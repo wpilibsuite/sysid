@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -74,6 +75,7 @@ class AnalysisManager {
   struct Gains {
     std::tuple<std::vector<double>, double> ff;
     std::tuple<double, double> fb;
+    std::optional<double> trackWidth;
   };
 
   /** The keys (which contain sysid data) that are in the JSON to analyze. */
@@ -214,9 +216,10 @@ class AnalysisManager {
   Settings m_settings;
 
   // Miscellaneous data from the JSON -- the analysis type, units per rotation
-  // (factor), and the units.
+  // (factor), the units, and whether we have track width.
   AnalysisType m_type;
   double m_factor;
   std::string m_unit;
+  bool m_hasTrackWidth;
 };
 }  // namespace sysid

@@ -205,6 +205,10 @@ void Analyzer::Display() {
         ShowGain("Kcos", &m_ff[3]);
       }
 
+      if (m_trackWidth) {
+        ShowGain("Track Width", &*m_trackWidth);
+      }
+
       ShowGain("r-squared", &m_rs);
       float endY = ImGui::GetCursorPosY();
 
@@ -516,6 +520,7 @@ void Analyzer::Calculate() {
   m_rs = std::get<1>(gains.ff);
   m_Kp = std::get<0>(gains.fb);
   m_Kd = std::get<1>(gains.fb);
+  m_trackWidth = gains.trackWidth;
   m_unit = m_manager->GetUnit();
   m_factor = m_manager->GetFactor();
 }

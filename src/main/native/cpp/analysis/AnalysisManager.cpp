@@ -8,10 +8,13 @@
 #include <initializer_list>
 #include <system_error>
 
+#include <units/angle.h>
 #include <wpi/StringMap.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
 #include <wpi/raw_ostream.h>
+
+#include "sysid/analysis/TrackWidthAnalysis.h"
 
 using namespace sysid;
 
@@ -49,6 +52,9 @@ AnalysisManager::AnalysisManager(wpi::StringRef path, Settings settings)
   // Get the rotation -> output units factor from the JSON.
   m_unit = m_json.at("units").get<std::string>();
   m_factor = m_json.at("unitsPerRotation").get<double>();
+
+  // Check if we have a track width value.
+  m_hasTrackWidth = m_json.find("track-width") != m_json.end();
 
   // Prepare data.
   PrepareData();
@@ -161,6 +167,21 @@ AnalysisManager::Gains AnalysisManager::Calculate() {
   } else {
     fb = sysid::CalculateVelocityFeedbackGains(*m_settings.preset,
                                                *m_settings.lqr, gains);
+  }
+
+  // Calculate track width if applicable.
+  if (m_hasTrackWidth) {
+    auto data = m_json.at("track-width").get<std::vector<RawData>>();
+
+    double l =
+        (data.back()[Cols::kLPos] - data.front()[Cols::kLPos]) * m_factor;
+    double r =
+        (data.back()[Cols::kRPos] - data.front()[Cols::kRPos]) * m_factor;
+    double a = (data.back()[Cols::kGyro] - data.front()[Cols::kGyro]);
+
+    return {ff, fb,
+            std::make_optional(
+                sysid::CalculateTrackWidth(l, r, units::radian_t(a)))};
   }
 
   return {ff, fb};

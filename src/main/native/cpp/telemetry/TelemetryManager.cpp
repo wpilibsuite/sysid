@@ -20,6 +20,7 @@ TelemetryManager::TelemetryManager(Settings settings, NT_Inst instance)
     : m_settings(std::move(settings)),
       m_nt(instance),
       m_autospeed(m_nt.GetEntry("/SmartDashboard/SysIdAutoSpeed")),
+      m_rotate(m_nt.GetEntry("/SmartDashboard/SysIdRotate")),
       m_telemetry(m_nt.GetEntry("/SmartDashboard/SysIdTelemetry")),
       m_fieldInfo(m_nt.GetEntry("/FMSInfo/FMSControlData")) {
   // Add listeners for our readable entries.
@@ -30,7 +31,7 @@ TelemetryManager::TelemetryManager(Settings settings, NT_Inst instance)
 void TelemetryManager::BeginTest(wpi::StringRef name) {
   // Create a new test params instance for this test.
   m_params = TestParameters{name.startswith("fast"), name.endswith("forward"),
-                            wpi::Now() * 1E-6};
+                            name.startswith("track"), wpi::Now() * 1E-6};
 
   // Add this test to the list of running tests and set the running flag.
   m_tests.push_back(name);
@@ -50,9 +51,11 @@ void TelemetryManager::EndTest() {
   // Call the cancellation callbacks.
   for (auto&& func : m_callbacks) {
     if (!m_params.data.empty()) {
-      func(m_params.data.back()[5], m_params.data.back()[6]);
+      func(m_params.data.back()[5] - m_params.data.front()[5],
+           m_params.data.back()[6] - m_params.data.front()[6],
+           m_params.data.back()[9] - m_params.data.front()[9]);
     } else {
-      func(0.0, 0.0);
+      func(0.0, 0.0, 0.0);
     }
   }
 
@@ -101,6 +104,7 @@ void TelemetryManager::Update() {
              : ((now - m_params.start) * *m_settings.quasistaticRampRate)) *
         (m_params.forward ? 1 : -1);
     nt::SetEntryValue(m_autospeed, nt::Value::MakeDouble(volts / 12.0));
+    nt::SetEntryValue(m_rotate, nt::Value::MakeBoolean(m_params.rotate));
   }
 
   // If the robot was previously enabled, but isn't now, it means that we should

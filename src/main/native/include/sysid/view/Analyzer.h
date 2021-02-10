@@ -6,6 +6,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -64,6 +65,9 @@ class Analyzer : public glass::View {
   double m_rs;
   double m_Kp;
   double m_Kd;
+
+  // Track width
+  std::optional<double> m_trackWidth;
 
   // Units
   double m_factor;

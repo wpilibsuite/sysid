@@ -41,6 +41,10 @@ class Logger : public glass::View {
   bool m_ntConnected = false;
   bool m_ntReset = true;
 
+  double m_primaryEncoder = 0.0;
+  double m_secondaryEncoder = 0.0;
+  double m_gyro = 0.0;
+
   int* m_team = nullptr;
 
   std::string m_opened;
