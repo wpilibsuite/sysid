@@ -153,8 +153,10 @@ model {
     // Create the run task.
     $.components.sysid.binaries.each { bin ->
       if (bin.buildable && bin.name.contains("debug")) {
-        Task run = project.tasks.create("run", Exec) { commandLine bin.executable.file }
-        run.dependsOn bin.tasks.link
+        Task run = project.tasks.create("run", Exec) {
+          commandLine bin.tasks.install.runScriptFile.get().asFile.toString()
+        }
+        run.dependsOn bin.tasks.install
       }
     }
   }
