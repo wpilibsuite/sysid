@@ -246,7 +246,7 @@ void Analyzer::Display() {
       }
 
       auto size = ImGui::GetIO().DisplaySize;
-      ImGui::SetNextWindowSize(ImVec2(size.x / 3, size.y * 0.9));
+      ImGui::SetNextWindowSize(ImVec2(size.x / 2.5, size.y * 0.9));
 
       // Show voltage domain diagnostic plots.
       if (ImGui::BeginPopupModal("Voltage-Domain Diagnostics")) {
@@ -312,7 +312,7 @@ void Analyzer::Display() {
         ImGui::EndPopup();
       }
 
-      ImGui::SetNextWindowSize(ImVec2(size.x / 3, size.y * 0.9));
+      ImGui::SetNextWindowSize(ImVec2(size.x / 2.5, size.y * 0.9));
 
       // Show time domain diagnostic plots.
       if (ImGui::BeginPopupModal("Time-Domain Diagnostics")) {
