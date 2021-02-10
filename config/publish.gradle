@@ -1,0 +1,61 @@
+// Define our artifact IDs, classifiers, etc. for publishing.
+def baseArtifactId = "SysId"
+def artifactGroupId = "edu.wpi.first.tools"
+def zipBaseName = "_GROUP_edu_wpi_first_tools_ID_SysId_CLS"
+
+model {
+  publishing {
+    Task zip
+    $.components.sysid.binaries.each { binary ->
+      if (binary.buildable && binary.name.contains("release")) {
+        // Get path to exe.
+        def exe = binary.executable.getFile()
+
+        // Create an application bundle on macOS and set that as the exe.
+        def bundle = project.tasks.create("bundle", Copy) {
+          description("Generates a macOS application bundle for SysId")
+          from(file("$project.projectDir/Info.plist"))
+          into(file("$project.buildDir/outputs/bundles/SysId.app/Contents"))
+          into("MacOS") { with copySpec { from binary.executable.file } }
+        }
+        if (binary.getTargetPlatform().getOperatingSystem().isMacOsX()) {
+          exe = file("$project.buildDir/outputs/bundles/")
+          project.build.dependsOn bundle
+        }
+
+        // Create the ZIP.
+        zip = project.tasks.create("zip", Zip) {
+          description("Archives and copies the exe to the outputs directory")
+
+          destinationDirectory = file("$project.buildDir/outputs")
+          archiveBaseName = '_M_' + zipBaseName
+          duplicatesStrategy = 'exclude'
+          classifier = nativeUtils.getPublishClassifier(binary)
+
+          from("LICENSE.md") { into '/' }
+          from(exe)
+          into(nativeUtils.getPlatformPath(binary))
+        }
+
+        // Set task dependencies.
+        if (binary.getTargetPlatform().getOperatingSystem().isMacOsX()) {
+          bundle.dependsOn binary.tasks.link
+          zip.dependsOn bundle
+        }
+
+        zip.dependsOn binary.tasks.link
+        project.build.dependsOn zip
+        project.artifacts { zip }
+        addTaskToCopyAllOutputs(zip)
+      }
+    }
+    publications {
+      cpp(MavenPublication) {
+        artifact zip
+        artifactId = baseArtifactId
+        groupId = artifactGroupId
+        version wpilibVersioning.version.get()
+      }
+    }
+  }
+}

@@ -1,0 +1,128 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    env:
+      MACOSX_DEPLOYMENT_TARGET: 10.14
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact-name: Win32
+            architecture: x86
+          - os: windows-latest
+            artifact-name: Win64
+            architecture: x64
+          - os: macos-latest
+            artifact-name: macOS
+            architecture: x64
+          - os: ubuntu-latest
+            artifact-name: Linux
+            architecture: x64
+
+    name: "Build - ${{ matrix.artifact-name }}"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 11
+          architecture: ${{ matrix.architecture }}
+
+      - name: Build with Gradle
+        run: ./gradlew build -PbuildServer
+        if: ${{ !github.repository_owner == 'wpilibsuite' || !startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Build with Gradle (Release)
+        run: ./gradlew build -PbuildServer -PreleaseMode
+        if: ${{ github.repository_owner == 'wpilibsuite' && startsWith(github.ref, 'refs/tags/v') }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: build/allOutputs
+
+  wpiformat:
+    name: "Format"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Fetch all history and metadata
+        run: |
+          git fetch --prune --unshallow
+          git checkout -b pr
+          git branch -f main origin/main
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install clang-format
+        run: sudo apt-get update -q && sudo apt-get install -y clang-format-10
+      - name: Install wpiformat
+        run: pip3 install wpiformat
+      - name: Run
+        run: wpiformat -clang 10
+      - name: Check Output
+        run: git --no-pager diff --exit-code HEAD
+
+  combine:
+    runs-on: ubuntu-latest
+    needs: [build, wpiformat]
+    name: "Combine"
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          repository: wpilibsuite/build-tools
+
+      - uses: actions/download-artifact@v2
+        with:
+          path: combiner/products/build/allOutputs
+
+      - name: Flatten Artifacts
+        run: rsync -a --delete combiner/products/build/allOutputs/*/* combiner/products/build/allOutputs/
+
+      - name: Check version number exists
+        run: |
+          cat combiner/products/build/allOutputs/version.txt
+          test -s combiner/products/build/allOutputs/version.txt
+
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 11
+
+      - name: Combine
+        if: |
+          (!startsWith(github.ref, 'refs/tags/v') &&
+          github.ref != 'refs/heads/main') || github.repository_owner != 'wpilibsuite'
+        run: cd combiner && ./gradlew publish -Pthirdparty -PbuildName=sysid
+
+      - name: Combine (Master)
+        if: |
+          github.repository_owner == 'wpilibsuite' &&
+          github.ref == 'refs/heads/main'
+        run: cd combiner && ./gradlew publish -Pthirdparty -PbuildName=sysid
+        # env:
+        #   RUN_AZURE_ARTIFACTORY_RELEASE: "TRUE"
+        #   ARTIFACTORY_PUBLISH_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+        #   ARTIFACTORY_PUBLISH_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+
+      - name: Combine (Release)
+        if: |
+          github.repository_owner == 'wpilibsuite' &&
+          startsWith(github.ref, 'refs/tags/v')
+        run: cd combiner && ./gradlew publish -Pthirdparty -PbuildName=sysid -PreleaseRepoPublish
+        # env:
+        #   RUN_AZURE_ARTIFACTORY_RELEASE: "TRUE"
+        #   ARTIFACTORY_PUBLISH_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+        #   ARTIFACTORY_PUBLISH_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Maven
+          path: ~/releases

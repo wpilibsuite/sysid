@@ -1,0 +1,164 @@
+plugins {
+  id "cpp"
+  id "google-test-test-suite"
+  id "maven-publish"
+  id "edu.wpi.first.NativeUtils" version "2021.1.1"
+  id "edu.wpi.first.wpilib.versioning.WPILibVersioningPlugin" version "4.1.0"
+  id "edu.wpi.first.wpilib.repositories.WPILibRepositoriesPlugin" version "2020.2"
+}
+
+// Configure versioning for this project.
+wpilibVersioning.buildServerMode = project.hasProperty("buildServer")
+wpilibVersioning.releaseMode = project.hasProperty("releaseMode")
+wpilibVersioning.useAllTags = true
+
+ext {
+  wpilibVersion = "2021.+"
+}
+
+// Apply NativeUtils configuration.
+apply from: "config/native.gradle"
+
+// Configure what repositories we should get dependencies from.
+allprojects {
+  if (project.hasProperty("releaseMode")) {
+    wpilibRepositories.addAllReleaseRepositories(it)
+  } else {
+    wpilibRepositories.addAllDevelopmentRepositories(it)
+  }
+}
+
+// Finalize the versioning for this project.
+if (project.hasProperty("publishVersion")) {
+  wpilibVersioning.version.set(project.publishVersion)
+}
+wpilibVersioning.version.finalizeValue()
+version = wpilibVersioning.version.get()
+
+// Configure output files.
+def outputsFolder = file("$buildDir/allOutputs")
+def versionFile = file("$outputsFolder/version.txt")
+
+task outputVersions() {
+  outputs.files(versionFile)
+  doFirst {
+    buildDir.mkdir()
+    outputsFolder.mkdir()
+  }
+  doLast {
+    versionFile.write wpilibVersioning.version.get()
+  }
+}
+
+task copyAllOutputs(type: Copy) {
+  destinationDir outputsFolder
+}
+
+copyAllOutputs.dependsOn outputVersions
+project.build.dependsOn outputVersions
+project.build.dependsOn copyAllOutputs
+
+ext.addTaskToCopyAllOutputs = { task ->
+  copyAllOutputs.dependsOn task
+  copyAllOutputs.inputs.file task.archivePath
+  copyAllOutputs.from task.archivePath
+}
+
+// Generate the version number on each build.
+def wpilibVersionFileInput = file("src/generate/WPILibVersion.cpp.in")
+def wpilibVersionFileOutput = file("$buildDir/generated/cpp/WPILibVersion.cpp")
+
+task generateCppVersion() {
+  description = 'Generates the wpilib version class'
+  group = 'WPILib'
+
+  outputs.file wpilibVersionFileOutput
+  inputs.file wpilibVersionFileInput
+
+  if (wpilibVersioning.releaseMode) {
+    outputs.upToDateWhen { false }
+  }
+
+  // We follow a simple set of checks to determine whether we should generate a new version file:
+  // 1. If the release type is not development, we generate a new version file
+  // 2. If there is no generated version number, we generate a new version file
+  // 3. If there is a generated build number, and the release type is development, then we will
+  //    only generate if the publish task is run.
+  doLast {
+    def version = wpilibVersioning.version.get()
+    println "Writing version ${version} to $wpilibVersionFileOutput"
+
+    if (wpilibVersionFileOutput.exists()) {
+      wpilibVersionFileOutput.delete()
+    }
+    def read = wpilibVersionFileInput.text.replace('${wpilib_version}', version)
+    wpilibVersionFileOutput.write(read)
+  }
+}
+
+gradle.taskGraph.addTaskExecutionGraphListener { graph ->
+  def willPublish = graph.hasTask(publish)
+  if (willPublish) {
+    generateCppVersion.outputs.upToDateWhen { false }
+  }
+}
+
+tasks.withType(CppCompile) {
+  dependsOn generateCppVersion
+}
+
+// Configure application.
+model {
+  components {
+    sysid(NativeExecutableSpec) {
+      sources.cpp {
+        source {
+          srcDirs "src/main/native/cpp", "$buildDir/generated/cpp"
+          include "**/*.cpp"
+        }
+        exportedHeaders.srcDirs "src/main/native/include"
+      }
+    }
+  }
+  testSuites {
+    sysidTest(GoogleTestTestSuiteSpec) {
+      testing $.components.sysid
+      sources.cpp.source {
+        srcDirs "src/test/native/cpp"
+        include "**/*.cpp"
+      }
+      binaries.all {
+        nativeUtils.useRequiredLibrary(it, "googletest_static")
+        it.cppCompiler.define("RUNNING_SYSID_TESTS")
+      }
+    }
+  }
+  binaries {
+    withType(NativeBinarySpec).all {
+      nativeUtils.useRequiredLibrary(it, "gui")
+
+      // Add platform-specific renderer dependencies.
+      if (it.targetPlatform.operatingSystem.isWindows()) {
+        it.linker.args << 'Gdi32.lib' << 'Shell32.lib' << 'd3d11.lib' << 'd3dcompiler.lib'
+      } else if (it.targetPlatform.operatingSystem.isMacOsX()) {
+        it.linker.args << '-framework' << 'Metal' << '-framework' << 'MetalKit' <<
+                '-framework' << 'Cocoa' << '-framework' << 'IOKit' << '-framework' <<
+                'CoreFoundation' << '-framework' << 'CoreVideo' << '-framework' << 'QuartzCore'
+      } else {
+        it.linker.args << '-lX11'
+      }
+    }
+  }
+  publishing {
+    // Create the run task.
+    $.components.sysid.binaries.each { bin ->
+      if (bin.buildable && bin.name.contains("debug")) {
+        Task run = project.tasks.create("run", Exec) { commandLine bin.executable.file }
+        run.dependsOn bin.tasks.link
+      }
+    }
+  }
+}
+
+// Configure publishing.
+apply from: "config/publish.gradle"
