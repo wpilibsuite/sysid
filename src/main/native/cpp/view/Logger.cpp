@@ -148,7 +148,7 @@ void Logger::Display() {
   CreateTest("Quasistatic Backward", "slow-backward");
   CreateTest("Dynamic Forward", "fast-forward");
   CreateTest("Dynamic Backward", "fast-backward");
-  CreateTest("Track Width", "trackwidth");
+  CreateTest("Track Width", "track-width");
 
   m_manager->RegisterCancellationCallback(
       [&](double primary, double secondary, double gyro) {
