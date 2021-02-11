@@ -130,10 +130,7 @@ void Analyzer::Display() {
   if (first) {
     if (!m_location->empty() && wpi::sys::fs::exists(*m_location)) {
       try {
-        m_manager = std::make_unique<AnalysisManager>(
-            *m_location, AnalysisManager::Settings{
-                             &m_preset, &m_loopType, &m_params, &m_threshold,
-                             &m_window, &m_selectedDataset});
+        m_manager = std::make_unique<AnalysisManager>(*m_location, m_settings);
         m_type = m_manager->GetAnalysisType();
         Calculate();
       } catch (const std::exception& e) {
@@ -160,7 +157,7 @@ void Analyzer::Display() {
   // button. Also show the units and the units per rotation.
   if (m_manager) {
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 15);
-    if (ImGui::Combo("Dataset", &m_selectedDataset, AnalysisManager::kDatasets,
+    if (ImGui::Combo("Dataset", &m_settings.dataset, AnalysisManager::kDatasets,
                      m_type == analysis::kDrivetrain ? 9 : 3)) {
       Calculate();
     }
@@ -228,19 +225,19 @@ void Analyzer::Display() {
 
       ImGui::SetCursorPosX(ImGui::GetFontSize() * 15);
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-      int window = m_window;
+      int window = m_settings.windowSize;
       if (ImGui::InputInt("Window Size", &window, 0, 0)) {
-        m_window = std::clamp(window, 2, 10);
+        m_settings.windowSize = std::clamp(window, 2, 10);
         m_manager->PrepareData();
         Calculate();
       }
 
       ImGui::SetCursorPosX(ImGui::GetFontSize() * 15);
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-      double threshold = m_threshold;
+      double threshold = m_settings.motionThreshold;
       if (ImGui::InputDouble("Velocity Threshold", &threshold, 0.0, 0.0,
                              "%.3f")) {
-        m_threshold = std::clamp(threshold, 0.0, 1.0);
+        m_settings.motionThreshold = std::clamp(threshold, 0.0, 1.0);
         m_manager->PrepareData();
         Calculate();
       }
@@ -353,7 +350,7 @@ void Analyzer::Display() {
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
       if (ImGui::Combo("Gain Preset", &m_selectedPreset, kPresetNames,
                        IM_ARRAYSIZE(kPresetNames))) {
-        m_preset = m_presets[kPresetNames[m_selectedPreset]];
+        m_settings.preset = m_presets[kPresetNames[m_selectedPreset]];
         Calculate();
       }
       ImGui::SameLine();
@@ -373,7 +370,7 @@ void Analyzer::Display() {
           "REV (Brushed): For use with brushless motors connected to a SPARK "
           "MAX.");
 
-      if (m_preset != m_presets[kPresetNames[m_selectedPreset]]) {
+      if (m_settings.preset != m_presets[kPresetNames[m_selectedPreset]]) {
         ImGui::SameLine();
         ImGui::TextDisabled("(modified)");
       }
@@ -381,11 +378,11 @@ void Analyzer::Display() {
       float beginY = ImGui::GetCursorPosY();
       // Show our feedback controller preset values.
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-      double value = m_preset.outputConversionFactor * 12;
+      double value = m_settings.preset.outputConversionFactor * 12;
       if (ImGui::InputDouble("Max Controller Output", &value, 0.0, 0.0,
                              "%.1f") &&
           value > 0) {
-        m_preset.outputConversionFactor = value / 12.0;
+        m_settings.preset.outputConversionFactor = value / 12.0;
         Calculate();
       }
 
@@ -403,24 +400,24 @@ void Analyzer::Display() {
 
       // Show controller period.
       ShowPresetValue("Controller Period (s)",
-                      reinterpret_cast<double*>(&m_preset.period));
+                      reinterpret_cast<double*>(&m_settings.preset.period));
 
       // Show whether the controller gains are time-normalized.
-      if (ImGui::Checkbox("Time-Normalized?", &m_preset.normalized)) {
+      if (ImGui::Checkbox("Time-Normalized?", &m_settings.preset.normalized)) {
         Calculate();
       }
       float endY = ImGui::GetCursorPosY();
 
       // Show position/velocity measurement delay.
       ImGui::SetCursorPosY(beginY);
-      ShowPresetValue(
-          "Position Measurement Delay (s)",
-          reinterpret_cast<double*>(&m_preset.positionMeasurementDelay),
-          ImGui::GetFontSize() * 17);
-      ShowPresetValue(
-          "Velocity Measurement Delay (s)",
-          reinterpret_cast<double*>(&m_preset.velocityMeasurementDelay),
-          ImGui::GetFontSize() * 17);
+      ShowPresetValue("Position Measurement Delay (s)",
+                      reinterpret_cast<double*>(
+                          &m_settings.preset.positionMeasurementDelay),
+                      ImGui::GetFontSize() * 17);
+      ShowPresetValue("Velocity Measurement Delay (s)",
+                      reinterpret_cast<double*>(
+                          &m_settings.preset.velocityMeasurementDelay),
+                      ImGui::GetFontSize() * 17);
 
       ImGui::SetCursorPosY(endY);
 
@@ -431,7 +428,7 @@ void Analyzer::Display() {
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
       if (ImGui::Combo("Loop Type", &m_selectedLoopType, kLoopTypes,
                        IM_ARRAYSIZE(kLoopTypes))) {
-        m_loopType =
+        m_settings.type =
             static_cast<FeedbackControllerLoopType>(m_selectedLoopType);
         Calculate();
       }
@@ -467,11 +464,14 @@ void Analyzer::Display() {
       };
 
       if (m_selectedLoopType == 0) {
-        ShowLQRParam("Max Position Error (units)", &m_params.qp, 0.05f, 40.0f);
+        ShowLQRParam("Max Position Error (units)", &m_settings.lqr.qp, 0.05f,
+                     40.0f);
       }
 
-      ShowLQRParam("Max Velocity Error (units/s)", &m_params.qv, 0.05f, 40.0f);
-      ShowLQRParam("Max Control Effort (V)", &m_params.r, 0.1f, 12.0f, false);
+      ShowLQRParam("Max Velocity Error (units/s)", &m_settings.lqr.qv, 0.05f,
+                   40.0f);
+      ShowLQRParam("Max Control Effort (V)", &m_settings.lqr.r, 0.1f, 12.0f,
+                   false);
     }
   }
 
@@ -505,10 +505,7 @@ void Analyzer::SelectFile() {
     m_selector.reset();
 
     // Create the analysis manager.
-    m_manager = std::make_unique<AnalysisManager>(
-        *m_location,
-        AnalysisManager::Settings{&m_preset, &m_loopType, &m_params,
-                                  &m_threshold, &m_window, &m_selectedDataset});
+    m_manager = std::make_unique<AnalysisManager>(*m_location, m_settings);
     m_type = m_manager->GetAnalysisType();
     Calculate();
   }

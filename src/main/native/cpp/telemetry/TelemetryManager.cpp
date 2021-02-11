@@ -16,8 +16,8 @@
 
 using namespace sysid;
 
-TelemetryManager::TelemetryManager(Settings settings, NT_Inst instance)
-    : m_settings(std::move(settings)),
+TelemetryManager::TelemetryManager(const Settings& settings, NT_Inst instance)
+    : m_settings(settings),
       m_nt(instance),
       m_autospeed(m_nt.GetEntry("/SmartDashboard/SysIdAutoSpeed")),
       m_rotate(m_nt.GetEntry("/SmartDashboard/SysIdRotate")),
@@ -100,8 +100,8 @@ void TelemetryManager::Update() {
     double now = wpi::Now() * 1E-6;
     double volts =
         (m_params.fast
-             ? *m_settings.stepVoltage
-             : ((now - m_params.start) * *m_settings.quasistaticRampRate)) *
+             ? m_settings.stepVoltage
+             : ((now - m_params.start) * m_settings.quasistaticRampRate)) *
         (m_params.forward ? 1 : -1);
     nt::SetEntryValue(m_autospeed, nt::Value::MakeDouble(volts / 12.0));
     nt::SetEntryValue(m_rotate, nt::Value::MakeBoolean(m_params.rotate));

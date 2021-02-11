@@ -51,10 +51,8 @@ void Logger::Display() {
   // Reset and clear the internal manager state.
   ImGui::SameLine();
   if (ImGui::Button("Reset")) {
-    m_quasistatic = 0.25;
-    m_step = 7.0;
-    m_manager = std::make_unique<TelemetryManager>(
-        TelemetryManager::Settings{&m_quasistatic, &m_step});
+    m_manager =
+        std::make_unique<TelemetryManager>(TelemetryManager::Settings{});
   }
 
   // Add NT connection indicator.
@@ -81,13 +79,14 @@ void Logger::Display() {
     ImGui::PopItemFlag();
   };
 
-  CreateVoltageParameters("Quasistatic Ramp Rate (V/s)", &m_quasistatic, 0.10f,
-                          0.60f);
+  CreateVoltageParameters("Quasistatic Ramp Rate (V/s)",
+                          &m_settings.quasistaticRampRate, 0.10f, 0.60f);
   sysid::CreateTooltip(
       "This is the rate at which the voltage will increase "
       "during the quasistatic test.");
 
-  CreateVoltageParameters("Dynamic Step Voltage (V)", &m_step, 2.0f, 10.0f);
+  CreateVoltageParameters("Dynamic Step Voltage (V)", &m_settings.stepVoltage,
+                          2.0f, 10.0f);
   sysid::CreateTooltip(
       "This is the voltage that will be applied for the "
       "dynamic voltage (acceleration) tests.");

@@ -28,13 +28,10 @@ class TelemetryManager {
    * Represents settings for an instance of the TelemetryManager class. This
    * contains information about the quasistatic ramp rate for slow tests and the
    * step voltage for fast tests.
-   *
-   * The creator of this struct is responsible for managing the lifetime of the
-   * pointers contained within the struct.
    */
   struct Settings {
-    double* quasistaticRampRate;
-    double* stepVoltage;
+    double quasistaticRampRate = 0.25;
+    double stepVoltage = 7.0;
   };
 
   /**
@@ -46,7 +43,7 @@ class TelemetryManager {
    *                 this parameter should suffice in production; it should only
    *                 be changed during unit testing.
    */
-  explicit TelemetryManager(Settings settings,
+  explicit TelemetryManager(const Settings& settings,
                             NT_Inst instance = nt::GetDefaultInstance());
 
   /**

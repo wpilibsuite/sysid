@@ -51,12 +51,9 @@ class Analyzer : public glass::View {
   std::string m_exception;
 
   // Everything related to feedback controller calculations.
+  AnalysisManager::Settings m_settings;
   wpi::StringMap<FeedbackControllerPreset> m_presets;
-  FeedbackControllerPreset m_preset = presets::kDefault;
-  FeedbackControllerLoopType m_loopType = FeedbackControllerLoopType::kVelocity;
-  LQRParameters m_params{1, 1.5, 7};
 
-  int m_selectedDataset = 0;
   int m_selectedLoopType = 1;
   int m_selectedPreset = 0;
 

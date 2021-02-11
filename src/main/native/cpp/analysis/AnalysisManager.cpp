@@ -34,8 +34,8 @@ std::vector<PreparedData> Concatenate(
   return dest;
 }
 
-AnalysisManager::AnalysisManager(wpi::StringRef path, Settings settings)
-    : m_settings(std::move(settings)) {
+AnalysisManager::AnalysisManager(wpi::StringRef path, const Settings& settings)
+    : m_settings(settings) {
   // Read JSON from the specified path.
   std::error_code ec;
   wpi::raw_fd_istream is{path, ec};
@@ -64,7 +64,7 @@ AnalysisManager::AnalysisManager(wpi::StringRef path, Settings settings)
 void AnalysisManager::PrepareDataDrivetrain(
     wpi::StringMap<std::vector<RawData>>&& data) {
   // Compute acceleration on all datasets.
-  int window = *m_settings.windowSize;
+  int window = m_settings.windowSize;
   auto sfl = ComputeAcceleration(data["slow-forward"], window);
   auto sfr = ComputeAcceleration(data["slow-forward"], window, true);
   auto sbl = ComputeAcceleration(data["slow-backward"], window);
@@ -124,8 +124,8 @@ void AnalysisManager::PrepareData() {
 
   // Trim quasistatic test data to remove all points where voltage == 0 or
   // velocity < threshold.
-  TrimQuasistaticData(&data["slow-forward"], *m_settings.motionThreshold);
-  TrimQuasistaticData(&data["slow-backward"], *m_settings.motionThreshold);
+  TrimQuasistaticData(&data["slow-forward"], m_settings.motionThreshold);
+  TrimQuasistaticData(&data["slow-backward"], m_settings.motionThreshold);
 
   // If the type is drivetrain, we can use our special function from here.
   if (m_type == analysis::kDrivetrain) {
@@ -134,10 +134,10 @@ void AnalysisManager::PrepareData() {
   }
 
   // Compute acceleration on all datasets.
-  auto sf = ComputeAcceleration(data["slow-forward"], *m_settings.windowSize);
-  auto sb = ComputeAcceleration(data["slow-backward"], *m_settings.windowSize);
-  auto ff = ComputeAcceleration(data["fast-forward"], *m_settings.windowSize);
-  auto fb = ComputeAcceleration(data["fast-backward"], *m_settings.windowSize);
+  auto sf = ComputeAcceleration(data["slow-forward"], m_settings.windowSize);
+  auto sb = ComputeAcceleration(data["slow-backward"], m_settings.windowSize);
+  auto ff = ComputeAcceleration(data["fast-forward"], m_settings.windowSize);
+  auto fb = ComputeAcceleration(data["fast-backward"], m_settings.windowSize);
 
   // Trim the step voltage data.
   TrimStepVoltageData(&ff);
@@ -153,7 +153,7 @@ void AnalysisManager::PrepareData() {
 AnalysisManager::Gains AnalysisManager::Calculate() {
   // Calculate feedforward gains from the data.
   auto ff = sysid::CalculateFeedforwardGains(
-      m_datasets[kDatasets[*m_settings.dataset]], m_type);
+      m_datasets[kDatasets[m_settings.dataset]], m_type);
 
   // Create the struct that we need for feedback analysis.
   auto& f = std::get<0>(ff);
@@ -161,12 +161,12 @@ AnalysisManager::Gains AnalysisManager::Calculate() {
 
   // Calculate the appropriate gains.
   std::tuple<double, double> fb;
-  if (*m_settings.type == FeedbackControllerLoopType::kPosition) {
-    fb = sysid::CalculatePositionFeedbackGains(*m_settings.preset,
-                                               *m_settings.lqr, gains);
+  if (m_settings.type == FeedbackControllerLoopType::kPosition) {
+    fb = sysid::CalculatePositionFeedbackGains(m_settings.preset,
+                                               m_settings.lqr, gains);
   } else {
-    fb = sysid::CalculateVelocityFeedbackGains(*m_settings.preset,
-                                               *m_settings.lqr, gains);
+    fb = sysid::CalculateVelocityFeedbackGains(m_settings.preset,
+                                               m_settings.lqr, gains);
   }
 
   // Calculate track width if applicable.

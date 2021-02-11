@@ -47,28 +47,25 @@ class AnalysisManager {
    * information about the feedback controller preset, loop type, motion
    * threshold, acceleration window size, LQR parameters, and the selected
    * dataset.
-   *
-   * The creator of this struct is responsible for managing the lifetime of the
-   * pointers contained within the struct.
    */
   struct Settings {
     /** The feedback controller preset used to calculate gains. */
-    FeedbackControllerPreset* preset;
+    FeedbackControllerPreset preset = presets::kDefault;
 
     /** The feedback controller loop type (position or velocity). */
-    FeedbackControllerLoopType* type;
+    FeedbackControllerLoopType type = FeedbackControllerLoopType::kVelocity;
 
     /** LQR parameters used for feedback gain calculation. */
-    LQRParameters* lqr;
+    LQRParameters lqr{1, 1.5, 7};
 
     /** The motion threshold (units/s) for trimming quasistatic test data */
-    double* motionThreshold;
+    double motionThreshold = 0.2;
 
     /** The window size for computing acceleration */
-    int* windowSize;
+    int windowSize = 8;
 
     /** The dataset that is being analyzed. */
-    int* dataset;
+    int dataset = 0;
   };
 
   /** Stores feedforward and feedback gains */
@@ -99,7 +96,7 @@ class AnalysisManager {
    * @param path     The path to the JSON containing the sysid data.
    * @param settings The settings for this instance of the analysis manager.
    */
-  AnalysisManager(wpi::StringRef path, Settings settings);
+  AnalysisManager(wpi::StringRef path, const Settings& settings);
 
   /**
    * Prepares data from the JSON and stores the output in the StringMap.
@@ -142,7 +139,7 @@ class AnalysisManager {
    *
    * @return A reference to the raw internal data.
    */
-  Storage& GetRawData() { return m_datasets[kDatasets[*m_settings.dataset]]; }
+  Storage& GetRawData() { return m_datasets[kDatasets[m_settings.dataset]]; }
 
   /**
    * Trims the existing raw data vector to remove any values where the voltage
@@ -213,7 +210,7 @@ class AnalysisManager {
 
   // The settings for this instance. This contains pointers to the feedback
   // controller preset, LQR parameters, acceleration window size, etc.
-  Settings m_settings;
+  const Settings& m_settings;
 
   // Miscellaneous data from the JSON -- the analysis type, units per rotation
   // (factor), the units, and whether we have track width.

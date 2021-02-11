@@ -28,12 +28,10 @@ class Logger : public glass::View {
   void SelectDataFolder();
   void CheckNTReset();
 
-  double m_quasistatic = 0.25;
-  double m_step = 7.0;
+  TelemetryManager::Settings m_settings;
 
   std::unique_ptr<TelemetryManager> m_manager =
-      std::make_unique<TelemetryManager>(
-          TelemetryManager::Settings{&m_quasistatic, &m_step});
+      std::make_unique<TelemetryManager>(m_settings);
 
   std::unique_ptr<pfd::select_folder> m_selector;
   std::string m_jsonLocation;
