@@ -17,6 +17,8 @@
 #include <wpi/StringRef.h>
 #include <wpi/json.h>
 
+#include "sysid/analysis/AnalysisType.h"
+
 namespace sysid {
 /**
  * This class is reponsible for collecting data from the robot and storing it
@@ -26,12 +28,13 @@ class TelemetryManager {
  public:
   /**
    * Represents settings for an instance of the TelemetryManager class. This
-   * contains information about the quasistatic ramp rate for slow tests and the
-   * step voltage for fast tests.
+   * contains information about the quasistatic ramp rate for slow tests, the
+   * step voltage for fast tests, and the mechanism type for characterization.
    */
   struct Settings {
     double quasistaticRampRate = 0.25;
     double stepVoltage = 7.0;
+    AnalysisType mechanism = analysis::kDrivetrain;
   };
 
   /**
@@ -126,7 +129,7 @@ class TelemetryManager {
   };
 
   // Settings for this instance.
-  Settings m_settings;
+  const Settings& m_settings;
 
   // Test parameters for the currently running test.
   TestParameters m_params;
