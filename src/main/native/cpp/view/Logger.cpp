@@ -16,6 +16,7 @@
 #include <wpigui.h>
 
 #include "sysid/Util.h"
+#include "sysid/analysis/AnalysisType.h"
 
 using namespace sysid;
 
@@ -44,6 +45,16 @@ void Logger::Display() {
   // Add team number input and apply button for NT connection.
   ImGui::SetNextItemWidth(width / 5);
   ImGui::InputInt("Team #", m_team, 0);
+
+  // Add a dropdown for mechanism type.
+  ImGui::SameLine();
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+
+  if (ImGui::Combo("Mechanism", &m_selectedType, kTypes,
+                   IM_ARRAYSIZE(kTypes))) {
+    m_settings.mechanism = analysis::FromName(kTypes[m_selectedType]);
+  }
+
   if (ImGui::Button("Apply")) {
     m_ntReset = true;
   }
@@ -53,6 +64,7 @@ void Logger::Display() {
   if (ImGui::Button("Reset")) {
     m_manager =
         std::make_unique<TelemetryManager>(TelemetryManager::Settings{});
+    m_selectedType = 0;
   }
 
   // Add NT connection indicator.

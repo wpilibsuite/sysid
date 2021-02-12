@@ -24,11 +24,15 @@ class Logger : public glass::View {
   Logger();
   void Display() override;
 
+  static constexpr const char* kTypes[] = {"Drivetrain", "Arm", "Elevator",
+                                           "Simple"};
+
  private:
   void SelectDataFolder();
   void CheckNTReset();
 
   TelemetryManager::Settings m_settings;
+  int m_selectedType = 0;
 
   std::unique_ptr<TelemetryManager> m_manager =
       std::make_unique<TelemetryManager>(m_settings);
