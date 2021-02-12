@@ -2,6 +2,7 @@ plugins {
   id "cpp"
   id "google-test-test-suite"
   id "maven-publish"
+  id "edu.wpi.first.GradleVsCode" version "0.12.0"
   id "edu.wpi.first.NativeUtils" version "2021.1.1"
   id "edu.wpi.first.wpilib.versioning.WPILibVersioningPlugin" version "4.1.0"
   id "edu.wpi.first.wpilib.repositories.WPILibRepositoriesPlugin" version "2020.2"

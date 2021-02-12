@@ -283,3 +283,7 @@ gradle-app.setting
 
 # VS Code settings file
 .vscode/
+
+# Vim and Clangd
+.vim/
+.caches/
