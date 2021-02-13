@@ -4,6 +4,10 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
 namespace sysid {
 void CreateTooltip(const char* text);
+std::vector<std::string> Split(const std::string& s, char c);
 }  // namespace sysid

@@ -50,9 +50,7 @@ class Logger : public glass::View {
 
   bool m_isRotationalUnits = false;
 
-  double m_primaryEncoder = 0.0;
-  double m_secondaryEncoder = 0.0;
-  double m_gyro = 0.0;
+  std::string m_popupText;
 
   int* m_team = nullptr;
 
