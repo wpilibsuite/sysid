@@ -163,26 +163,8 @@ void Logger::Display() {
         m_opened = text;
       }
       if (m_opened == text && ImGui::BeginPopupModal("Warning")) {
-        if (m_manager->IsActive()) {
-          ImGui::Text(
-              "Please enable the robot in autonomous mode, and then "
-              "disable it "
-              "before it runs out of space. \n Note: The robot will "
-              "continue "
-              "to move until you disable it - It is your "
-              "responsibility to "
-              "ensure it does not hit anything!");
-        } else {
-          ImGui::Text(
-              "The primary encoder has reported: %.3f %s.\n"
-              "The secondary encoder has reported: %.3f %s.\n"
-              "The gyro has reported: %.3f degrees.\n",
-              m_primaryEncoder, m_settings.units.c_str(), m_secondaryEncoder,
-              m_settings.units.c_str(), m_gyro);
-        }
-
-        const char* button = m_manager->IsActive() ? "End Test" : "Close";
-        if (ImGui::Button(button)) {
+        ImGui::Text("%s", m_popupText.c_str());
+        if (ImGui::Button("Close")) {
           m_manager->EndTest();
           ImGui::CloseCurrentPopup();
           m_opened = "";
@@ -206,12 +188,8 @@ void Logger::Display() {
   CreateTest("Dynamic Backward", "fast-backward");
   CreateTest("Track Width", "track-width");
 
-  m_manager->RegisterCancellationCallback(
-      [&](double primary, double secondary, double gyro) {
-        m_primaryEncoder = primary * m_settings.unitsPerRotation;
-        m_secondaryEncoder = secondary * m_settings.unitsPerRotation;
-        m_gyro = units::convert<units::radian, units::degree>(gyro);
-      });
+  m_manager->RegisterDisplayCallback(
+      [this](const auto& str) { m_popupText = str; });
 
   // Display the path to where the JSON will be saved and a button to select the
   // location.

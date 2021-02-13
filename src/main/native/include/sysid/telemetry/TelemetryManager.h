@@ -72,15 +72,11 @@ class TelemetryManager {
   void Update();
 
   /**
-   * Registers a callback that should be called when a test ends or is canceled.
-   * The callback should accept two parameters -- the distances traveled by the
-   * primary and secondary encoders and the gyro angle in radians at the end of
-   * the test.
-   *
-   * @param callback The function to be called upon cancellation of a test.
+   * Registers a callback that's called by the TelemetryManager when there is a
+   * message to display to the user.
    */
-  void RegisterCancellationCallback(
-      std::function<void(double, double, double)> callback) {
+  void RegisterDisplayCallback(
+      std::function<void(const std::string&)> callback) {
     m_callbacks.emplace_back(std::move(callback));
   }
 
@@ -111,6 +107,8 @@ class TelemetryManager {
   }
 
  private:
+  enum class State { WaitingForEnable, RunningTest, WaitingForData };
+
   /**
    * Stores information about a currently running test. This information
    * includes whether the robot will be traveling quickly (dynamic) or slowly
@@ -122,11 +120,16 @@ class TelemetryManager {
     bool fast;
     bool forward;
     bool rotate;
-    double start;
+
+    State state;
+
+    double enableStart;
+    double disableStart;
 
     bool enabled = false;
     double speed = 0.0;
 
+    std::string raw;
     std::vector<std::array<double, 10>> data{};
   };
 
@@ -143,8 +146,8 @@ class TelemetryManager {
   // Stores the test data.
   wpi::json m_data;
 
-  // Cancellation callbacks.
-  wpi::SmallVector<std::function<void(double, double, double)>, 1> m_callbacks;
+  // Display callbacks.
+  wpi::SmallVector<std::function<void(const std::string&)>, 1> m_callbacks;
 
   // NetworkTables instance and entries.
   glass::NetworkTablesHelper m_nt;
