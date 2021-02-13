@@ -27,12 +27,17 @@ class Logger : public glass::View {
   static constexpr const char* kTypes[] = {"Drivetrain", "Arm", "Elevator",
                                            "Simple"};
 
+  static constexpr const char* kUnits[] = {"Meters",  "Feet",      "Inches",
+                                           "Radians", "Rotations", "Degrees"};
+
  private:
   void SelectDataFolder();
   void CheckNTReset();
 
   TelemetryManager::Settings m_settings;
   int m_selectedType = 0;
+
+  int m_selectedUnit = 0;
 
   std::unique_ptr<TelemetryManager> m_manager =
       std::make_unique<TelemetryManager>(m_settings);
@@ -42,6 +47,8 @@ class Logger : public glass::View {
 
   bool m_ntConnected = false;
   bool m_ntReset = true;
+
+  bool m_isRotationalUnits = false;
 
   double m_primaryEncoder = 0.0;
   double m_secondaryEncoder = 0.0;
