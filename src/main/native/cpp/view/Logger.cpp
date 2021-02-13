@@ -12,6 +12,7 @@
 #include <imgui_stdlib.h>
 #include <ntcore_cpp.h>
 #include <units/angle.h>
+#include <wpi/math>
 #include <wpi/raw_ostream.h>
 #include <wpigui.h>
 
@@ -46,15 +47,6 @@ void Logger::Display() {
   ImGui::SetNextItemWidth(width / 5);
   ImGui::InputInt("Team #", m_team, 0);
 
-  // Add a dropdown for mechanism type.
-  ImGui::SameLine();
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
-
-  if (ImGui::Combo("Mechanism", &m_selectedType, kTypes,
-                   IM_ARRAYSIZE(kTypes))) {
-    m_settings.mechanism = analysis::FromName(kTypes[m_selectedType]);
-  }
-
   if (ImGui::Button("Apply")) {
     m_ntReset = true;
   }
@@ -74,6 +66,58 @@ void Logger::Display() {
   ImGui::TextColored(m_ntConnected ? kColorConnected : kColorDisconnected,
                      m_ntConnected ? "NT Connected" : "NT Disconnected");
 
+  // Create a Section for project configuration
+  ImGui::Separator();
+  ImGui::Spacing();
+  ImGui::Text("Project Parameters");
+
+  // Add a dropdown for mechanism type.
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+
+  if (ImGui::Combo("Mechanism", &m_selectedType, kTypes,
+                   IM_ARRAYSIZE(kTypes))) {
+    m_settings.mechanism = analysis::FromName(kTypes[m_selectedType]);
+  }
+
+  // Add Dropdown for Units
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+  if (ImGui::Combo("Unit Type", &m_selectedUnit, kUnits,
+                   IM_ARRAYSIZE(kUnits))) {
+    m_settings.units = kUnits[m_selectedUnit];
+  }
+
+  sysid::CreateTooltip(
+      "This is the type of units that your robot will be using."
+      "For example, if you want your flywheel gains in terms of radians, then "
+      "use the "
+      "radians unit."
+      "On the other hand, if your drivetrain will use gains in meters, choose "
+      "meters.");
+
+  // Add Units Per Rotations entry
+
+  // Rotational units have fixed Units per rotations
+  m_isRotationalUnits =
+      (m_settings.units == "Rotations" || m_settings.units == "Degrees" ||
+       m_settings.units == "Radians");
+  if (m_settings.units == "Degrees") {
+    m_settings.unitsPerRotation = 360.0;
+  } else if (m_settings.units == "Radians") {
+    m_settings.unitsPerRotation = 2 * wpi::math::pi;
+  } else if (m_settings.units == "Rotations") {
+    m_settings.unitsPerRotation = 1.0;
+  }
+
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+  ImGui::InputDouble("Units Per Rotation", &m_settings.unitsPerRotation, 0.0f,
+                     0.0f, "%.4f",
+                     m_isRotationalUnits ? ImGuiInputTextFlags_ReadOnly
+                                         : ImGuiInputTextFlags_None);
+  sysid::CreateTooltip(
+      "The logger assumes that the code will be sending recorded rotations "
+      "over Network Tables."
+      "This value will then be multiplied by the units per rotation to get the "
+      "measurement in the units you specified.");
   // Create a section for voltage parameters.
   ImGui::Separator();
   ImGui::Spacing();
@@ -130,10 +174,11 @@ void Logger::Display() {
               "ensure it does not hit anything!");
         } else {
           ImGui::Text(
-              "The primary encoder has reported: %.3f units.\n"
-              "The secondary encoder has reported: %.3f units.\n"
+              "The primary encoder has reported: %.3f %s.\n"
+              "The secondary encoder has reported: %.3f %s.\n"
               "The gyro has reported: %.3f degrees.\n",
-              m_primaryEncoder, m_secondaryEncoder, m_gyro);
+              m_primaryEncoder, m_settings.units.c_str(), m_secondaryEncoder,
+              m_settings.units.c_str(), m_gyro);
         }
 
         const char* button = m_manager->IsActive() ? "End Test" : "Close";
@@ -163,8 +208,8 @@ void Logger::Display() {
 
   m_manager->RegisterCancellationCallback(
       [&](double primary, double secondary, double gyro) {
-        m_primaryEncoder = primary;
-        m_secondaryEncoder = secondary;
+        m_primaryEncoder = primary * m_settings.unitsPerRotation;
+        m_secondaryEncoder = secondary * m_settings.unitsPerRotation;
         m_gyro = units::convert<units::radian, units::degree>(gyro);
       });
 

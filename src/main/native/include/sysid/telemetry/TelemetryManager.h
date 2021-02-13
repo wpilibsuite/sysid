@@ -34,6 +34,8 @@ class TelemetryManager {
   struct Settings {
     double quasistaticRampRate = 0.25;
     double stepVoltage = 7.0;
+    double unitsPerRotation = 1.0;
+    std::string units = "Meters";
     AnalysisType mechanism = analysis::kDrivetrain;
   };
 

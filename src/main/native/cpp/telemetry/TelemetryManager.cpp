@@ -117,8 +117,8 @@ void TelemetryManager::Update() {
 void TelemetryManager::SaveJSON(wpi::StringRef location) {
   // Use the same data for now while things are sorted out.
   m_data["test"] = m_settings.mechanism.name;
-  m_data["units"] = "Meters";
-  m_data["unitsPerRotation"] = 1.0;
+  m_data["units"] = m_settings.units;
+  m_data["unitsPerRotation"] = m_settings.unitsPerRotation;
 
   // Get the current date and time. This will be included in the file name.
   std::time_t t = std::time(nullptr);
