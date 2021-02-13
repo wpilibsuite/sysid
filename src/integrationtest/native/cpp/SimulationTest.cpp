@@ -3,7 +3,6 @@
 // the WPILib BSD license file in the root directory of this project.
 
 #include <cstdlib>
-#include <stdexcept>
 #include <thread>
 
 #include <ntcore_c.h>
@@ -59,19 +58,15 @@ class IntegrationTest : public ::testing::Test {
     wpi::outs().flush();
 
     int result = std::system(cmd.c_str());
-    if (result != 0) {
-      throw std::runtime_error(
-          "The integration test project could not be launched.");
-    }
+    ASSERT_EQ(0, result) << "The robot program couldn't be started";
 
     nt::StartClient(m_nt, "localhost", NT_DEFAULT_PORT);
 
     // Wait for NT to connect or until it times out.
     auto time = wpi::Now();
     while (!nt::IsConnected(m_nt)) {
-      if (wpi::Now() - time > 1E7) {
-        throw std::runtime_error(
-            "Was not able to connect to the integration test project.");
+      if (wpi::Now() - time > 1.5E7) {
+        ASSERT_TRUE(false) << "Was not able to connect to the robot program.";
       }
     }
     nt::SetEntryValue(m_kill, nt::Value::MakeBoolean(false));
