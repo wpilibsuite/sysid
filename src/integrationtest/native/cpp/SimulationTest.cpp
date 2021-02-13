@@ -54,7 +54,7 @@ class IntegrationTest : public ::testing::Test {
 
     os << "cd " << PROJECT_ROOT_DIR << SYSID_PATH_SEPARATOR
        << "integration_test_project"
-       << " && " << LAUNCHSIM;
+       << " && " << LAUNCHSIM << " -Pintegration";
     wpi::outs() << "Executing: " << cmd.c_str() << "\n";
     wpi::outs().flush();
 
@@ -98,8 +98,8 @@ class IntegrationTest : public ::testing::Test {
     auto ff = std::get<0>(output.ff);
     auto trackWidth = output.trackWidth;
 
-    EXPECT_NEAR(Kv, ff[1], 0.2);
-    EXPECT_NEAR(Ka, ff[2], 0.4);
+    EXPECT_NEAR(Kv, ff[1], 0.1);
+    EXPECT_NEAR(Ka, ff[2], 0.2);
 
     if (trackWidth) {
       EXPECT_NEAR(kTrackWidth, *trackWidth, 0.1);

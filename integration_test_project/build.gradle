@@ -85,22 +85,12 @@ model {
             // Defining my dependencies. In this case, WPILib (+ friends), and vendor libraries.
             wpi.deps.vendor.cpp(it)
             wpi.deps.wpilib(it)
-        }
-    }
-    testSuites {
-        frcUserProgramTest(GoogleTestTestSuiteSpec) {
-            testing $.components.frcUserProgram
 
-            sources.cpp {
-                source {
-                    srcDir 'src/test/cpp'
-                    include '**/*.cpp'
-                }
+            binaries.all {
+              if (project.hasProperty("integration")) {
+                it.cppCompiler.define("INTEGRATION")
+              }
             }
-
-            wpi.deps.vendor.cpp(it)
-            wpi.deps.wpilib(it)
-            wpi.deps.googleTest(it)
         }
     }
 }

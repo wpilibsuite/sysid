@@ -6,6 +6,10 @@ This is the C++ version of [frc-characterization](https://github.com/wpilibsuite
 
 SysId uses Gradle to build. To build debug and release versions of the main executable and run tests, run `./gradlew build`. During development, you can use `./gradlew run` to build and run the debug executable.
 
+SysId also has integration tests, which involves launching a robot program with simulation physics, characterizing it and verifying the gains. These tests are not enabled by default; instead, you need to pass the `-PwithIntegration` flag into Gradle. To run just the integration tests, you can use `./gradlew runIntegrationTests -PwithIntegration`.
+
+There is also a robot project in `integration_test_project` that you can use to test out SysId. To launch the robot program, simply `cd` into it and run `./gradlew simulateCpp`.
+
 ### Requirements
 
 - [JDK 11](https://adoptopenjdk.net/)

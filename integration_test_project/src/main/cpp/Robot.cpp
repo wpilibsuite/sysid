@@ -92,10 +92,12 @@ class Robot : public frc::TimedRobot {
   void SimulationPeriodic() override {
     m_drive.SimulationPeriodic();
 
+#ifdef INTEGRATION
     bool enable = frc::SmartDashboard::GetBoolean("SysIdRun", false);
     frc::sim::DriverStationSim::SetAutonomous(enable);
     frc::sim::DriverStationSim::SetEnabled(enable);
     frc::sim::DriverStationSim::NotifyNewData();
+#endif
 
     if (frc::SmartDashboard::GetBoolean("SysIdKill", false)) {
       std::exit(0);
