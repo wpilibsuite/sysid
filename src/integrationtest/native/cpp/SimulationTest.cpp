@@ -146,7 +146,7 @@ class IntegrationTest : public ::testing::Test {
       nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(false));
       while (wpi::Now() * 1E-6 - start < 2) {
         m_manager->Update();
-        std::this_thread::sleep_for(0.005_s);
+        std::this_thread::sleep_for(0.005s);
         nt::Flush(m_nt);
       }
 
