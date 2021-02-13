@@ -180,7 +180,7 @@ void TelemetryManager::Update() {
   }
 }
 
-void TelemetryManager::SaveJSON(wpi::StringRef location) {
+std::string TelemetryManager::SaveJSON(wpi::StringRef location) {
   // Use the same data for now while things are sorted out.
   m_data["test"] = m_settings.mechanism.name;
   m_data["units"] = m_settings.units;
@@ -192,18 +192,23 @@ void TelemetryManager::SaveJSON(wpi::StringRef location) {
 
   std::stringstream ss;
   ss << location;
-  ss << "/sysid_data";
+  ss << SYSID_PATH_SEPARATOR;
+  ss << "sysid_data";
   ss << std::put_time(&tm, "%Y%m%d-%H%M");
   ss << ".json";
 
+  std::string loc = ss.str();
+
   std::error_code ec;
-  wpi::raw_fd_ostream os{ss.str(), ec};
+  wpi::raw_fd_ostream os{loc, ec};
 
   if (ec) {
-    throw std::runtime_error("Cannot write to file: " + ss.str());
+    throw std::runtime_error("Cannot write to file: " + loc);
   }
 
   os << m_data;
   os.flush();
-  wpi::outs() << "Wrote JSON to: " << ss.str() << "\n";
+  wpi::outs() << "Wrote JSON to: " << loc << "\n";
+
+  return loc;
 }
