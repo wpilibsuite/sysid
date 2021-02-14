@@ -186,7 +186,9 @@ void Logger::Display() {
   CreateTest("Quasistatic Backward", "slow-backward");
   CreateTest("Dynamic Forward", "fast-forward");
   CreateTest("Dynamic Backward", "fast-backward");
-  CreateTest("Track Width", "track-width");
+  if (m_settings.mechanism == analysis::kDrivetrain) {
+    CreateTest("Track Width", "track-width");
+  }
 
   m_manager->RegisterDisplayCallback(
       [this](const auto& str) { m_popupText = str; });
