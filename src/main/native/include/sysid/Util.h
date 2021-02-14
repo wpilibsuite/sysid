@@ -7,6 +7,12 @@
 #include <string>
 #include <vector>
 
+#ifdef _WIN32
+#define SYSID_PATH_SEPARATOR "\\"
+#else
+#define SYSID_PATH_SEPARATOR "/"
+#endif
+
 namespace sysid {
 void CreateTooltip(const char* text);
 std::vector<std::string> Split(const std::string& s, char c);

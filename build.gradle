@@ -133,6 +133,21 @@ model {
         it.cppCompiler.define("RUNNING_SYSID_TESTS")
       }
     }
+    sysidIntegrationTest(GoogleTestTestSuiteSpec) {
+      testing $.components.sysid
+      sources.cpp.source {
+        srcDirs "src/integrationtest/native/cpp"
+        include "**/*.cpp"
+      }
+      binaries.all {
+        nativeUtils.useRequiredLibrary(it, "googletest_static");
+        it.cppCompiler.define("RUNNING_SYSID_TESTS")
+        it.cppCompiler.define("PROJECT_ROOT_DIR", "\"$projectDir\"")
+        if (!project.hasProperty("withIntegration")) {
+          it.buildable = false
+        }
+      }
+    }
   }
   binaries {
     withType(NativeBinarySpec).all {
@@ -155,6 +170,14 @@ model {
     $.components.sysid.binaries.each { bin ->
       if (bin.buildable && bin.name.contains("debug")) {
         Task run = project.tasks.create("run", Exec) {
+          commandLine bin.tasks.install.runScriptFile.get().asFile.toString()
+        }
+        run.dependsOn bin.tasks.install
+      }
+    }
+    $.testSuites.sysidIntegrationTest.binaries.each { bin ->
+      if (bin.buildable && bin.name.contains("debug")) {
+        Task run = project.tasks.create("runIntegrationTests", Exec) {
           commandLine bin.tasks.install.runScriptFile.get().asFile.toString()
         }
         run.dependsOn bin.tasks.install

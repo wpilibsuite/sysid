@@ -136,8 +136,10 @@ void TelemetryManager::Update() {
     nt::Flush(m_nt.GetInstance());
 
     // If for some reason we've disconnected, end the test.
-    if (!m_nt.IsConnected())
+    if (!m_nt.IsConnected()) {
+      wpi::outs() << "NT connection dropped while executing test...";
       EndTest();
+    }
 
     // If the robot has disabled, then we can move on to the next step.
     if (!m_params.enabled) {
@@ -170,17 +172,21 @@ void TelemetryManager::Update() {
         m_params.data.push_back(std::move(d));
       }
 
+      wpi::outs() << "Received data with size: " << m_params.data.size()
+                  << " for the " << m_tests.back() << " test.\n";
       EndTest();
     }
-    //
+
     // If we timed out, end the test and let the user know.
     if (now - m_params.disableStart > 5) {
+      wpi::outs() << "TelemetryManager did not receieve data 5 seconds after "
+                     "completing the test...";
       EndTest();
     }
   }
 }
 
-void TelemetryManager::SaveJSON(wpi::StringRef location) {
+std::string TelemetryManager::SaveJSON(wpi::StringRef location) {
   // Use the same data for now while things are sorted out.
   m_data["test"] = m_settings.mechanism.name;
   m_data["units"] = m_settings.units;
@@ -192,18 +198,23 @@ void TelemetryManager::SaveJSON(wpi::StringRef location) {
 
   std::stringstream ss;
   ss << location;
-  ss << "/sysid_data";
+  ss << SYSID_PATH_SEPARATOR;
+  ss << "sysid_data";
   ss << std::put_time(&tm, "%Y%m%d-%H%M");
   ss << ".json";
 
+  std::string loc = ss.str();
+
   std::error_code ec;
-  wpi::raw_fd_ostream os{ss.str(), ec};
+  wpi::raw_fd_ostream os{loc, ec};
 
   if (ec) {
-    throw std::runtime_error("Cannot write to file: " + ss.str());
+    throw std::runtime_error("Cannot write to file: " + loc);
   }
 
   os << m_data;
   os.flush();
-  wpi::outs() << "Wrote JSON to: " << ss.str() << "\n";
+  wpi::outs() << "Wrote JSON to: " << loc << "\n";
+
+  return loc;
 }
