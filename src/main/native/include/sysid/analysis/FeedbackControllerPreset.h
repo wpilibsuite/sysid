@@ -37,6 +37,7 @@ struct FeedbackControllerPreset {
   /** Checks equality between two feedback controller presets. */
   constexpr bool operator==(const FeedbackControllerPreset& rhs) const {
     return outputConversionFactor == rhs.outputConversionFactor &&
+           outputVelocityTimeFactor == rhs.outputVelocityTimeFactor &&
            period == rhs.period && normalized == rhs.normalized &&
            positionMeasurementDelay == rhs.positionMeasurementDelay &&
            velocityMeasurementDelay == rhs.velocityMeasurementDelay;

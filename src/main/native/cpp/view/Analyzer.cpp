@@ -351,6 +351,13 @@ void Analyzer::Display() {
       if (ImGui::Combo("Gain Preset", &m_selectedPreset, kPresetNames,
                        IM_ARRAYSIZE(kPresetNames))) {
         m_settings.preset = m_presets[kPresetNames[m_selectedPreset]];
+        if (m_settings.preset != presets::kWPILibNew &&
+            m_settings.preset != presets::kWPILibOld &&
+            m_settings.preset != presets::kDefault) {
+          m_settings.calcGains = true;
+        } else {
+          m_settings.calcGains = false;
+        }
         Calculate();
       }
       ImGui::SameLine();
@@ -420,6 +427,34 @@ void Analyzer::Display() {
                       ImGui::GetFontSize() * 17);
 
       ImGui::SetCursorPosY(endY);
+
+      // Add EPR and Gearing for converting Feedback Gains
+      ImGui::Separator();
+      ImGui::Spacing();
+
+      if (ImGui::Checkbox("Convert Gains", &m_settings.calcGains)) {
+        Calculate();
+      }
+      sysid::CreateTooltip(
+          "Check this box if you are using a setup where the the gearing and "
+          "EPR affect the controller output.");
+
+      if (m_settings.calcGains) {
+        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+        if (ImGui::InputDouble("Gearing", &m_settings.gearing, 0.0, 0.0,
+                               "%.1f") &&
+            m_settings.epr > 0) {
+          Calculate();
+        }
+        sysid::CreateTooltip(
+            "This is the gearing between your encoder and your shaft");
+
+        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+        if (ImGui::InputInt("EPR", &m_settings.epr, 0) && m_settings.epr > 0) {
+          Calculate();
+        }
+        sysid::CreateTooltip("This is the edges per rotation for your encoder");
+      }
 
       ImGui::Separator();
       ImGui::Spacing();

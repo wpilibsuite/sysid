@@ -66,6 +66,12 @@ class AnalysisManager {
 
     /** The dataset that is being analyzed. */
     int dataset = 0;
+
+    /** The Conversion factors. These contain values to convert feedback gains
+     * by gearing and epr. */
+    int epr = 1;
+    double gearing = 1;
+    bool calcGains = false;
   };
 
   /** Stores feedforward and feedback gains */

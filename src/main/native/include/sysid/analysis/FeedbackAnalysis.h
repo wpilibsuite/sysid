@@ -37,7 +37,7 @@ struct LQRParameters {
  */
 std::tuple<double, double> CalculatePositionFeedbackGains(
     const FeedbackControllerPreset& preset, const LQRParameters& params,
-    const FeedforwardGains& feedforwardGains);
+    const FeedforwardGains& feedforwardGains, double gearing, int epr);
 
 /**
  * Calculates velocity feedback gains for the given controller preset, LQR
@@ -50,5 +50,5 @@ std::tuple<double, double> CalculatePositionFeedbackGains(
  */
 std::tuple<double, double> CalculateVelocityFeedbackGains(
     const FeedbackControllerPreset& preset, const LQRParameters& params,
-    const FeedforwardGains& feedforwardGains);
+    const FeedforwardGains& feedforwardGains, double gearing, int epr);
 }  // namespace sysid

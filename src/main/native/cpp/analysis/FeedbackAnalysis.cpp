@@ -20,7 +20,7 @@ using Ka_t = decltype(1_V / 1_mps_sq);
 
 std::tuple<double, double> sysid::CalculatePositionFeedbackGains(
     const FeedbackControllerPreset& preset, const LQRParameters& params,
-    const FeedforwardGains& feedforwardGains) {
+    const FeedforwardGains& feedforwardGains, double gearing, int epr) {
   // Get Ks, Kv, and Ka from the tuple.
   auto& [Ks, Kv, Ka] = feedforwardGains;
   static_cast<void>(Ks);
@@ -40,9 +40,10 @@ std::tuple<double, double> sysid::CalculatePositionFeedbackGains(
                                  preset.positionMeasurementDelay);
 
     return std::make_tuple(
-        controller.K(0, 0) * preset.outputConversionFactor,
+        controller.K(0, 0) * preset.outputConversionFactor / (gearing * epr),
         controller.K(0, 1) * preset.outputConversionFactor /
-            (preset.normalized ? 1 : preset.period.to<double>()));
+            (gearing * epr *
+             (preset.normalized ? 1 : preset.period.to<double>())));
   }
 
   // This is our special model to avoid instabilities in the LQR.
@@ -62,7 +63,7 @@ std::tuple<double, double> sysid::CalculatePositionFeedbackGains(
 
 std::tuple<double, double> sysid::CalculateVelocityFeedbackGains(
     const FeedbackControllerPreset& preset, const LQRParameters& params,
-    const FeedforwardGains& feedforwardGains) {
+    const FeedforwardGains& feedforwardGains, double gearing, int epr) {
   // Get Ks, Kv, and Ka from the tuple.
   auto& [Ks, Kv, Ka] = feedforwardGains;
   static_cast<void>(Ks);
@@ -85,6 +86,6 @@ std::tuple<double, double> sysid::CalculateVelocityFeedbackGains(
                                preset.velocityMeasurementDelay);
 
   return std::make_tuple(controller.K(0, 0) * preset.outputConversionFactor /
-                             preset.outputVelocityTimeFactor,
+                             (preset.outputVelocityTimeFactor * gearing * epr),
                          0);
 }
