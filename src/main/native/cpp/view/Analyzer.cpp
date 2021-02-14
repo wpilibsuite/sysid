@@ -351,11 +351,7 @@ void Analyzer::Display() {
       if (ImGui::Combo("Gain Preset", &m_selectedPreset, kPresetNames,
                        IM_ARRAYSIZE(kPresetNames))) {
         m_settings.preset = m_presets[kPresetNames[m_selectedPreset]];
-        if (m_selectedPreset > 2) {
-          m_settings.convertGainsToEncTicks = true;
-        } else {
-          m_settings.convertGainsToEncTicks = false;
-        }
+        m_settings.convertGainsToEncTicks = m_selectedPreset > 2;
         Calculate();
       }
       ImGui::SameLine();
@@ -446,7 +442,7 @@ void Analyzer::Display() {
         ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
         if (ImGui::InputDouble("Gearing", &m_settings.gearing, 0.0, 0.0,
                                "%.1f") &&
-            m_settings.epr > 0) {
+            m_settings.gearing > 0) {
           Calculate();
         }
         sysid::CreateTooltip(
