@@ -20,7 +20,7 @@ using Ka_t = decltype(1_V / 1_mps_sq);
 
 std::tuple<double, double> sysid::CalculatePositionFeedbackGains(
     const FeedbackControllerPreset& preset, const LQRParameters& params,
-    const FeedforwardGains& feedforwardGains) {
+    const FeedforwardGains& feedforwardGains, double encFactor) {
   // Get Ks, Kv, and Ka from the tuple.
   auto& [Ks, Kv, Ka] = feedforwardGains;
   static_cast<void>(Ks);
@@ -40,9 +40,9 @@ std::tuple<double, double> sysid::CalculatePositionFeedbackGains(
                                  preset.positionMeasurementDelay);
 
     return std::make_tuple(
-        controller.K(0, 0) * preset.outputConversionFactor,
+        controller.K(0, 0) * preset.outputConversionFactor / encFactor,
         controller.K(0, 1) * preset.outputConversionFactor /
-            (preset.normalized ? 1 : preset.period.to<double>()));
+            (encFactor * (preset.normalized ? 1 : preset.period.to<double>())));
   }
 
   // This is our special model to avoid instabilities in the LQR.
@@ -57,12 +57,12 @@ std::tuple<double, double> sysid::CalculatePositionFeedbackGains(
                                preset.positionMeasurementDelay);
 
   return std::make_tuple(
-      Kv * controller.K(0, 0) * preset.outputConversionFactor, 0);
+      Kv * controller.K(0, 0) * preset.outputConversionFactor / encFactor, 0);
 }
 
 std::tuple<double, double> sysid::CalculateVelocityFeedbackGains(
     const FeedbackControllerPreset& preset, const LQRParameters& params,
-    const FeedforwardGains& feedforwardGains) {
+    const FeedforwardGains& feedforwardGains, double encFactor) {
   // Get Ks, Kv, and Ka from the tuple.
   auto& [Ks, Kv, Ka] = feedforwardGains;
   static_cast<void>(Ks);
@@ -84,5 +84,7 @@ std::tuple<double, double> sysid::CalculateVelocityFeedbackGains(
   controller.LatencyCompensate(system, preset.period,
                                preset.velocityMeasurementDelay);
 
-  return std::make_tuple(controller.K(0, 0) * preset.outputConversionFactor, 0);
+  return std::make_tuple(controller.K(0, 0) * preset.outputConversionFactor /
+                             (preset.outputVelocityTimeFactor * encFactor),
+                         0);
 }
