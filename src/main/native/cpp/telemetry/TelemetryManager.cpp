@@ -179,7 +179,7 @@ void TelemetryManager::Update() {
                   << "\n";
       EndTest();
     }
-    
+
     // If we timed out, end the test and let the user know.
     if (now - m_params.disableStart > 5) {
       wpi::outs() << "TelemetryManager did not receieve data 5 seconds after "
