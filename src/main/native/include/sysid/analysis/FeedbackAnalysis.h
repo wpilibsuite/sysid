@@ -35,7 +35,8 @@ struct LQRParameters {
  *                         gains.
  * @param feedforwardGains The feedforward gains for the system.
  * @param encFactor        The factor to convert the gains from output units to
- *                         encoder units.
+ *                         encoder units. This is usually encoder EPR * gearing
+ *                         * units per rotation.
  */
 std::tuple<double, double> CalculatePositionFeedbackGains(
     const FeedbackControllerPreset& preset, const LQRParameters& params,
@@ -50,7 +51,8 @@ std::tuple<double, double> CalculatePositionFeedbackGains(
  *                         gains.
  * @param feedforwardGains The feedforward gains for the system.
  * @param encFactor        The factor to convert the gains from output units to
- *                         encoder units.
+ *                         encoder units. This is usually encoder EPR * gearing
+ *                         * units per rotation.
  */
 std::tuple<double, double> CalculateVelocityFeedbackGains(
     const FeedbackControllerPreset& preset, const LQRParameters& params,
