@@ -65,9 +65,7 @@ class IntegrationTest : public ::testing::Test {
     // Wait for NT to connect or until it times out.
     auto time = wpi::Now();
     while (!nt::IsConnected(m_nt)) {
-      if (wpi::Now() - time > 1.5E7) {
-        ASSERT_TRUE(false) << "Was not able to connect to the robot program.";
-      }
+      ASSERT_LT(wpi::Now() - time, 1.5E7);
     }
     nt::SetEntryValue(m_kill, nt::Value::MakeBoolean(false));
     nt::Flush(m_nt);

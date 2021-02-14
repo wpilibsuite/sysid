@@ -136,8 +136,10 @@ void TelemetryManager::Update() {
     nt::Flush(m_nt.GetInstance());
 
     // If for some reason we've disconnected, end the test.
-    if (!m_nt.IsConnected())
+    if (!m_nt.IsConnected()) {
+      wpi::outs() << "NT connection dropped while executing test...";
       EndTest();
+    }
 
     // If the robot has disabled, then we can move on to the next step.
     if (!m_params.enabled) {
@@ -170,11 +172,15 @@ void TelemetryManager::Update() {
         m_params.data.push_back(std::move(d));
       }
 
+      wpi::outs() << "Received data with size: " << m_params.data.size()
+                  << "\n";
       EndTest();
     }
     //
     // If we timed out, end the test and let the user know.
     if (now - m_params.disableStart > 5) {
+      wpi::outs() << "TelemetryManager did not receieve data 5 seconds after "
+                     "completing the test...";
       EndTest();
     }
   }
