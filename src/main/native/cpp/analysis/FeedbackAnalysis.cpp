@@ -84,5 +84,7 @@ std::tuple<double, double> sysid::CalculateVelocityFeedbackGains(
   controller.LatencyCompensate(system, preset.period,
                                preset.velocityMeasurementDelay);
 
-  return std::make_tuple(controller.K(0, 0) * preset.outputConversionFactor, 0);
+  return std::make_tuple(controller.K(0, 0) * preset.outputConversionFactor /
+                             preset.outputVelocityTimeFactor,
+                         0);
 }
