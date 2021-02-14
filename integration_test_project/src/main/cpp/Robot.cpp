@@ -10,23 +10,30 @@
 #include <frc/TimedRobot.h>
 #include <frc/XboxController.h>
 #include <frc/controller/RamseteController.h>
+#include <frc/livewindow/LiveWindow.h>
 #include <frc/simulation/DriverStationSim.h>
 #include <frc/trajectory/TrajectoryGenerator.h>
 #include <frc2/Timer.h>
 
 #include "Drivetrain.h"
+#include "SimpleMotor.h"
 
 class Robot : public frc::TimedRobot {
  public:
-  Robot() : frc::TimedRobot(5_ms) {}
+  Robot() : frc::TimedRobot(5_ms) {
+    frc::LiveWindow::GetInstance()->DisableAllTelemetry();
+  }
   void RobotInit() override {
     // Flush NetworkTables every loop. This ensures that robot pose and other
     // values are sent during every iteration.
     SetNetworkTablesFlushEnabled(true);
+    frc::SmartDashboard::PutString("SysIdTest", "Drivetrain");
+    frc::SmartDashboard::PutNumber("SysIdAutoSpeed", 0.0);
   }
 
   void DisabledInit() override {
     m_drive.SetPercent(0, 0);
+    m_flywheel.SetPercent(0);
 
     if (m_counter > 0) {
       wpi::outs() << "Collected " << m_counter << " data points.\n";
@@ -43,32 +50,65 @@ class Robot : public frc::TimedRobot {
     }
   }
 
-  void RobotPeriodic() override { m_drive.Periodic(); }
+  void RobotPeriodic() override {
+    m_drive.Periodic();
+    m_flywheel.Periodic();
+  }
+
+  void AutonomousInit() override {
+    m_testMode = frc::SmartDashboard::GetString("SysIdTest", "Drivetrain");
+  }
 
   void AutonomousPeriodic() override {
+    std::array<double, 10> arr = UpdateCharacterization();
+    m_data.insert(m_data.end(), arr.cbegin(), arr.cend());
+    m_counter++;
+  }
+
+  std::array<double, 10> UpdateCharacterization() {
     double speed = frc::SmartDashboard::GetNumber("SysIdAutoSpeed", 0.0);
     bool rotate = frc::SmartDashboard::GetBoolean("SysIdRotate", false);
 
-    m_drive.SetPercent((rotate ? -1 : 1) * speed, speed);
-    m_drive.UpdateOdometry();
+    // Set output
+    if (m_testMode == "Drivetrain") {
+      m_drive.SetPercent((rotate ? -1 : 1) * speed, speed);
+      m_drive.UpdateOdometry();
 
+    } else if (m_testMode == "Simple") {
+      m_flywheel.SetPercent(speed);
+    }
+
+    // Calculate Voltage
     double voltage = frc::RobotController::GetInputVoltage();
-
-    std::array<double, 10> arr{frc2::Timer::GetFPGATimestamp().to<double>(),
-                               voltage,
-                               speed,
-                               speed * voltage,
-                               speed * voltage,
-                               m_drive.GetLEnc().GetDistance(),
-                               m_drive.GetREnc().GetDistance(),
-                               m_drive.GetLEnc().GetRate(),
-                               m_drive.GetREnc().GetRate(),
-                               m_drive.GetGyro().to<double>()};
-
     frc::SmartDashboard::PutNumber("Speed", speed);
 
-    m_data.insert(m_data.end(), arr.cbegin(), arr.cend());
-    m_counter++;
+    // Return telemetry
+    if (m_testMode == "Drivetrain") {
+      return {frc2::Timer::GetFPGATimestamp().to<double>(),
+              voltage,
+              speed,
+              speed * voltage,
+              speed * voltage,
+              m_drive.GetLEnc().GetDistance(),
+              m_drive.GetREnc().GetDistance(),
+              m_drive.GetLEnc().GetRate(),
+              m_drive.GetREnc().GetRate(),
+              m_drive.GetGyro().to<double>()};
+
+    } else if (m_testMode == "Simple") {
+      return {frc2::Timer::GetFPGATimestamp().to<double>(),
+              voltage,
+              speed,
+              speed * voltage,
+              speed * voltage,
+              m_flywheel.GetEnc().GetDistance(),
+              m_flywheel.GetEnc().GetDistance(),
+              m_flywheel.GetEnc().GetRate(),
+              m_flywheel.GetEnc().GetRate(),
+              0};
+    }
+
+    return {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   }
 
   void TeleopPeriodic() override {
@@ -91,6 +131,7 @@ class Robot : public frc::TimedRobot {
 
   void SimulationPeriodic() override {
     m_drive.SimulationPeriodic();
+    m_flywheel.SimulationPeriodic();
 
 #ifdef INTEGRATION
     bool enable = frc::SmartDashboard::GetBoolean("SysIdRun", false);
@@ -113,6 +154,9 @@ class Robot : public frc::TimedRobot {
   frc::SlewRateLimiter<units::scalar> m_rotLimiter{3 / 1_s};
 
   Drivetrain m_drive;
+  SimpleMotor m_flywheel;
+
+  std::string m_testMode = "Drivetrain";
 
   std::vector<double> m_data;
   size_t m_counter = 0;

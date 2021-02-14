@@ -41,12 +41,11 @@ class IntegrationTest : public ::testing::Test {
                                            "fast-forward", "fast-backward",
                                            "track-width"};
 
-  void SetUp(sysid::AnalysisType mechanism) {
-    m_settings.mechanism = mechanism;
-    m_manager = std::make_unique<sysid::TelemetryManager>(m_settings, m_nt);
-    // Change the default settings a little bit.
-    m_settings.quasistaticRampRate = 0.75;
-
+  static void SetUpTestSuite() {
+    m_nt = nt::GetDefaultInstance();
+    m_enable = nt::GetEntry(m_nt, "/SmartDashboard/SysIdRun");
+    m_mechanism = nt::GetEntry(m_nt, "/SmartDashboard/SysIdTest");
+    m_kill = nt::GetEntry(m_nt, "/SmartDashboard/SysIdKill");
     // Start the robot program.
     wpi::SmallString<128> cmd;
     wpi::raw_svector_ostream os(cmd);
@@ -71,17 +70,22 @@ class IntegrationTest : public ::testing::Test {
     nt::Flush(m_nt);
   }
 
-  void TearDown() override {
-    nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(false));
-    nt::SetEntryValue(m_kill, nt::Value::MakeBoolean(true));
+  void SetUp(sysid::AnalysisType mechanism) {
+    // Make use a new manager
+    m_manager = std::make_unique<sysid::TelemetryManager>(m_settings, m_nt);
 
-    while (nt::IsConnected(m_nt)) {
-      nt::Flush(m_nt);
-    }
+    // Change the default settings a little bit.
+    m_settings.quasistaticRampRate = 0.75;
+    m_settings.mechanism = mechanism;
 
-    wpi::outs() << "Killed robot program"
-                << "\n";
+    nt::SetEntryValue(m_mechanism,
+                      nt::Value::MakeString(m_settings.mechanism.name));
 
+    nt::Flush(m_nt);
+    std::this_thread::sleep_for(1s);
+  }
+
+  void TearDown() {
     // Save the JSON and make sure that everything checks out.
     auto path = m_manager->SaveJSON(PROJECT_ROOT_DIR);
 
@@ -107,21 +111,32 @@ class IntegrationTest : public ::testing::Test {
     std::string del = "rm " + path;
 #endif
     std::system(del.c_str());
-
-    // Destroy NT.
-    nt::StopClient(m_nt);
-    nt::DestroyInstance(m_nt);
   }
 
-  void Run() {
-    for (auto&& test : kTests) {
+  static void TearDownTestSuite() {
+    nt::SetEntryValue(m_kill, nt::Value::MakeBoolean(true));
+
+    while (nt::IsConnected(m_nt)) {
+      nt::Flush(m_nt);
+    }
+
+    wpi::outs() << "Killed robot program"
+                << "\n";
+
+    // Destroy NT Client.
+    nt::StopClient(m_nt);
+  }
+
+  void Run(int tests) {
+    for (int i = 0; i < tests; i++) {
+      auto test = kTests[i];
       // Enable the robot.
       nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(true));
       wpi::outs() << "Running: " << test << "\n";
       wpi::outs().flush();
 
       // Wait 5 ms and flush.
-      std::this_thread::sleep_for(5ms);
+      std::this_thread::sleep_for(1s);
       nt::Flush(m_nt);
 
       // Start the test and let it run for 2 or 4 seconds depending on the test.
@@ -136,8 +151,8 @@ class IntegrationTest : public ::testing::Test {
 
       // Wait for five seconds while the robot comes to a stop.
       start = wpi::Now() * 1E-6;
-      nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(false));
       while (wpi::Now() * 1E-6 - start < 5) {
+        nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(false));
         m_manager->Update();
         std::this_thread::sleep_for(0.005s);
         nt::Flush(m_nt);
@@ -146,19 +161,35 @@ class IntegrationTest : public ::testing::Test {
       // Make sure the telemetry manager has ended the test.
       EXPECT_FALSE(m_manager->IsActive());
     }
+    std::this_thread::sleep_for(1s);
   }
 
  private:
-  NT_Inst m_nt = nt::CreateInstance();
+  static NT_Inst m_nt;
 
-  NT_Entry m_enable{nt::GetEntry(m_nt, "/SmartDashboard/SysIdRun")};
-  NT_Entry m_kill{nt::GetEntry(m_nt, "/SmartDashboard/SysIdKill")};
+  static NT_Entry m_enable;
+  static NT_Entry m_mechanism;
+  static NT_Entry m_kill;
 
-  std::unique_ptr<sysid::TelemetryManager> m_manager;
-  sysid::TelemetryManager::Settings m_settings;
+  static std::unique_ptr<sysid::TelemetryManager> m_manager;
+  static sysid::TelemetryManager::Settings m_settings;
 };
+
+NT_Inst IntegrationTest::m_nt;
+
+NT_Entry IntegrationTest::m_enable;
+NT_Entry IntegrationTest::m_mechanism;
+NT_Entry IntegrationTest::m_kill;
+
+std::unique_ptr<sysid::TelemetryManager> IntegrationTest::m_manager;
+sysid::TelemetryManager::Settings IntegrationTest::m_settings;
 
 TEST_F(IntegrationTest, Drivetrain) {
   SetUp(sysid::analysis::kDrivetrain);
-  Run();
+  Run(5);
+}
+
+TEST_F(IntegrationTest, Flywheel) {
+  SetUp(sysid::analysis::kSimple);
+  Run(4);
 }
