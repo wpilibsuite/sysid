@@ -134,10 +134,10 @@ class IntegrationTest : public ::testing::Test {
         nt::Flush(m_nt);
       }
 
-      // Wait for two seconds while the robot comes to a stop.
+      // Wait for five seconds while the robot comes to a stop.
       start = wpi::Now() * 1E-6;
       nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(false));
-      while (wpi::Now() * 1E-6 - start < 2) {
+      while (wpi::Now() * 1E-6 - start < 5) {
         m_manager->Update();
         std::this_thread::sleep_for(0.005s);
         nt::Flush(m_nt);
