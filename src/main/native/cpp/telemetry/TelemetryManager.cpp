@@ -112,9 +112,6 @@ void TelemetryManager::Update() {
     if (event.entry == m_telemetry && event.value && event.value->IsString()) {
       std::string value = event.value->GetString();
       if (!value.empty()) {
-        if (m_params.enabled)
-          wpi::outs()
-              << "Received data when enabled... this should not happen\n";
         m_params.raw = std::move(value);
       }
     }
@@ -176,7 +173,7 @@ void TelemetryManager::Update() {
       }
 
       wpi::outs() << "Received data with size: " << m_params.data.size()
-                  << "\n";
+                  << " for the " << m_tests.back() << " test.\n";
       EndTest();
     }
 
