@@ -164,13 +164,13 @@ AnalysisManager::Gains AnalysisManager::Calculate() {
   if (m_settings.type == FeedbackControllerLoopType::kPosition) {
     fb = sysid::CalculatePositionFeedbackGains(
         m_settings.preset, m_settings.lqr, gains,
-        m_settings.calcGains ? m_settings.gearing : 1,
-        m_settings.calcGains ? m_settings.epr : 1);
+        m_settings.convertGainsToEncTicks ? m_settings.gearing * m_settings.epr
+                                          : 1);
   } else {
     fb = sysid::CalculateVelocityFeedbackGains(
         m_settings.preset, m_settings.lqr, gains,
-        m_settings.calcGains ? m_settings.gearing : 1,
-        m_settings.calcGains ? m_settings.epr : 1);
+        m_settings.convertGainsToEncTicks ? m_settings.gearing * m_settings.epr
+                                          : 1);
   }
 
   // Calculate track width if applicable.

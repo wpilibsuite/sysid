@@ -351,12 +351,10 @@ void Analyzer::Display() {
       if (ImGui::Combo("Gain Preset", &m_selectedPreset, kPresetNames,
                        IM_ARRAYSIZE(kPresetNames))) {
         m_settings.preset = m_presets[kPresetNames[m_selectedPreset]];
-        if (m_settings.preset != presets::kWPILibNew &&
-            m_settings.preset != presets::kWPILibOld &&
-            m_settings.preset != presets::kDefault) {
-          m_settings.calcGains = true;
+        if (m_selectedPreset > 2) {
+          m_settings.convertGainsToEncTicks = true;
         } else {
-          m_settings.calcGains = false;
+          m_settings.convertGainsToEncTicks = false;
         }
         Calculate();
       }
@@ -432,28 +430,41 @@ void Analyzer::Display() {
       ImGui::Separator();
       ImGui::Spacing();
 
-      if (ImGui::Checkbox("Convert Gains", &m_settings.calcGains)) {
+      if (ImGui::Checkbox("Convert Gains to Encoder Ticks",
+                          &m_settings.convertGainsToEncTicks)) {
         Calculate();
       }
       sysid::CreateTooltip(
-          "Check this box if you are using a setup where the the gearing and "
-          "EPR affect the controller output.");
+          "Whether the feedback gains should be in terms of encoder ticks or "
+          "output units. Because smart motor controllers usually don't have "
+          "direct access to the output units (i.e. m/s for a drivetrain), they "
+          "perform feedback on the encoder units directly. If you are using a "
+          "PID Controller on the RoboRIO, you are probably performing feedback "
+          "on the output units directly.");
 
-      if (m_settings.calcGains) {
-        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+      if (m_settings.convertGainsToEncTicks) {
+        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
         if (ImGui::InputDouble("Gearing", &m_settings.gearing, 0.0, 0.0,
                                "%.1f") &&
             m_settings.epr > 0) {
           Calculate();
         }
         sysid::CreateTooltip(
-            "This is the gearing between your encoder and your shaft");
+            "The gearing between the encoder and the output shaft (# of "
+            "encoder turns / # of output shaft turns).");
 
-        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
         if (ImGui::InputInt("EPR", &m_settings.epr, 0) && m_settings.epr > 0) {
           Calculate();
         }
-        sysid::CreateTooltip("This is the edges per rotation for your encoder");
+        sysid::CreateTooltip(
+            "The edges per rotation of your encoder. This is the number of "
+            "ticks reported in user code when the encoder is rotated exactly "
+            "once. Some common values for various motors/encoders "
+            "are:\n\nFalcon "
+            "500: 2048\nNEO: 1\nCTRE Mag Encoder / CANCoder: 4096\nREV Through "
+            "Bore "
+            "Encoder: 8192\n");
       }
 
       ImGui::Separator();

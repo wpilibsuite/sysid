@@ -12,7 +12,7 @@
 
 void sysid::CreateTooltip(const char* text) {
   ImGui::SameLine();
-  ImGui::TextDisabled("  (?)");
+  ImGui::TextDisabled(" (?)");
 
   if (ImGui::IsItemHovered()) {
     ImGui::BeginTooltip();

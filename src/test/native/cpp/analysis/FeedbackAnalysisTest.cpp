@@ -19,7 +19,7 @@ TEST(FeedbackAnalysis, Velocity1) {
   sysid::LQRParameters params{1, 1.5, 7};
 
   auto [Kp, Kd] = sysid::CalculateVelocityFeedbackGains(
-      sysid::presets::kDefault, params, {Ks, Kv, Ka}, 1, 1);
+      sysid::presets::kDefault, params, {Ks, Kv, Ka});
 
   EXPECT_NEAR(Kp, 2.11, 0.05);
   EXPECT_NEAR(Kd, 0.00, 0.05);
@@ -33,7 +33,7 @@ TEST(FeedbackAnalysis, Velocity2) {
   sysid::LQRParameters params{1, 1.5, 7};
 
   auto [Kp, Kd] = sysid::CalculateVelocityFeedbackGains(
-      sysid::presets::kDefault, params, {Ks, Kv, Ka}, 1, 1);
+      sysid::presets::kDefault, params, {Ks, Kv, Ka});
 
   EXPECT_NEAR(Kp, 3.11, 0.05);
   EXPECT_NEAR(Kd, 0.00, 0.05);
@@ -47,7 +47,7 @@ TEST(FeedbackAnalysis, VelocityConversion) {
   sysid::LQRParameters params{1, 1.5, 7};
 
   auto [Kp, Kd] = sysid::CalculateVelocityFeedbackGains(
-      sysid::presets::kDefault, params, {Ks, Kv, Ka}, 3.0, 1023);
+      sysid::presets::kDefault, params, {Ks, Kv, Ka}, 3.0 * 1023);
 
   EXPECT_NEAR(Kp, 0.001, 0.005);
   EXPECT_NEAR(Kd, 0.00, 0.05);
@@ -61,7 +61,7 @@ TEST(FeedbackAnalysis, VelocityCTRE) {
   sysid::LQRParameters params{1, 1.5, 7};
 
   auto [Kp, Kd] = sysid::CalculateVelocityFeedbackGains(
-      sysid::presets::kCTRENew, params, {Ks, Kv, Ka}, 1, 1);
+      sysid::presets::kCTRENew, params, {Ks, Kv, Ka});
 
   EXPECT_NEAR(Kp, 0.25, 0.05);
   EXPECT_NEAR(Kd, 0.00, 0.05);
@@ -75,7 +75,7 @@ TEST(FeedbackAnalysis, VelocityCTREConversion) {
   sysid::LQRParameters params{1, 1.5, 7};
 
   auto [Kp, Kd] = sysid::CalculateVelocityFeedbackGains(
-      sysid::presets::kCTRENew, params, {Ks, Kv, Ka}, 3.0, 1);
+      sysid::presets::kCTRENew, params, {Ks, Kv, Ka}, 3.0);
 
   EXPECT_NEAR(Kp, 0.08, 0.05);
   EXPECT_NEAR(Kd, 0.00, 0.05);
@@ -89,7 +89,7 @@ TEST(FeedbackAnalysis, VelocityREV) {
   sysid::LQRParameters params{1, 1.5, 7};
 
   auto [Kp, Kd] = sysid::CalculateVelocityFeedbackGains(
-      sysid::presets::kREVBrushless, params, {Ks, Kv, Ka}, 1, 1);
+      sysid::presets::kREVBrushless, params, {Ks, Kv, Ka});
 
   EXPECT_NEAR(Kp, 0.00241, 0.005);
   EXPECT_NEAR(Kd, 0.00, 0.05);
