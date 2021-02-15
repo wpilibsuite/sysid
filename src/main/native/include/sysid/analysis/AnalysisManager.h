@@ -183,6 +183,15 @@ class AnalysisManager {
    */
   static void TrimStepVoltageData(std::vector<PreparedData>* data);
 
+  /**
+   * Calculates the cosine of the position data for single jointed arm analysis.
+   *
+   * @param data The data to calcuate the cosine on.
+   * @param unit The units that the data is in (rotations, radians, or degrees).
+   */
+  static void CalculateCosine(std::vector<PreparedData>* data,
+                              const std::string& unit);
+
  private:
   /**
    * Special function that prepares drivetrain data. This is called
