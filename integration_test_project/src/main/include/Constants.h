@@ -64,4 +64,19 @@ constexpr auto kA = 0.2_V / 1_rad_per_s_sq;
 constexpr units::meter_t kHeight{std::numeric_limits<double>::max()};
 }  // namespace Elevator
 
+namespace Arm {
+constexpr int kLeaderPort = 9;
+constexpr int kFollowerPort = 10;
+
+constexpr int kEncoderPorts[2] = {8, 9};
+
+constexpr auto kV = 1.98_V / 1_rad_per_s;
+constexpr auto kA = 0.2_V / 1_rad_per_s_sq;
+
+constexpr units::degree_t kAngle{std::numeric_limits<double>::max()};
+
+constexpr units::kilogram_t kMass{.1};
+
+}  // namespace Arm
+
 }  // namespace Constants

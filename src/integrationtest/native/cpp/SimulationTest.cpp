@@ -80,6 +80,12 @@ class IntegrationTest : public ::testing::Test {
     m_settings.quasistaticRampRate = 0.75;
     m_settings.mechanism = mechanism;
 
+    if (mechanism == sysid::analysis::kArm) {
+      m_settings.units = "Radians";
+    } else {
+      m_settings.units = "Meters";
+    }
+
     nt::SetEntryValue(m_mechanism,
                       nt::Value::MakeString(m_settings.mechanism.name));
 
@@ -91,7 +97,13 @@ class IntegrationTest : public ::testing::Test {
     // Save the JSON and make sure that everything checks out.
     auto path = m_manager->SaveJSON(PROJECT_ROOT_DIR);
 
-    sysid::AnalysisManager analyzer{path, sysid::AnalysisManager::Settings{}};
+    auto analyzer_settings = sysid::AnalysisManager::Settings{};
+    if (m_settings.mechanism == sysid::analysis::kArm) {
+      analyzer_settings.motionThreshold = 0.01;  // reduce threshold for arm
+                                                 // test
+    }
+    sysid::AnalysisManager analyzer{path, analyzer_settings};
+
     auto output = analyzer.Calculate();
 
     auto ff = std::get<0>(output.ff);
@@ -101,9 +113,9 @@ class IntegrationTest : public ::testing::Test {
     EXPECT_NEAR(Ka, ff[2], 0.2);
 
     if (m_settings.mechanism == sysid::analysis::kElevator) {
-      EXPECT_NEAR(kG, ff[3], 1);
+      EXPECT_NEAR(kG, ff[3], 10);
     } else if (m_settings.mechanism == sysid::analysis::kArm) {
-      EXPECT_NEAR(kCos, ff[3], 1);
+      EXPECT_NEAR(kCos, ff[3], 10);
     }
 
     if (trackWidth) {
@@ -204,5 +216,10 @@ TEST_F(IntegrationTest, Flywheel) {
 
 TEST_F(IntegrationTest, Elevator) {
   SetUp(sysid::analysis::kElevator);
+  Run(4);
+}
+
+TEST_F(IntegrationTest, Arm) {
+  SetUp(sysid::analysis::kArm);
   Run(4);
 }

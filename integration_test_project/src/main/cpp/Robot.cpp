@@ -15,6 +15,7 @@
 #include <frc/trajectory/TrajectoryGenerator.h>
 #include <frc2/Timer.h>
 
+#include "Arm.h"
 #include "Drivetrain.h"
 #include "Elevator.h"
 #include "SimpleMotor.h"
@@ -36,6 +37,7 @@ class Robot : public frc::TimedRobot {
     m_drive.SetPercent(0, 0);
     m_flywheel.SetPercent(0);
     m_elevator.SetPercent(0);
+    m_arm.SetPercent(0);
 
     if (m_counter > 0) {
       wpi::outs() << "Collected " << m_counter << " data points.\n";
@@ -56,11 +58,13 @@ class Robot : public frc::TimedRobot {
     m_drive.Periodic();
     m_flywheel.Periodic();
     m_elevator.Periodic();
+    m_arm.Periodic();
   }
 
   void AutonomousInit() override {
     m_testMode = frc::SmartDashboard::GetString("SysIdTest", "Drivetrain");
     m_elevatorSpeed = m_elevator.GetEnc().GetRate();
+    // m_arm.ResetReadings();
   }
 
   void AutonomousPeriodic() override {
@@ -82,6 +86,8 @@ class Robot : public frc::TimedRobot {
       m_flywheel.SetPercent(speed);
     } else if (m_testMode == "Elevator") {
       m_elevator.SetPercent(speed);
+    } else if (m_testMode == "Arm") {
+      m_arm.SetPercent(speed);
     }
 
     // Calculate Voltage
@@ -123,6 +129,17 @@ class Robot : public frc::TimedRobot {
               m_elevator.GetEnc().GetRate() - m_elevatorSpeed,
               m_elevator.GetEnc().GetRate() - m_elevatorSpeed,
               0};
+    } else if (m_testMode == "Arm") {
+      return {frc2::Timer::GetFPGATimestamp().to<double>(),
+              voltage,
+              speed,
+              speed * voltage,
+              speed * voltage,
+              m_arm.GetEnc().GetDistance(),
+              m_arm.GetEnc().GetDistance(),
+              m_arm.GetEnc().GetRate(),
+              m_arm.GetEnc().GetRate(),
+              0};
     }
 
     return {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -144,12 +161,14 @@ class Robot : public frc::TimedRobot {
                Drivetrain::kMaxAngularSpeed;
 
     m_drive.Drive(xSpeed, rot);
+    m_arm.SetPercent(xSpeed.to<double>());
   }
 
   void SimulationPeriodic() override {
     m_drive.SimulationPeriodic();
     m_flywheel.SimulationPeriodic();
     m_elevator.SimulationPeriodic();
+    m_arm.SimulationPeriodic();
 
 #ifdef INTEGRATION
     bool enable = frc::SmartDashboard::GetBoolean("SysIdRun", false);
@@ -174,6 +193,7 @@ class Robot : public frc::TimedRobot {
   Drivetrain m_drive;
   SimpleMotor m_flywheel;
   Elevator m_elevator;
+  Arm m_arm;
 
   double m_elevatorSpeed = 0.0;
 

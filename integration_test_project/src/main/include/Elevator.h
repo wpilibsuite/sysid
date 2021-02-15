@@ -45,6 +45,8 @@ class Elevator {
 
   void Periodic() {
     frc::SmartDashboard::PutNumber("Elevator Speed", m_encoder.GetRate());
+    frc::SmartDashboard::PutNumber("Elevator Position",
+                                   m_encoder.GetDistance());
   }
 
  private:
