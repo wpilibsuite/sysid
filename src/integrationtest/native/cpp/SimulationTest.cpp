@@ -32,6 +32,8 @@ using namespace std::chrono_literals;
 constexpr double Kv = 1.98;
 constexpr double Ka = 0.2;
 constexpr double kTrackWidth = 0.762;
+constexpr double kG = 1;
+constexpr double kCos = 1;
 
 // Create our test fixture class so we can reuse the same logic for various test
 // mechanisms.
@@ -97,6 +99,12 @@ class IntegrationTest : public ::testing::Test {
 
     EXPECT_NEAR(Kv, ff[1], 0.1);
     EXPECT_NEAR(Ka, ff[2], 0.2);
+
+    if (m_settings.mechanism == sysid::analysis::kElevator) {
+      EXPECT_NEAR(kG, ff[3], 1);
+    } else if (m_settings.mechanism == sysid::analysis::kArm) {
+      EXPECT_NEAR(kCos, ff[3], 1);
+    }
 
     if (trackWidth) {
       EXPECT_NEAR(kTrackWidth, *trackWidth, 0.1);
@@ -191,5 +199,10 @@ TEST_F(IntegrationTest, Drivetrain) {
 
 TEST_F(IntegrationTest, Flywheel) {
   SetUp(sysid::analysis::kSimple);
+  Run(4);
+}
+
+TEST_F(IntegrationTest, Elevator) {
+  SetUp(sysid::analysis::kElevator);
   Run(4);
 }
