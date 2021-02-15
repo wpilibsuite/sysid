@@ -271,15 +271,17 @@ void Analyzer::Display() {
             auto minE =
                 std::min_element(data.data()->cbegin(), data.data()->cend(),
                                  [i](const auto& a, const auto& b) {
-                                   if (i == 0)
+                                   if (i == 0) {
                                      return a.velocity < b.velocity;
+                                   }
                                    return a.acceleration < b.acceleration;
                                  });
             auto maxE =
                 std::max_element(data.data()->cbegin(), data.data()->cend(),
                                  [i](const auto& a, const auto& b) {
-                                   if (i == 0)
+                                   if (i == 0) {
                                      return a.velocity < b.velocity;
+                                   }
                                    return a.acceleration < b.acceleration;
                                  });
 
