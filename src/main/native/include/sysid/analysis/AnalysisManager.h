@@ -118,6 +118,20 @@ class AnalysisManager {
   Gains Calculate();
 
   /**
+   * Overrides the units in the JSON with the user-provided ones.
+   *
+   * @param unit             The unit to output gains in.
+   * @param unitsPerRotation The conversion factor between rotations and the
+   *                         selected unit.
+   */
+  void OverrideUnits(const std::string& unit, double unitsPerRotation);
+
+  /**
+   * Resets the units back to those defined in the JSON.
+   */
+  void ResetUnitsFromJSON();
+
+  /**
    * Returns the analysis type of the current instance (read from the JSON).
    *
    * @return The analysis type.

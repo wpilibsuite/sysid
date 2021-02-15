@@ -206,6 +206,19 @@ AnalysisManager::Gains AnalysisManager::Calculate() {
   return {ff, fb};
 }
 
+void AnalysisManager::OverrideUnits(const std::string& unit,
+                                    double unitsPerRotation) {
+  m_unit = unit;
+  m_factor = unitsPerRotation;
+  PrepareData();
+}
+
+void AnalysisManager::ResetUnitsFromJSON() {
+  m_unit = m_json.at("units").get<std::string>();
+  m_factor = m_json.at("unitsPerRotation").get<double>();
+  PrepareData();
+}
+
 void AnalysisManager::TrimQuasistaticData(std::vector<RawData>* data,
                                           double threshold, bool drivetrain) {
   data->erase(

@@ -30,6 +30,9 @@ class Analyzer : public glass::View {
 
   static constexpr const char* kLoopTypes[] = {"Position", "Velocity"};
 
+  static constexpr const char* kUnits[] = {"Meters",  "Feet",      "Inches",
+                                           "Radians", "Rotations", "Degrees"};
+
   Analyzer();
 
   void Display() override;
@@ -69,6 +72,7 @@ class Analyzer : public glass::View {
   // Units
   double m_factor;
   std::string m_unit;
+  int m_selectedOverrideUnit = 0;
 
   // Data analysis
   std::unique_ptr<AnalysisManager> m_manager;
