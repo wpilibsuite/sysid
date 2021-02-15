@@ -5,15 +5,19 @@
 #include "sysid/analysis/AnalysisManager.h"
 
 #include <algorithm>
+#include <cmath>
 #include <initializer_list>
+#include <stdexcept>
 #include <system_error>
 
 #include <units/angle.h>
 #include <wpi/StringMap.h>
 #include <wpi/json.h>
+#include <wpi/math>
 #include <wpi/raw_istream.h>
 #include <wpi/raw_ostream.h>
 
+#include "sysid/analysis/AnalysisType.h"
 #include "sysid/analysis/TrackWidthAnalysis.h"
 
 using namespace sysid;
@@ -142,6 +146,15 @@ void AnalysisManager::PrepareData() {
   // Trim the step voltage data.
   TrimStepVoltageData(&ff);
   TrimStepVoltageData(&fb);
+
+  // If the analysis type is kArm, then we need to calculate the cosine of the
+  // positions.
+  if (m_type == analysis::kArm) {
+    CalculateCosine(&sf, m_unit);
+    CalculateCosine(&sb, m_unit);
+    CalculateCosine(&ff, m_unit);
+    CalculateCosine(&fb, m_unit);
+  }
 
   // Create the distinct datasets and store them in our StringMap.
   m_datasets["Forward"] = std::make_tuple(sf, ff);
@@ -287,6 +300,21 @@ void AnalysisManager::TrimStepVoltageData(std::vector<PreparedData>* data) {
     // If we were in caution for three iterations, we can exit.
     if (caution && (i - idx) == 3) {
       break;
+    }
+  }
+}
+
+void AnalysisManager::CalculateCosine(std::vector<PreparedData>* data,
+                                      const std::string& unit) {
+  for (auto&& pt : *data) {
+    if (unit == "Radians") {
+      pt.cos = std::cos(pt.position);
+    } else if (unit == "Degrees") {
+      pt.cos = std::cos(pt.position * wpi::math::pi / 180.0);
+    } else if (unit == "Rotations") {
+      pt.cos = std::cos(pt.position * 2 * wpi::math::pi);
+    } else {
+      throw std::runtime_error("The unit is not supported");
     }
   }
 }
