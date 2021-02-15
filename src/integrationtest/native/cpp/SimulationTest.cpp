@@ -71,7 +71,7 @@ class IntegrationTest : public ::testing::Test {
     nt::Flush(m_nt);
   }
 
-  void TearDown() {
+  void TearDown() override {
     nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(false));
     nt::SetEntryValue(m_kill, nt::Value::MakeBoolean(true));
 

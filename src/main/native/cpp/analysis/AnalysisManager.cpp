@@ -285,7 +285,8 @@ void AnalysisManager::TrimStepVoltageData(std::vector<PreparedData>* data) {
     }
 
     // If we were in caution for three iterations, we can exit.
-    if (caution && (i - idx) == 3)
+    if (caution && (i - idx) == 3) {
       break;
+    }
   }
 }
