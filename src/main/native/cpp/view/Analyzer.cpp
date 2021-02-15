@@ -13,6 +13,7 @@
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 #include <wpi/FileSystem.h>
+#include <wpi/math>
 #include <wpi/raw_ostream.h>
 
 #include "sysid/Util.h"
@@ -172,6 +173,48 @@ void Analyzer::Display() {
         "Units Per Rotation: %.4f\n"
         "Type:               %s",
         m_unit.c_str(), m_factor, m_type.name);
+
+    if (ImGui::Button("Override Units")) {
+      ImGui::OpenPopup("Override Units");
+    }
+
+    auto size = ImGui::GetIO().DisplaySize;
+    ImGui::SetNextWindowSize(ImVec2(size.x / 4, size.y * 0.2));
+    if (ImGui::BeginPopupModal("Override Units")) {
+      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);
+      ImGui::Combo("Units", &m_selectedOverrideUnit, kUnits,
+                   IM_ARRAYSIZE(kUnits));
+      m_unit = kUnits[m_selectedOverrideUnit];
+
+      if (m_unit == "Degrees") {
+        m_factor = 360.0;
+      } else if (m_unit == "Radians") {
+        m_factor = 2 * wpi::math::pi;
+      } else if (m_unit == "Rotations") {
+        m_factor = 1.0;
+      }
+
+      bool isRotational = m_selectedOverrideUnit > 2;
+
+      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);
+      ImGui::InputDouble("Units Per Rotation", &m_factor, 0.0, 0.0, "%.4f",
+                         isRotational ? ImGuiInputTextFlags_ReadOnly
+                                      : ImGuiInputTextFlags_None);
+
+      if (ImGui::Button("Close")) {
+        ImGui::CloseCurrentPopup();
+        m_manager->OverrideUnits(m_unit, m_factor);
+        Calculate();
+      }
+
+      ImGui::EndPopup();
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("Reset Units from JSON")) {
+      m_manager->ResetUnitsFromJSON();
+      Calculate();
+    }
   }
 
   // Function that displays a read-only value.
