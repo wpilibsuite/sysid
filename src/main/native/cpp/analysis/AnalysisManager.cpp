@@ -249,6 +249,12 @@ std::vector<PreparedData> AnalysisManager::ComputeAcceleration(
   size_t step = window / 2;
   std::vector<PreparedData> prepared;
 
+  if (data.size() <= window) {
+    throw std::runtime_error(
+        "The data collected is too small! This can be caused by too high of a "
+        "motion threshold or bad data collection.");
+  }
+
   prepared.reserve(data.size() - window);
 
   if (data.size() < static_cast<size_t>(window)) {
