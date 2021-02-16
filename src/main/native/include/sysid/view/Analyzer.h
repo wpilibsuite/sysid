@@ -39,6 +39,7 @@ class Analyzer : public glass::View {
 
  private:
   void SelectFile();
+  void PrepareData();
   void Calculate();
 
   struct PlotData {

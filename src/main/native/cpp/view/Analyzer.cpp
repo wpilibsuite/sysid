@@ -13,6 +13,7 @@
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 #include <wpi/FileSystem.h>
+#include <exception>
 #include <wpi/math>
 #include <wpi/raw_ostream.h>
 
@@ -271,7 +272,7 @@ void Analyzer::Display() {
       int window = m_settings.windowSize;
       if (ImGui::InputInt("Window Size", &window, 0, 0)) {
         m_settings.windowSize = std::clamp(window, 2, 10);
-        m_manager->PrepareData();
+        PrepareData();
         Calculate();
       }
 
@@ -281,7 +282,7 @@ void Analyzer::Display() {
       if (ImGui::InputDouble("Velocity Threshold", &threshold, 0.0, 0.0,
                              "%.3f")) {
         m_settings.motionThreshold = std::clamp(threshold, 0.0, 1.0);
-        m_manager->PrepareData();
+        PrepareData();
         Calculate();
       }
 
@@ -574,9 +575,6 @@ void Analyzer::Display() {
   if (ImGui::BeginPopupModal("Exception Caught!")) {
     ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s",
                        m_exception.c_str());
-    ImGui::Text(
-        "An exception at this stage usually means that the JSON data is "
-        "malformed.");
     if (ImGui::Button("Close")) {
       ImGui::CloseCurrentPopup();
     }
@@ -598,13 +596,27 @@ void Analyzer::SelectFile() {
   }
 }
 
+void Analyzer::PrepareData() {
+  try {
+    m_manager->PrepareData();
+  } catch (const std::exception& e) {
+    m_exception = e.what();
+    ImGui::OpenPopup("Exception Caught!");
+  }
+}
+
 void Analyzer::Calculate() {
-  auto gains = m_manager->Calculate();
-  m_ff = std::get<0>(gains.ff);
-  m_rs = std::get<1>(gains.ff);
-  m_Kp = std::get<0>(gains.fb);
-  m_Kd = std::get<1>(gains.fb);
-  m_trackWidth = gains.trackWidth;
-  m_unit = m_manager->GetUnit();
-  m_factor = m_manager->GetFactor();
+  try {
+    auto gains = m_manager->Calculate();
+    m_ff = std::get<0>(gains.ff);
+    m_rs = std::get<1>(gains.ff);
+    m_Kp = std::get<0>(gains.fb);
+    m_Kd = std::get<1>(gains.fb);
+    m_trackWidth = gains.trackWidth;
+    m_unit = m_manager->GetUnit();
+    m_factor = m_manager->GetFactor();
+  } catch (const std::exception& e) {
+    m_exception = e.what();
+    ImGui::OpenPopup("Exception Caught!");
+  }
 }
