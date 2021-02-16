@@ -41,6 +41,8 @@ class Elevator {
 
   void ResetReadings() {
     m_elevatorSimulator.SetState(frc::MakeMatrix<2, 1>(0.0, 0.0));
+    m_encoderSim.SetRate(0);
+    m_encoderSim.SetDistance(0);
   }
 
   void Periodic() {
@@ -67,9 +69,9 @@ class Elevator {
       frc::LinearSystemId::IdentifyPositionSystem<units::radians>(
           Constants::Elevator::kV, Constants::Elevator::kA);
   frc::sim::ElevatorSim m_elevatorSimulator{m_elevatorSystem,
-                                            frc::DCMotor::Vex775Pro(2),
-                                            1.0,
-                                            1_m,
+                                            frc::DCMotor::Vex775Pro(4),
+                                            1000,
+                                            2_in,
                                             -Constants::Elevator::kHeight,
                                             Constants::Elevator::kHeight};
 };

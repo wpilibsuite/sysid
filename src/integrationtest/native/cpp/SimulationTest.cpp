@@ -3,6 +3,7 @@
 // the WPILib BSD license file in the root directory of this project.
 
 #include <cstdlib>
+#include <exception>
 #include <thread>
 
 #include <ntcore_c.h>
@@ -31,6 +32,7 @@ using namespace std::chrono_literals;
 // The constants that are defined in our integration test program.
 constexpr double Kv = 1.98;
 constexpr double Ka = 0.2;
+constexpr double kElevatorKa = 0.01;
 constexpr double kTrackWidth = 0.762;
 constexpr double kG = 1;
 constexpr double kCos = 1;
@@ -96,30 +98,34 @@ class IntegrationTest : public ::testing::Test {
   void TearDown() {
     // Save the JSON and make sure that everything checks out.
     auto path = m_manager->SaveJSON(PROJECT_ROOT_DIR);
+    try {
+      auto analyzer_settings = sysid::AnalysisManager::Settings{};
+      if (m_settings.mechanism == sysid::analysis::kArm) {
+        analyzer_settings.motionThreshold = 0.01;  // reduce threshold for arm
+                                                   // test
+      }
+      sysid::AnalysisManager analyzer{path, analyzer_settings};
 
-    auto analyzer_settings = sysid::AnalysisManager::Settings{};
-    if (m_settings.mechanism == sysid::analysis::kArm) {
-      analyzer_settings.motionThreshold = 0.01;  // reduce threshold for arm
-                                                 // test
-    }
-    sysid::AnalysisManager analyzer{path, analyzer_settings};
+      auto output = analyzer.Calculate();
 
-    auto output = analyzer.Calculate();
+      auto ff = std::get<0>(output.ff);
+      auto trackWidth = output.trackWidth;
 
-    auto ff = std::get<0>(output.ff);
-    auto trackWidth = output.trackWidth;
+      EXPECT_NEAR(Kv, ff[1], 0.1);
+      EXPECT_NEAR(Ka, ff[2], 0.2);
 
-    EXPECT_NEAR(Kv, ff[1], 0.1);
-    EXPECT_NEAR(Ka, ff[2], 0.2);
+      if (m_settings.mechanism == sysid::analysis::kElevator) {
+        EXPECT_NEAR(kG, ff[3], 10);
+      } else if (m_settings.mechanism == sysid::analysis::kArm) {
+        EXPECT_NEAR(kCos, ff[3], 10);
+      }
 
-    if (m_settings.mechanism == sysid::analysis::kElevator) {
-      EXPECT_NEAR(kG, ff[3], 10);
-    } else if (m_settings.mechanism == sysid::analysis::kArm) {
-      EXPECT_NEAR(kCos, ff[3], 10);
-    }
-
-    if (trackWidth) {
-      EXPECT_NEAR(kTrackWidth, *trackWidth, 0.1);
+      if (trackWidth) {
+        EXPECT_NEAR(kTrackWidth, *trackWidth, 0.1);
+      }
+    } catch (std::exception& e) {
+      wpi::outs() << "Teardown Failed: " << e.what() << "\n";
+      ADD_FAILURE();
     }
 
     wpi::outs().flush();

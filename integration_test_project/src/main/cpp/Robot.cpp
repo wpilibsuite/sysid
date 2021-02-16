@@ -38,6 +38,7 @@ class Robot : public frc::TimedRobot {
     m_flywheel.SetPercent(0);
     m_elevator.SetPercent(0);
     m_arm.SetPercent(0);
+    m_arm.ResetReadings();
 
     if (m_counter > 0) {
       wpi::outs() << "Collected " << m_counter << " data points.\n";
@@ -54,17 +55,18 @@ class Robot : public frc::TimedRobot {
     }
   }
 
+  void DisabledPeriodic() override { m_arm.ResetReadings(); }
+
   void RobotPeriodic() override {
     m_drive.Periodic();
     m_flywheel.Periodic();
-    m_elevator.Periodic();
     m_arm.Periodic();
   }
 
   void AutonomousInit() override {
     m_testMode = frc::SmartDashboard::GetString("SysIdTest", "Drivetrain");
     m_elevatorSpeed = m_elevator.GetEnc().GetRate();
-    // m_arm.ResetReadings();
+    m_arm.ResetReadings();
   }
 
   void AutonomousPeriodic() override {
@@ -195,7 +197,7 @@ class Robot : public frc::TimedRobot {
   Elevator m_elevator;
   Arm m_arm;
 
-  double m_elevatorSpeed = 0.0;
+  double m_elevatorSpeed = 0;
 
   std::string m_testMode = "Drivetrain";
 

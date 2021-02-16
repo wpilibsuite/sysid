@@ -6,11 +6,14 @@
 
 #include <limits>
 
+#include <units/acceleration.h>
 #include <units/angle.h>
 #include <units/angular_acceleration.h>
 #include <units/angular_velocity.h>
 #include <units/length.h>
+#include <units/mass.h>
 #include <units/velocity.h>
+#include <units/voltage.h>
 
 namespace Constants {
 
@@ -59,7 +62,7 @@ constexpr int kFollowerPort = 8;
 constexpr int kEncoderPorts[2] = {6, 7};
 
 constexpr auto kV = 1.98_V / 1_rad_per_s;
-constexpr auto kA = 0.2_V / 1_rad_per_s_sq;
+constexpr auto kA = .2_V / 1_rad_per_s_sq;
 
 constexpr units::meter_t kHeight{std::numeric_limits<double>::max()};
 }  // namespace Elevator
@@ -75,7 +78,7 @@ constexpr auto kA = 0.2_V / 1_rad_per_s_sq;
 
 constexpr units::degree_t kAngle{std::numeric_limits<double>::max()};
 
-constexpr units::kilogram_t kMass{.1};
+constexpr units::kilogram_t kMass{.01};
 
 }  // namespace Arm
 

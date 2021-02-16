@@ -40,7 +40,10 @@ class Arm {
   void SimulationPeriodic();
 
   void ResetReadings() {
-    m_armSimulator.SetState(frc::MakeMatrix<2, 1>(0.0, 0.0));
+    m_armSimulator.SetState(frc::MakeMatrix<2, 1>(wpi::math::pi / 2, 0.0));
+    m_armSimulator.Update(5_ms);
+    m_encoderSim.SetRate(0);
+    m_encoderSim.SetDistance(wpi::math::pi / 2);
   }
 
   void Periodic() {
@@ -73,8 +76,8 @@ class Arm {
           Constants::Arm::kV, Constants::Arm::kA);
   frc::sim::SingleJointedArmSim m_armSimulator{m_armSystem,
                                                frc::DCMotor::Vex775Pro(4),
-                                               .1,
-                                               30_in,
+                                               1000,
+                                               1000_in,
                                                -Constants::Arm::kAngle,
                                                Constants::Arm::kAngle,
                                                Constants::Arm::kMass,
