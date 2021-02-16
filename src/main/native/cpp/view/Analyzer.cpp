@@ -7,13 +7,13 @@
 #include <implot.h>
 
 #include <algorithm>
+#include <exception>
 
 #include <glass/Context.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 #include <wpi/FileSystem.h>
-#include <exception>
 #include <wpi/math>
 #include <wpi/raw_ostream.h>
 
