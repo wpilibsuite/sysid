@@ -32,10 +32,32 @@ using namespace std::chrono_literals;
 // The constants that are defined in our integration test program.
 constexpr double Kv = 1.98;
 constexpr double Ka = 0.2;
-constexpr double kElevatorKa = 0.01;
 constexpr double kTrackWidth = 0.762;
-constexpr double kG = 1;
-constexpr double kCos = 1;
+
+/** This was calculated with the following model:
+a = 1/K_a * V - K_v/K_a * v - g
+
+Where g is the gravitational constant divided by gearing.
+
+We are finding V s.t. the system is in equilibrium, => a = 0, v = 0.
+
+0 = 1/K_a * V - g
+g = 1/K_a * V
+V = K_a * g
+*/
+
+constexpr double kG = .002;
+
+/** This was calculated with the following model:
+V = T_m * R / k_t
+kCos(std::cos(θ)) = mg(cos(θ))l/2 * R/k_t
+kCos = mgl/2 * 1/(NG) * V_stall/I_stall * 1/(I_stall/T_stall)
+= mgl/(2NG) * V_stall/T_stall
+
+where N is the number of motors, G is the gearing, V_stall is the stall voltage
+and T_stall is the torque at the stall voltage.
+ */
+constexpr double kCos = .029;
 
 // Create our test fixture class so we can reuse the same logic for various test
 // mechanisms.
@@ -83,7 +105,7 @@ class IntegrationTest : public ::testing::Test {
     m_settings.mechanism = mechanism;
 
     if (mechanism == sysid::analysis::kArm) {
-      m_settings.units = "Radians";
+      m_settings.units = "Rotations";
     } else {
       m_settings.units = "Meters";
     }
@@ -115,9 +137,11 @@ class IntegrationTest : public ::testing::Test {
       EXPECT_NEAR(Ka, ff[2], 0.2);
 
       if (m_settings.mechanism == sysid::analysis::kElevator) {
-        EXPECT_NEAR(kG, ff[3], 10);
+        std::cout << "kG: " << ff[3] << std::endl;
+        EXPECT_NEAR(kG, ff[3], .05);
       } else if (m_settings.mechanism == sysid::analysis::kArm) {
-        EXPECT_NEAR(kCos, ff[3], 10);
+        std::cout << "kCos: " << ff[3] << std::endl;
+        EXPECT_NEAR(kCos, ff[3], 0.05);
       }
 
       if (trackWidth) {
