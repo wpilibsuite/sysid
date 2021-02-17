@@ -25,11 +25,12 @@
 #include <wpi/math>
 
 #include "Constants.h"
+#include "SysIdMechanism.h"
 
 /**
  * Represents a differential drive style drivetrain.
  */
-class Drivetrain {
+class Drivetrain : public SysIdMechanism {
  public:
   Drivetrain() {
     m_gyro.Reset();
@@ -67,6 +68,19 @@ class Drivetrain {
     m_rightGroup.Set(r);
   }
 
+  void SetPMotor(double value) override { m_leftGroup.Set(value); }
+
+  void SetSMotor(double value) override { m_rightGroup.Set(value); }
+
+  double GetPEncDistance() override { return m_leftEncoder.GetDistance(); }
+
+  double GetPEncVelocity() override { return m_leftEncoder.GetRate(); }
+
+  double GetSEncDistance() override { return m_rightEncoder.GetDistance(); }
+
+  double GetSEncVelocity() override { return m_rightEncoder.GetRate(); }
+
+  double GetGyroAngle() override { return GetGyro().to<double>(); }
   frc::Encoder& GetLEnc() { return m_leftEncoder; }
   frc::Encoder& GetREnc() { return m_rightEncoder; }
 

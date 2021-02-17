@@ -16,11 +16,12 @@
 #include <wpi/math>
 
 #include "Constants.h"
+#include "SysIdMechanism.h"
 
 /**
  * Represents a differential drive style drivetrain.
  */
-class Arm {
+class Arm : public SysIdMechanism {
  public:
   Arm() {
     // Set the distance per pulse for the flywheel encoders. We can simply use
@@ -31,11 +32,13 @@ class Arm {
     m_encoder.Reset();
   }
 
-  void SetPercent(double power) { m_group.Set(power); }
+  void SetPMotor(double value) override { m_group.Set(value); }
+
+  double GetPEncDistance() override { return m_encoder.GetDistance(); }
 
   frc::Encoder& GetEnc() { return m_encoder; }
 
-  double GetSpeed() { return m_group.Get(); }
+  double GetPEncVelocity() override { return m_encoder.GetRate(); }
 
   void SimulationPeriodic();
 

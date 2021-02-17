@@ -19,6 +19,7 @@
 #include "Drivetrain.h"
 #include "Elevator.h"
 #include "SimpleMotor.h"
+#include "SysIdMechanism.h"
 
 class Robot : public frc::TimedRobot {
  public:
@@ -34,10 +35,8 @@ class Robot : public frc::TimedRobot {
   }
 
   void DisabledInit() override {
-    m_drive.SetPercent(0, 0);
-    m_flywheel.SetPercent(0);
-    m_elevator.SetPercent(0);
-    m_arm.SetPercent(0);
+    m_mechanism->SetPMotor(0);
+    m_mechanism->SetSMotor(0);
     m_arm.ResetReadings();
 
     if (m_counter > 0) {
@@ -64,87 +63,43 @@ class Robot : public frc::TimedRobot {
   }
 
   void AutonomousInit() override {
-    m_testMode = frc::SmartDashboard::GetString("SysIdTest", "Drivetrain");
-    m_elevatorSpeed = m_elevator.GetEnc().GetRate();
+    std::string test =
+        frc::SmartDashboard::GetString("SysIdTest", "Drivetrain");
+    m_elevator.m_initSpeed = m_elevator.GetEnc().GetRate();
     m_arm.ResetReadings();
+
+    if (test == "Drivetrain") {
+      m_mechanism = &m_drive;
+    } else if (test == "Simple") {
+      m_mechanism = &m_flywheel;
+    } else if (test == "Elevator") {
+      m_mechanism = &m_elevator;
+    } else if (test == "Arm") {
+      m_mechanism = &m_arm;
+    }
   }
 
   void AutonomousPeriodic() override {
-    std::array<double, 10> arr = UpdateCharacterization();
-    m_data.insert(m_data.end(), arr.cbegin(), arr.cend());
-    m_counter++;
-  }
-
-  std::array<double, 10> UpdateCharacterization() {
     double speed = frc::SmartDashboard::GetNumber("SysIdAutoSpeed", 0.0);
     bool rotate = frc::SmartDashboard::GetBoolean("SysIdRotate", false);
-
-    // Set output
-    if (m_testMode == "Drivetrain") {
-      m_drive.SetPercent((rotate ? -1 : 1) * speed, speed);
-      m_drive.UpdateOdometry();
-
-    } else if (m_testMode == "Simple") {
-      m_flywheel.SetPercent(speed);
-    } else if (m_testMode == "Elevator") {
-      m_elevator.SetPercent(speed);
-    } else if (m_testMode == "Arm") {
-      m_arm.SetPercent(speed);
-    }
-
-    // Calculate Voltage
     double voltage = frc::RobotController::GetInputVoltage();
     frc::SmartDashboard::PutNumber("Speed", speed);
 
-    // Return telemetry
-    if (m_testMode == "Drivetrain") {
-      return {frc2::Timer::GetFPGATimestamp().to<double>(),
-              voltage,
-              speed,
-              speed * voltage,
-              speed * voltage,
-              m_drive.GetLEnc().GetDistance(),
-              m_drive.GetREnc().GetDistance(),
-              m_drive.GetLEnc().GetRate(),
-              m_drive.GetREnc().GetRate(),
-              m_drive.GetGyro().to<double>()};
+    m_mechanism->SetPMotor((rotate ? -1 : 1) * speed);
+    m_mechanism->SetSMotor(-speed);
 
-    } else if (m_testMode == "Simple") {
-      return {frc2::Timer::GetFPGATimestamp().to<double>(),
-              voltage,
-              speed,
-              speed * voltage,
-              speed * voltage,
-              m_flywheel.GetEnc().GetDistance(),
-              m_flywheel.GetEnc().GetDistance(),
-              m_flywheel.GetEnc().GetRate(),
-              m_flywheel.GetEnc().GetRate(),
-              0};
-    } else if (m_testMode == "Elevator") {
-      return {frc2::Timer::GetFPGATimestamp().to<double>(),
-              voltage,
-              speed,
-              speed * voltage,
-              speed * voltage,
-              m_elevator.GetEnc().GetDistance(),
-              m_elevator.GetEnc().GetDistance(),
-              m_elevator.GetEnc().GetRate() - m_elevatorSpeed,
-              m_elevator.GetEnc().GetRate() - m_elevatorSpeed,
-              0};
-    } else if (m_testMode == "Arm") {
-      return {frc2::Timer::GetFPGATimestamp().to<double>(),
-              voltage,
-              speed,
-              speed * voltage,
-              speed * voltage,
-              m_arm.GetEnc().GetDistance(),
-              m_arm.GetEnc().GetDistance(),
-              m_arm.GetEnc().GetRate(),
-              m_arm.GetEnc().GetRate(),
-              0};
-    }
-
-    return {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    std::array<double, 10> arr = {frc2::Timer::GetFPGATimestamp().to<double>(),
+                                  voltage,
+                                  speed,
+                                  speed * voltage,
+                                  speed * voltage,
+                                  m_mechanism->GetPEncDistance(),
+                                  m_mechanism->GetSEncDistance(),
+                                  m_mechanism->GetPEncVelocity(),
+                                  m_mechanism->GetSEncVelocity(),
+                                  m_mechanism->GetGyroAngle()};
+    m_data.insert(m_data.end(), arr.cbegin(), arr.cend());
+    m_counter++;
   }
 
   void TeleopPeriodic() override {
@@ -163,7 +118,6 @@ class Robot : public frc::TimedRobot {
                Drivetrain::kMaxAngularSpeed;
 
     m_drive.Drive(xSpeed, rot);
-    m_arm.SetPercent(xSpeed.to<double>());
   }
 
   void SimulationPeriodic() override {
@@ -196,6 +150,8 @@ class Robot : public frc::TimedRobot {
   SimpleMotor m_flywheel;
   Elevator m_elevator;
   Arm m_arm;
+
+  SysIdMechanism* m_mechanism = &m_drive;
 
   double m_elevatorSpeed = 0;
 
