@@ -63,7 +63,6 @@ class Drivetrain : public SysIdMechanism {
   void UpdateOdometry();
   void ResetOdometry(const frc::Pose2d& pose);
 
-
   void SetPMotor(double value) override { m_leftGroup.Set(value); }
 
   void SetSMotor(double value) override { m_rightGroup.Set(value); }

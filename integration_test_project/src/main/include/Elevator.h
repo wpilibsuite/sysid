@@ -56,8 +56,6 @@ class Elevator : public SysIdMechanism {
 
   void UpdateInitialSpeed() { m_initSpeed = m_encoder.GetRate(); }
 
-  
-
  private:
   static constexpr int kEncoderResolution = 4096;
   double distance = 0;
