@@ -27,11 +27,23 @@ struct VoltageDomainPlotData {
   AnalysisType type;
 };
 
+// This is the factor by which we should divide the data when plotting. For
+// example, if the size of the data is larger than 1 << 12, we will only visit
+// every other point.
+static int CalculatePlotVectorFactor(size_t size) {
+  return static_cast<int>(std::ceil(size * 1.0 / (1 << 12)));
+}
+
 // Methods that return various ImPlotPoint values for plotting, given a
 // const_iterator to the data.
 ImPlotPoint GetVelocityVsVoltage(void* data, int idx) {
   auto& d = *static_cast<VoltageDomainPlotData*>(data);
-  auto& p = d.vec->at(idx);
+
+  // If the data is too big, then we should "stride" the data so that we only
+  // visit every 2, 3, ... points.
+  int factor = CalculatePlotVectorFactor(d.vec->size());
+
+  auto& p = d.vec->at(idx * factor);
   if (d.type == analysis::kElevator) {
     return ImPlotPoint(p.voltage - d.ff[3] -
                            std::copysign(d.ff[0], p.velocity) -
@@ -51,7 +63,11 @@ ImPlotPoint GetVelocityVsVoltage(void* data, int idx) {
 
 ImPlotPoint GetAccelerationVsVoltage(void* data, int idx) {
   auto& d = *static_cast<VoltageDomainPlotData*>(data);
-  auto& p = d.vec->at(idx);
+  // If the data is too big, then we should "stride" the data so that we only
+  // visit every 2, 3, ... points.
+  int factor = CalculatePlotVectorFactor(d.vec->size());
+
+  auto& p = d.vec->at(idx * factor);
   if (d.type == analysis::kElevator) {
     return ImPlotPoint(p.voltage - d.ff[3] -
                            std::copysign(d.ff[0], p.velocity) -
@@ -71,11 +87,13 @@ ImPlotPoint GetAccelerationVsVoltage(void* data, int idx) {
 
 ImPlotPoint GetVelocityVsTime(void* data, int idx) {
   auto& d = *static_cast<std::vector<PreparedData>*>(data);
+  idx *= CalculatePlotVectorFactor(d.size());
   return ImPlotPoint(d[idx].timestamp - d[0].timestamp, d[idx].velocity);
 }
 
 ImPlotPoint GetAccelerationVsTime(void* data, int idx) {
   auto& d = *static_cast<std::vector<PreparedData>*>(data);
+  idx *= CalculatePlotVectorFactor(d.size());
   return ImPlotPoint(d[idx].timestamp - d[0].timestamp, d[idx].acceleration);
 }
 
@@ -307,9 +325,13 @@ void Analyzer::Display() {
             // data, feedforward values, and the type of analysis.
             VoltageDomainPlotData d{data.data(), m_ff, m_type};
 
+            // Calculate the factor by which we should scale the data.
+            int factor = CalculatePlotVectorFactor(data.data()->size());
+
             // Plot the scatter data.
             ImPlot::SetNextMarkerStyle(IMPLOT_AUTO, 1, IMPLOT_AUTO_COL, 0);
-            ImPlot::PlotScatterG("", data.getter, &d, data.data()->size());
+            ImPlot::PlotScatterG("", data.getter, &d,
+                                 data.data()->size() / factor);
 
             // Plot the line of best fit.
             auto minE =
@@ -368,10 +390,13 @@ void Analyzer::Display() {
 
           // Create the plot.
           if (ImPlot::BeginPlot(data.name, data.xlabel, data.ylabel)) {
+            // Calculate the factor by which we should scale the data.
+            int factor = CalculatePlotVectorFactor(data.data()->size());
+
             // For time domain data, only the raw data is required, so we can
             // plot it directly.
             ImPlot::PlotScatterG("", data.getter, data.data(),
-                                 data.data()->size());
+                                 data.data()->size() / factor);
             ImPlot::EndPlot();
           }
         }
