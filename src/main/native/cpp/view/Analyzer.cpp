@@ -221,7 +221,7 @@ void Analyzer::Display() {
   // Function that displays a read-only value.
   auto ShowGain = [](const char* text, double* data) {
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-    ImGui::InputDouble(text, data, 0.0, 0.0, "%.3f",
+    ImGui::InputDouble(text, data, 0.0, 0.0, "%.3G",
                        ImGuiInputTextFlags_ReadOnly);
   };
 
@@ -526,12 +526,10 @@ void Analyzer::Display() {
       // Show Kp and Kd.
       beginY = ImGui::GetCursorPosY();
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-      ImGui::InputDouble("Kp", &m_Kp, 0.0, 0.0, "%.3f",
-                         ImGuiInputTextFlags_ReadOnly);
+      ShowGain("Kp", &m_Kp);
 
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-      ImGui::InputDouble("Kd", &m_Kd, 0.0, 0.0, "%.3f",
-                         ImGuiInputTextFlags_ReadOnly);
+      ShowGain("Kd", &m_Kd);
 
       // Come back to the starting y pos.
       ImGui::SetCursorPosY(beginY);
