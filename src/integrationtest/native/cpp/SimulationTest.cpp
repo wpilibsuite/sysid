@@ -186,7 +186,7 @@ class IntegrationTest : public ::testing::Test {
       wpi::outs().flush();
 
       // Wait 5 ms and flush.
-      std::this_thread::sleep_for(1s);
+      std::this_thread::sleep_for(5ms);
       nt::Flush(m_nt);
 
       // Start the test and let it run for 2 or 4 seconds depending on the test.
@@ -199,19 +199,15 @@ class IntegrationTest : public ::testing::Test {
         nt::Flush(m_nt);
       }
 
-      // Wait for five seconds while the robot comes to a stop.
+      // Wait at least one second while the mechanism stops.
       start = wpi::Now() * 1E-6;
-      while (wpi::Now() * 1E-6 - start < 5) {
+      while (m_manager->IsActive() || wpi::Now() * 1E-6 - start < 1) {
         nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(false));
         m_manager->Update();
         std::this_thread::sleep_for(0.005s);
         nt::Flush(m_nt);
       }
-
-      // Make sure the telemetry manager has ended the test.
-      EXPECT_FALSE(m_manager->IsActive());
     }
-    std::this_thread::sleep_for(1s);
   }
 
  private:
