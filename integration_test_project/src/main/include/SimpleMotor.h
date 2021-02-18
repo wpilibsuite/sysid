@@ -19,7 +19,7 @@
 #include "SysIdMechanism.h"
 
 /**
- * Represents a differential drive style drivetrain.
+ * Represents a flywheel mechanism.
  */
 class SimpleMotor : public SysIdMechanism {
  public:
@@ -37,10 +37,6 @@ class SimpleMotor : public SysIdMechanism {
   double GetPEncDistance() override { return m_encoder.GetDistance(); }
 
   double GetPEncVelocity() override { return m_encoder.GetRate(); }
-
-  frc::Encoder& GetEnc() { return m_encoder; }
-
-  double GetSpeed() { return m_group.Get(); }
 
   void SimulationPeriodic();
   void Periodic() {

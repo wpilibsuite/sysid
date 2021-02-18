@@ -19,7 +19,7 @@
 #include "SysIdMechanism.h"
 
 /**
- * Represents a differential drive style drivetrain.
+ * Represents an arm mechanism.
  */
 class Arm : public SysIdMechanism {
  public:
@@ -35,8 +35,6 @@ class Arm : public SysIdMechanism {
   void SetPMotor(double value) override { m_group.Set(value); }
 
   double GetPEncDistance() override { return m_encoder.GetDistance(); }
-
-  frc::Encoder& GetEnc() { return m_encoder; }
 
   double GetPEncVelocity() override { return m_encoder.GetRate(); }
 

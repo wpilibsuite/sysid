@@ -65,7 +65,7 @@ class Robot : public frc::TimedRobot {
   void AutonomousInit() override {
     std::string test =
         frc::SmartDashboard::GetString("SysIdTest", "Drivetrain");
-    m_elevator.m_initSpeed = m_elevator.GetEnc().GetRate();
+    m_elevator.UpdateInitialSpeed();
     m_arm.ResetReadings();
 
     if (test == "Drivetrain") {
@@ -152,10 +152,6 @@ class Robot : public frc::TimedRobot {
   Arm m_arm;
 
   SysIdMechanism* m_mechanism = &m_drive;
-
-  double m_elevatorSpeed = 0;
-
-  std::string m_testMode = "Drivetrain";
 
   std::vector<double> m_data;
   size_t m_counter = 0;

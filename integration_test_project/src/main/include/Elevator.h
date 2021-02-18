@@ -19,7 +19,7 @@
 #include "SysIdMechanism.h"
 
 /**
- * Represents a differential drive style drivetrain.
+ * Represents an elevator mechanism.
  */
 class Elevator : public SysIdMechanism {
  public:
@@ -40,10 +40,6 @@ class Elevator : public SysIdMechanism {
     return m_encoder.GetRate() - m_initSpeed;
   }
 
-  frc::Encoder& GetEnc() { return m_encoder; }
-
-  double GetSpeed() { return m_group.Get(); }
-
   void SimulationPeriodic();
 
   void ResetReadings() {
@@ -58,11 +54,15 @@ class Elevator : public SysIdMechanism {
                                    m_encoder.GetDistance());
   }
 
-  double m_initSpeed = 0;
+  void UpdateInitialSpeed() { m_initSpeed = m_encoder.GetRate(); }
+
+  
 
  private:
   static constexpr int kEncoderResolution = 4096;
   double distance = 0;
+
+  double m_initSpeed = 0;
 
   frc::PWMVictorSPX m_leader{Constants::Elevator::kLeaderPort};
   frc::PWMVictorSPX m_follower{Constants::Elevator::kFollowerPort};

@@ -7,8 +7,8 @@
 #include <frc/RobotController.h>
 
 void Arm::SimulationPeriodic() {
-  m_armSimulator.SetInput(frc::MakeMatrix<1, 1>(
-      m_leader.Get() * frc::RobotController::GetInputVoltage()));
+  m_armSimulator.SetInputVoltage(units::volt_t{m_leader.Get()} *
+                                      frc::RobotController::GetInputVoltage());
   m_armSimulator.Update(5_ms);
 
   m_encoderSim.SetDistance(m_armSimulator.GetAngle().to<double>());

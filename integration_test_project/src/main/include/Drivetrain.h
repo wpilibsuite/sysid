@@ -63,10 +63,6 @@ class Drivetrain : public SysIdMechanism {
   void UpdateOdometry();
   void ResetOdometry(const frc::Pose2d& pose);
 
-  void SetPercent(double l, double r) {
-    m_leftGroup.Set(l);
-    m_rightGroup.Set(r);
-  }
 
   void SetPMotor(double value) override { m_leftGroup.Set(value); }
 
@@ -81,8 +77,6 @@ class Drivetrain : public SysIdMechanism {
   double GetSEncVelocity() override { return m_rightEncoder.GetRate(); }
 
   double GetGyroAngle() override { return GetGyro().to<double>(); }
-  frc::Encoder& GetLEnc() { return m_leftEncoder; }
-  frc::Encoder& GetREnc() { return m_rightEncoder; }
 
   double GetSpeed() { return (m_leftGroup.Get() + m_rightGroup.Get()) / 2; }
 
