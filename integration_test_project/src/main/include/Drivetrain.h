@@ -47,8 +47,6 @@ class Drivetrain : public SysIdDrivetrain {
     m_leftEncoder.Reset();
     m_rightEncoder.Reset();
 
-    m_rightGroup.SetInverted(true);
-
     frc::SmartDashboard::PutData("Field", &m_fieldSim);
   }
 
@@ -63,11 +61,15 @@ class Drivetrain : public SysIdDrivetrain {
   void UpdateOdometry();
   void ResetOdometry(const frc::Pose2d& pose);
 
-  void SetLMotor(double value) override { m_leftGroup.Set(value); }
-  void SetRMotor(double value) override { m_rightGroup.Set(value); }
-
   double GetLEncDistance() override { return m_leftEncoder.GetDistance(); }
   double GetLEncVelocity() override { return m_leftEncoder.GetRate(); }
+  void SetLMotor(units::volt_t value) override {
+    m_leftGroup.SetVoltage(value);
+  }
+
+  void SetRMotor(units::volt_t value) override {
+    m_rightGroup.SetVoltage(value);
+  }
 
   double GetREncDistance() override { return m_rightEncoder.GetDistance(); }
   double GetREncVelocity() override { return m_rightEncoder.GetRate(); }

@@ -22,12 +22,6 @@
 #include "sysid/analysis/AnalysisType.h"
 #include "sysid/telemetry/TelemetryManager.h"
 
-#ifdef _WIN32
-#define LAUNCHSIM "gradlew simulateCpp"
-#else
-#define LAUNCHSIM "./gradlew simulateCpp"
-#endif
-
 using namespace std::chrono_literals;
 
 // The constants that are defined in our integration test program.
@@ -183,6 +177,9 @@ class IntegrationTest : public ::testing::Test {
     while (nt::IsConnected(m_nt)) {
       nt::Flush(m_nt);
     }
+
+    // Set kill to false for future tests.
+    nt::SetEntryValue(m_kill, nt::Value::MakeBoolean(false));
 
     wpi::outs() << "Killed robot program"
                 << "\n";

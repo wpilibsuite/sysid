@@ -4,10 +4,12 @@
 
 #pragma once
 
+#include <units/voltage.h>
+
 class SysIdDrivetrain {
  public:
-  virtual void SetLMotor(double value) = 0;
-  virtual void SetRMotor(double value) = 0;
+  virtual void SetLMotor(units::volt_t value) = 0;
+  virtual void SetRMotor(units::volt_t value) = 0;
 
   virtual double GetLEncDistance() = 0;
   virtual double GetREncDistance() = 0;

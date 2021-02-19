@@ -32,7 +32,7 @@ class Arm : public SysIdGeneralMechanism {
     m_encoder.Reset();
   }
 
-  void SetMotor(double value) override { m_group.Set(value); }
+  void SetMotor(units::volt_t value) override { m_group.SetVoltage(value); }
 
   double GetPosition() override { return m_encoder.GetDistance(); }
   double GetVelocity() override { return m_encoder.GetRate(); }

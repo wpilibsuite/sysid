@@ -36,10 +36,8 @@ class Analyzer : public glass::View {
 
   static constexpr const char* kLoopTypes[] = {"Position", "Velocity"};
 
-  static constexpr const char* kUnits[] = {"Meters",  "Feet",      "Inches",
-                                           "Radians", "Rotations", "Degrees"};
-
   explicit Analyzer(wpi::Logger& logger);
+
   void Display() override;
   ~Analyzer() override { AbortDataPrep(); };
 

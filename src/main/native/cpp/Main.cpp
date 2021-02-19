@@ -2,6 +2,8 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
+#include <imgui.h>
+
 #ifndef RUNNING_SYSID_TESTS
 
 #include <memory>
@@ -18,6 +20,7 @@
 
 #include "sysid/view/Analyzer.h"
 #include "sysid/view/JSONConverter.h"
+#include "sysid/view/Generator.h"
 #include "sysid/view/Logger.h"
 
 namespace gui = wpi::gui;
@@ -97,7 +100,13 @@ int main() {
   gProgramLogWindow = gWindowManager->AddWindow(
       "Program Log", std::make_unique<glass::LogView>(&gLog));
 
+  gGeneratorWindow = gWindowManager->AddWindow(
+      "Generator", std::make_unique<sysid::Generator>(gLogger));
+
   // Set default positions and sizes for windows.
+  gGeneratorWindow->SetDefaultPos(5, 25);
+  gGeneratorWindow->SetDefaultSize(350, 255);
+
   gLoggerWindow->SetDefaultPos(5, 285);
   gLoggerWindow->SetDefaultSize(350, 400);
 

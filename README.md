@@ -46,3 +46,11 @@ There is also a robot project in `integration_test_project` that you can use to 
     - On Linux, install GCC 7 or greater
     - On Windows, install [Visual Studio Community 2019](https://visualstudio.microsoft.com/vs/community/) and select the C++ programming language during installation (Gradle can't use the build tools for Visual Studio 2019)
     - On macOS, install the Xcode command-line build tools via `xcode-select --install`
+
+## Logging Projects
+SysId comes with projects that interface with the telemetry manager to provide the necessary data for analysis. These projects are stored in the `base_projects` folder and take in a `config.json` file in the `src/main/deploy` directory to setup the robot hardware for analysis.
+
+There is a `Drivetrain` project for drivetrain analysis and a `GeneralMechanism` project for simple-motor, elevator, and arm analyses.
+
+### Running the Projects
+The executable generated from building is currently hardcoded to save to the proper project and these projects can be run normally from VSCode or the command line.

@@ -86,8 +86,6 @@ void Logger::Display() {
       "unit. On the other hand, if your drivetrain will use gains in meters, "
       "choose meters.");
 
-  // Add Units Per Rotations entry
-
   // Rotational units have fixed Units per rotations
   m_isRotationalUnits =
       (m_settings.units == "Rotations" || m_settings.units == "Degrees" ||
@@ -100,6 +98,7 @@ void Logger::Display() {
     m_settings.unitsPerRotation = 1.0;
   }
 
+  // Units Per Rotations entry
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 17);
   ImGui::InputDouble("Units Per Rotation", &m_settings.unitsPerRotation, 0.0f,
                      0.0f, "%.4f",

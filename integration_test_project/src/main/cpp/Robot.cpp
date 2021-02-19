@@ -15,6 +15,7 @@
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc/trajectory/TrajectoryGenerator.h>
 #include <frc2/Timer.h>
+#include <units/voltage.h>
 #include <wpi/StringRef.h>
 
 #include "Arm.h"
@@ -23,40 +24,33 @@
 #include "SimpleMotor.h"
 #include "interface/SysIdDrivetrain.h"
 #include "interface/SysIdGeneralMechanism.h"
+#include "logging/SysIdDrivetrainLogger.h"
+#include "logging/SysIdGeneralMechanismLogger.h"
 
 class Robot : public frc::TimedRobot {
  public:
-  Robot() : frc::TimedRobot(5_ms) {
-    frc::LiveWindow::GetInstance()->DisableAllTelemetry();
-  }
+  Robot() : frc::TimedRobot(5_ms) { m_driveLogger.UpdateThreadPriority(); }
   void RobotInit() override {
     // Flush NetworkTables every loop. This ensures that robot pose and other
     // values are sent during every iteration.
     SetNetworkTablesFlushEnabled(true);
     frc::SmartDashboard::PutString("SysIdTest", "Drivetrain");
     frc::SmartDashboard::PutNumber("SysIdAutoSpeed", 0.0);
+    frc::SmartDashboard::PutString("SysIdUnit", "Meters");
+    frc::SmartDashboard::PutNumber("SysIdUnitsPerRotation", 1.0);
   }
 
   void DisabledInit() override {
-    m_mechanism->SetMotor(0);
+    m_mechanism->SetMotor(units::volt_t{0});
 
-    m_driveMechanism->SetLMotor(0);
-    m_driveMechanism->SetRMotor(0);
+    m_driveMechanism->SetLMotor(units::volt_t{0});
+    m_driveMechanism->SetRMotor(units::volt_t{0});
 
     m_arm.ResetReadings();
-
-    if (m_counter > 0) {
-      wpi::outs() << "Collected " << m_counter << " data points.\n";
-
-      std::stringstream ss;
-      for (const auto& pt : m_data) {
-        ss << std::to_string(pt) << ", ";
-      }
-
-      frc::SmartDashboard::PutString("SysIdTelemetry", ss.str());
-
-      m_counter = 0;
-      m_data.clear();
+    if (m_test == "Drivetrain") {
+      m_driveLogger.SendData();
+    } else {
+      m_generalLogger.SendData();
     }
   }
 
@@ -69,10 +63,10 @@ class Robot : public frc::TimedRobot {
   }
 
   void AutonomousInit() override {
+    m_driveLogger.InitLogging();
+    m_generalLogger.InitLogging();
     m_elevator.UpdateInitialSpeed();
     m_arm.ResetReadings();
-
-    frc::SmartDashboard::PutString("SysIdTelemetry", "");
 
     if (m_test == "Simple") {
       m_mechanism = &m_flywheel;
@@ -84,34 +78,19 @@ class Robot : public frc::TimedRobot {
   }
 
   void AutonomousPeriodic() override {
-    double speed = frc::SmartDashboard::GetNumber("SysIdAutoSpeed", 0.0);
-    bool rotate = frc::SmartDashboard::GetBoolean("SysIdRotate", false);
-    double voltage = frc::RobotController::GetInputVoltage();
-
     if (m_test == "Drivetrain" || m_test == "Drivetrain (Angular)") {
-      std::array<double, 9> arr = {frc2::Timer::GetFPGATimestamp().to<double>(),
-                                   speed * voltage,
-                                   speed * voltage,
-                                   m_driveMechanism->GetLEncDistance(),
-                                   m_driveMechanism->GetREncDistance(),
-                                   m_driveMechanism->GetLEncVelocity(),
-                                   m_driveMechanism->GetREncVelocity(),
-                                   m_driveMechanism->GetGyroAngle(),
-                                   m_driveMechanism->GetGyroAngularRate()};
-
-      m_driveMechanism->SetLMotor(speed);
-      m_driveMechanism->SetRMotor(speed * (rotate ? 1 : -1));
-
-      m_data.insert(m_data.end(), arr.cbegin(), arr.cend());
-      m_counter++;
+      m_driveLogger.Log(m_driveMechanism->GetLEncDistance(),
+                        m_driveMechanism->GetREncDistance(),
+                        m_driveMechanism->GetLEncVelocity(),
+                        m_driveMechanism->GetREncVelocity(),
+                        m_driveMechanism->GetGyroAngle(),
+                        m_driveMechanism->GetGyroAngularRate());
+      m_driveMechanism->SetLMotor(m_driveLogger.GetLeftMotorVoltage());
+      m_driveMechanism->SetRMotor(m_driveLogger.GetRightMotorVoltage());
     } else {
-      std::array<double, 4> arr = {frc2::Timer::GetFPGATimestamp().to<double>(),
-                                   speed * voltage, m_mechanism->GetPosition(),
-                                   m_mechanism->GetVelocity()};
-
-      m_mechanism->SetMotor(speed);
-      m_data.insert(m_data.end(), arr.cbegin(), arr.cend());
-      m_counter++;
+      m_generalLogger.Log(m_mechanism->GetPosition(),
+                          m_mechanism->GetVelocity());
+      m_mechanism->SetMotor(m_generalLogger.GetMotorVoltage());
     }
   }
 
@@ -169,6 +148,8 @@ class Robot : public frc::TimedRobot {
 
   SysIdGeneralMechanism* m_mechanism = &m_flywheel;
   SysIdDrivetrain* m_driveMechanism = &m_drive;
+  SysIdGeneralMechanismLogger m_generalLogger;
+  SysIdDrivetrainLogger m_driveLogger;
 
   std::string m_test = "Drivetrain";
   std::vector<double> m_data;

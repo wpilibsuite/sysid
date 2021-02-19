@@ -4,10 +4,12 @@
 
 #pragma once
 
+#include <units/voltage.h>
+
 class SysIdGeneralMechanism {
  public:
   virtual double GetPosition() = 0;
   virtual double GetVelocity() = 0;
 
-  virtual void SetMotor(double value) = 0;
+  virtual void SetMotor(units::volt_t value) = 0;
 };
