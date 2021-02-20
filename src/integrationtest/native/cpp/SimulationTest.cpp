@@ -115,8 +115,8 @@ class IntegrationTest : public ::testing::Test {
       auto ff = std::get<0>(output.ff);
       auto trackWidth = output.trackWidth;
 
-      EXPECT_NEAR(Kv, ff[1], 0.05);
-      EXPECT_NEAR(Ka, ff[2], 0.05);
+      EXPECT_NEAR(Kv, ff[1], 0.10);
+      EXPECT_NEAR(Ka, ff[2], 0.10);
 
       if (m_settings.mechanism == sysid::analysis::kElevator) {
         EXPECT_NEAR(kG, ff[3], 0.15);
