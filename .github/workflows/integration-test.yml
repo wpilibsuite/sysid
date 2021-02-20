@@ -1,0 +1,38 @@
+name: Integration Test
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact-name: Windows x86
+            architecture: x86
+          - os: windows-latest
+            artifact-name: Windows x86-64
+            architecture: x64
+          - os: macos-latest
+            artifact-name: macOS x86-64
+            architecture: x64
+          - os: ubuntu-latest
+            artifact-name: Linux x86-64
+            architecture: x64
+
+    name: "Test - ${{ matrix.artifact-name }}"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 11
+          architecture: ${{ matrix.architecture }}
+
+      - name: Install RoboRIO Toolchain
+        run: ./gradlew installRoborioToolchain
+        working-directory: integration_test_project
+
+      - name: Run Integration Tests
+        run: ./gradlew runIntegrationTests -PwithIntegration
