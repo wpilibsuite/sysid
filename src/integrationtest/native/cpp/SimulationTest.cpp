@@ -119,9 +119,9 @@ class IntegrationTest : public ::testing::Test {
       EXPECT_NEAR(Ka, ff[2], 0.05);
 
       if (m_settings.mechanism == sysid::analysis::kElevator) {
-        EXPECT_NEAR(kG, ff[3], 0.05);
+        EXPECT_NEAR(kG, ff[3], 0.15);
       } else if (m_settings.mechanism == sysid::analysis::kArm) {
-        EXPECT_NEAR(kCos, ff[3], 0.05);
+        EXPECT_NEAR(kCos, ff[3], 0.15);
       }
 
       if (trackWidth) {
