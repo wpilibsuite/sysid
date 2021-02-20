@@ -107,6 +107,8 @@ Analyzer::Analyzer() {
   m_presets["REV (Brushless)"] = presets::kREVBrushless;
   m_presets["REV (Brushed)"] = presets::kREVBrushed;
 
+  m_settings.dataset = 1;
+
   // Load the last file location from storage if it exists.
   m_location = glass::GetStorage().GetStringRef("AnalyzerJSONLocation");
 

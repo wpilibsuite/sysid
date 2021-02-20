@@ -34,30 +34,10 @@ constexpr double Kv = 1.98;
 constexpr double Ka = 0.2;
 constexpr double kTrackWidth = 0.762;
 
-/** This was calculated with the following model:
-a = 1/K_a * V - K_v/K_a * v - g
-
-Where g is the gravitational constant divided by gearing.
-
-We are finding V s.t. the system is in equilibrium, => a = 0, v = 0.
-
-0 = 1/K_a * V - g
-g = 1/K_a * V
-V = K_a * g
-*/
-
+// Calculated by finding the voltage required to hold the arm horizontal in the
+// simulation program.
+constexpr double kCos = .250;
 constexpr double kG = .002;
-
-/** This was calculated with the following model:
-V = T_m * R / k_t
-kCos(std::cos(θ)) = mg(cos(θ))l/2 * R/k_t
-kCos = mgl/2 * 1/(NG) * V_stall/I_stall * 1/(I_stall/T_stall)
-= mgl/(2NG) * V_stall/T_stall
-
-where N is the number of motors, G is the gearing, V_stall is the stall voltage
-and T_stall is the torque at the stall voltage.
- */
-constexpr double kCos = .029;
 
 // Create our test fixture class so we can reuse the same logic for various test
 // mechanisms.
@@ -72,6 +52,7 @@ class IntegrationTest : public ::testing::Test {
     m_enable = nt::GetEntry(m_nt, "/SmartDashboard/SysIdRun");
     m_mechanism = nt::GetEntry(m_nt, "/SmartDashboard/SysIdTest");
     m_kill = nt::GetEntry(m_nt, "/SmartDashboard/SysIdKill");
+
     // Start the robot program.
     wpi::SmallString<128> cmd;
     wpi::raw_svector_ostream os(cmd);
@@ -92,12 +73,13 @@ class IntegrationTest : public ::testing::Test {
     while (!nt::IsConnected(m_nt)) {
       ASSERT_LT(wpi::Now() - time, 1.5E7);
     }
+
     nt::SetEntryValue(m_kill, nt::Value::MakeBoolean(false));
     nt::Flush(m_nt);
   }
 
   void SetUp(sysid::AnalysisType mechanism) {
-    // Make use a new manager
+    // Make a new manager
     m_manager = std::make_unique<sysid::TelemetryManager>(m_settings, m_nt);
 
     // Change the default settings a little bit.
@@ -105,7 +87,7 @@ class IntegrationTest : public ::testing::Test {
     m_settings.mechanism = mechanism;
 
     if (mechanism == sysid::analysis::kArm) {
-      m_settings.units = "Rotations";
+      m_settings.units = "Radians";
     } else {
       m_settings.units = "Meters";
     }
@@ -117,30 +99,28 @@ class IntegrationTest : public ::testing::Test {
     std::this_thread::sleep_for(1s);
   }
 
-  void TearDown() {
+  void TearDown() override {
     // Save the JSON and make sure that everything checks out.
     auto path = m_manager->SaveJSON(PROJECT_ROOT_DIR);
     try {
-      auto analyzer_settings = sysid::AnalysisManager::Settings{};
+      auto analyzerSettings = sysid::AnalysisManager::Settings{};
       if (m_settings.mechanism == sysid::analysis::kArm) {
-        analyzer_settings.motionThreshold = 0.01;  // reduce threshold for arm
-                                                   // test
+        analyzerSettings.motionThreshold = 0.01;  // Reduce threshold for arm
+                                                  // test
       }
-      sysid::AnalysisManager analyzer{path, analyzer_settings};
+      sysid::AnalysisManager analyzer{path, analyzerSettings};
 
       auto output = analyzer.Calculate();
 
       auto ff = std::get<0>(output.ff);
       auto trackWidth = output.trackWidth;
 
-      EXPECT_NEAR(Kv, ff[1], 0.1);
-      EXPECT_NEAR(Ka, ff[2], 0.2);
+      EXPECT_NEAR(Kv, ff[1], 0.05);
+      EXPECT_NEAR(Ka, ff[2], 0.05);
 
       if (m_settings.mechanism == sysid::analysis::kElevator) {
-        std::cout << "kG: " << ff[3] << std::endl;
-        EXPECT_NEAR(kG, ff[3], .05);
+        EXPECT_NEAR(kG, ff[3], 0.05);
       } else if (m_settings.mechanism == sysid::analysis::kArm) {
-        std::cout << "kCos: " << ff[3] << std::endl;
         EXPECT_NEAR(kCos, ff[3], 0.05);
       }
 
@@ -154,7 +134,7 @@ class IntegrationTest : public ::testing::Test {
 
     wpi::outs().flush();
 
-    // Delete the JSON.
+// Delete the JSON.
 #ifdef _WIN32
     std::string del = "del " + path;
 #else
@@ -173,11 +153,11 @@ class IntegrationTest : public ::testing::Test {
     wpi::outs() << "Killed robot program"
                 << "\n";
 
-    // Destroy NT Client.
+    // Stop NT Client.
     nt::StopClient(m_nt);
   }
 
-  void Run(int tests) {
+  void Run(int tests = 4) {
     for (int i = 0; i < tests; i++) {
       auto test = kTests[i];
       // Enable the robot.
@@ -237,15 +217,15 @@ TEST_F(IntegrationTest, Drivetrain) {
 
 TEST_F(IntegrationTest, Flywheel) {
   SetUp(sysid::analysis::kSimple);
-  Run(4);
+  Run();
 }
 
 TEST_F(IntegrationTest, Elevator) {
   SetUp(sysid::analysis::kElevator);
-  Run(4);
+  Run();
 }
 
 TEST_F(IntegrationTest, Arm) {
   SetUp(sysid::analysis::kArm);
-  Run(4);
+  Run();
 }
