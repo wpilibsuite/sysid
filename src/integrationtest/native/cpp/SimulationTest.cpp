@@ -119,7 +119,7 @@ class IntegrationTest : public ::testing::Test {
       EXPECT_NEAR(Ka, ff[2], 0.10);
 
       if (m_settings.mechanism == sysid::analysis::kElevator) {
-        EXPECT_NEAR(kG, ff[3], 0.15);
+        EXPECT_NEAR(kG, ff[3], 0.2);
       } else if (m_settings.mechanism == sysid::analysis::kArm) {
         EXPECT_NEAR(kCos, ff[3], 0.15);
       }
