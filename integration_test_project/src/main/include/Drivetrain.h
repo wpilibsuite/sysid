@@ -24,20 +24,25 @@
 #include <units/velocity.h>
 #include <wpi/math>
 
+#include "Constants.h"
+#include "SysIdMechanism.h"
+
 /**
  * Represents a differential drive style drivetrain.
  */
-class Drivetrain {
+class Drivetrain : public SysIdMechanism {
  public:
   Drivetrain() {
     m_gyro.Reset();
     // Set the distance per pulse for the drive encoders. We can simply use the
     // distance traveled for one rotation of the wheel divided by the encoder
     // resolution.
-    m_leftEncoder.SetDistancePerPulse(2 * wpi::math::pi * kWheelRadius /
-                                      kEncoderResolution);
-    m_rightEncoder.SetDistancePerPulse(2 * wpi::math::pi * kWheelRadius /
-                                       kEncoderResolution);
+    m_leftEncoder.SetDistancePerPulse(
+        2 * wpi::math::pi * Constants::Drivetrain::kWheelRadius /
+        Constants::Drivetrain::kEncoderResolution);
+    m_rightEncoder.SetDistancePerPulse(
+        2 * wpi::math::pi * Constants::Drivetrain::kWheelRadius /
+        Constants::Drivetrain::kEncoderResolution);
 
     m_leftEncoder.Reset();
     m_rightEncoder.Reset();
@@ -58,13 +63,19 @@ class Drivetrain {
   void UpdateOdometry();
   void ResetOdometry(const frc::Pose2d& pose);
 
-  void SetPercent(double l, double r) {
-    m_leftGroup.Set(l);
-    m_rightGroup.Set(r);
-  }
+  void SetPMotor(double value) override { m_leftGroup.Set(value); }
 
-  frc::Encoder& GetLEnc() { return m_leftEncoder; }
-  frc::Encoder& GetREnc() { return m_rightEncoder; }
+  void SetSMotor(double value) override { m_rightGroup.Set(value); }
+
+  double GetPEncDistance() override { return m_leftEncoder.GetDistance(); }
+
+  double GetPEncVelocity() override { return m_leftEncoder.GetRate(); }
+
+  double GetSEncDistance() override { return m_rightEncoder.GetDistance(); }
+
+  double GetSEncVelocity() override { return m_rightEncoder.GetRate(); }
+
+  double GetGyroAngle() override { return GetGyro().to<double>(); }
 
   double GetSpeed() { return (m_leftGroup.Get() + m_rightGroup.Get()) / 2; }
 
@@ -76,27 +87,26 @@ class Drivetrain {
   void Periodic();
 
  private:
-  static constexpr units::meter_t kTrackWidth = 0.381_m * 2;
-  static constexpr double kWheelRadius = 0.0508;  // meters
-  static constexpr int kEncoderResolution = 4096;
-
-  frc::PWMVictorSPX m_leftLeader{1};
-  frc::PWMVictorSPX m_leftFollower{2};
-  frc::PWMVictorSPX m_rightLeader{3};
-  frc::PWMVictorSPX m_rightFollower{4};
+  frc::PWMVictorSPX m_leftLeader{Constants::Drivetrain::kLeftLeaderPort};
+  frc::PWMVictorSPX m_leftFollower{Constants::Drivetrain::kLeftFollowerPort};
+  frc::PWMVictorSPX m_rightLeader{Constants::Drivetrain::kRightLeaderPort};
+  frc::PWMVictorSPX m_rightFollower{Constants::Drivetrain::kRightFollowerPort};
 
   frc::SpeedControllerGroup m_leftGroup{m_leftLeader, m_leftFollower};
   frc::SpeedControllerGroup m_rightGroup{m_rightLeader, m_rightFollower};
 
-  frc::Encoder m_leftEncoder{0, 1};
-  frc::Encoder m_rightEncoder{2, 3};
+  frc::Encoder m_leftEncoder{Constants::Drivetrain::kLeftEncoderPorts[0],
+                             Constants::Drivetrain::kLeftEncoderPorts[1]};
+  frc::Encoder m_rightEncoder{Constants::Drivetrain::kRightEncoderPorts[0],
+                              Constants::Drivetrain::kRightEncoderPorts[0]};
 
   frc2::PIDController m_leftPIDController{8.5, 0.0, 0.0};
   frc2::PIDController m_rightPIDController{8.5, 0.0, 0.0};
 
-  frc::AnalogGyro m_gyro{0};
+  frc::AnalogGyro m_gyro{Constants::Drivetrain::kGyroPort};
 
-  frc::DifferentialDriveKinematics m_kinematics{kTrackWidth};
+  frc::DifferentialDriveKinematics m_kinematics{
+      Constants::Drivetrain::kTrackWidth};
   frc::DifferentialDriveOdometry m_odometry{m_gyro.GetRotation2d()};
 
   // Gains are for example purposes only - must be determined for your own
@@ -110,8 +120,9 @@ class Drivetrain {
   frc::Field2d m_fieldSim;
   frc::LinearSystem<2, 2, 2> m_drivetrainSystem =
       frc::LinearSystemId::IdentifyDrivetrainSystem(
-          1.98_V / 1_mps, 0.2_V / 1_mps_sq, 1.5_V / 1_rad_per_s,
-          0.3_V / 1_rad_per_s_sq);
+          Constants::Drivetrain::kV, Constants::Drivetrain::kA,
+          Constants::Drivetrain::kAngularKV, Constants::Drivetrain::kAngularKA);
   frc::sim::DifferentialDrivetrainSim m_drivetrainSimulator{
-      m_drivetrainSystem, kTrackWidth, frc::DCMotor::CIM(2), 8, 2_in};
+      m_drivetrainSystem, Constants::Drivetrain::kTrackWidth,
+      frc::DCMotor::CIM(2), 8, 2_in};
 };
