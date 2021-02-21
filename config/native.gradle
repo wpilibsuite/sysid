@@ -34,15 +34,6 @@ nativeUtils {
       version = wpilibVersion
       staticPlatforms.addAll(nativeUtils.wpi.platforms.desktopPlatforms)
     }
-    libglassnt {
-      groupId = "edu.wpi.first.glass"
-      artifactId = "libglassnt"
-      headerClassifier = "headers"
-      sourceClassifier = "sources"
-      ext = "zip"
-      version = wpilibVersion
-      staticPlatforms.addAll(nativeUtils.wpi.platforms.desktopPlatforms)
-    }
   }
   combinedDependencyConfigs {
     gui {
@@ -50,7 +41,7 @@ nativeUtils {
       targetPlatforms.addAll(nativeUtils.wpi.platforms.desktopPlatforms)
       dependencies <<
           "wpimath_static" << "ntcore_static" << "wpiutil_static" <<
-          "libglassnt_static" << "libglass_static" << "wpigui_static" << "imgui_static"
+          "libglass_static" << "wpigui_static" << "imgui_static"
     }
   }
 }

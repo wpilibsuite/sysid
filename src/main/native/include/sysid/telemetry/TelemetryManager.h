@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-#include <glass/networktables/NetworkTablesHelper.h>
+#include <ntcore_c.h>
 #include <ntcore_cpp.h>
 #include <units/time.h>
 #include <wpi/SmallVector.h>
@@ -39,6 +39,10 @@ class TelemetryManager {
     AnalysisType mechanism = analysis::kDrivetrain;
   };
 
+  // Default NT Listener Flags.
+  static constexpr int kNTFlags =
+      NT_NOTIFY_LOCAL | NT_NOTIFY_NEW | NT_NOTIFY_UPDATE | NT_NOTIFY_IMMEDIATE;
+
   /**
    * Constructs an instance of the telemetry manager with the provided settings
    * and NT instance to collect data over.
@@ -50,6 +54,8 @@ class TelemetryManager {
    */
   explicit TelemetryManager(const Settings& settings,
                             NT_Inst instance = nt::GetDefaultInstance());
+
+  ~TelemetryManager();
 
   /**
    * Begins a test with the given parameters.
@@ -152,7 +158,8 @@ class TelemetryManager {
   wpi::SmallVector<std::function<void(const std::string&)>, 1> m_callbacks;
 
   // NetworkTables instance and entries.
-  glass::NetworkTablesHelper m_nt;
+  NT_Inst m_inst;
+  NT_EntryListenerPoller m_poller;
   NT_Entry m_autospeed;
   NT_Entry m_rotate;
   NT_Entry m_telemetry;

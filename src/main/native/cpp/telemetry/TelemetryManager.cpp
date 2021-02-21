@@ -26,14 +26,20 @@ using namespace sysid;
 
 TelemetryManager::TelemetryManager(const Settings& settings, NT_Inst instance)
     : m_settings(settings),
-      m_nt(instance),
-      m_autospeed(m_nt.GetEntry("/SmartDashboard/SysIdAutoSpeed")),
-      m_rotate(m_nt.GetEntry("/SmartDashboard/SysIdRotate")),
-      m_telemetry(m_nt.GetEntry("/SmartDashboard/SysIdTelemetry")),
-      m_fieldInfo(m_nt.GetEntry("/FMSInfo/FMSControlData")) {
+      m_inst(instance),
+      m_poller(nt::CreateEntryListenerPoller(m_inst)),
+      m_autospeed(nt::GetEntry(m_inst, "/SmartDashboard/SysIdAutoSpeed")),
+      m_rotate(nt::GetEntry(m_inst, "/SmartDashboard/SysIdRotate")),
+      m_telemetry(nt::GetEntry(m_inst, "/SmartDashboard/SysIdTelemetry")),
+      m_fieldInfo(nt::GetEntry(m_inst, "/FMSInfo/FMSControlData")) {
   // Add listeners for our readable entries.
-  m_nt.AddListener(m_telemetry);
-  m_nt.AddListener(m_fieldInfo);
+
+  nt::AddPolledEntryListener(m_poller, m_telemetry, kNTFlags);
+  nt::AddPolledEntryListener(m_poller, m_fieldInfo, kNTFlags);
+}
+
+TelemetryManager::~TelemetryManager() {
+  nt::DestroyEntryListenerPoller(m_poller);
 }
 
 void TelemetryManager::BeginTest(wpi::StringRef name) {
@@ -92,7 +98,7 @@ void TelemetryManager::EndTest() {
 
   // Send a zero command over NT.
   nt::SetEntryValue(m_autospeed, nt::Value::MakeDouble(0.0));
-  nt::Flush(m_nt.GetInstance());
+  nt::Flush(m_inst);
 }
 
 void TelemetryManager::Update() {
@@ -102,7 +108,8 @@ void TelemetryManager::Update() {
   }
 
   // Update the NT entries that we're reading.
-  for (auto&& event : m_nt.PollListener()) {
+  bool timedOut = false;
+  for (auto&& event : nt::PollEntryListener(m_poller, 0, &timedOut)) {
     // Get the FMS Control Word.
     if (event.entry == m_fieldInfo && event.value && event.value->IsDouble()) {
       uint32_t ctrl = event.value->GetDouble();
@@ -133,10 +140,10 @@ void TelemetryManager::Update() {
 
     nt::SetEntryValue(m_autospeed, nt::Value::MakeDouble(spd / 12.0));
     nt::SetEntryValue(m_rotate, nt::Value::MakeBoolean(m_params.rotate));
-    nt::Flush(m_nt.GetInstance());
+    nt::Flush(m_inst);
 
     // If for some reason we've disconnected, end the test.
-    if (!m_nt.IsConnected()) {
+    if (!nt::IsConnected(m_inst)) {
       wpi::outs() << "NT connection dropped while executing test...";
       EndTest();
     }
@@ -151,7 +158,7 @@ void TelemetryManager::Update() {
   if (m_params.state == State::WaitingForData) {
     double now = wpi::Now() * 1E-6;
     nt::SetEntryValue(m_autospeed, nt::Value::MakeDouble(0.0));
-    nt::Flush(m_nt.GetInstance());
+    nt::Flush(m_inst);
 
     // We have the data that we need, so we can parse it and end the test.
     if (!m_params.raw.empty()) {
