@@ -125,20 +125,24 @@ class TelemetryManager {
    * collected data.
    */
   struct TestParameters {
-    bool fast;
-    bool forward;
-    bool rotate;
+    bool fast = false;
+    bool forward = false;
+    bool rotate = false;
 
-    State state;
+    State state = State::WaitingForEnable;
 
-    double enableStart;
-    double disableStart;
+    double enableStart = 0.0;
+    double disableStart = 0.0;
 
     bool enabled = false;
     double speed = 0.0;
 
     std::string raw;
     std::vector<std::array<double, 10>> data{};
+
+    TestParameters() = default;
+    TestParameters(bool fast, bool forward, bool rotate, State state)
+        : fast{fast}, forward{forward}, rotate{rotate}, state{state} {}
   };
 
   // Settings for this instance.
