@@ -5,6 +5,7 @@
 #include "sysid/telemetry/TelemetryManager.h"
 
 #include <algorithm>
+#include <cctype>
 #include <ctime>
 #include <iomanip>
 #include <iterator>
@@ -77,8 +78,10 @@ void TelemetryManager::EndTest() {
   // Call the cancellation callbacks.
   for (auto&& func : m_callbacks) {
     if (!m_params.data.empty()) {
-      double p = m_params.data.back()[5] - m_params.data.front()[5];
-      double s = m_params.data.back()[6] - m_params.data.front()[6];
+      double p = (m_params.data.back()[5] - m_params.data.front()[5]) *
+                 m_settings.unitsPerRotation;
+      double s = (m_params.data.back()[6] - m_params.data.front()[6]) *
+                 m_settings.unitsPerRotation;
       double g = m_params.data.back()[9] - m_params.data.front()[9];
 
       std::stringstream stream;
@@ -144,7 +147,7 @@ void TelemetryManager::Update() {
 
     // If for some reason we've disconnected, end the test.
     if (!nt::IsConnected(m_inst)) {
-      wpi::outs() << "NT connection dropped while executing test...";
+      wpi::outs() << "NT connection dropped while executing test...\n";
       EndTest();
     }
 
@@ -162,6 +165,11 @@ void TelemetryManager::Update() {
 
     // We have the data that we need, so we can parse it and end the test.
     if (!m_params.raw.empty()) {
+      // Clean up the string -- remove spaces if there are any.
+      m_params.raw.erase(
+          std::remove_if(m_params.raw.begin(), m_params.raw.end(), ::isspace),
+          m_params.raw.end());
+
       // Split the string into individual components.
       auto res = sysid::Split(m_params.raw, ',');
 
@@ -187,7 +195,7 @@ void TelemetryManager::Update() {
     // If we timed out, end the test and let the user know.
     if (now - m_params.disableStart > 5) {
       wpi::outs() << "TelemetryManager did not receieve data 5 seconds after "
-                     "completing the test...";
+                     "completing the test...\n";
       EndTest();
     }
   }
