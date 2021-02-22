@@ -10,6 +10,7 @@
 #include <tuple>
 #include <vector>
 
+#include <wpi/Logger.h>
 #include <wpi/StringMap.h>
 #include <wpi/StringRef.h>
 #include <wpi/json.h>
@@ -101,8 +102,10 @@ class AnalysisManager {
    *
    * @param path     The path to the JSON containing the sysid data.
    * @param settings The settings for this instance of the analysis manager.
+   * @param logger   The logger instance to use for log data.
    */
-  AnalysisManager(wpi::StringRef path, const Settings& settings);
+  AnalysisManager(wpi::StringRef path, const Settings& settings,
+                  wpi::Logger& logger);
 
   /**
    * Prepares data from the JSON and stores the output in the StringMap.
@@ -231,6 +234,8 @@ class AnalysisManager {
     static constexpr uint8_t kRVel = 8;
     static constexpr uint8_t kGyro = 9;
   };
+
+  wpi::Logger& m_logger;
 
   // This is used to store the various datasets (i.e. Combined, Forward,
   // Backward, etc.)

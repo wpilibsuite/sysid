@@ -97,7 +97,7 @@ ImPlotPoint GetAccelerationVsTime(void* data, int idx) {
   return ImPlotPoint(d[idx].timestamp - d[0].timestamp, d[idx].acceleration);
 }
 
-Analyzer::Analyzer() {
+Analyzer::Analyzer(wpi::Logger& logger) : m_logger(logger) {
   // Fill the StringMap with preset values.
   m_presets["Default"] = presets::kDefault;
   m_presets["WPILib (2020-)"] = presets::kWPILibNew;
@@ -150,7 +150,8 @@ void Analyzer::Display() {
   if (first) {
     if (!m_location->empty() && wpi::sys::fs::exists(*m_location)) {
       try {
-        m_manager = std::make_unique<AnalysisManager>(*m_location, m_settings);
+        m_manager = std::make_unique<AnalysisManager>(*m_location, m_settings,
+                                                      m_logger);
         m_type = m_manager->GetAnalysisType();
         Calculate();
       } catch (const std::exception& e) {
@@ -613,7 +614,8 @@ void Analyzer::SelectFile() {
     m_selector.reset();
 
     // Create the analysis manager.
-    m_manager = std::make_unique<AnalysisManager>(*m_location, m_settings);
+    m_manager =
+        std::make_unique<AnalysisManager>(*m_location, m_settings, m_logger);
     m_type = m_manager->GetAnalysisType();
     Calculate();
   }

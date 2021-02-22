@@ -21,7 +21,7 @@
 
 using namespace sysid;
 
-Logger::Logger() {
+Logger::Logger(wpi::Logger& logger) : m_logger(logger) {
   // Add an NT connection listener to update the GUI's state.
   auto instance = nt::GetDefaultInstance();
   auto poller = nt::CreateConnectionListenerPoller(instance);
@@ -54,8 +54,8 @@ void Logger::Display() {
   // Reset and clear the internal manager state.
   ImGui::SameLine();
   if (ImGui::Button("Reset")) {
-    m_manager =
-        std::make_unique<TelemetryManager>(TelemetryManager::Settings{});
+    m_settings = TelemetryManager::Settings{};
+    m_manager = std::make_unique<TelemetryManager>(m_settings, m_logger);
     m_selectedType = 0;
   }
 
