@@ -16,6 +16,7 @@
 #include <utility>
 
 #include <ntcore_cpp.h>
+#include <wpi/Logger.h>
 #include <wpi/math>
 #include <wpi/raw_ostream.h>
 #include <wpi/timestamp.h>
@@ -25,8 +26,10 @@
 
 using namespace sysid;
 
-TelemetryManager::TelemetryManager(const Settings& settings, NT_Inst instance)
+TelemetryManager::TelemetryManager(const Settings& settings,
+                                   wpi::Logger& logger, NT_Inst instance)
     : m_settings(settings),
+      m_logger(logger),
       m_inst(instance),
       m_poller(nt::CreateEntryListenerPoller(m_inst)),
       m_autospeed(nt::GetEntry(m_inst, "/SmartDashboard/SysIdAutoSpeed")),
@@ -147,7 +150,9 @@ void TelemetryManager::Update() {
 
     // If for some reason we've disconnected, end the test.
     if (!nt::IsConnected(m_inst)) {
-      wpi::outs() << "NT connection dropped while executing test...\n";
+      WPI_WARNING(m_logger,
+                  "NT connection was dropped when executing the test. The test "
+                  "has been canceled.");
       EndTest();
     }
 
@@ -187,15 +192,17 @@ void TelemetryManager::Update() {
         m_params.data.push_back(std::move(d));
       }
 
-      wpi::outs() << "Received data with size: " << m_params.data.size()
-                  << " for the " << m_tests.back() << " test.\n";
+      WPI_INFO(m_logger, "Received data with size: "
+                             << m_params.data.size() << " for the "
+                             << m_tests.back() << " test.");
       EndTest();
     }
 
     // If we timed out, end the test and let the user know.
     if (now - m_params.disableStart > 5) {
-      wpi::outs() << "TelemetryManager did not receieve data 5 seconds after "
-                     "completing the test...\n";
+      WPI_WARNING(m_logger,
+                  "TelemetryManager did not receieve data 5 seconds after "
+                  "completing the test...");
       EndTest();
     }
   }
@@ -229,7 +236,7 @@ std::string TelemetryManager::SaveJSON(wpi::StringRef location) {
 
   os << m_data;
   os.flush();
-  wpi::outs() << "Wrote JSON to: " << loc << "\n";
+  WPI_INFO(m_logger, "Wrote JSON to: " << loc);
 
   return loc;
 }

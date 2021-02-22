@@ -38,8 +38,9 @@ std::vector<PreparedData> Concatenate(
   return dest;
 }
 
-AnalysisManager::AnalysisManager(wpi::StringRef path, const Settings& settings)
-    : m_settings(settings) {
+AnalysisManager::AnalysisManager(wpi::StringRef path, const Settings& settings,
+                                 wpi::Logger& logger)
+    : m_settings(settings), m_logger(logger) {
   // Read JSON from the specified path.
   std::error_code ec;
   wpi::raw_fd_istream is{path, ec};
@@ -49,6 +50,7 @@ AnalysisManager::AnalysisManager(wpi::StringRef path, const Settings& settings)
   }
 
   is >> m_json;
+  WPI_INFO(m_logger, "Read " << path);
 
   // Get the analysis type from the JSON.
   m_type = sysid::analysis::FromName(m_json.at("test").get<std::string>());

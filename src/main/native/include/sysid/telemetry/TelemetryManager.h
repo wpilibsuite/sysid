@@ -13,6 +13,7 @@
 #include <ntcore_c.h>
 #include <ntcore_cpp.h>
 #include <units/time.h>
+#include <wpi/Logger.h>
 #include <wpi/SmallVector.h>
 #include <wpi/StringRef.h>
 #include <wpi/json.h>
@@ -48,11 +49,12 @@ class TelemetryManager {
    * and NT instance to collect data over.
    *
    * @param settings The settings for this instance of the telemetry manager.
+   * @param logger   The logger instance to use for log data.
    * @param instance The NT instance to collect data over. The default value of
    *                 this parameter should suffice in production; it should only
    *                 be changed during unit testing.
    */
-  explicit TelemetryManager(const Settings& settings,
+  explicit TelemetryManager(const Settings& settings, wpi::Logger& logger,
                             NT_Inst instance = nt::GetDefaultInstance());
 
   ~TelemetryManager();
@@ -147,6 +149,9 @@ class TelemetryManager {
 
   // Settings for this instance.
   const Settings& m_settings;
+
+  // Logger.
+  wpi::Logger& m_logger;
 
   // Test parameters for the currently running test.
   TestParameters m_params;

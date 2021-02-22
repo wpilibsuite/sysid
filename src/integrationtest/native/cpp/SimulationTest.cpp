@@ -8,6 +8,7 @@
 
 #include <ntcore_c.h>
 #include <ntcore_cpp.h>
+#include <wpi/Logger.h>
 #include <wpi/SmallString.h>
 #include <wpi/StringRef.h>
 #include <wpi/Twine.h>
@@ -53,6 +54,11 @@ class IntegrationTest : public ::testing::Test {
     m_mechanism = nt::GetEntry(m_nt, "/SmartDashboard/SysIdTest");
     m_kill = nt::GetEntry(m_nt, "/SmartDashboard/SysIdKill");
 
+    // Setup logger.
+    m_logger.SetLogger([](unsigned int level, const char* file,
+                          unsigned int line,
+                          const char* msg) { wpi::outs() << msg << "\n"; });
+
     // Start the robot program.
     wpi::SmallString<128> cmd;
     wpi::raw_svector_ostream os(cmd);
@@ -80,7 +86,8 @@ class IntegrationTest : public ::testing::Test {
 
   void SetUp(sysid::AnalysisType mechanism) {
     // Make a new manager
-    m_manager = std::make_unique<sysid::TelemetryManager>(m_settings, m_nt);
+    m_manager =
+        std::make_unique<sysid::TelemetryManager>(m_settings, m_logger, m_nt);
 
     // Change the default settings a little bit.
     m_settings.quasistaticRampRate = 0.75;
@@ -108,7 +115,7 @@ class IntegrationTest : public ::testing::Test {
         analyzerSettings.motionThreshold = 0.01;  // Reduce threshold for arm
                                                   // test
       }
-      sysid::AnalysisManager analyzer{path, analyzerSettings};
+      sysid::AnalysisManager analyzer{path, analyzerSettings, m_logger};
 
       auto output = analyzer.Calculate();
 
@@ -199,6 +206,8 @@ class IntegrationTest : public ::testing::Test {
 
   static std::unique_ptr<sysid::TelemetryManager> m_manager;
   static sysid::TelemetryManager::Settings m_settings;
+
+  static wpi::Logger m_logger;
 };
 
 NT_Inst IntegrationTest::m_nt;
@@ -209,6 +218,8 @@ NT_Entry IntegrationTest::m_kill;
 
 std::unique_ptr<sysid::TelemetryManager> IntegrationTest::m_manager;
 sysid::TelemetryManager::Settings IntegrationTest::m_settings;
+
+wpi::Logger IntegrationTest::m_logger;
 
 TEST_F(IntegrationTest, Drivetrain) {
   SetUp(sysid::analysis::kDrivetrain);

@@ -12,6 +12,7 @@
 
 #include <glass/View.h>
 #include <portable-file-dialogs.h>
+#include <wpi/Logger.h>
 #include <wpi/StringMap.h>
 
 #include "sysid/analysis/AnalysisManager.h"
@@ -33,8 +34,7 @@ class Analyzer : public glass::View {
   static constexpr const char* kUnits[] = {"Meters",  "Feet",      "Inches",
                                            "Radians", "Rotations", "Degrees"};
 
-  Analyzer();
-
+  explicit Analyzer(wpi::Logger& logger);
   void Display() override;
 
  private:
@@ -88,5 +88,8 @@ class Analyzer : public glass::View {
   // File manipulation
   std::unique_ptr<pfd::open_file> m_selector;
   std::string* m_location;
+
+  // Logger
+  wpi::Logger& m_logger;
 };
 }  // namespace sysid

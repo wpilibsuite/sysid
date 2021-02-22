@@ -10,6 +10,7 @@
 #include <glass/DataSource.h>
 #include <glass/View.h>
 #include <portable-file-dialogs.h>
+#include <wpi/Logger.h>
 
 #include "sysid/telemetry/TelemetryManager.h"
 
@@ -21,7 +22,7 @@ namespace sysid {
  */
 class Logger : public glass::View {
  public:
-  Logger();
+  explicit Logger(wpi::Logger& logger);
   void Display() override;
 
   static constexpr const char* kTypes[] = {"Drivetrain", "Arm", "Elevator",
@@ -34,13 +35,14 @@ class Logger : public glass::View {
   void SelectDataFolder();
   void CheckNTReset();
 
+  wpi::Logger& m_logger;
+
   TelemetryManager::Settings m_settings;
   int m_selectedType = 0;
-
   int m_selectedUnit = 0;
 
   std::unique_ptr<TelemetryManager> m_manager =
-      std::make_unique<TelemetryManager>(m_settings);
+      std::make_unique<TelemetryManager>(m_settings, m_logger);
 
   std::unique_ptr<pfd::select_folder> m_selector;
   std::string m_jsonLocation;
