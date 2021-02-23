@@ -300,7 +300,7 @@ void Analyzer::Display() {
       double threshold = m_settings.motionThreshold;
       if (ImGui::InputDouble("Velocity Threshold", &threshold, 0.0, 0.0,
                              "%.3f")) {
-        m_settings.motionThreshold = std::clamp(threshold, 0.0, 1.0);
+        m_settings.motionThreshold = std::max(0.0, threshold);
         PrepareData();
         Calculate();
       }
@@ -513,7 +513,7 @@ void Analyzer::Display() {
       if (m_settings.convertGainsToEncTicks) {
         ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
         if (ImGui::InputDouble("Gearing", &m_settings.gearing, 0.0, 0.0,
-                               "%.1f") &&
+                               "%.4f") &&
             m_settings.gearing > 0) {
           Calculate();
         }
