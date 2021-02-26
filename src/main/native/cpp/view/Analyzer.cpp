@@ -508,7 +508,10 @@ void Analyzer::Display() {
           "direct access to the output units (i.e. m/s for a drivetrain), they "
           "perform feedback on the encoder units directly. If you are using a "
           "PID Controller on the RoboRIO, you are probably performing feedback "
-          "on the output units directly.");
+          "on the output units directly.\n\nNote that if you have properly set "
+          "up position and velocity conversion factors with the SPARK MAX, you "
+          "can leave this box unchecked. The motor controller will perform "
+          "feedback on the output directly.");
 
       if (m_settings.convertGainsToEncTicks) {
         ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
