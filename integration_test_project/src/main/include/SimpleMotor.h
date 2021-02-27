@@ -16,12 +16,12 @@
 #include <wpi/math>
 
 #include "Constants.h"
-#include "SysIdMechanism.h"
+#include "interface/SysIdGeneralMechanism.h"
 
 /**
  * Represents a flywheel mechanism.
  */
-class SimpleMotor : public SysIdMechanism {
+class SimpleMotor : public SysIdGeneralMechanism {
  public:
   SimpleMotor() {
     // Set the distance per pulse for the flywheel encoders. We can simply use
@@ -32,13 +32,13 @@ class SimpleMotor : public SysIdMechanism {
     m_encoder.Reset();
   }
 
-  void SetPMotor(double value) override { m_group.Set(value); }
+  void SetMotor(double value) override { m_group.Set(value); }
 
-  double GetPEncDistance() override { return m_encoder.GetDistance(); }
-
-  double GetPEncVelocity() override { return m_encoder.GetRate(); }
+  double GetPosition() override { return m_encoder.GetDistance(); }
+  double GetVelocity() override { return m_encoder.GetRate(); }
 
   void SimulationPeriodic();
+
   void Periodic() {
     frc::SmartDashboard::PutNumber("Flywheel Speed", m_encoder.GetRate());
   }

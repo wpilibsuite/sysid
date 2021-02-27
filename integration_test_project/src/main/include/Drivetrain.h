@@ -25,12 +25,12 @@
 #include <wpi/math>
 
 #include "Constants.h"
-#include "SysIdMechanism.h"
+#include "interface/SysIdDrivetrain.h"
 
 /**
  * Represents a differential drive style drivetrain.
  */
-class Drivetrain : public SysIdMechanism {
+class Drivetrain : public SysIdDrivetrain {
  public:
   Drivetrain() {
     m_gyro.Reset();
@@ -63,19 +63,19 @@ class Drivetrain : public SysIdMechanism {
   void UpdateOdometry();
   void ResetOdometry(const frc::Pose2d& pose);
 
-  void SetPMotor(double value) override { m_leftGroup.Set(value); }
+  void SetLMotor(double value) override { m_leftGroup.Set(value); }
+  void SetRMotor(double value) override { m_rightGroup.Set(value); }
 
-  void SetSMotor(double value) override { m_rightGroup.Set(value); }
+  double GetLEncDistance() override { return m_leftEncoder.GetDistance(); }
+  double GetLEncVelocity() override { return m_leftEncoder.GetRate(); }
 
-  double GetPEncDistance() override { return m_leftEncoder.GetDistance(); }
-
-  double GetPEncVelocity() override { return m_leftEncoder.GetRate(); }
-
-  double GetSEncDistance() override { return m_rightEncoder.GetDistance(); }
-
-  double GetSEncVelocity() override { return m_rightEncoder.GetRate(); }
+  double GetREncDistance() override { return m_rightEncoder.GetDistance(); }
+  double GetREncVelocity() override { return m_rightEncoder.GetRate(); }
 
   double GetGyroAngle() override { return GetGyro().to<double>(); }
+  double GetGyroAngularRate() override {
+    return -m_gyro.GetRate() * wpi::math::pi / 180;
+  }
 
   double GetSpeed() { return (m_leftGroup.Get() + m_rightGroup.Get()) / 2; }
 
@@ -125,4 +125,6 @@ class Drivetrain : public SysIdMechanism {
   frc::sim::DifferentialDrivetrainSim m_drivetrainSimulator{
       m_drivetrainSystem, Constants::Drivetrain::kTrackWidth,
       frc::DCMotor::CIM(2), 8, 2_in};
+
+  frc::Rotation2d m_prevAngle = 0_rad;
 };

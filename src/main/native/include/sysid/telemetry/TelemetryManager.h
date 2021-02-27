@@ -140,7 +140,7 @@ class TelemetryManager {
     double speed = 0.0;
 
     std::string raw;
-    std::vector<std::array<double, 10>> data{};
+    std::vector<std::vector<double>> data{};
 
     TestParameters() = default;
     TestParameters(bool fast, bool forward, bool rotate, State state)
@@ -172,6 +172,7 @@ class TelemetryManager {
   NT_Entry m_autospeed;
   NT_Entry m_rotate;
   NT_Entry m_telemetry;
+  NT_Entry m_mechanism;
   NT_Entry m_fieldInfo;
 };
 }  // namespace sysid

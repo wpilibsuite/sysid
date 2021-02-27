@@ -18,6 +18,7 @@
 #include <wpi/raw_ostream.h>
 
 #include "sysid/Util.h"
+#include "sysid/analysis/AnalysisType.h"
 
 using namespace sysid;
 
@@ -157,7 +158,10 @@ void Analyzer::Display() {
       } catch (const std::exception& e) {
         // If we run into an error here, let's just ignore it and make the user
         // explicitly select their file.
-        *m_location = "";
+        ResetManagerState();
+        WPI_ERROR(
+            m_logger,
+            "An error occurred when attempting to load the previous JSON.");
         static_cast<void>(e);
       }
     } else {
@@ -193,6 +197,15 @@ void Analyzer::Display() {
         "Units Per Rotation: %.4f\n"
         "Type:               %s",
         m_unit.c_str(), m_factor, m_type.name);
+
+    if (m_type == analysis::kDrivetrainAngular) {
+      ImGui::SameLine();
+      sysid::CreateTooltip(
+          "Here, the units and units per rotation represent what the wheel "
+          "positions and velocities were captured in. The track width value "
+          "will reflect the unit selected here. However, the Kv and Ka will "
+          "always be in Vs/rad and Vs^2 / rad respectively.");
+    }
 
     if (ImGui::Button("Override Units")) {
       ImGui::OpenPopup("Override Units");
@@ -595,6 +608,7 @@ void Analyzer::Display() {
     SelectFile();
   } catch (const std::exception& e) {
     m_exception = e.what();
+    ResetManagerState();
     ImGui::OpenPopup("Exception Caught!");
   }
 
@@ -629,6 +643,7 @@ void Analyzer::PrepareData() {
     m_manager->PrepareData();
   } catch (const std::exception& e) {
     m_exception = e.what();
+    ResetManagerState();
     ImGui::OpenPopup("Exception Caught!");
   }
 }
@@ -645,6 +660,12 @@ void Analyzer::Calculate() {
     m_factor = m_manager->GetFactor();
   } catch (const std::exception& e) {
     m_exception = e.what();
+    ResetManagerState();
     ImGui::OpenPopup("Exception Caught!");
   }
+}
+
+void Analyzer::ResetManagerState() {
+  m_manager.reset();
+  *m_location = "";
 }

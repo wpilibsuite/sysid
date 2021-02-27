@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string_view>
 
 namespace wpi {
 class StringRef;
@@ -12,22 +13,21 @@ class StringRef;
 
 namespace sysid {
 
-enum class Mechanism { kDrivetrain, kElevator, kArm, kSimple };
-
 struct AnalysisType {
-  /** The mechanism for which analysis is being performed. */
-  Mechanism mechanism;
-
   /** The number of independent variables for feedforward analysis */
   size_t independentVariables;
+
+  /** The number of fields in the raw data within the mechanism's JSON */
+  size_t rawDataSize;
 
   /** Display name for the analysis type. */
   const char* name;
 
   /** Compares equality of two AnalysisType structs. */
   constexpr bool operator==(const AnalysisType& rhs) const {
-    return mechanism == rhs.mechanism &&
-           independentVariables == rhs.independentVariables;
+    return std::string_view(name) == rhs.name &&
+           independentVariables == rhs.independentVariables &&
+           rawDataSize == rhs.rawDataSize;
   }
 
   /** Compares inequality of two AnalysisType structs. */
@@ -37,10 +37,11 @@ struct AnalysisType {
 };
 
 namespace analysis {
-constexpr AnalysisType kDrivetrain{Mechanism::kDrivetrain, 3, "Drivetrain"};
-constexpr AnalysisType kElevator{Mechanism::kElevator, 4, "Elevator"};
-constexpr AnalysisType kArm{Mechanism::kArm, 4, "Arm"};
-constexpr AnalysisType kSimple{Mechanism::kSimple, 3, "Simple"};
+constexpr AnalysisType kDrivetrain{3, 9, "Drivetrain"};
+constexpr AnalysisType kDrivetrainAngular{3, 9, "Drivetrain (Angular)"};
+constexpr AnalysisType kElevator{4, 4, "Elevator"};
+constexpr AnalysisType kArm{4, 4, "Arm"};
+constexpr AnalysisType kSimple{3, 4, "Simple"};
 
 AnalysisType FromName(wpi::StringRef name);
 }  // namespace analysis

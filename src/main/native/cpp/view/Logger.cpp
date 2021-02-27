@@ -67,7 +67,7 @@ void Logger::Display() {
   ImGui::Text("Project Parameters");
 
   // Add a dropdown for mechanism type.
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 17);
 
   if (ImGui::Combo("Mechanism", &m_selectedType, kTypes,
                    IM_ARRAYSIZE(kTypes))) {
@@ -75,19 +75,17 @@ void Logger::Display() {
   }
 
   // Add Dropdown for Units
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 17);
   if (ImGui::Combo("Unit Type", &m_selectedUnit, kUnits,
                    IM_ARRAYSIZE(kUnits))) {
     m_settings.units = kUnits[m_selectedUnit];
   }
 
   sysid::CreateTooltip(
-      "This is the type of units that your robot will be using."
-      "For example, if you want your flywheel gains in terms of radians, then "
-      "use the "
-      "radians unit."
-      "On the other hand, if your drivetrain will use gains in meters, choose "
-      "meters.");
+      "This is the type of units that your gains will be in. For example, if "
+      "you want your flywheel gains in terms of radians, then use the radians "
+      "unit. On the other hand, if your drivetrain will use gains in meters, "
+      "choose meters.");
 
   // Add Units Per Rotations entry
 
@@ -103,16 +101,15 @@ void Logger::Display() {
     m_settings.unitsPerRotation = 1.0;
   }
 
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 17);
   ImGui::InputDouble("Units Per Rotation", &m_settings.unitsPerRotation, 0.0f,
                      0.0f, "%.4f",
                      m_isRotationalUnits ? ImGuiInputTextFlags_ReadOnly
                                          : ImGuiInputTextFlags_None);
   sysid::CreateTooltip(
       "The logger assumes that the code will be sending recorded rotations "
-      "over Network Tables."
-      "This value will then be multiplied by the units per rotation to get the "
-      "measurement in the units you specified.");
+      "over NetworkTables. This value will then be multiplied by the units per "
+      "rotation to get the measurement in the units you specified.");
   // Create a section for voltage parameters.
   ImGui::Separator();
   ImGui::Spacing();
@@ -181,9 +178,6 @@ void Logger::Display() {
   CreateTest("Quasistatic Backward", "slow-backward");
   CreateTest("Dynamic Forward", "fast-forward");
   CreateTest("Dynamic Backward", "fast-backward");
-  if (m_settings.mechanism == analysis::kDrivetrain) {
-    CreateTest("Track Width", "track-width");
-  }
 
   m_manager->RegisterDisplayCallback(
       [this](const auto& str) { m_popupText = str; });
