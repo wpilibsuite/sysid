@@ -133,7 +133,7 @@ class Robot : public frc::TimedRobot {
 #endif
 
     if (frc::SmartDashboard::GetBoolean("SysIdKill", false)) {
-      std::exit(0);
+      EndCompetition();
     }
   }
 
