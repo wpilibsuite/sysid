@@ -5,6 +5,7 @@
 #include "sysid/view/Logger.h"
 
 #include <exception>
+#include <thread>
 
 #include <glass/Context.h>
 #include <imgui.h>
@@ -243,13 +244,16 @@ void Logger::CheckNTReset() {
   if (m_ntReset) {
     // Reset the flag and stop the currently running client.
     m_ntReset = false;
-    nt::StopClient(nt::GetDefaultInstance());
 
     // Start a new client with localhost (if team == 0) or the team number.
-    if (*m_team == 0) {
-      nt::StartClient(nt::GetDefaultInstance(), "localhost", NT_DEFAULT_PORT);
-    } else {
-      nt::StartClientTeam(nt::GetDefaultInstance(), *m_team, NT_DEFAULT_PORT);
-    }
+    std::thread thr{[team = *m_team] {
+      nt::StopClient(nt::GetDefaultInstance());
+      if (team == 0) {
+        nt::StartClient(nt::GetDefaultInstance(), "localhost", NT_DEFAULT_PORT);
+      } else {
+        nt::StartClientTeam(nt::GetDefaultInstance(), team, NT_DEFAULT_PORT);
+      }
+    }};
+    thr.detach();
   }
 }
