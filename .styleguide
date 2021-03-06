@@ -10,8 +10,8 @@ cppSrcFileInclude {
 
 generatedFileExclude {
   src/main/native/resources
-  src/main/native/win/glass.ico
-  src/main/native/mac/glass.icns
+  src/main/native/win/sysid.ico
+  src/main/native/mac/sysid.icns
 }
 
 repoRootNameOverride {
