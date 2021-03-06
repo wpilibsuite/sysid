@@ -1,3 +1,5 @@
+import org.gradle.internal.os.OperatingSystem
+
 plugins {
   id "cpp"
   id "google-test-test-suite"
@@ -6,6 +8,11 @@ plugins {
   id "edu.wpi.first.NativeUtils" version "2021.1.1"
   id "edu.wpi.first.wpilib.versioning.WPILibVersioningPlugin" version "4.1.0"
   id "edu.wpi.first.wpilib.repositories.WPILibRepositoriesPlugin" version "2020.2"
+}
+
+// Support RC files on Windows.
+if (OperatingSystem.current().isWindows()) {
+  apply plugin: 'windows-resources'
 }
 
 // Configure versioning for this project.
@@ -67,7 +74,7 @@ ext.addTaskToCopyAllOutputs = { task ->
 
 // Generate the version number on each build.
 def wpilibVersionFileInput = file("src/generate/WPILibVersion.cpp.in")
-def wpilibVersionFileOutput = file("$buildDir/generated/cpp/WPILibVersion.cpp")
+def wpilibVersionFileOutput = file("$buildDir/generated/main/cpp/WPILibVersion.cpp")
 
 task generateCppVersion() {
   description = 'Generates the wpilib version class'
@@ -108,16 +115,30 @@ tasks.withType(CppCompile) {
   dependsOn generateCppVersion
 }
 
+// Generate resources.
+apply from: "config/resources.gradle"
+def generateTask = createGenerateResourcesTask('main', 'SYSID', 'sysid', project)
+
+tasks.withType(CppCompile) {
+  dependsOn generateTask
+}
+
 // Configure application.
 model {
   components {
     sysid(NativeExecutableSpec) {
       sources.cpp {
         source {
-          srcDirs "src/main/native/cpp", "$buildDir/generated/cpp"
+          srcDirs "src/main/native/cpp", "$buildDir/generated/main/cpp"
           include "**/*.cpp"
         }
         exportedHeaders.srcDirs "src/main/native/include"
+      }
+      if (OperatingSystem.current().isWindows()) {
+        sources.rc {
+          srcDirs "src/main/native/win"
+          include "*.rc"
+        }
       }
     }
   }
