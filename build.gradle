@@ -136,8 +136,10 @@ model {
       }
       if (OperatingSystem.current().isWindows()) {
         sources.rc {
-          srcDirs "src/main/native/win"
-          include "*.rc"
+          source {
+            srcDirs "src/main/native/win"
+            include "*.rc"
+          }
         }
       }
     }
