@@ -10,6 +10,7 @@ model {
       if (binary.buildable && binary.name.contains("release")) {
         // Get path to exe.
         def exe = binary.executable.getFile()
+        def icon = file("$project.projectDir/src/main/native/mac/sysid.icns")
 
         // Create an application bundle on macOS and set that as the exe.
         def bundle = project.tasks.create("bundle", Copy) {
@@ -17,6 +18,7 @@ model {
           from(file("$project.projectDir/Info.plist"))
           into(file("$project.buildDir/outputs/bundles/SysId.app/Contents"))
           into("MacOS") { with copySpec { from binary.executable.file } }
+          into("Resources") { with copySpec { from icon } }
         }
         if (binary.getTargetPlatform().getOperatingSystem().isMacOsX()) {
           exe = file("$project.buildDir/outputs/bundles/")

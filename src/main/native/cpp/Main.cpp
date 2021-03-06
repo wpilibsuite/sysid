@@ -12,6 +12,7 @@
 #include <glass/other/Log.h>
 #include <wpi/Logger.h>
 #include <wpi/Path.h>
+#include <wpi/StringRef.h>
 #include <wpigui.h>
 
 #include "sysid/view/Analyzer.h"
@@ -31,6 +32,16 @@ wpi::Logger gLogger;
 
 const char* GetWPILibVersion();
 
+namespace sysid {
+wpi::StringRef GetResource_sysid_16_png();
+wpi::StringRef GetResource_sysid_32_png();
+wpi::StringRef GetResource_sysid_48_png();
+wpi::StringRef GetResource_sysid_64_png();
+wpi::StringRef GetResource_sysid_128_png();
+wpi::StringRef GetResource_sysid_256_png();
+wpi::StringRef GetResource_sysid_512_png();
+}  // namespace sysid
+
 #ifdef _WIN32
 int __stdcall WinMain(void* hInstance, void* hPrevInstance, char* pCmdLine,
                       int nCmdShow) {
@@ -40,6 +51,15 @@ int main() {
   // Create the wpigui (along with Dear ImGui) and Glass contexts.
   gui::CreateContext();
   glass::CreateContext();
+
+  // Add icons
+  gui::AddIcon(sysid::GetResource_sysid_16_png());
+  gui::AddIcon(sysid::GetResource_sysid_32_png());
+  gui::AddIcon(sysid::GetResource_sysid_48_png());
+  gui::AddIcon(sysid::GetResource_sysid_64_png());
+  gui::AddIcon(sysid::GetResource_sysid_128_png());
+  gui::AddIcon(sysid::GetResource_sysid_256_png());
+  gui::AddIcon(sysid::GetResource_sysid_512_png());
 
   // Add messages from the global sysid logger into the Log window.
   gLogger.SetLogger([](unsigned int level, const char* file, unsigned int line,
