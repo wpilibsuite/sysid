@@ -25,6 +25,7 @@ includeOtherLibs {
   ^Eigen
   ^frc
   ^imgui
+  ^implot\.h$
   ^ntcore
   ^portable-file-dialogs
   ^units
