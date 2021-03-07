@@ -9,6 +9,7 @@
 
 #include <glass/DataSource.h>
 #include <glass/View.h>
+#include <glass/networktables/NetworkTablesSettings.h>
 #include <portable-file-dialogs.h>
 #include <wpi/Logger.h>
 
@@ -33,7 +34,6 @@ class Logger : public glass::View {
 
  private:
   void SelectDataFolder();
-  void CheckNTReset();
 
   wpi::Logger& m_logger;
 
@@ -47,8 +47,8 @@ class Logger : public glass::View {
   std::unique_ptr<pfd::select_folder> m_selector;
   std::string m_jsonLocation;
 
+  glass::NetworkTablesSettings m_ntSettings;
   bool m_ntConnected = false;
-  bool m_ntReset = true;
 
   bool m_isRotationalUnits = false;
 
