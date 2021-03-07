@@ -44,16 +44,11 @@ void Logger::Display() {
   float width = ImGui::GetContentRegionAvail().x;
 
   // Add team number input and apply button for NT connection.
-  ImGui::SetNextItemWidth(width / 5);
-  ImGui::InputInt("Team #", m_team, 0);
-
-  if (ImGui::Button("Apply")) {
-    m_ntReset = true;
-  }
+  m_ntSettings.Display();
 
   // Reset and clear the internal manager state.
   ImGui::SameLine();
-  if (ImGui::Button("Reset")) {
+  if (ImGui::Button("Reset Telemetry")) {
     m_settings = TelemetryManager::Settings{};
     m_manager = std::make_unique<TelemetryManager>(m_settings, m_logger);
     m_selectedType = 0;
@@ -227,7 +222,7 @@ void Logger::Display() {
 
   // Run periodic methods.
   SelectDataFolder();
-  CheckNTReset();
+  m_ntSettings.Update();
   m_manager->Update();
 }
 
@@ -236,20 +231,5 @@ void Logger::SelectDataFolder() {
   if (m_selector && m_selector->ready()) {
     m_jsonLocation = m_selector->result();
     m_selector.reset();
-  }
-}
-
-void Logger::CheckNTReset() {
-  if (m_ntReset) {
-    // Reset the flag and stop the currently running client.
-    m_ntReset = false;
-    nt::StopClient(nt::GetDefaultInstance());
-
-    // Start a new client with localhost (if team == 0) or the team number.
-    if (*m_team == 0) {
-      nt::StartClient(nt::GetDefaultInstance(), "localhost", NT_DEFAULT_PORT);
-    } else {
-      nt::StartClientTeam(nt::GetDefaultInstance(), *m_team, NT_DEFAULT_PORT);
-    }
   }
 }
