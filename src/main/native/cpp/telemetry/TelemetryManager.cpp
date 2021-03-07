@@ -35,11 +35,14 @@ TelemetryManager::TelemetryManager(const Settings& settings,
       m_autospeed(nt::GetEntry(m_inst, "/SmartDashboard/SysIdAutoSpeed")),
       m_rotate(nt::GetEntry(m_inst, "/SmartDashboard/SysIdRotate")),
       m_telemetry(nt::GetEntry(m_inst, "/SmartDashboard/SysIdTelemetry")),
+      m_telemetryOld(nt::GetEntry(m_inst, "/robot/telemetry")),
       m_mechanism(nt::GetEntry(m_inst, "/SmartDashboard/SysIdTest")),
       m_fieldInfo(nt::GetEntry(m_inst, "/FMSInfo/FMSControlData")) {
   // Add listeners for our readable entries.
   nt::AddPolledEntryListener(m_poller, m_telemetry, kNTFlags);
   nt::AddPolledEntryListener(m_poller, m_fieldInfo, kNTFlags);
+  nt::AddPolledEntryListener(m_poller, m_telemetryOld,
+                             NT_NOTIFY_NEW | NT_NOTIFY_UPDATE);
 }
 
 TelemetryManager::~TelemetryManager() {
@@ -136,6 +139,16 @@ void TelemetryManager::Update() {
       if (!value.empty()) {
         m_params.raw = std::move(value);
         nt::SetEntryValue(m_telemetry, nt::Value::MakeString(""));
+      }
+    }
+    // Check if we got frc-characterization data.
+    if (event.entry == m_telemetryOld) {
+      for (auto&& func : m_callbacks) {
+        func(
+            "Detected data over frc-characterization NT entry.\nPlease ensure "
+            "that you are sending data over the sysid NT entries as described "
+            "in the documentation.");
+        EndTest();
       }
     }
   }

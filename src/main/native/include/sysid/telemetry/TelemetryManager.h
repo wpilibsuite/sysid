@@ -172,6 +172,7 @@ class TelemetryManager {
   NT_Entry m_autospeed;
   NT_Entry m_rotate;
   NT_Entry m_telemetry;
+  NT_Entry m_telemetryOld;
   NT_Entry m_mechanism;
   NT_Entry m_fieldInfo;
 };
