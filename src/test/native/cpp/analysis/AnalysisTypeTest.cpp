@@ -10,6 +10,8 @@
 TEST(AnalysisType, FromName) {
   EXPECT_EQ(sysid::analysis::kDrivetrain,
             sysid::analysis::FromName("Drivetrain"));
+  EXPECT_EQ(sysid::analysis::kDrivetrainAngular,
+            sysid::analysis::FromName("Drivetrain (Angular)"));
   EXPECT_EQ(sysid::analysis::kElevator, sysid::analysis::FromName("Elevator"));
   EXPECT_EQ(sysid::analysis::kArm, sysid::analysis::FromName("Arm"));
   EXPECT_EQ(sysid::analysis::kSimple, sysid::analysis::FromName("Simple"));

@@ -32,10 +32,10 @@ std::tuple<std::vector<double>, double> sysid::CalculateFeedforwardGains(
       olsData.push_back(pt.acceleration);
 
       // Add test-specific variables.
-      if (type.mechanism == Mechanism::kElevator) {
+      if (wpi::StringRef(type.name) == "Elevator") {
         // Add the gravity term (for Kg)
         olsData.push_back(1.0);
-      } else if (type.mechanism == Mechanism::kArm) {
+      } else if (wpi::StringRef(type.name) == "Arm") {
         // Add the cosine term (for Kcos)
         olsData.push_back(pt.cos);
       }

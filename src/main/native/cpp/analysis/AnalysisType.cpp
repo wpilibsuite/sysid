@@ -12,6 +12,9 @@ AnalysisType sysid::analysis::FromName(wpi::StringRef name) {
   if (name == "Drivetrain") {
     return sysid::analysis::kDrivetrain;
   }
+  if (name == "Drivetrain (Angular)") {
+    return sysid::analysis::kDrivetrainAngular;
+  }
   if (name == "Elevator") {
     return sysid::analysis::kElevator;
   }

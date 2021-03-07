@@ -35,9 +35,9 @@ TelemetryManager::TelemetryManager(const Settings& settings,
       m_autospeed(nt::GetEntry(m_inst, "/SmartDashboard/SysIdAutoSpeed")),
       m_rotate(nt::GetEntry(m_inst, "/SmartDashboard/SysIdRotate")),
       m_telemetry(nt::GetEntry(m_inst, "/SmartDashboard/SysIdTelemetry")),
+      m_mechanism(nt::GetEntry(m_inst, "/SmartDashboard/SysIdTest")),
       m_fieldInfo(nt::GetEntry(m_inst, "/FMSInfo/FMSControlData")) {
   // Add listeners for our readable entries.
-
   nt::AddPolledEntryListener(m_poller, m_telemetry, kNTFlags);
   nt::AddPolledEntryListener(m_poller, m_fieldInfo, kNTFlags);
 }
@@ -48,12 +48,18 @@ TelemetryManager::~TelemetryManager() {
 
 void TelemetryManager::BeginTest(wpi::StringRef name) {
   // Create a new test params instance for this test.
-  m_params = TestParameters{name.startswith("fast"), name.endswith("forward"),
-                            name.startswith("track"), State::WaitingForEnable};
+  m_params =
+      TestParameters{name.startswith("fast"), name.endswith("forward"),
+                     m_settings.mechanism == analysis::kDrivetrainAngular,
+                     State::WaitingForEnable};
 
   // Add this test to the list of running tests and set the running flag.
   m_tests.push_back(name);
   m_isRunningTest = true;
+
+  // Set the current mechanism in NT.
+  nt::SetEntryValue(m_mechanism,
+                    nt::Value::MakeString(m_settings.mechanism.name));
 
   // Display the warning message.
   for (auto&& func : m_callbacks) {
@@ -66,6 +72,8 @@ void TelemetryManager::BeginTest(wpi::StringRef name) {
         "responsibility to "
         "ensure it does not hit anything!");
   }
+
+  WPI_DEBUG(m_logger, "Started " << m_tests.back() << "test");
 }
 
 void TelemetryManager::EndTest() {
@@ -81,21 +89,22 @@ void TelemetryManager::EndTest() {
   // Call the cancellation callbacks.
   for (auto&& func : m_callbacks) {
     if (!m_params.data.empty()) {
-      double p = (m_params.data.back()[5] - m_params.data.front()[5]) *
-                 m_settings.unitsPerRotation;
-      double s = (m_params.data.back()[6] - m_params.data.front()[6]) *
-                 m_settings.unitsPerRotation;
-      double g = m_params.data.back()[9] - m_params.data.front()[9];
-
       std::stringstream stream;
       std::string units = wpi::StringRef(m_settings.units).lower();
 
-      if (m_settings.mechanism == analysis::kDrivetrain) {
+      if (wpi::StringRef(m_settings.mechanism.name).startswith("Drivetrain")) {
+        double p = (m_params.data.back()[3] - m_params.data.front()[3]) *
+                   m_settings.unitsPerRotation;
+        double s = (m_params.data.back()[4] - m_params.data.front()[4]) *
+                   m_settings.unitsPerRotation;
+        double g = m_params.data.back()[7] - m_params.data.front()[7];
         stream << "The left and right encoders traveled " << p << " " << units
                << " and " << s << " " << units
                << " respectively.\nThe gyro angle delta was "
-               << g * 2 * wpi::math::pi << " degrees.";
+               << g * 180.0 / wpi::math::pi << " degrees.";
       } else {
+        double p = (m_params.data.back()[2] - m_params.data.front()[2]) *
+                   m_settings.unitsPerRotation;
         stream << "The encoder reported traveling " << p << " " << units << ".";
       }
       func(stream.str());
@@ -126,6 +135,7 @@ void TelemetryManager::Update() {
       std::string value = event.value->GetString();
       if (!value.empty()) {
         m_params.raw = std::move(value);
+        nt::SetEntryValue(m_telemetry, nt::Value::MakeString(""));
       }
     }
   }
@@ -135,6 +145,7 @@ void TelemetryManager::Update() {
     if (m_params.enabled) {
       m_params.enableStart = wpi::Now() * 1E-6;
       m_params.state = State::RunningTest;
+      WPI_DEBUG(m_logger, "Transitioned to running test state.");
     }
   }
 
@@ -186,9 +197,12 @@ void TelemetryManager::Update() {
       }
 
       // Add the values to our result vector.
-      for (size_t i = 0; i < values.size(); i += 10) {
-        std::array<double, 10> d;
-        std::copy_n(std::make_move_iterator(values.begin() + i), 10, d.begin());
+      for (size_t i = 0; i < values.size() - m_settings.mechanism.rawDataSize;
+           i += m_settings.mechanism.rawDataSize) {
+        std::vector<double> d(m_settings.mechanism.rawDataSize);
+
+        std::copy_n(std::make_move_iterator(values.begin() + i),
+                    m_settings.mechanism.rawDataSize, d.begin());
         m_params.data.push_back(std::move(d));
       }
 
@@ -209,10 +223,10 @@ void TelemetryManager::Update() {
 }
 
 std::string TelemetryManager::SaveJSON(wpi::StringRef location) {
-  // Use the same data for now while things are sorted out.
   m_data["test"] = m_settings.mechanism.name;
   m_data["units"] = m_settings.units;
   m_data["unitsPerRotation"] = m_settings.unitsPerRotation;
+  m_data["sysid"] = true;
 
   // Get the current date and time. This will be included in the file name.
   std::time_t t = std::time(nullptr);

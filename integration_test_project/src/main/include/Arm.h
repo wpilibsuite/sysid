@@ -16,12 +16,12 @@
 #include <wpi/math>
 
 #include "Constants.h"
-#include "SysIdMechanism.h"
+#include "interface/SysIdGeneralMechanism.h"
 
 /**
  * Represents an arm mechanism.
  */
-class Arm : public SysIdMechanism {
+class Arm : public SysIdGeneralMechanism {
  public:
   Arm() {
     // Set the distance per pulse for the flywheel encoders. We can simply use
@@ -32,11 +32,10 @@ class Arm : public SysIdMechanism {
     m_encoder.Reset();
   }
 
-  void SetPMotor(double value) override { m_group.Set(value); }
+  void SetMotor(double value) override { m_group.Set(value); }
 
-  double GetPEncDistance() override { return m_encoder.GetDistance(); }
-
-  double GetPEncVelocity() override { return m_encoder.GetRate(); }
+  double GetPosition() override { return m_encoder.GetDistance(); }
+  double GetVelocity() override { return m_encoder.GetRate(); }
 
   void SimulationPeriodic();
 

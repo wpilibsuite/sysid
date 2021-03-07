@@ -45,13 +45,11 @@ constexpr double kG = .002;
 class IntegrationTest : public ::testing::Test {
  public:
   static constexpr const char* kTests[] = {"slow-forward", "slow-backward",
-                                           "fast-forward", "fast-backward",
-                                           "track-width"};
+                                           "fast-forward", "fast-backward"};
 
   static void SetUpTestSuite() {
     m_nt = nt::GetDefaultInstance();
     m_enable = nt::GetEntry(m_nt, "/SmartDashboard/SysIdRun");
-    m_mechanism = nt::GetEntry(m_nt, "/SmartDashboard/SysIdTest");
     m_kill = nt::GetEntry(m_nt, "/SmartDashboard/SysIdKill");
 
     // Setup logger.
@@ -98,12 +96,6 @@ class IntegrationTest : public ::testing::Test {
     } else {
       m_settings.units = "Meters";
     }
-
-    nt::SetEntryValue(m_mechanism,
-                      nt::Value::MakeString(m_settings.mechanism.name));
-
-    nt::Flush(m_nt);
-    std::this_thread::sleep_for(1s);
   }
 
   void TearDown() override {
@@ -122,8 +114,8 @@ class IntegrationTest : public ::testing::Test {
       auto ff = std::get<0>(output.ff);
       auto trackWidth = output.trackWidth;
 
-      EXPECT_NEAR(Kv, ff[1], 0.10);
-      EXPECT_NEAR(Ka, ff[2], 0.10);
+      EXPECT_NEAR(Kv, ff[1], 0.30);
+      EXPECT_NEAR(Ka, ff[2], 0.15);
 
       if (m_settings.mechanism == sysid::analysis::kElevator) {
         EXPECT_NEAR(kG, ff[3], 0.2);
@@ -164,23 +156,19 @@ class IntegrationTest : public ::testing::Test {
     nt::StopClient(m_nt);
   }
 
-  void Run(int tests = 4) {
-    for (int i = 0; i < tests; i++) {
+  void Run() {
+    for (int i = 0; i < 4; i++) {
       auto test = kTests[i];
+      m_manager->BeginTest(test);
+
       // Enable the robot.
       nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(true));
       wpi::outs() << "Running: " << test << "\n";
       wpi::outs().flush();
 
-      // Wait 5 ms and flush.
-      std::this_thread::sleep_for(5ms);
-      nt::Flush(m_nt);
-
-      // Start the test and let it run for 2 or 4 seconds depending on the test.
-      m_manager->BeginTest(test);
+      // Start the test and let it run for 3 seconds.
       auto start = wpi::Now() * 1E-6;
-      while (wpi::Now() * 1E-6 - start <
-             (wpi::StringRef(test).startswith("fast") ? 2 : 4)) {
+      while (wpi::Now() * 1E-6 - start < 3) {
         m_manager->Update();
         std::this_thread::sleep_for(0.005s);
         nt::Flush(m_nt);
@@ -201,7 +189,6 @@ class IntegrationTest : public ::testing::Test {
   static NT_Inst m_nt;
 
   static NT_Entry m_enable;
-  static NT_Entry m_mechanism;
   static NT_Entry m_kill;
 
   static std::unique_ptr<sysid::TelemetryManager> m_manager;
@@ -213,7 +200,6 @@ class IntegrationTest : public ::testing::Test {
 NT_Inst IntegrationTest::m_nt;
 
 NT_Entry IntegrationTest::m_enable;
-NT_Entry IntegrationTest::m_mechanism;
 NT_Entry IntegrationTest::m_kill;
 
 std::unique_ptr<sysid::TelemetryManager> IntegrationTest::m_manager;
@@ -223,7 +209,7 @@ wpi::Logger IntegrationTest::m_logger;
 
 TEST_F(IntegrationTest, Drivetrain) {
   SetUp(sysid::analysis::kDrivetrain);
-  Run(5);
+  Run();
 }
 
 TEST_F(IntegrationTest, Flywheel) {

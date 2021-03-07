@@ -16,6 +16,7 @@
 #include <wpigui.h>
 
 #include "sysid/view/Analyzer.h"
+#include "sysid/view/JSONConverter.h"
 #include "sysid/view/Logger.h"
 
 namespace gui = wpi::gui;
@@ -24,6 +25,7 @@ static std::unique_ptr<glass::WindowManager> gWindowManager;
 
 glass::Window* gLoggerWindow;
 glass::Window* gAnalyzerWindow;
+glass::Window* gJSONConverterWindow;
 glass::Window* gGeneratorWindow;
 glass::Window* gProgramLogWindow;
 
@@ -90,6 +92,9 @@ int main() {
   gAnalyzerWindow = gWindowManager->AddWindow(
       "Analyzer", std::make_unique<sysid::Analyzer>(gLogger));
 
+  gJSONConverterWindow = gWindowManager->AddWindow(
+      "JSON Converter", std::make_unique<sysid::JSONConverter>(gLogger));
+
   gProgramLogWindow = gWindowManager->AddWindow(
       "Program Log", std::make_unique<glass::LogView>(&gLog));
 
@@ -99,6 +104,9 @@ int main() {
 
   gAnalyzerWindow->SetDefaultPos(550, 40);
   gAnalyzerWindow->SetDefaultSize(670, 530);
+
+  gJSONConverterWindow->SetDefaultPos(35, 485);
+  gJSONConverterWindow->SetDefaultSize(500, 80);
 
   gProgramLogWindow->SetDefaultPos(40, 580);
   gProgramLogWindow->SetDefaultSize(1180, 125);

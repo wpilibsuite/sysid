@@ -41,6 +41,7 @@ class Analyzer : public glass::View {
   void SelectFile();
   void PrepareData();
   void Calculate();
+  void ResetManagerState();
 
   struct PlotData {
     const char* name;

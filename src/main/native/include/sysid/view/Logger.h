@@ -26,8 +26,8 @@ class Logger : public glass::View {
   explicit Logger(wpi::Logger& logger);
   void Display() override;
 
-  static constexpr const char* kTypes[] = {"Drivetrain", "Arm", "Elevator",
-                                           "Simple"};
+  static constexpr const char* kTypes[] = {"Drivetrain", "Drivetrain (Angular)",
+                                           "Arm", "Elevator", "Simple"};
 
   static constexpr const char* kUnits[] = {"Meters",  "Feet",      "Inches",
                                            "Radians", "Rotations", "Degrees"};

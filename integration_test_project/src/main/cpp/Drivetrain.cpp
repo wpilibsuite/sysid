@@ -55,8 +55,13 @@ void Drivetrain::SimulationPeriodic() {
       m_drivetrainSimulator.GetRightPosition().to<double>());
   m_rightEncoderSim.SetRate(
       m_drivetrainSimulator.GetRightVelocity().to<double>());
-  m_gyroSim.SetAngle(
-      -m_drivetrainSimulator.GetHeading().Degrees().to<double>());
+
+  frc::Rotation2d angle = m_drivetrainSimulator.GetHeading();
+
+  m_gyroSim.SetAngle(-angle.Degrees().to<double>());
+  m_gyroSim.SetRate((m_prevAngle - angle).Degrees().to<double>() / 0.005);
+
+  m_prevAngle = angle;
 }
 
 void Drivetrain::Periodic() {

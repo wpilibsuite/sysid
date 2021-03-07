@@ -18,6 +18,7 @@
 #include <wpi/raw_ostream.h>
 
 #include "sysid/analysis/AnalysisType.h"
+#include "sysid/analysis/JSONConverter.h"
 #include "sysid/analysis/TrackWidthAnalysis.h"
 
 using namespace sysid;
@@ -26,7 +27,7 @@ using namespace sysid;
  * Concatenates a list of vectors to the end of a vector. The contents of the
  * source vectors are copied (not moved) into the new vector.
  */
-std::vector<PreparedData> Concatenate(
+static std::vector<PreparedData> Concatenate(
     std::vector<PreparedData> dest,
     std::initializer_list<const std::vector<PreparedData>*> srcs) {
   // Copy the contents of the source vectors into the dest vector.
@@ -38,254 +39,76 @@ std::vector<PreparedData> Concatenate(
   return dest;
 }
 
-AnalysisManager::AnalysisManager(wpi::StringRef path, const Settings& settings,
-                                 wpi::Logger& logger)
-    : m_settings(settings), m_logger(logger) {
-  // Read JSON from the specified path.
-  std::error_code ec;
-  wpi::raw_fd_istream is{path, ec};
-
-  if (ec) {
-    throw std::runtime_error("Unable to read: " + path.str());
-  }
-
-  is >> m_json;
-  WPI_INFO(m_logger, "Read " << path);
-
-  // Get the analysis type from the JSON.
-  m_type = sysid::analysis::FromName(m_json.at("test").get<std::string>());
-
-  // Get the rotation -> output units factor from the JSON.
-  m_unit = m_json.at("units").get<std::string>();
-  m_factor = m_json.at("unitsPerRotation").get<double>();
-
-  // Check if we have a track width value.
-  m_hasTrackWidth = m_json.find("track-width") != m_json.end();
-
-  // Prepare data.
-  PrepareData();
+/**
+ * Trims quasistatic data so that no point has a voltage of zero or a velocity
+ * less than the motion threshold.
+ *
+ * @tparam S        The size of the raw data array.
+ * @tparam Voltage  The index of the voltage entry in the raw data.
+ * @tparam Velocity The index of the velocity entry in the raw data.
+ *
+ * @param data            A pointer to the vector of raw data.
+ * @param motionThreshold The velocity threshold under which to delete data.
+ */
+template <size_t S, size_t Voltage, size_t Velocity>
+void TrimQuasistaticData(std::vector<std::array<double, S>>* data,
+                         double motionThreshold) {
+  data->erase(std::remove_if(data->begin(), data->end(),
+                             [motionThreshold](const auto& pt) {
+                               return std::abs(pt[Voltage]) <= 0 ||
+                                      std::abs(pt[Velocity]) < motionThreshold;
+                             }),
+              data->end());
 }
 
-// Helper function that prepares data for drivetrain.
-void AnalysisManager::PrepareDataDrivetrain(
-    wpi::StringMap<std::vector<RawData>>&& data) {
-  // Compute acceleration on all datasets.
-  int window = m_settings.windowSize;
-  auto sfl = ComputeAcceleration(data["slow-forward"], window);
-  auto sfr = ComputeAcceleration(data["slow-forward"], window, true);
-  auto sbl = ComputeAcceleration(data["slow-backward"], window);
-  auto sbr = ComputeAcceleration(data["slow-backward"], window, true);
-  auto ffl = ComputeAcceleration(data["fast-forward"], window);
-  auto ffr = ComputeAcceleration(data["fast-forward"], window, true);
-  auto fbl = ComputeAcceleration(data["fast-backward"], window);
-  auto fbr = ComputeAcceleration(data["fast-backward"], window, true);
-
-  // Trim the step voltage data.
-  TrimStepVoltageData(&ffl);
-  TrimStepVoltageData(&ffr);
-  TrimStepVoltageData(&fbl);
-  TrimStepVoltageData(&fbr);
-
-  // Create the distinct datasets and store them in our StringMap.
-  auto sf = Concatenate(sfl, {&sfr});
-  auto sb = Concatenate(sbl, {&sbr});
-  auto ff = Concatenate(ffl, {&ffr});
-  auto fb = Concatenate(fbl, {&fbr});
-
-  m_datasets["Forward"] = std::make_tuple(sf, ff);
-  m_datasets["Backward"] = std::make_tuple(sb, fb);
-  m_datasets["Combined"] =
-      std::make_tuple(Concatenate(sf, {&sb}), Concatenate(ff, {&fb}));
-
-  m_datasets["Left Forward"] = std::make_tuple(sfl, ffl);
-  m_datasets["Left Backward"] = std::make_tuple(sbl, fbl);
-  m_datasets["Left Combined"] =
-      std::make_tuple(Concatenate(sfl, {&sbl}), Concatenate(ffl, {&fbl}));
-
-  m_datasets["Right Forward"] = std::make_tuple(sfr, ffr);
-  m_datasets["Right Backward"] = std::make_tuple(sbr, fbr);
-  m_datasets["Right Combined"] =
-      std::make_tuple(Concatenate(sfr, {&sbr}), Concatenate(ffr, {&fbr}));
-}
-
-void AnalysisManager::PrepareData() {
-  // Get the major components from the JSON and store them inside a StringMap.
-  wpi::StringMap<std::vector<RawData>> data;
-  for (auto&& key : kJsonDataKeys) {
-    data[key] = m_json.at(key).get<std::vector<RawData>>();
-  }
-
-  // Ensure that voltage and velocity have the same sign; apply conversion
-  // factor.
-  for (auto it = data.begin(); it != data.end(); ++it) {
-    for (auto&& pt : it->second) {
-      pt[3] = std::copysign(pt[Cols::kLVolts], pt[Cols::kLVel]);
-      pt[4] = std::copysign(pt[Cols::kRVolts], pt[Cols::kRVel]);
-      pt[5] *= m_factor;
-      pt[6] *= m_factor;
-      pt[7] *= m_factor;
-      pt[8] *= m_factor;
-    }
-  }
-
-  // Trim quasistatic test data to remove all points where voltage == 0 or
-  // velocity < threshold.
-  TrimQuasistaticData(&data["slow-forward"], m_settings.motionThreshold);
-  TrimQuasistaticData(&data["slow-backward"], m_settings.motionThreshold);
-
-  // If the type is drivetrain, we can use our special function from here.
-  if (m_type == analysis::kDrivetrain) {
-    PrepareDataDrivetrain(std::move(data));
-    return;
-  }
-
-  // Compute acceleration on all datasets.
-  auto sf = ComputeAcceleration(data["slow-forward"], m_settings.windowSize);
-  auto sb = ComputeAcceleration(data["slow-backward"], m_settings.windowSize);
-  auto ff = ComputeAcceleration(data["fast-forward"], m_settings.windowSize);
-  auto fb = ComputeAcceleration(data["fast-backward"], m_settings.windowSize);
-
-  // Trim the step voltage data.
-  TrimStepVoltageData(&ff);
-  TrimStepVoltageData(&fb);
-
-  // If the analysis type is kArm, then we need to calculate the cosine of the
-  // positions.
-  if (m_type == analysis::kArm) {
-    CalculateCosine(&sf, m_unit);
-    CalculateCosine(&sb, m_unit);
-    CalculateCosine(&ff, m_unit);
-    CalculateCosine(&fb, m_unit);
-  }
-
-  // Create the distinct datasets and store them in our StringMap.
-  m_datasets["Forward"] = std::make_tuple(sf, ff);
-  m_datasets["Backward"] = std::make_tuple(sb, fb);
-  m_datasets["Combined"] =
-      std::make_tuple(Concatenate(sf, {&sb}), Concatenate(ff, {&fb}));
-}
-
-AnalysisManager::Gains AnalysisManager::Calculate() {
-  // Calculate feedforward gains from the data.
-  auto ff = sysid::CalculateFeedforwardGains(
-      m_datasets[kDatasets[m_settings.dataset]], m_type);
-
-  // Create the struct that we need for feedback analysis.
-  auto& f = std::get<0>(ff);
-  FeedforwardGains gains = {f[0], f[1], f[2]};
-
-  // Calculate the appropriate gains.
-  std::tuple<double, double> fb;
-  if (m_settings.type == FeedbackControllerLoopType::kPosition) {
-    fb = sysid::CalculatePositionFeedbackGains(
-        m_settings.preset, m_settings.lqr, gains,
-        m_settings.convertGainsToEncTicks
-            ? m_settings.gearing * m_settings.epr * m_factor
-            : 1);
-  } else {
-    fb = sysid::CalculateVelocityFeedbackGains(
-        m_settings.preset, m_settings.lqr, gains,
-        m_settings.convertGainsToEncTicks
-            ? m_settings.gearing * m_settings.epr * m_factor
-            : 1);
-  }
-
-  // Calculate track width if applicable.
-  if (m_hasTrackWidth) {
-    auto data = m_json.at("track-width").get<std::vector<RawData>>();
-
-    double l =
-        (data.back()[Cols::kLPos] - data.front()[Cols::kLPos]) * m_factor;
-    double r =
-        (data.back()[Cols::kRPos] - data.front()[Cols::kRPos]) * m_factor;
-    double a = (data.back()[Cols::kGyro] - data.front()[Cols::kGyro]);
-
-    return {ff, fb,
-            std::make_optional(
-                sysid::CalculateTrackWidth(l, r, units::radian_t(a)))};
-  }
-
-  return {ff, fb};
-}
-
-void AnalysisManager::OverrideUnits(const std::string& unit,
-                                    double unitsPerRotation) {
-  m_unit = unit;
-  m_factor = unitsPerRotation;
-  PrepareData();
-}
-
-void AnalysisManager::ResetUnitsFromJSON() {
-  m_unit = m_json.at("units").get<std::string>();
-  m_factor = m_json.at("unitsPerRotation").get<double>();
-  PrepareData();
-}
-
-void AnalysisManager::TrimQuasistaticData(std::vector<RawData>* data,
-                                          double threshold, bool drivetrain) {
-  data->erase(
-      std::remove_if(data->begin(), data->end(),
-                     [drivetrain, threshold](const auto& pt) {
-                       // Calculate abs value of voltages.
-                       double lvolts = std::abs(pt[Cols::kLVolts]);
-                       double rvolts = std::abs(pt[Cols::kRVolts]);
-
-                       // Calculate abs value of velocities.
-                       double lvelocity = std::abs(pt[Cols::kLVel]);
-                       double rvelocity = std::abs(pt[Cols::kRVel]);
-
-                       // Calculate primary and secondary conditions (secondary
-                       // is for drivetrain).
-                       bool primary = lvolts <= 0 || lvelocity <= threshold;
-                       bool secondary = rvolts <= 0 || rvelocity <= threshold;
-
-                       // Return the condition, depending on whether we want
-                       // secondary or not.
-                       return primary || (drivetrain ? secondary : false);
-                     }),
-      data->end());
-}
-
-std::vector<PreparedData> AnalysisManager::ComputeAcceleration(
-    const std::vector<RawData>& data, int window, bool right) {
+/**
+ * Computes acceleration from a vector of raw data and returns prepared data.
+ *
+ * @tparam S        The size of the raw data array.
+ * @tparam Voltage  The index of the voltage entry in the raw data.
+ * @tparam Position The index of the position entry in the raw data.
+ * @tparam Velocity The index of the velocity entry in the raw data.
+ *
+ * @param data A reference to a vector of the raw data.
+ */
+template <size_t S, size_t Voltage, size_t Position, size_t Velocity>
+std::vector<PreparedData> ComputeAcceleration(
+    const std::vector<std::array<double, S>>& data, int window) {
+  // Calculate the step size for acceleration data.
   size_t step = window / 2;
-  std::vector<PreparedData> prepared;
 
-  if (data.size() <= window) {
+  // Create our prepared data vector.
+  std::vector<PreparedData> prepared;
+  if (data.size() <= static_cast<size_t>(window)) {
     throw std::runtime_error(
         "The data collected is too small! This can be caused by too high of a "
         "motion threshold or bad data collection.");
   }
-
   prepared.reserve(data.size() - window);
-
-  if (data.size() < static_cast<size_t>(window)) {
-    throw std::runtime_error("The size of the data is too small.");
-  }
-
-  size_t volts = right ? Cols::kRVolts : Cols::kLVolts;
-  size_t pos = right ? Cols::kRPos : Cols::kLPos;
-  size_t vel = right ? Cols::kRVel : Cols::kLVel;
 
   // Compute acceleration and add it to the vector.
   for (size_t i = step; i < data.size() - step; ++i) {
-    auto& pt = data[i];
-    double acc =
-        (data[i + step][vel] - data[i - step][vel]) /
-        (data[i + step][Cols::kTimestamp] - data[i - step][Cols::kTimestamp]);
+    const auto& pt = data[i];
+    double acc = (data[i + step][Velocity] - data[i - step][Velocity]) /
+                 (data[i + step][0] - data[i - step][0]);
 
-    // Sometimes, if the encoder velocities are the same, it will register
-    // zero acceleration. Do not include these values.
+    // Sometimes, if the encoder velocities are the same, it will register zero
+    // acceleration. Do not include these values.
     if (acc != 0) {
-      prepared.push_back(
-          {pt[Cols::kTimestamp], pt[volts], pt[pos], pt[vel], acc, 0.0});
+      prepared.push_back(PreparedData{pt[0], pt[Voltage], pt[Position],
+                                      pt[Velocity], acc, 0.0});
     }
   }
-
   return prepared;
 }
 
-void AnalysisManager::TrimStepVoltageData(std::vector<PreparedData>* data) {
+/**
+ * Trims the step voltage data to discard all points before the maximum
+ * acceleration.
+ *
+ * @param data A pointer to the step voltage data.
+ */
+void TrimStepVoltageData(std::vector<PreparedData>* data) {
   // We want to find the point where the acceleration data roughly stops
   // decreasing at the beginning.
   size_t idx = 0;
@@ -325,8 +148,14 @@ void AnalysisManager::TrimStepVoltageData(std::vector<PreparedData>* data) {
   }
 }
 
-void AnalysisManager::CalculateCosine(std::vector<PreparedData>* data,
-                                      const std::string& unit) {
+/**
+ * Calculates the cosine of the position data for single jointed arm analysis.
+ *
+ * @param data The data to calculate the cosine on.
+ * @param unit The units that the data is in (rotations, radians, or degrees).
+ */
+static void CalculateCosine(std::vector<PreparedData>* data,
+                            wpi::StringRef unit) {
   for (auto&& pt : *data) {
     if (unit == "Radians") {
       pt.cos = std::cos(pt.position);
@@ -334,8 +163,347 @@ void AnalysisManager::CalculateCosine(std::vector<PreparedData>* data,
       pt.cos = std::cos(pt.position * wpi::math::pi / 180.0);
     } else if (unit == "Rotations") {
       pt.cos = std::cos(pt.position * 2 * wpi::math::pi);
-    } else {
-      throw std::runtime_error("The unit is not supported");
     }
   }
+}
+
+/**
+ * Prepares data for general mechanisms (i.e. not drivetrain) and stores them
+ * in the analysis manager dataset.
+ *
+ * @param json     A reference to the JSON containing all of the collected
+ * data.
+ * @param settings A reference to the settings being used by the analysis
+ *                 manager instance.
+ * @param factor   The units per rotation to multiply positions and velocities
+ *                 by.
+ * @param datasets A reference to the datasets object of the relevant analysis
+ *                 manager instance.
+ */
+static void PrepareGeneralData(const wpi::json& json,
+                               const AnalysisManager::Settings& settings,
+                               double factor, wpi::StringRef unit,
+                               wpi::StringMap<Storage>& datasets) {
+  using Data = std::array<double, 4>;
+  wpi::StringMap<std::vector<Data>> data;
+
+  // Store the raw data columns.
+  static constexpr size_t kTimeCol = 0;
+  static constexpr size_t kVoltageCol = 1;
+  static constexpr size_t kPosCol = 2;
+  static constexpr size_t kVelCol = 3;
+
+  // Get the major components from the JSON and store them inside a StringMap.
+  for (auto&& key : AnalysisManager::kJsonDataKeys) {
+    data[key] = json.at(key).get<std::vector<Data>>();
+  }
+
+  // Ensure that voltage and velocity have the same sign. Also multiply
+  // positions and velocities by the factor.
+  for (auto it = data.begin(); it != data.end(); ++it) {
+    for (auto&& pt : it->second) {
+      pt[kVoltageCol] = std::copysign(pt[kVoltageCol], pt[kVelCol]);
+      pt[kPosCol] *= factor;
+      pt[kVelCol] *= factor;
+    }
+  }
+
+  // Trim quasistatic test data to remove all points where voltage is zero or
+  // velocity < motion threshold.
+  TrimQuasistaticData<4, kVoltageCol, kVelCol>(&data["slow-forward"],
+                                               settings.motionThreshold);
+  TrimQuasistaticData<4, kVoltageCol, kVelCol>(&data["slow-backward"],
+                                               settings.motionThreshold);
+
+  // Compute acceleration on all data sets.
+  auto sf = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
+      data["slow-forward"], settings.windowSize);
+  auto sb = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
+      data["slow-backward"], settings.windowSize);
+  auto ff = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
+      data["fast-forward"], settings.windowSize);
+  auto fb = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
+      data["fast-backward"], settings.windowSize);
+
+  // Calculate cosine of position data.
+  CalculateCosine(&sf, unit);
+  CalculateCosine(&sb, unit);
+  CalculateCosine(&ff, unit);
+  CalculateCosine(&fb, unit);
+
+  // Trim the step voltage data.
+  TrimStepVoltageData(&ff);
+  TrimStepVoltageData(&fb);
+
+  // Create the distinct datasets and store them in our StringMap.
+  datasets["Forward"] = std::make_tuple(sf, ff);
+  datasets["Backward"] = std::make_tuple(sb, fb);
+  datasets["Combined"] =
+      std::make_tuple(Concatenate(sf, {&sb}), Concatenate(ff, {&fb}));
+}
+
+/**
+ * Prepares data for angular drivetrain test data and stores them in
+ * the analysis manager dataset.
+ *
+ * @param json     A reference to the JSON containing all of the collected
+ * data.
+ * @param settings A reference to the settings being used by the analysis
+ *                 manager instance.
+ * @param factor   The units per rotation to multiply positions and velocities
+ *                 by.
+ * @param tw       A reference to the std::optional where the track width will
+ *                 be stored.
+ * @param datasets A reference to the datasets object of the relevant analysis
+ *                 manager instance.
+ */
+static void PrepareAngularDrivetrainData(
+    const wpi::json& json, const AnalysisManager::Settings& settings,
+    double factor, std::optional<double>& tw,
+    wpi::StringMap<Storage>& datasets) {
+  using Data = std::array<double, 9>;
+  wpi::StringMap<std::vector<Data>> data;
+
+  // Store the relevant raw data columns.
+  static constexpr size_t kTimeCol = 0;
+  static constexpr size_t kVoltageCol = 1;
+  static constexpr size_t kLPosCol = 3;
+  static constexpr size_t kRPosCol = 4;
+  static constexpr size_t kAngleCol = 7;
+  static constexpr size_t kAngularRateCol = 8;
+
+  // Get the major components from the JSON and store them inside a StringMap.
+  for (auto&& key : AnalysisManager::kJsonDataKeys) {
+    data[key] = json.at(key).get<std::vector<Data>>();
+  }
+
+  // Ensure that voltage and velocity have the same sign. Also multiply
+  // positions and velocities by the factor.
+  for (auto it = data.begin(); it != data.end(); ++it) {
+    for (auto&& pt : it->second) {
+      pt[kVoltageCol] = 2 * std::copysign(pt[kVoltageCol], pt[kAngularRateCol]);
+      pt[kLPosCol] *= factor;
+      pt[kRPosCol] *= factor;
+    }
+  }
+
+  // Trim quasistatic test data to remove all points where voltage is zero or
+  // velocity < motion threshold.
+  TrimQuasistaticData<9, kVoltageCol, kAngularRateCol>(
+      &data["slow-forward"], settings.motionThreshold);
+  TrimQuasistaticData<9, kVoltageCol, kAngularRateCol>(
+      &data["slow-backward"], settings.motionThreshold);
+
+  // Compute acceleration on all data sets.
+  auto sf = ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
+      data["slow-forward"], settings.windowSize);
+  auto sb = ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
+      data["slow-backward"], settings.windowSize);
+  auto ff = ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
+      data["fast-forward"], settings.windowSize);
+  auto fb = ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
+      data["fast-backward"], settings.windowSize);
+
+  // Trim the step voltage data.
+  TrimStepVoltageData(&ff);
+  TrimStepVoltageData(&fb);
+
+  // Calculate track width from the slow-forward raw data.
+  auto& twd = data["slow-forward"];
+  double l = twd.back()[kLPosCol] - twd.front()[kLPosCol];
+  double r = twd.back()[kRPosCol] - twd.front()[kRPosCol];
+  double a = twd.back()[kAngleCol] - twd.front()[kAngleCol];
+  tw = sysid::CalculateTrackWidth(l, r, units::radian_t(a));
+
+  // Create the distinct datasets and store them in our StringMap.
+  datasets["Forward"] = std::make_tuple(sf, ff);
+  datasets["Backward"] = std::make_tuple(sb, fb);
+  datasets["Combined"] =
+      std::make_tuple(Concatenate(sf, {&sb}), Concatenate(ff, {&fb}));
+}
+
+/**
+ * Prepares data for linear drivetrain test data and stores them in
+ * the analysis manager dataset.
+ *
+ * @param json     A reference to the JSON containing all of the collected
+ * data.
+ * @param settings A reference to the settings being used by the analysis
+ *                 manager instance.
+ * @param factor   The units per rotation to multiply positions and velocities
+ *                 by.
+ * @param datasets A reference to the datasets object of the relevant analysis
+ *                 manager instance.
+ */
+static void PrepareLinearDrivetrainData(
+    const wpi::json& json, const AnalysisManager::Settings& settings,
+    double factor, wpi::StringMap<Storage>& datasets) {
+  using Data = std::array<double, 9>;
+  wpi::StringMap<std::vector<Data>> data;
+
+  // Store the relevant raw data columns.
+  static constexpr size_t kTimeCol = 0;
+  static constexpr size_t kLVoltageCol = 1;
+  static constexpr size_t kRVoltageCol = 2;
+  static constexpr size_t kLPosCol = 3;
+  static constexpr size_t kRPosCol = 4;
+  static constexpr size_t kLVelCol = 5;
+  static constexpr size_t kRVelCol = 6;
+
+  // Get the major components from the JSON and store them inside a StringMap.
+  for (auto&& key : AnalysisManager::kJsonDataKeys) {
+    data[key] = json.at(key).get<std::vector<Data>>();
+  }
+
+  // Ensure that voltage and velocity have the same sign. Also multiply
+  // positions and velocities by the factor.
+  for (auto it = data.begin(); it != data.end(); ++it) {
+    for (auto&& pt : it->second) {
+      pt[kLVoltageCol] = std::copysign(pt[kLVoltageCol], pt[kLVelCol]);
+      pt[kRVoltageCol] = std::copysign(pt[kRVoltageCol], pt[kRVelCol]);
+      pt[kLPosCol] *= factor;
+      pt[kRPosCol] *= factor;
+      pt[kLVelCol] *= factor;
+      pt[kRVelCol] *= factor;
+    }
+  }
+
+  // Trim quasistatic test data to remove all points where voltage is zero or
+  // velocity < motion threshold.
+  TrimQuasistaticData<9, kLVoltageCol, kLVelCol>(&data["slow-forward"],
+                                                 settings.motionThreshold);
+  TrimQuasistaticData<9, kLVoltageCol, kLVelCol>(&data["slow-backward"],
+                                                 settings.motionThreshold);
+  TrimQuasistaticData<9, kRVoltageCol, kRVelCol>(&data["slow-forward"],
+                                                 settings.motionThreshold);
+  TrimQuasistaticData<9, kRVoltageCol, kRVelCol>(&data["slow-backward"],
+                                                 settings.motionThreshold);
+
+  // Compute acceleration on all data sets.
+  auto sfl = ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
+      data["slow-forward"], settings.windowSize);
+  auto sbl = ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
+      data["slow-backward"], settings.windowSize);
+  auto ffl = ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
+      data["fast-forward"], settings.windowSize);
+  auto fbl = ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
+      data["fast-backward"], settings.windowSize);
+  auto sfr = ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
+      data["slow-forward"], settings.windowSize);
+  auto sbr = ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
+      data["slow-backward"], settings.windowSize);
+  auto ffr = ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
+      data["fast-forward"], settings.windowSize);
+  auto fbr = ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
+      data["fast-backward"], settings.windowSize);
+
+  // Trim the step voltage data.
+  TrimStepVoltageData(&ffl);
+  TrimStepVoltageData(&ffr);
+  TrimStepVoltageData(&fbl);
+  TrimStepVoltageData(&fbr);
+
+  // Create the distinct datasets and store them in our StringMap.
+  auto sf = Concatenate(sfl, {&sfr});
+  auto sb = Concatenate(sbl, {&sbr});
+  auto ff = Concatenate(ffl, {&ffr});
+  auto fb = Concatenate(fbl, {&fbr});
+
+  datasets["Forward"] = std::make_tuple(sf, ff);
+  datasets["Backward"] = std::make_tuple(sb, fb);
+  datasets["Combined"] =
+      std::make_tuple(Concatenate(sf, {&sb}), Concatenate(ff, {&fb}));
+
+  datasets["Left Forward"] = std::make_tuple(sfl, ffl);
+  datasets["Left Backward"] = std::make_tuple(sbl, fbl);
+  datasets["Left Combined"] =
+      std::make_tuple(Concatenate(sfl, {&sbl}), Concatenate(ffl, {&fbl}));
+
+  datasets["Right Forward"] = std::make_tuple(sfr, ffr);
+  datasets["Right Backward"] = std::make_tuple(sbr, fbr);
+  datasets["Right Combined"] =
+      std::make_tuple(Concatenate(sfr, {&sbr}), Concatenate(ffr, {&fbr}));
+}
+
+AnalysisManager::AnalysisManager(wpi::StringRef path, const Settings& settings,
+                                 wpi::Logger& logger)
+    : m_settings(settings), m_logger(logger) {
+  // Read JSON from the specified path.
+  std::error_code ec;
+  wpi::raw_fd_istream is{path, ec};
+
+  if (ec) {
+    throw std::runtime_error("Unable to read: " + path.str());
+  }
+
+  is >> m_json;
+  WPI_INFO(m_logger, "Read " << path);
+
+  // Check that we have a sysid json.
+  if (m_json.find("sysid") == m_json.end()) {
+    throw std::runtime_error(
+        "Incorrect JSON format detected. Please use the JSON Converter "
+        "to convert a frc-char JSON to a sysid JSON.");
+  } else {
+    // Get the analysis type from the JSON.
+    m_type = sysid::analysis::FromName(m_json.at("test").get<std::string>());
+
+    // Get the rotation -> output units factor from the JSON.
+    m_unit = m_json.at("units").get<std::string>();
+    m_factor = m_json.at("unitsPerRotation").get<double>();
+
+    // Prepare data.
+    PrepareData();
+  }
+}
+
+void AnalysisManager::PrepareData() {
+  if (m_type == analysis::kDrivetrain) {
+    PrepareLinearDrivetrainData(m_json, m_settings, m_factor, m_datasets);
+  } else if (m_type == analysis::kDrivetrainAngular) {
+    PrepareAngularDrivetrainData(m_json, m_settings, m_factor, m_trackWidth,
+                                 m_datasets);
+  } else {
+    PrepareGeneralData(m_json, m_settings, m_factor, m_unit, m_datasets);
+  }
+}
+
+AnalysisManager::Gains AnalysisManager::Calculate() {
+  // Calculate feedforward gains from the data.
+  auto ff = sysid::CalculateFeedforwardGains(
+      m_datasets[kDatasets[m_settings.dataset]], m_type);
+
+  // Create the struct that we need for feedback analysis.
+  auto& f = std::get<0>(ff);
+  FeedforwardGains gains = {f[0], f[1], f[2]};
+
+  // Calculate the appropriate gains.
+  std::tuple<double, double> fb;
+  if (m_settings.type == FeedbackControllerLoopType::kPosition) {
+    fb = sysid::CalculatePositionFeedbackGains(
+        m_settings.preset, m_settings.lqr, gains,
+        m_settings.convertGainsToEncTicks
+            ? m_settings.gearing * m_settings.epr * m_factor
+            : 1);
+  } else {
+    fb = sysid::CalculateVelocityFeedbackGains(
+        m_settings.preset, m_settings.lqr, gains,
+        m_settings.convertGainsToEncTicks
+            ? m_settings.gearing * m_settings.epr * m_factor
+            : 1);
+  }
+  return {ff, fb, m_trackWidth};
+}
+
+void AnalysisManager::OverrideUnits(const std::string& unit,
+                                    double unitsPerRotation) {
+  m_unit = unit;
+  m_factor = unitsPerRotation;
+  PrepareData();
+}
+
+void AnalysisManager::ResetUnitsFromJSON() {
+  m_unit = m_json.at("units").get<std::string>();
+  m_factor = m_json.at("unitsPerRotation").get<double>();
+  PrepareData();
 }

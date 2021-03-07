@@ -34,9 +34,6 @@ struct PreparedData {
   double cos;
 };
 
-/** The raw data that is contained within the JSON. */
-using RawData = std::array<double, 10>;
-
 /**
  * Manages analysis of data. Each instance of this class represents a JSON file
  * that is read from storage.
@@ -164,77 +161,7 @@ class AnalysisManager {
    */
   Storage& GetRawData() { return m_datasets[kDatasets[m_settings.dataset]]; }
 
-  /**
-   * Trims the existing raw data vector to remove any values where the voltage
-   * is less than or equal to zero or where the velocity is less than the
-   * provided threshold.
-   *
-   * @param data       The raw data.
-   * @param threshold  The motion threshold -- all velocities below this value
-   *                   will be discarded.
-   * @param drivetrain Whether the data also contains data for the right side of
-   *                   the drivetrain.
-   */
-  static void TrimQuasistaticData(std::vector<RawData>* data, double threshold,
-                                  bool drivetrain = false);
-
-  /**
-   * Computes acceleration from the given raw data and returns a new vector of
-   * prepared data that can be used for feedforward and feedback analysis.
-   *
-   * @param data   The raw data.
-   * @param window The window size to compute acceleration.
-   * @param right  Whether acceleration should be computed on the right side of
-   *               the drivetrain.
-   *
-   * @return The prepared data.
-   */
-  static std::vector<PreparedData> ComputeAcceleration(
-      const std::vector<RawData>& data, int window, bool right = false);
-
-  /**
-   * Trims the step voltage data such that we discard all data before the point
-   * of maximum acceleration.
-   *
-   * @param data The step voltage (dynamic test) data to trim.
-   */
-  static void TrimStepVoltageData(std::vector<PreparedData>* data);
-
-  /**
-   * Calculates the cosine of the position data for single jointed arm analysis.
-   *
-   * @param data The data to calcuate the cosine on.
-   * @param unit The units that the data is in (rotations, radians, or degrees).
-   */
-  static void CalculateCosine(std::vector<PreparedData>* data,
-                              const std::string& unit);
-
  private:
-  /**
-   * Special function that prepares drivetrain data. This is called
-   * automatically from PrepareData() if m_type.mechanism ==
-   * Mechanism::kDrivetrain.
-   *
-   * @param data The data to prepare. This should be moved in from
-   *             PrepareData().
-   */
-  void PrepareDataDrivetrain(wpi::StringMap<std::vector<RawData>>&& data);
-
-  /** The columns in the raw data. */
-  class Cols {
-   public:
-    static constexpr uint8_t kTimestamp = 0;
-    static constexpr uint8_t kBattery = 1;
-    static constexpr uint8_t kAutospeed = 2;
-    static constexpr uint8_t kLVolts = 3;
-    static constexpr uint8_t kRVolts = 4;
-    static constexpr uint8_t kLPos = 5;
-    static constexpr uint8_t kRPos = 6;
-    static constexpr uint8_t kLVel = 7;
-    static constexpr uint8_t kRVel = 8;
-    static constexpr uint8_t kGyro = 9;
-  };
-
   wpi::Logger& m_logger;
 
   // This is used to store the various datasets (i.e. Combined, Forward,
@@ -246,11 +173,13 @@ class AnalysisManager {
   // controller preset, LQR parameters, acceleration window size, etc.
   const Settings& m_settings;
 
-  // Miscellaneous data from the JSON -- the analysis type, units per rotation
-  // (factor), the units, and whether we have track width.
+  // Miscellaneous data from the JSON -- the analysis type, the units, and the
+  // units per rotation.
   AnalysisType m_type;
-  double m_factor;
   std::string m_unit;
-  bool m_hasTrackWidth;
+  double m_factor;
+
+  // Stores an optional track width if we are doing the drivetrain angular test.
+  std::optional<double> m_trackWidth;
 };
 }  // namespace sysid
