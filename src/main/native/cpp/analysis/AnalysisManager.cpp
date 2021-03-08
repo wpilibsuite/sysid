@@ -483,13 +483,13 @@ AnalysisManager::Gains AnalysisManager::Calculate() {
     fb = sysid::CalculatePositionFeedbackGains(
         m_settings.preset, m_settings.lqr, gains,
         m_settings.convertGainsToEncTicks
-            ? m_settings.gearing * m_settings.epr * m_factor
+            ? m_settings.gearing * m_settings.cpr * m_factor
             : 1);
   } else {
     fb = sysid::CalculateVelocityFeedbackGains(
         m_settings.preset, m_settings.lqr, gains,
         m_settings.convertGainsToEncTicks
-            ? m_settings.gearing * m_settings.epr * m_factor
+            ? m_settings.gearing * m_settings.cpr * m_factor
             : 1);
   }
   return {ff, fb, m_trackWidth};

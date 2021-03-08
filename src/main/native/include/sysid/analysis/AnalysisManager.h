@@ -66,8 +66,8 @@ class AnalysisManager {
     int dataset = 0;
 
     /** The conversion factors. These contain values to convert feedback gains
-     * by gearing and epr. */
-    int epr = 1440;
+     * by gearing and cpr. */
+    int cpr = 1440;
     double gearing = 1;
     bool convertGainsToEncTicks = false;
   };

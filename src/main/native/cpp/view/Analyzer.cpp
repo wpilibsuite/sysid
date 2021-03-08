@@ -507,19 +507,19 @@ void Analyzer::Display() {
 
       ImGui::SetCursorPosY(endY);
 
-      // Add EPR and Gearing for converting Feedback Gains
+      // Add CPR and Gearing for converting Feedback Gains
       ImGui::Separator();
       ImGui::Spacing();
 
-      if (ImGui::Checkbox("Convert Gains to Encoder Ticks",
+      if (ImGui::Checkbox("Convert Gains to Encoder Counts",
                           &m_settings.convertGainsToEncTicks)) {
         Calculate();
       }
       sysid::CreateTooltip(
-          "Whether the feedback gains should be in terms of encoder ticks or "
+          "Whether the feedback gains should be in terms of encoder counts or "
           "output units. Because smart motor controllers usually don't have "
           "direct access to the output units (i.e. m/s for a drivetrain), they "
-          "perform feedback on the encoder units directly. If you are using a "
+          "perform feedback on the encoder counts directly. If you are using a "
           "PID Controller on the RoboRIO, you are probably performing feedback "
           "on the output units directly.\n\nNote that if you have properly set "
           "up position and velocity conversion factors with the SPARK MAX, you "
@@ -538,12 +538,12 @@ void Analyzer::Display() {
             "encoder turns / # of output shaft turns).");
 
         ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
-        if (ImGui::InputInt("EPR", &m_settings.epr, 0) && m_settings.epr > 0) {
+        if (ImGui::InputInt("CPR", &m_settings.cpr, 0) && m_settings.cpr > 0) {
           Calculate();
         }
         sysid::CreateTooltip(
-            "The edges per rotation of your encoder. This is the number of "
-            "ticks reported in user code when the encoder is rotated exactly "
+            "The counts per rotation of your encoder. This is the number of "
+            "counts reported in user code when the encoder is rotated exactly "
             "once. Some common values for various motors/encoders "
             "are:\n\nFalcon "
             "500: 2048\nNEO: 1\nCTRE Mag Encoder / CANCoder: 4096\nREV Through "
