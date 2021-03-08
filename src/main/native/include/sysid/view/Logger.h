@@ -54,8 +54,6 @@ class Logger : public glass::View {
 
   std::string m_popupText;
 
-  int* m_team = nullptr;
-
   std::string m_opened;
   std::string m_exception;
 };

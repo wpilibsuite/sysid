@@ -34,8 +34,7 @@ Logger::Logger(wpi::Logger& logger) : m_logger(logger) {
     }
   });
 
-  // Initialize team number from storage.
-  m_team = glass::GetStorage().GetIntRef("Team");
+  m_ntSettings.EnableServerOption(false);
 }
 
 void Logger::Display() {
