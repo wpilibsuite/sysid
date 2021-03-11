@@ -14,6 +14,7 @@
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 #include <wpi/FileSystem.h>
+#include <wpi/json.h>
 #include <wpi/math>
 #include <wpi/raw_ostream.h>
 
@@ -641,16 +642,30 @@ void Analyzer::SelectFile() {
     m_selector.reset();
 
     // Create the analysis manager.
-    m_manager =
-        std::make_unique<AnalysisManager>(*m_location, m_settings, m_logger);
-    m_type = m_manager->GetAnalysisType();
-    Calculate();
+    try {
+      m_manager =
+          std::make_unique<AnalysisManager>(*m_location, m_settings, m_logger);
+      m_type = m_manager->GetAnalysisType();
+      Calculate();
+    } catch (const wpi::json::exception& e) {
+      m_exception =
+          "The provided JSON was invalid! You may need to rerun the logger.\n" +
+          std::string(e.what());
+      ResetManagerState();
+      ImGui::OpenPopup("Exception Caught!");
+    }
   }
 }
 
 void Analyzer::PrepareData() {
   try {
     m_manager->PrepareData();
+  } catch (const wpi::json::exception& e) {
+    m_exception =
+        "The provided JSON was invalid! You may need to rerun the logger.\n" +
+        std::string(e.what());
+    ResetManagerState();
+    ImGui::OpenPopup("Exception Caught!");
   } catch (const std::exception& e) {
     m_exception = e.what();
     ResetManagerState();
