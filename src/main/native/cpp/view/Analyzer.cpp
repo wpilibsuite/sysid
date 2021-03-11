@@ -252,7 +252,7 @@ void Analyzer::Display() {
 
   // Function that displays a read-only value.
   auto ShowGain = [](const char* text, double* data) {
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
     ImGui::InputDouble(text, data, 0.0, 0.0, "%.5G",
                        ImGuiInputTextFlags_ReadOnly);
   };
