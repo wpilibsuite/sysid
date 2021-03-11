@@ -234,13 +234,23 @@ void Analyzer::Display() {
                          isRotational ? ImGuiInputTextFlags_ReadOnly
                                       : ImGuiInputTextFlags_None);
 
+      bool ex = false;
+
       if (ImGui::Button("Close")) {
         ImGui::CloseCurrentPopup();
-        m_manager->OverrideUnits(m_unit, m_factor);
-        Calculate();
+        try {
+          m_manager->OverrideUnits(m_unit, m_factor);
+          Calculate();
+        } catch (const std::exception& e) {
+          ex = true;
+          m_exception = e.what();
+        }
       }
 
       ImGui::EndPopup();
+      if (ex) {
+        ImGui::OpenPopup("Exception Caught!");
+      }
     }
 
     ImGui::SameLine();
