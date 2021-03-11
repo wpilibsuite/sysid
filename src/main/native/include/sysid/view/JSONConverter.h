@@ -23,6 +23,8 @@ class JSONConverter : public glass::View {
   std::string m_location;
   std::unique_ptr<pfd::open_file> m_opener;
 
+  std::string m_exception;
+
   double m_timestamp = 0;
 };
 }  // namespace sysid
