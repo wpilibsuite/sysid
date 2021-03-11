@@ -108,7 +108,9 @@ void Logger::Display() {
   sysid::CreateTooltip(
       "The logger assumes that the code will be sending recorded rotations "
       "over NetworkTables. This value will then be multiplied by the units per "
-      "rotation to get the measurement in the units you specified.");
+      "rotation to get the measurement in the units you specified.\n\nFor "
+      "non-rotational units (e.g. meters), this value is usually the wheel "
+      "diameter times pi.");
   // Create a section for voltage parameters.
   ImGui::Separator();
   ImGui::Spacing();
