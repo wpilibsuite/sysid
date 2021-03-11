@@ -11,12 +11,15 @@
 #include <portable-file-dialogs.h>
 #include <wpi/timestamp.h>
 
+#include "sysid/Util.h"
+
 using namespace sysid;
 
 void JSONConverter::Display() {
   if (ImGui::Button("Select frc-characterization JSON")) {
-    m_opener =
-        std::make_unique<pfd::open_file>("Select frc-characterization JSON");
+    m_opener = std::make_unique<pfd::open_file>(
+        "Select frc-characterization JSON", "",
+        std::vector<std::string>{"JSON File", SYSID_PFD_JSON_EXT});
   }
 
   if (m_opener && m_opener->ready()) {
