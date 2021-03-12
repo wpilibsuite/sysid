@@ -173,7 +173,9 @@ void Analyzer::Display() {
 
   // Show the file location along with an option to choose.
   if (ImGui::Button("Select")) {
-    m_selector = std::make_unique<pfd::open_file>("Select Data");
+    m_selector = std::make_unique<pfd::open_file>(
+        "Select Data", "",
+        std::vector<std::string>{"JSON File", SYSID_PFD_JSON_EXT});
   }
   ImGui::SameLine();
   ImGui::SetNextItemWidth(width - ImGui::CalcTextSize("Select").x);
