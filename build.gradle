@@ -199,7 +199,7 @@ model {
       }
     }
     $.testSuites.sysidIntegrationTest.binaries.each { bin ->
-      if (bin.buildable && bin.name.contains("debug")) {
+      if (bin.buildable && bin.name.contains("release")) {
         Task run = project.tasks.create("runIntegrationTests", Exec) {
           commandLine bin.tasks.install.runScriptFile.get().asFile.toString()
         }

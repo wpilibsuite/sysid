@@ -47,8 +47,8 @@ def includeDesktopSupport = true
 // upon debugging
 dependencies {
   if (System.getenv()['CI'] == null) {
-      simulation wpi.deps.sim.gui(wpi.platforms.desktop, true)
-      simulation wpi.deps.sim.driverstation(wpi.platforms.desktop, true)
+      simulation wpi.deps.sim.gui(wpi.platforms.desktop, false)
+      simulation wpi.deps.sim.driverstation(wpi.platforms.desktop, false)
   }
     // Websocket extensions require additional configuration.
     // simulation wpi.deps.sim.ws_server(wpi.platforms.desktop, true)
@@ -96,5 +96,5 @@ model {
 }
 
 task simulateCpp {
-    dependsOn 'simulateFrcUserProgram' + wpi.platforms.desktop.capitalize() + 'DebugExecutable'
+    dependsOn 'simulateFrcUserProgram' + wpi.platforms.desktop.capitalize() + 'ReleaseExecutable'
 }
