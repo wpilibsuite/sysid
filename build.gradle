@@ -152,6 +152,10 @@ model {
         include "**/*.cpp"
       }
       binaries.all {
+        // Only build/run release version of tests
+        if (it.buildType.name.contains('debug')) {
+          it.buildable = false
+        }
         nativeUtils.useRequiredLibrary(it, "googletest_static")
         it.cppCompiler.define("RUNNING_SYSID_TESTS")
       }
