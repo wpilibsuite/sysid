@@ -118,7 +118,10 @@ class IntegrationTest : public ::testing::Test {
                   << "Kv: " << ff[1] << "\nKa: " << ff[2] << "\n";
       wpi::outs().flush();
       EXPECT_NEAR(Kv, ff[1], 0.30);
-      EXPECT_NEAR(Ka, ff[2], 0.20);
+
+      // Due to scheduling jitter in integration test, Ka is extremely
+      // inaccurate
+      EXPECT_NEAR(Ka, ff[2], 0.60);
 
       if (m_settings.mechanism == sysid::analysis::kElevator) {
         wpi::outs() << "KG: " << ff[3] << "\n";
