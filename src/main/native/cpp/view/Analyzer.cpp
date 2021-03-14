@@ -4,8 +4,6 @@
 
 #include "sysid/view/Analyzer.h"
 
-#include <implot.h>
-
 #include <algorithm>
 #include <exception>
 
@@ -20,6 +18,9 @@
 
 #include "sysid/Util.h"
 #include "sysid/analysis/AnalysisType.h"
+#include "sysid/analysis/ArmSim.h"
+#include "sysid/analysis/ElevatorSim.h"
+#include "sysid/analysis/SimpleMotorSim.h"
 
 using namespace sysid;
 
@@ -429,65 +430,16 @@ void Analyzer::Display() {
 
             // Plot time domain simulation of feedforward gains
             if (i == 2) {
-              ImPlot::SetNextLineStyle(IMPLOT_AUTO_COL, 1.5);
-
-              double Ks = m_ff[0];
-              double Kv = m_ff[1];
-              double Ka = m_ff[2];
-
-              // Create a continuous state-space model from feedforward gains
-              //
-              // Feedforward model is
-              //
-              // u = Ks + Kv v + Ka a
-              //
-              // Solve for a.
-              //
-              // Ka a = -Kv v + u - Ks
-              // a = -Kv/Ka v + 1/Ka u - Ks/Ka
-              //
-              // dx/dt = Ax + Bu + c, so by inspection:
-              double A = -Kv / Ka;
-              double B = 1.0 / Ka;
-              double c = -Ks / Ka;
-
-              std::vector<double> xs;
-              std::vector<double> ys;
-
-              // Get data list and initialize model state
-              auto preparedData = *(data.data());
-              xs.emplace_back(0.0);
-              ys.emplace_back(preparedData[0].velocity);
-
-              double x = preparedData[0].velocity;
-              double t = 0.0;
-              for (int j = 1; j < preparedData.size(); ++j) {
-                const auto& prev = preparedData[j - 1];
-                const auto& now = preparedData[j];
-
-                double dt = now.timestamp - prev.timestamp;
-                t += dt;
-
-                // If there's a large gap or the time went backwards, it's a new
-                // section of data, so reset the model state
-                if (dt < 0.0 || dt > 1.0) {
-                  ImPlot::PlotLine("##Fit", &xs[0], &ys[0], xs.size());
-                  xs.clear();
-                  ys.clear();
-                  x = now.velocity;
-                  continue;
-                }
-
-                // Given dx/dt = Ax + Bu + c,
-                // x_k+1 = e^(AT) x_k + A^-1 (e^(AT) - 1) (Bu + c)
-                double Ad = std::exp(A * dt);
-                double Bd = 1.0 / A * (Ad - 1) * B;
-                x = Ad * x + Bd * prev.voltage +
-                    1.0 / A * (Ad - 1) * c * wpi::sgn(x);
-                xs.emplace_back(t);
-                ys.emplace_back(x);
+              if (m_type == analysis::kElevator) {
+                PlotTimeDomainSim(data, sysid::ElevatorSim{m_ff[0], m_ff[1],
+                                                           m_ff[2], m_ff[3]});
+              } else if (m_type == analysis::kArm) {
+                PlotTimeDomainSim(
+                    data, sysid::ArmSim{m_ff[0], m_ff[1], m_ff[2], m_ff[3]});
+              } else {
+                PlotTimeDomainSim(
+                    data, sysid::SimpleMotorSim{m_ff[0], m_ff[1], m_ff[2]});
               }
-              ImPlot::PlotLine("##Fit", &xs[0], &ys[0], xs.size());
             }
 
             ImPlot::EndPlot();
