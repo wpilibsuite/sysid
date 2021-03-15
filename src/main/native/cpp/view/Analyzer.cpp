@@ -19,6 +19,7 @@
 #include <wpi/raw_ostream.h>
 
 #include "sysid/Util.h"
+#include "sysid/analysis/AnalysisManager.h"
 #include "sysid/analysis/AnalysisType.h"
 #include "sysid/analysis/ArmSim.h"
 #include "sysid/analysis/ElevatorSim.h"
@@ -53,7 +54,10 @@ void Analyzer::Display() {
         m_manager = std::make_unique<AnalysisManager>(*m_location, m_settings,
                                                       m_logger);
         m_type = m_manager->GetAnalysisType();
-        RefreshInformation();
+        Calculate();
+        PrepareData();
+        PrepareGraphs();
+        m_stepTestDuration = m_settings.stepTestDuration.to<float>();
       } catch (const std::exception& e) {
         // If we run into an error here, let's just ignore it and make the user
         // explicitly select their file.
@@ -210,7 +214,7 @@ void Analyzer::Display() {
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
       int window = m_settings.windowSize;
       if (ImGui::InputInt("Window Size", &window, 0, 0)) {
-        m_settings.windowSize = std::clamp(window, 2, 10);
+        m_settings.windowSize = std::clamp(window, 2, 15);
         RefreshInformation();
       }
       ImGui::SetCursorPosX(ImGui::GetFontSize() * 15);
@@ -219,6 +223,15 @@ void Analyzer::Display() {
       if (ImGui::InputDouble("Velocity Threshold", &threshold, 0.0, 0.0,
                              "%.3f")) {
         m_settings.motionThreshold = std::max(0.0, threshold);
+        RefreshInformation();
+      }
+
+      ImGui::SetCursorPosX(ImGui::GetFontSize() * 15);
+      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+      if (ImGui::SliderFloat("Test Duration", &m_stepTestDuration,
+                             m_manager->GetMinDuration(),
+                             m_manager->GetMaxDuration(), "%.2f")) {
+        m_settings.stepTestDuration = units::second_t{m_stepTestDuration};
         RefreshInformation();
       }
 
@@ -497,6 +510,7 @@ void Analyzer::SelectFile() {
           std::make_unique<AnalysisManager>(*m_location, m_settings, m_logger);
       m_type = m_manager->GetAnalysisType();
       RefreshInformation();
+      m_stepTestDuration = m_settings.stepTestDuration.to<float>();
     } catch (const wpi::json::exception& e) {
       m_exception =
           "The provided JSON was invalid! You may need to rerun the logger.\n" +
@@ -552,8 +566,8 @@ void Analyzer::PrepareGraphs() {
   try {
     AbortDataPrep();
     m_dataThread = std::thread([&] {
-      m_plot.SetData(m_manager->GetRawData(), m_ff, m_manager->GetStartTimes(),
-                     m_type, m_abortDataPrep);
+      m_plot.SetData(m_manager->GetRawData(), m_manager->GetFilteredData(),
+                     m_ff, m_manager->GetStartTimes(), m_type, m_abortDataPrep);
     });
   } catch (const std::exception& e) {
     m_exception = e.what();

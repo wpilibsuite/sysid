@@ -52,6 +52,14 @@ class Analyzer : public glass::View {
   void RefreshInformation();
   void AbortDataPrep();
 
+  /**
+   * Loads the diagnostic plots.
+   *
+   * @return returns true if the plots have already been loaded, false if they
+   * have just finished loading.
+   */
+  bool LoadPlots();
+
   bool first = true;
   std::string m_exception;
 
@@ -81,6 +89,7 @@ class Analyzer : public glass::View {
   AnalysisType m_type;
   int m_window = 8;
   double m_threshold = 0.2;
+  float m_stepTestDuration = 0.0;
 
   bool combinedGraphFit = false;
 
