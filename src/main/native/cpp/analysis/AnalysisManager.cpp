@@ -120,7 +120,7 @@ void TrimStepVoltageData(std::vector<PreparedData>* data) {
 
   for (size_t i = 0; i < data->size(); ++i) {
     // Get the current acceleration.
-    double acc = data->at(i).acceleration;
+    double acc = std::abs(data->at(i).acceleration);
 
     // If we are not in caution, the acceleration values are still increasing.
     if (!caution) {
@@ -146,6 +146,8 @@ void TrimStepVoltageData(std::vector<PreparedData>* data) {
       break;
     }
   }
+
+  data->erase(data->begin(), data->begin() + idx);
 }
 
 /**
