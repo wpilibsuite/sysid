@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <array>
 #include <vector>
 
 #include <implot.h>
@@ -75,7 +76,7 @@ class AnalyzerPlot {
   wpi::Logger& m_logger;
 
   // Stores whether this was the first call to Plot() since setting data.
-  bool m_fitVoltageDomainPlots = false;
-  bool m_fitTimeDomainPlots = false;
+  std::array<bool, sizeof(kChartTitles) / sizeof(kChartTitles[0])>
+      m_fitNextPlot{};
 };
 }  // namespace sysid
