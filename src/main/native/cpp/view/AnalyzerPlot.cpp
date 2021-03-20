@@ -167,8 +167,8 @@ void AnalyzerPlot::SetData(const Storage& data, const std::vector<double>& ff,
   }
 
   // Set the "fit" flag to true.
-  m_fitVoltageDomainPlots = true;
-  m_fitTimeDomainPlots = true;
+  std::for_each(m_fitNextPlot.begin(), m_fitNextPlot.end(),
+                [](auto& f) { f = true; });
 }
 
 void AnalyzerPlot::DisplayVoltageDomainPlots() {
@@ -181,7 +181,7 @@ void AnalyzerPlot::DisplayVoltageDomainPlots() {
   }
 
   // Quasistatic Velocity vs. Velocity Portion Voltage.
-  if (m_fitVoltageDomainPlots) {
+  if (m_fitNextPlot[0]) {
     ImPlot::FitNextPlotAxes();
   }
   if (ImPlot::BeginPlot(kChartTitles[0], "Velocity-Portion Voltage",
@@ -198,11 +198,14 @@ void AnalyzerPlot::DisplayVoltageDomainPlots() {
     ImPlot::PlotLineG("##Fit", Getter, m_KvFit, 2);
 
     ImPlot::EndPlot();
+
+    if (m_fitNextPlot[0]) {
+      m_fitNextPlot[0] = false;
+    }
   }
 
-  if (m_fitVoltageDomainPlots) {
+  if (m_fitNextPlot[1]) {
     ImPlot::FitNextPlotAxes();
-    m_fitVoltageDomainPlots = false;
   }
   if (ImPlot::BeginPlot(kChartTitles[1], "Acceleration-Portion Voltage",
                         "Dynamic Acceleration", ImVec2(-1, 0), ImPlotFlags_None,
@@ -217,6 +220,10 @@ void AnalyzerPlot::DisplayVoltageDomainPlots() {
     ImPlot::PlotLineG("", Getter, m_KaFit, 2);
 
     ImPlot::EndPlot();
+
+    if (m_fitNextPlot[1]) {
+      m_fitNextPlot[1] = false;
+    }
   }
 }
 
@@ -235,7 +242,7 @@ void AnalyzerPlot::DisplayTimeDomainPlots() {
     const char* y =
         i % 2 == 0 ? "Velocity (units / s)" : "Acceleration (units / s / s)";
 
-    if (m_fitTimeDomainPlots) {
+    if (m_fitNextPlot[i]) {
       ImPlot::FitNextPlotAxes();
     }
     if (ImPlot::BeginPlot(kChartTitles[i], x, y, ImVec2(-1, 0),
@@ -254,9 +261,10 @@ void AnalyzerPlot::DisplayTimeDomainPlots() {
         }
       }
       ImPlot::EndPlot();
+
+      if (m_fitNextPlot[i]) {
+        m_fitNextPlot[i] = false;
+      }
     }
-  }
-  if (m_fitTimeDomainPlots) {
-    m_fitTimeDomainPlots = false;
   }
 }
