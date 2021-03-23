@@ -156,14 +156,20 @@ void AnalyzerPlot::SetData(const Storage& data, const std::vector<double>& ff,
 
   // Populate simulated time-domain data.
   if (type == analysis::kElevator) {
-    m_sim = PopulateTimeDomainSim(
+    m_quasistaticSim = PopulateTimeDomainSim(
+        slow, fStep, sysid::ElevatorSim{ff[0], ff[1], ff[2], ff[3]});
+    m_dynamicSim = PopulateTimeDomainSim(
         fast, fStep, sysid::ElevatorSim{ff[0], ff[1], ff[2], ff[3]});
   } else if (type == analysis::kArm) {
-    m_sim = PopulateTimeDomainSim(fast, fStep,
-                                  sysid::ArmSim{ff[0], ff[1], ff[2], ff[3]});
+    m_quasistaticSim = PopulateTimeDomainSim(
+        slow, fStep, sysid::ArmSim{ff[0], ff[1], ff[2], ff[3]});
+    m_dynamicSim = PopulateTimeDomainSim(
+        fast, fStep, sysid::ArmSim{ff[0], ff[1], ff[2], ff[3]});
   } else {
-    m_sim = PopulateTimeDomainSim(fast, fStep,
-                                  sysid::SimpleMotorSim{ff[0], ff[1], ff[2]});
+    m_quasistaticSim = PopulateTimeDomainSim(
+        slow, fStep, sysid::SimpleMotorSim{ff[0], ff[1], ff[2]});
+    m_dynamicSim = PopulateTimeDomainSim(
+        fast, fStep, sysid::SimpleMotorSim{ff[0], ff[1], ff[2]});
   }
 
   // Set the "fit" flag to true.
@@ -254,8 +260,13 @@ void AnalyzerPlot::DisplayTimeDomainPlots() {
       ImPlot::PlotScatterG("", Getter, data.data(), data.size());
 
       // Plot simulated time-domain data.
-      if (i == 4) {
-        for (auto&& pts : m_sim) {
+      if (i == 2) {
+        for (auto&& pts : m_quasistaticSim) {
+          ImPlot::SetNextLineStyle(IMPLOT_AUTO_COL, 1.5);
+          ImPlot::PlotLineG("##Simulated", Getter, pts.data(), pts.size());
+        }
+      } else if (i == 4) {
+        for (auto&& pts : m_dynamicSim) {
           ImPlot::SetNextLineStyle(IMPLOT_AUTO_COL, 1.5);
           ImPlot::PlotLineG("##Simulated", Getter, pts.data(), pts.size());
         }
