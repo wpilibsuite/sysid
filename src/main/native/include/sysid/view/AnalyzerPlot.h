@@ -67,7 +67,8 @@ class AnalyzerPlot {
   ImPlotPoint m_KaFit[2];
 
   // Stores points for simulated time-domain data.
-  std::vector<std::vector<ImPlotPoint>> m_sim;
+  std::vector<std::vector<ImPlotPoint>> m_quasistaticSim;
+  std::vector<std::vector<ImPlotPoint>> m_dynamicSim;
 
   // Thread safety
   wpi::spinlock m_mutex;
