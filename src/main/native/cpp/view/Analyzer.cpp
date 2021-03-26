@@ -306,6 +306,15 @@ void Analyzer::Display() {
         Calculate();
       }
 
+      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+      value = m_settings.preset.outputVelocityTimeFactor;
+      if (ImGui::InputDouble("Velocity Time Units (s)", &value, 0.0, 0.0,
+                             "%.1f") &&
+          value > 0) {
+        m_settings.preset.outputVelocityTimeFactor = value;
+        Calculate();
+      }
+
       auto ShowPresetValue = [this](const char* text, double* data,
                                     float cursorX = 0.0f) {
         if (cursorX > 0) {
