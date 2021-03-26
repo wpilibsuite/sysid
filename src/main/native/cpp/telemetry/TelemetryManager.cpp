@@ -249,7 +249,7 @@ std::string TelemetryManager::SaveJSON(wpi::StringRef location) {
   ss << location;
   ss << SYSID_PATH_SEPARATOR;
   ss << "sysid_data";
-  ss << std::put_time(&tm, "%Y%m%d-%H%M");
+  ss << std::put_time(&tm, "%Y%m%d-%H%M%S");
   ss << ".json";
 
   std::string loc = ss.str();

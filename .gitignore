@@ -288,3 +288,6 @@ gradle-app.setting
 .vim/
 .caches/
 .cache/
+
+# Failed JSONS
+jsons/
