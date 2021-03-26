@@ -114,17 +114,46 @@ class IntegrationTest : public ::testing::Test {
       auto ff = std::get<0>(output.ff);
       auto trackWidth = output.trackWidth;
 
+      wpi::outs() << "Ks: " << ff[0] << "\n"
+                  << "Kv: " << ff[1] << "\nKa: " << ff[2] << "\n";
+      wpi::outs().flush();
       EXPECT_NEAR(Kv, ff[1], 0.30);
       EXPECT_NEAR(Ka, ff[2], 0.15);
 
       if (m_settings.mechanism == sysid::analysis::kElevator) {
+        wpi::outs() << "KG: " << ff[3] << "\n";
+        wpi::outs().flush();
         EXPECT_NEAR(kG, ff[3], 0.2);
       } else if (m_settings.mechanism == sysid::analysis::kArm) {
+        wpi::outs() << "KCos: " << ff[3] << "\n";
+        wpi::outs().flush();
         EXPECT_NEAR(kCos, ff[3], 0.15);
       }
 
       if (trackWidth) {
+        wpi::outs() << "Trackwidth: " << *trackWidth << "\n";
+        wpi::outs().flush();
         EXPECT_NEAR(kTrackWidth, *trackWidth, 0.1);
+      }
+
+      if (HasFailure()) {  // If it failed, write to jsons folder for artifact
+                           // upload
+        wpi::SmallString<128> jsonFolderPath;
+        wpi::raw_svector_ostream os(jsonFolderPath);
+        os << PROJECT_ROOT_DIR << SYSID_PATH_SEPARATOR << "jsons/";
+
+        wpi::SmallString<128> failCommand;
+        wpi::raw_svector_ostream cmdOs(failCommand);
+#ifdef _WIN32 || _WIN64
+        cmdOs << "if not exist \"" << jsonFolderPath.c_str() << "\" mkdir \""
+              << jsonFolderPath.c_str() << "\" && copy \"" << path << "\" \""
+              << jsonFolderPath.c_str() << "\"";
+#else
+        cmdOs << "mkdir -p " << jsonFolderPath.c_str() << " && cp -v " << path
+              << " " << jsonFolderPath.c_str();
+#endif
+        wpi::outs() << "Running: " << failCommand.c_str() << "\n";
+        std::system(failCommand.c_str());
       }
     } catch (std::exception& e) {
       wpi::outs() << "Teardown Failed: " << e.what() << "\n";

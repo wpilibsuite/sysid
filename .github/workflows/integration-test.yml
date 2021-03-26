@@ -36,3 +36,10 @@ jobs:
 
       - name: Run Integration Tests
         run: ./gradlew runIntegrationTests -PwithIntegration
+
+      - uses: actions/upload-artifact@v2
+        if: ${{ failure() }}
+        with:
+          name: Upload Bad Json
+          path: jsons/
+          if-no-files-found: ignore
