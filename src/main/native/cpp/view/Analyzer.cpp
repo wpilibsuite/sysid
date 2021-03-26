@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <exception>
+#include <stdexcept>
 #include <thread>
 
 #include <glass/Context.h>
@@ -52,7 +53,7 @@ void Analyzer::Display() {
         m_manager = std::make_unique<AnalysisManager>(*m_location, m_settings,
                                                       m_logger);
         m_type = m_manager->GetAnalysisType();
-        Calculate();
+        RefreshInformation();
       } catch (const std::exception& e) {
         // If we run into an error here, let's just ignore it and make the user
         // explicitly select their file.
@@ -85,6 +86,7 @@ void Analyzer::Display() {
     if (ImGui::Combo("Dataset", &m_settings.dataset, AnalysisManager::kDatasets,
                      m_type == analysis::kDrivetrain ? 9 : 3)) {
       Calculate();
+      PrepareGraphs();
     }
     ImGui::SameLine(width - ImGui::CalcTextSize("Reset").x);
     if (ImGui::Button("Reset")) {
@@ -194,87 +196,82 @@ void Analyzer::Display() {
 
       ShowGain("r-squared", &m_rs);
 
+      double endY = ImGui::GetCursorPosY();
+
       // Come back to the starting y pos.
       ImGui::SetCursorPosY(beginY);
 
-      // Create buttons to show diagnostics.
-      auto ShowDiagnostics = [&](const char* text) {
-        ImGui::SetCursorPosX(ImGui::GetFontSize() * 15);
-        if (ImGui::Button(text)) {
-          ImGui::OpenPopup(text);
-          std::thread thr{[&] {
-            m_plot.SetData(m_manager->GetRawData(), m_manager->GetStartTimes(),
-                           m_ff, m_type);
-          }};
-          thr.detach();
-        }
-      };
-
-      ShowDiagnostics("Voltage-Domain Diagnostics");
-      ShowDiagnostics("Time-Domain Diagnostics");
-      ShowDiagnostics("Combined Diagnostics");
+      ImGui::SetCursorPosX(ImGui::GetFontSize() * 15);
+      if (ImGui::Button("Combined Diagnostics")) {
+        ImGui::OpenPopup("Combined Diagnostics");
+      }
 
       ImGui::SetCursorPosX(ImGui::GetFontSize() * 15);
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
       int window = m_settings.windowSize;
       if (ImGui::InputInt("Window Size", &window, 0, 0)) {
         m_settings.windowSize = std::clamp(window, 2, 10);
-        PrepareData();
-        Calculate();
+        RefreshInformation();
       }
-
       ImGui::SetCursorPosX(ImGui::GetFontSize() * 15);
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
       double threshold = m_settings.motionThreshold;
       if (ImGui::InputDouble("Velocity Threshold", &threshold, 0.0, 0.0,
                              "%.3f")) {
         m_settings.motionThreshold = std::max(0.0, threshold);
-        PrepareData();
-        Calculate();
-      }
-
-      float endY = ImGui::GetCursorPosY();
-
-      auto size = ImGui::GetIO().DisplaySize;
-      ImGui::SetNextWindowSize(ImVec2(size.x / 2.5, size.y * 0.9));
-
-      // Show voltage domain diagnostic plots.
-      if (ImGui::BeginPopupModal("Voltage-Domain Diagnostics")) {
-        m_plot.DisplayVoltageDomainPlots();
-        // Button to close popup.
-        if (ImGui::Button("Close")) {
-          ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-      }
-
-      ImGui::SetNextWindowSize(ImVec2(size.x / 2.5, size.y * 0.9));
-
-      // Show time domain diagnostic plots.
-      if (ImGui::BeginPopupModal("Time-Domain Diagnostics")) {
-        m_plot.DisplayTimeDomainPlots();
-        // Button to close popup.
-        if (ImGui::Button("Close")) {
-          ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
+        RefreshInformation();
       }
 
       ImGui::SetNextWindowSize(ImVec2(m_plot.kCombinedPlotSize * 4 + 50,
-                                      m_plot.kCombinedPlotSize * 2 + 25));
+                                      m_plot.kCombinedPlotSize * 2 + 25),
+                               ImGuiCond_Once);
       // Show plots for screenshots
       if (ImGui::BeginPopupModal("Combined Diagnostics")) {
+        // Only fit the plots when the popup first shows as they get messed up
+        // by being set to a different size
+        if (!combinedGraphFit) {
+          m_plot.FitPlots();
+          combinedGraphFit = true;
+        }
         m_plot.DisplayCombinedPlots();
 
         // Button to close popup.
         if (ImGui::Button("Close")) {
           ImGui::CloseCurrentPopup();
+          combinedGraphFit = false;
+
+          // Fit plots afterwards so that the regular plot view isn't messed up
+          m_plot.FitPlots();
         }
         ImGui::EndPopup();
       }
+
       ImGui::SetCursorPosY(endY);
+      ImGui::Separator();
     }
   }
+
+  ImGui::SetNextWindowPos(
+      ImVec2(ImGui::GetWindowPos().x + ImGui::GetContentRegionAvail().x + 25,
+             ImGui::GetWindowPos().y),
+      ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(3 * ImGui::GetContentRegionAvail().x / 4,
+                                  ImGui::GetContentRegionAvail().y),
+                           ImGuiCond_FirstUseEver);
+  ImGui::Begin("Diagnostic Plots");
+  // If the plots were already loaded, store the scroll position. Else go to
+  // the last recorded scroll position if they have just been initialized
+  bool plotsLoaded = m_plot.LoadPlots();
+  if (plotsLoaded) {
+    if (m_prevPlotsLoaded) {
+      m_graphScroll = ImGui::GetScrollY();
+    } else {
+      ImGui::SetScrollY(m_graphScroll);
+    }
+  }
+  m_prevPlotsLoaded = plotsLoaded;
+  ImGui::End();
+
   if (ImGui::CollapsingHeader("Feedback Analysis")) {
     // Depending on whether a file has been selected or not, display a generic
     // warning message or show the feedback gains.
@@ -499,7 +496,7 @@ void Analyzer::SelectFile() {
       m_manager =
           std::make_unique<AnalysisManager>(*m_location, m_settings, m_logger);
       m_type = m_manager->GetAnalysisType();
-      Calculate();
+      RefreshInformation();
     } catch (const wpi::json::exception& e) {
       m_exception =
           "The provided JSON was invalid! You may need to rerun the logger.\n" +
@@ -541,6 +538,34 @@ void Analyzer::Calculate() {
     ResetManagerState();
     ImGui::OpenPopup("Exception Caught!");
   }
+}
+
+void Analyzer::AbortDataPrep() {
+  if (m_dataThread.joinable()) {
+    m_abortDataPrep = true;
+    m_dataThread.join();
+    m_abortDataPrep = false;
+  }
+}
+
+void Analyzer::PrepareGraphs() {
+  try {
+    AbortDataPrep();
+    m_dataThread = std::thread([&] {
+      m_plot.SetData(m_manager->GetRawData(), m_ff, m_manager->GetStartTimes(),
+                     m_type, m_abortDataPrep);
+    });
+  } catch (const std::exception& e) {
+    m_exception = e.what();
+    ResetManagerState();
+    ImGui::OpenPopup("Exception Caught!");
+  }
+}
+
+void Analyzer::RefreshInformation() {
+  PrepareData();
+  Calculate();
+  PrepareGraphs();
 }
 
 void Analyzer::ResetManagerState() {

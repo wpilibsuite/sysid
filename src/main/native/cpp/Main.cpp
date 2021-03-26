@@ -100,13 +100,13 @@ int main() {
 
   // Set default positions and sizes for windows.
   gLoggerWindow->SetDefaultPos(35, 40);
-  gLoggerWindow->SetDefaultSize(500, 420);
+  gLoggerWindow->SetDefaultSize(350, 420);
 
-  gAnalyzerWindow->SetDefaultPos(550, 40);
-  gAnalyzerWindow->SetDefaultSize(670, 530);
+  gAnalyzerWindow->SetDefaultPos(400, 40);
+  gAnalyzerWindow->SetDefaultSize(500, 530);
 
   gJSONConverterWindow->SetDefaultPos(35, 485);
-  gJSONConverterWindow->SetDefaultSize(500, 80);
+  gJSONConverterWindow->SetDefaultSize(350, 80);
 
   gProgramLogWindow->SetDefaultPos(40, 580);
   gProgramLogWindow->SetDefaultSize(1180, 125);

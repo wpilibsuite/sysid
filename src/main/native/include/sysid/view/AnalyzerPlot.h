@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <vector>
 
 #include <imgui.h>
@@ -47,20 +48,29 @@ class AnalyzerPlot {
   /**
    * Sets the raw data to be displayed on the plots.
    */
-  void SetData(const Storage& data, const std::array<double, 4>& startTimes,
-               const std::vector<double>& ff, AnalysisType type);
+  void SetData(const Storage& data, const std::vector<double>& ff,
+               const std::array<double, 4>& startTimes, AnalysisType type,
+               std::atomic<bool>& abort);
 
   /**
    * Displays voltage-domain plots.
+   *
+   * @return Returns true if plots aren't in the loading state
    */
-  void DisplayVoltageDomainPlots(ImVec2 plotSize = ImVec2(-1, 0));
+  bool DisplayVoltageDomainPlots(ImVec2 plotSize = ImVec2(-1, 0));
 
   /**
    * Displays time-domain plots.
+   *
+   * @return Returns true if plots aren't in the loading state
    */
-  void DisplayTimeDomainPlots(ImVec2 plotSize = ImVec2(-1, 0));
+  bool DisplayTimeDomainPlots(ImVec2 plotSize = ImVec2(-1, 0));
 
   void DisplayCombinedPlots();
+
+  bool LoadPlots();
+
+  void FitPlots();
 
  private:
   // The maximum size of each vector (dataset to plot).
@@ -80,7 +90,6 @@ class AnalyzerPlot {
   // Stores differences in time deltas
   std::vector<std::vector<ImPlotPoint>> m_dt;
   std::vector<ImPlotPoint> m_dtMeanLine;
-  double m_dtMaxTime = 0.0;
 
   // Thread safety
   wpi::spinlock m_mutex;

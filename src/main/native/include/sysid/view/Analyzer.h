@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <glass/View.h>
@@ -40,12 +41,16 @@ class Analyzer : public glass::View {
 
   explicit Analyzer(wpi::Logger& logger);
   void Display() override;
+  ~Analyzer() override { AbortDataPrep(); };
 
  private:
   void SelectFile();
   void PrepareData();
   void Calculate();
   void ResetManagerState();
+  void PrepareGraphs();
+  void RefreshInformation();
+  void AbortDataPrep();
 
   bool first = true;
   std::string m_exception;
@@ -77,6 +82,8 @@ class Analyzer : public glass::View {
   int m_window = 8;
   double m_threshold = 0.2;
 
+  bool combinedGraphFit = false;
+
   // File manipulation
   std::unique_ptr<pfd::open_file> m_selector;
   std::string* m_location;
@@ -86,5 +93,13 @@ class Analyzer : public glass::View {
 
   // Plot
   AnalyzerPlot m_plot{m_logger};
+  bool m_prevPlotsLoaded = false;
+
+  // Stores graph scroll bar position and states for keeping track of scroll
+  // positions after loading graphs
+  float m_graphScroll;
+
+  std::atomic<bool> m_abortDataPrep{false};
+  std::thread m_dataThread;
 };
 }  // namespace sysid
