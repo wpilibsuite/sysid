@@ -306,6 +306,19 @@ void Analyzer::Display() {
         Calculate();
       }
 
+      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+      value = m_settings.preset.outputVelocityTimeFactor;
+      if (ImGui::InputDouble("Velocity Denominator Units (s)", &value, 0.0, 0.0,
+                             "%.1f") &&
+          value > 0) {
+        m_settings.preset.outputVelocityTimeFactor = value;
+        Calculate();
+      }
+
+      sysid::CreateTooltip(
+          "This represents the denominator of the velocity unit used by the "
+          "feedback controller. For example, CTRE uses 100 ms = 0.1 s.");
+
       auto ShowPresetValue = [this](const char* text, double* data,
                                     float cursorX = 0.0f) {
         if (cursorX > 0) {
@@ -333,11 +346,11 @@ void Analyzer::Display() {
       ShowPresetValue("Position Measurement Delay (s)",
                       reinterpret_cast<double*>(
                           &m_settings.preset.positionMeasurementDelay),
-                      ImGui::GetFontSize() * 17);
+                      ImGui::GetFontSize() * 23);
       ShowPresetValue("Velocity Measurement Delay (s)",
                       reinterpret_cast<double*>(
                           &m_settings.preset.velocityMeasurementDelay),
-                      ImGui::GetFontSize() * 17);
+                      ImGui::GetFontSize() * 23);
 
       ImGui::SetCursorPosY(endY);
 
