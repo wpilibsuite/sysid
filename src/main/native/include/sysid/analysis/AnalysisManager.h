@@ -161,6 +161,11 @@ class AnalysisManager {
    */
   Storage& GetRawData() { return m_datasets[kDatasets[m_settings.dataset]]; }
 
+  /**
+   * Returns the different start times of the recorded tests.
+   */
+  const std::array<double, 4> GetStartTimes() { return m_startTimes; }
+
  private:
   wpi::Logger& m_logger;
 
@@ -168,6 +173,9 @@ class AnalysisManager {
   // Backward, etc.)
   wpi::json m_json;
   wpi::StringMap<Storage> m_datasets;
+
+  // Stores the various start times of the different tests.
+  std::array<double, 4> m_startTimes;
 
   // The settings for this instance. This contains pointers to the feedback
   // controller preset, LQR parameters, acceleration window size, etc.

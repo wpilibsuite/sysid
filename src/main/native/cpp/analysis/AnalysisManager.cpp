@@ -185,7 +185,8 @@ static void CalculateCosine(std::vector<PreparedData>* data,
 static void PrepareGeneralData(const wpi::json& json,
                                const AnalysisManager::Settings& settings,
                                double factor, wpi::StringRef unit,
-                               wpi::StringMap<Storage>& datasets) {
+                               wpi::StringMap<Storage>& datasets,
+                               std::array<double, 4>& startTimes) {
   using Data = std::array<double, 4>;
   wpi::StringMap<std::vector<Data>> data;
 
@@ -242,6 +243,8 @@ static void PrepareGeneralData(const wpi::json& json,
   datasets["Backward"] = std::make_tuple(sb, fb);
   datasets["Combined"] =
       std::make_tuple(Concatenate(sf, {&sb}), Concatenate(ff, {&fb}));
+  startTimes = {sf[0].timestamp, sb[0].timestamp, ff[0].timestamp,
+                fb[0].timestamp};
 }
 
 /**
@@ -261,8 +264,8 @@ static void PrepareGeneralData(const wpi::json& json,
  */
 static void PrepareAngularDrivetrainData(
     const wpi::json& json, const AnalysisManager::Settings& settings,
-    double factor, std::optional<double>& tw,
-    wpi::StringMap<Storage>& datasets) {
+    double factor, std::optional<double>& tw, wpi::StringMap<Storage>& datasets,
+    std::array<double, 4>& startTimes) {
   using Data = std::array<double, 9>;
   wpi::StringMap<std::vector<Data>> data;
 
@@ -322,6 +325,8 @@ static void PrepareAngularDrivetrainData(
   datasets["Backward"] = std::make_tuple(sb, fb);
   datasets["Combined"] =
       std::make_tuple(Concatenate(sf, {&sb}), Concatenate(ff, {&fb}));
+  startTimes = {sf[0].timestamp, sb[0].timestamp, ff[0].timestamp,
+                fb[0].timestamp};
 }
 
 /**
@@ -339,7 +344,8 @@ static void PrepareAngularDrivetrainData(
  */
 static void PrepareLinearDrivetrainData(
     const wpi::json& json, const AnalysisManager::Settings& settings,
-    double factor, wpi::StringMap<Storage>& datasets) {
+    double factor, wpi::StringMap<Storage>& datasets,
+    std::array<double, 4>& startTimes) {
   using Data = std::array<double, 9>;
   wpi::StringMap<std::vector<Data>> data;
 
@@ -425,6 +431,8 @@ static void PrepareLinearDrivetrainData(
   datasets["Right Backward"] = std::make_tuple(sbr, fbr);
   datasets["Right Combined"] =
       std::make_tuple(Concatenate(sfr, {&sbr}), Concatenate(ffr, {&fbr}));
+  startTimes = {sf[0].timestamp, sb[0].timestamp, ff[0].timestamp,
+                fb[0].timestamp};
 }
 
 AnalysisManager::AnalysisManager(wpi::StringRef path, const Settings& settings,
@@ -461,12 +469,14 @@ AnalysisManager::AnalysisManager(wpi::StringRef path, const Settings& settings,
 
 void AnalysisManager::PrepareData() {
   if (m_type == analysis::kDrivetrain) {
-    PrepareLinearDrivetrainData(m_json, m_settings, m_factor, m_datasets);
+    PrepareLinearDrivetrainData(m_json, m_settings, m_factor, m_datasets,
+                                m_startTimes);
   } else if (m_type == analysis::kDrivetrainAngular) {
     PrepareAngularDrivetrainData(m_json, m_settings, m_factor, m_trackWidth,
-                                 m_datasets);
+                                 m_datasets, m_startTimes);
   } else {
-    PrepareGeneralData(m_json, m_settings, m_factor, m_unit, m_datasets);
+    PrepareGeneralData(m_json, m_settings, m_factor, m_unit, m_datasets,
+                       m_startTimes);
   }
 }
 
