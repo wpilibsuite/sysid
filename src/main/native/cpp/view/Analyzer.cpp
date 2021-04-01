@@ -203,8 +203,10 @@ void Analyzer::Display() {
         ImGui::SetCursorPosX(ImGui::GetFontSize() * 15);
         if (ImGui::Button(text)) {
           ImGui::OpenPopup(text);
-          std::thread thr{
-              [&] { m_plot.SetData(m_manager->GetRawData(), m_ff, m_type); }};
+          std::thread thr{[&] {
+            m_plot.SetData(m_manager->GetRawData(), m_manager->GetStartTimes(),
+                           m_ff, m_type);
+          }};
           thr.detach();
         }
       };

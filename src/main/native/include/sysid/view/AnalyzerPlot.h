@@ -31,7 +31,8 @@ class AnalyzerPlot {
       "Quasistatic Velocity vs. Time",
       "Quasistatic Acceleration vs. Time",
       "Dynamic Velocity vs. Time",
-      "Dynamic Acceleration vs. Time"};
+      "Dynamic Acceleration vs. Time",
+      "Timesteps vs. Time"};
 
   /**
    * Constructs an instance of the analyzer plot helper and allocates memory for
@@ -42,8 +43,8 @@ class AnalyzerPlot {
   /**
    * Sets the raw data to be displayed on the plots.
    */
-  void SetData(const Storage& data, const std::vector<double>& ff,
-               AnalysisType type);
+  void SetData(const Storage& data, const std::array<double, 4>& startTimes,
+               const std::vector<double>& ff, AnalysisType type);
 
   /**
    * Displays voltage-domain plots.
@@ -69,6 +70,11 @@ class AnalyzerPlot {
   // Stores points for simulated time-domain data.
   std::vector<std::vector<ImPlotPoint>> m_quasistaticSim;
   std::vector<std::vector<ImPlotPoint>> m_dynamicSim;
+
+  // Stores differences in time deltas
+  std::vector<std::vector<ImPlotPoint>> m_dt;
+  std::vector<ImPlotPoint> m_dtMeanLine;
+  double m_dtMaxTime = 0.0;
 
   // Thread safety
   wpi::spinlock m_mutex;
