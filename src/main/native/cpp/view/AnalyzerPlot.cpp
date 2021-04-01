@@ -328,7 +328,7 @@ void AnalyzerPlot::DisplayTimeDomainPlots() {
     }
   }
   if (m_fitNextPlot[6]) {
-    ImPlot::SetNextPlotLimits(0, m_dtMaxTime, 0, 50);
+    ImPlot::SetNextPlotLimitsY(0, 50);
     ImPlot::FitNextPlotAxes(true, false, false, false);
   }
   if (ImPlot::BeginPlot(kChartTitles[6], "Time (s)", "Change in Time (ms)",
