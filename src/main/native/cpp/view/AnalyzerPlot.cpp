@@ -226,7 +226,7 @@ void AnalyzerPlot::SetData(const Storage& data,
                 [](auto& f) { f = true; });
 }
 
-void AnalyzerPlot::DisplayVoltageDomainPlots() {
+void AnalyzerPlot::DisplayVoltageDomainPlots(ImVec2 plotSize) {
   std::unique_lock lock(m_mutex, std::defer_lock);
 
   if (!lock.try_lock()) {
@@ -235,12 +235,15 @@ void AnalyzerPlot::DisplayVoltageDomainPlots() {
     return;
   }
 
+  bool forPicture = plotSize.x != -1;
+
   // Quasistatic Velocity vs. Velocity Portion Voltage.
   if (m_fitNextPlot[0]) {
     ImPlot::FitNextPlotAxes();
   }
+
   if (ImPlot::BeginPlot(kChartTitles[0], "Velocity-Portion Voltage",
-                        "Quasistatic Velocity", ImVec2(-1, 0), ImPlotFlags_None,
+                        "Quasistatic Velocity", plotSize, ImPlotFlags_None,
                         ImPlotAxisFlags_NoGridLines,
                         ImPlotAxisFlags_NoGridLines)) {
     // Get a reference to the data that we are plotting.
@@ -262,8 +265,13 @@ void AnalyzerPlot::DisplayVoltageDomainPlots() {
   if (m_fitNextPlot[1]) {
     ImPlot::FitNextPlotAxes();
   }
+
+  if (forPicture) {
+    ImGui::SameLine();
+  }
+
   if (ImPlot::BeginPlot(kChartTitles[1], "Acceleration-Portion Voltage",
-                        "Dynamic Acceleration", ImVec2(-1, 0), ImPlotFlags_None,
+                        "Dynamic Acceleration", plotSize, ImPlotFlags_None,
                         ImPlotAxisFlags_NoGridLines)) {
     // Get a reference to the data we are plotting.
     auto& data = m_data[kChartTitles[1]];
@@ -282,7 +290,7 @@ void AnalyzerPlot::DisplayVoltageDomainPlots() {
   }
 }
 
-void AnalyzerPlot::DisplayTimeDomainPlots() {
+void AnalyzerPlot::DisplayTimeDomainPlots(ImVec2 plotSize) {
   std::unique_lock lock(m_mutex, std::defer_lock);
 
   if (!lock.try_lock()) {
@@ -290,6 +298,8 @@ void AnalyzerPlot::DisplayTimeDomainPlots() {
                 "|/-\\"[static_cast<int>(ImGui::GetTime() / 0.05f) & 3]);
     return;
   }
+
+  bool forPicture = plotSize.x != -1;
 
   // Iterate through the chart titles for these plots and graph them.
   for (size_t i = 2; i < 6; ++i) {
@@ -300,8 +310,12 @@ void AnalyzerPlot::DisplayTimeDomainPlots() {
     if (m_fitNextPlot[i]) {
       ImPlot::FitNextPlotAxes();
     }
-    if (ImPlot::BeginPlot(kChartTitles[i], x, y, ImVec2(-1, 0),
-                          ImPlotFlags_None, ImPlotAxisFlags_NoGridLines)) {
+
+    if (forPicture && i % 4 != 0) {
+      ImGui::SameLine();
+    }
+    if (ImPlot::BeginPlot(kChartTitles[i], x, y, plotSize, ImPlotFlags_None,
+                          ImPlotAxisFlags_NoGridLines)) {
       // Get a reference to the data we are plotting.
       auto& data = m_data[kChartTitles[i]];
 
@@ -327,12 +341,17 @@ void AnalyzerPlot::DisplayTimeDomainPlots() {
       }
     }
   }
+
+  if (forPicture) {
+    ImGui::SameLine();
+  }
+
   if (m_fitNextPlot[6]) {
     ImPlot::SetNextPlotLimitsY(0, 50);
     ImPlot::FitNextPlotAxes(true, false, false, false);
   }
   if (ImPlot::BeginPlot(kChartTitles[6], "Time (s)", "Change in Time (ms)",
-                        ImVec2(-1, 0), ImPlotFlags_None,
+                        plotSize, ImPlotFlags_None,
                         ImPlotAxisFlags_NoGridLines)) {
     // Get a reference to the data we are plotting.
     auto& data = m_data[kChartTitles[6]];
@@ -351,4 +370,10 @@ void AnalyzerPlot::DisplayTimeDomainPlots() {
       m_fitNextPlot[6] = false;
     }
   }
+}
+
+void AnalyzerPlot::DisplayCombinedPlots() {
+  const ImVec2 plotSize{kCombinedPlotSize, kCombinedPlotSize};
+  DisplayVoltageDomainPlots(plotSize);
+  DisplayTimeDomainPlots(plotSize);
 }

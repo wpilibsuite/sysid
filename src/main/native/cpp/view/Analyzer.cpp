@@ -193,7 +193,6 @@ void Analyzer::Display() {
       }
 
       ShowGain("r-squared", &m_rs);
-      float endY = ImGui::GetCursorPosY();
 
       // Come back to the starting y pos.
       ImGui::SetCursorPosY(beginY);
@@ -213,6 +212,7 @@ void Analyzer::Display() {
 
       ShowDiagnostics("Voltage-Domain Diagnostics");
       ShowDiagnostics("Time-Domain Diagnostics");
+      ShowDiagnostics("Combined Diagnostics");
 
       ImGui::SetCursorPosX(ImGui::GetFontSize() * 15);
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
@@ -233,6 +233,8 @@ void Analyzer::Display() {
         Calculate();
       }
 
+      float endY = ImGui::GetCursorPosY();
+
       auto size = ImGui::GetIO().DisplaySize;
       ImGui::SetNextWindowSize(ImVec2(size.x / 2.5, size.y * 0.9));
 
@@ -251,6 +253,19 @@ void Analyzer::Display() {
       // Show time domain diagnostic plots.
       if (ImGui::BeginPopupModal("Time-Domain Diagnostics")) {
         m_plot.DisplayTimeDomainPlots();
+        // Button to close popup.
+        if (ImGui::Button("Close")) {
+          ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+      }
+
+      ImGui::SetNextWindowSize(ImVec2(m_plot.kCombinedPlotSize * 4 + 50,
+                                      m_plot.kCombinedPlotSize * 2 + 25));
+      // Show plots for screenshots
+      if (ImGui::BeginPopupModal("Combined Diagnostics")) {
+        m_plot.DisplayCombinedPlots();
+
         // Button to close popup.
         if (ImGui::Button("Close")) {
           ImGui::CloseCurrentPopup();
