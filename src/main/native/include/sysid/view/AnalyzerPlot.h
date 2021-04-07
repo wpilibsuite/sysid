@@ -7,6 +7,7 @@
 #include <array>
 #include <vector>
 
+#include <imgui.h>
 #include <implot.h>
 #include <units/time.h>
 #include <units/voltage.h>
@@ -34,6 +35,9 @@ class AnalyzerPlot {
       "Dynamic Acceleration vs. Time",
       "Timesteps vs. Time"};
 
+  // Size of plots when screenshotting
+  static constexpr int kCombinedPlotSize = 300;
+
   /**
    * Constructs an instance of the analyzer plot helper and allocates memory for
    * all data vectors.
@@ -49,12 +53,14 @@ class AnalyzerPlot {
   /**
    * Displays voltage-domain plots.
    */
-  void DisplayVoltageDomainPlots();
+  void DisplayVoltageDomainPlots(ImVec2 plotSize = ImVec2(-1, 0));
 
   /**
    * Displays time-domain plots.
    */
-  void DisplayTimeDomainPlots();
+  void DisplayTimeDomainPlots(ImVec2 plotSize = ImVec2(-1, 0));
+
+  void DisplayCombinedPlots();
 
  private:
   // The maximum size of each vector (dataset to plot).
