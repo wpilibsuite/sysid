@@ -13,6 +13,7 @@
 #include <imgui.h>
 #include <implot.h>
 #include <units/time.h>
+#include <wpi/raw_ostream.h>
 
 #include "sysid/analysis/AnalysisManager.h"
 #include "sysid/analysis/AnalysisType.h"
@@ -71,14 +72,17 @@ AnalyzerPlot::AnalyzerPlot(wpi::Logger& logger) : m_logger(logger) {
   }
 }
 
-void AnalyzerPlot::SetData(const Storage& data,
+void AnalyzerPlot::SetData(const Storage& data, const std::vector<double>& ff,
                            const std::array<double, 4>& startTimes,
-                           const std::vector<double>& ff, AnalysisType type) {
+                           AnalysisType type, std::atomic<bool>& abort) {
   std::scoped_lock lock(m_mutex);
   auto& [slow, fast] = data;
 
   // Clear all data vectors.
   for (auto it = m_data.begin(); it != m_data.end(); ++it) {
+    if (abort) {
+      return;
+    }
     it->second.clear();
   }
 
@@ -115,6 +119,9 @@ void AnalyzerPlot::SetData(const Storage& data,
   // velocity-portion voltage graph.
   double t = slow[0].timestamp;
   for (size_t i = 0; i < slow.size(); i += sStep) {
+    if (abort) {
+      return;
+    }
     // Calculate portion of voltage that corresponds to change in velocity.
     double Vportion = slow[i].voltage - std::copysign(ff[0], slow[i].velocity) -
                       ff[2] * slow[i].acceleration;
@@ -155,6 +162,9 @@ void AnalyzerPlot::SetData(const Storage& data,
   // acceleration-portion voltage graph.
   t = fast[0].timestamp;
   for (size_t i = 0; i < fast.size(); i += fStep) {
+    if (abort) {
+      return;
+    }
     // Calculate portion of voltage that corresponds to change in acceleration.
     double Vportion = fast[i].voltage - std::copysign(ff[0], fast[i].velocity) -
                       ff[1] * fast[i].velocity;
@@ -192,14 +202,14 @@ void AnalyzerPlot::SetData(const Storage& data,
 
   // Load dt mean for plot data
   double dtMean = dtSum / dtSamples;
-  m_dtMaxTime = std::max(slow.back().timestamp - slow.front().timestamp,
-                         fast.back().timestamp - fast.front().timestamp);
+  double maxTime = std::max(slow.back().timestamp - slow.front().timestamp,
+                            fast.back().timestamp - fast.front().timestamp);
 
   // Set first recorded timestamp to mean
   m_dtMeanLine.emplace_back(0.0, dtMean);
 
   // Set last recorded timestamp to mean
-  m_dtMeanLine.emplace_back(m_dtMaxTime, dtMean);
+  m_dtMeanLine.emplace_back(maxTime, dtMean);
 
   // Populate simulated time-domain data.
   if (type == analysis::kElevator) {
@@ -221,18 +231,22 @@ void AnalyzerPlot::SetData(const Storage& data,
         fast, startTimes, fStep, sysid::SimpleMotorSim{ff[0], ff[1], ff[2]});
   }
 
+  FitPlots();
+}
+
+void AnalyzerPlot::FitPlots() {
   // Set the "fit" flag to true.
   std::for_each(m_fitNextPlot.begin(), m_fitNextPlot.end(),
                 [](auto& f) { f = true; });
 }
 
-void AnalyzerPlot::DisplayVoltageDomainPlots(ImVec2 plotSize) {
+bool AnalyzerPlot::DisplayVoltageDomainPlots(ImVec2 plotSize) {
   std::unique_lock lock(m_mutex, std::defer_lock);
 
   if (!lock.try_lock()) {
     ImGui::Text("Loading %c",
                 "|/-\\"[static_cast<int>(ImGui::GetTime() / 0.05f) & 3]);
-    return;
+    return false;
   }
 
   bool forPicture = plotSize.x != -1;
@@ -250,10 +264,10 @@ void AnalyzerPlot::DisplayVoltageDomainPlots(ImVec2 plotSize) {
     auto& data = m_data[kChartTitles[0]];
 
     ImPlot::SetNextMarkerStyle(IMPLOT_AUTO, 1, IMPLOT_AUTO_COL, 0);
-    ImPlot::PlotScatterG("", Getter, data.data(), data.size());
+    ImPlot::PlotScatterG("Collected Data", Getter, data.data(), data.size());
 
     ImPlot::SetNextLineStyle(IMPLOT_AUTO_COL, 1.5);
-    ImPlot::PlotLineG("##Fit", Getter, m_KvFit, 2);
+    ImPlot::PlotLineG("Fit", Getter, m_KvFit, 2);
 
     ImPlot::EndPlot();
 
@@ -277,10 +291,10 @@ void AnalyzerPlot::DisplayVoltageDomainPlots(ImVec2 plotSize) {
     auto& data = m_data[kChartTitles[1]];
 
     ImPlot::SetNextMarkerStyle(IMPLOT_AUTO, 1, IMPLOT_AUTO_COL, 0);
-    ImPlot::PlotScatterG("##Fit", Getter, data.data(), data.size());
+    ImPlot::PlotScatterG("Collected Data", Getter, data.data(), data.size());
 
     ImPlot::SetNextLineStyle(IMPLOT_AUTO_COL, 1.5);
-    ImPlot::PlotLineG("", Getter, m_KaFit, 2);
+    ImPlot::PlotLineG("Fit", Getter, m_KaFit, 2);
 
     ImPlot::EndPlot();
 
@@ -288,15 +302,23 @@ void AnalyzerPlot::DisplayVoltageDomainPlots(ImVec2 plotSize) {
       m_fitNextPlot[1] = false;
     }
   }
+  return true;
 }
 
-void AnalyzerPlot::DisplayTimeDomainPlots(ImVec2 plotSize) {
+static void PlotSimData(std::vector<std::vector<ImPlotPoint>>& data) {
+  for (auto&& pts : data) {
+    ImPlot::SetNextLineStyle(IMPLOT_AUTO_COL, 1.5);
+    ImPlot::PlotLineG("Simulation", Getter, pts.data(), pts.size());
+  }
+}
+
+bool AnalyzerPlot::DisplayTimeDomainPlots(ImVec2 plotSize) {
   std::unique_lock lock(m_mutex, std::defer_lock);
 
   if (!lock.try_lock()) {
     ImGui::Text("Loading %c",
                 "|/-\\"[static_cast<int>(ImGui::GetTime() / 0.05f) & 3]);
-    return;
+    return false;
   }
 
   bool forPicture = plotSize.x != -1;
@@ -306,6 +328,7 @@ void AnalyzerPlot::DisplayTimeDomainPlots(ImVec2 plotSize) {
     const char* x = "Time (s)";
     const char* y =
         i % 2 == 0 ? "Velocity (units / s)" : "Acceleration (units / s / s)";
+    bool isVelocity = (i == 2 || i == 4);
 
     if (m_fitNextPlot[i]) {
       ImPlot::FitNextPlotAxes();
@@ -319,20 +342,16 @@ void AnalyzerPlot::DisplayTimeDomainPlots(ImVec2 plotSize) {
       // Get a reference to the data we are plotting.
       auto& data = m_data[kChartTitles[i]];
 
-      ImPlot::SetNextMarkerStyle(IMPLOT_AUTO, 1, IMPLOT_AUTO_COL, 0);
-      ImPlot::PlotScatterG("", Getter, data.data(), data.size());
+      // Set Legend Location:
+      ImPlot::SetLegendLocation(ImPlotLocation_NorthEast,
+                                ImPlotOrientation_Vertical, false);
 
-      // Plot simulated time-domain data.
-      if (i == 2) {
-        for (auto&& pts : m_quasistaticSim) {
-          ImPlot::SetNextLineStyle(IMPLOT_AUTO_COL, 1.5);
-          ImPlot::PlotLineG("##Simulated", Getter, pts.data(), pts.size());
-        }
-      } else if (i == 4) {
-        for (auto&& pts : m_dynamicSim) {
-          ImPlot::SetNextLineStyle(IMPLOT_AUTO_COL, 1.5);
-          ImPlot::PlotLineG("##Simulated", Getter, pts.data(), pts.size());
-        }
+      ImPlot::SetNextMarkerStyle(IMPLOT_AUTO, 1, IMPLOT_AUTO_COL, 0);
+      ImPlot::PlotScatterG("Collected Data", Getter, data.data(), data.size());
+
+      // Plot Simulation Data for Velocity Data
+      if (isVelocity) {
+        PlotSimData((i == 2) ? m_quasistaticSim : m_dynamicSim);
       }
       ImPlot::EndPlot();
 
@@ -357,7 +376,7 @@ void AnalyzerPlot::DisplayTimeDomainPlots(ImVec2 plotSize) {
     auto& data = m_data[kChartTitles[6]];
 
     ImPlot::SetNextMarkerStyle(IMPLOT_AUTO, 1, IMPLOT_AUTO_COL, 0);
-    ImPlot::PlotScatterG("", Getter, data.data(), data.size());
+    ImPlot::PlotScatterG("Timesteps", Getter, data.data(), data.size());
 
     ImPlot::SetNextMarkerStyle(IMPLOT_AUTO, 1, IMPLOT_AUTO_COL, 0);
 
@@ -370,6 +389,12 @@ void AnalyzerPlot::DisplayTimeDomainPlots(ImVec2 plotSize) {
       m_fitNextPlot[6] = false;
     }
   }
+  return true;
+}
+
+bool AnalyzerPlot::LoadPlots() {
+  // See if the plots are loaded
+  return DisplayVoltageDomainPlots() && DisplayTimeDomainPlots();
 }
 
 void AnalyzerPlot::DisplayCombinedPlots() {
