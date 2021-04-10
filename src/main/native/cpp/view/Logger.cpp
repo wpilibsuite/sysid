@@ -157,7 +157,7 @@ void Logger::Display() {
       }
       if (m_opened == text && ImGui::BeginPopupModal("Warning")) {
         ImGui::Text("%s", m_popupText.c_str());
-        if (ImGui::Button("Close")) {
+        if (ImGui::Button(m_manager->IsActive() ? "End Test" : "Close")) {
           m_manager->EndTest();
           ImGui::CloseCurrentPopup();
           m_opened = "";
