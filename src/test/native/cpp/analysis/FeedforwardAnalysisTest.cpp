@@ -97,10 +97,10 @@ TEST(FeedforwardAnalysis, Arm1) {
                                              sysid::analysis::kArm);
   auto& gains = std::get<0>(ff);
 
-  EXPECT_NEAR(gains[0], Ks, 0.005);
-  EXPECT_NEAR(gains[1], Kv, 0.005);
-  EXPECT_NEAR(gains[2], Ka, 0.005);
-  EXPECT_NEAR(gains[3], Kcos, 0.005);
+  EXPECT_NEAR(gains[0], Ks, 0.003);
+  EXPECT_NEAR(gains[1], Kv, 0.003);
+  EXPECT_NEAR(gains[2], Ka, 0.003);
+  EXPECT_NEAR(gains[3], Kcos, 0.003);
 }
 
 TEST(FeedforwardAnalysis, Arm2) {
@@ -114,10 +114,10 @@ TEST(FeedforwardAnalysis, Arm2) {
                                              sysid::analysis::kArm);
   auto& gains = std::get<0>(ff);
 
-  EXPECT_NEAR(gains[0], Ks, 0.005);
-  EXPECT_NEAR(gains[1], Kv, 0.005);
-  EXPECT_NEAR(gains[2], Ka, 0.005);
-  EXPECT_NEAR(gains[3], Kcos, 0.005);
+  EXPECT_NEAR(gains[0], Ks, 0.003);
+  EXPECT_NEAR(gains[1], Kv, 0.003);
+  EXPECT_NEAR(gains[2], Ka, 0.003);
+  EXPECT_NEAR(gains[3], Kcos, 0.003);
 }
 
 TEST(FeedforwardAnalysis, Drivetrain1) {
@@ -130,9 +130,9 @@ TEST(FeedforwardAnalysis, Drivetrain1) {
                                              sysid::analysis::kDrivetrain);
   auto& gains = std::get<0>(ff);
 
-  EXPECT_NEAR(gains[0], Ks, 0.006);
-  EXPECT_NEAR(gains[1], Kv, 0.005);
-  EXPECT_NEAR(gains[2], Ka, 0.005);
+  EXPECT_NEAR(gains[0], Ks, 0.003);
+  EXPECT_NEAR(gains[1], Kv, 0.003);
+  EXPECT_NEAR(gains[2], Ka, 0.003);
 }
 
 TEST(FeedforwardAnalysis, Drivetrain2) {
@@ -145,9 +145,9 @@ TEST(FeedforwardAnalysis, Drivetrain2) {
                                              sysid::analysis::kDrivetrain);
   auto& gains = std::get<0>(ff);
 
-  EXPECT_NEAR(gains[0], Ks, 0.005);
-  EXPECT_NEAR(gains[1], Kv, 0.005);
-  EXPECT_NEAR(gains[2], Ka, 0.005);
+  EXPECT_NEAR(gains[0], Ks, 0.003);
+  EXPECT_NEAR(gains[1], Kv, 0.003);
+  EXPECT_NEAR(gains[2], Ka, 0.003);
 }
 
 TEST(FeedforwardAnalysis, Elevator1) {
@@ -161,10 +161,10 @@ TEST(FeedforwardAnalysis, Elevator1) {
                                              sysid::analysis::kElevator);
   auto& gains = std::get<0>(ff);
 
-  EXPECT_NEAR(gains[0], Ks, 0.005);
-  EXPECT_NEAR(gains[1], Kv, 0.005);
-  EXPECT_NEAR(gains[2], Ka, 0.005);
-  EXPECT_NEAR(gains[3], Kg, 0.005);
+  EXPECT_NEAR(gains[0], Ks, 0.003);
+  EXPECT_NEAR(gains[1], Kv, 0.003);
+  EXPECT_NEAR(gains[2], Ka, 0.003);
+  EXPECT_NEAR(gains[3], Kg, 0.003);
 }
 
 TEST(FeedforwardAnalysis, Elevator2) {
@@ -178,10 +178,10 @@ TEST(FeedforwardAnalysis, Elevator2) {
                                              sysid::analysis::kElevator);
   auto& gains = std::get<0>(ff);
 
-  EXPECT_NEAR(gains[0], Ks, 0.005);
-  EXPECT_NEAR(gains[1], Kv, 0.005);
-  EXPECT_NEAR(gains[2], Ka, 0.005);
-  EXPECT_NEAR(gains[3], Kg, 0.005);
+  EXPECT_NEAR(gains[0], Ks, 0.003);
+  EXPECT_NEAR(gains[1], Kv, 0.003);
+  EXPECT_NEAR(gains[2], Ka, 0.003);
+  EXPECT_NEAR(gains[3], Kg, 0.003);
 }
 
 TEST(FeedforwardAnalysis, Simple1) {
@@ -194,9 +194,9 @@ TEST(FeedforwardAnalysis, Simple1) {
                                              sysid::analysis::kSimple);
   auto& gains = std::get<0>(ff);
 
-  EXPECT_NEAR(gains[0], Ks, 0.006);
-  EXPECT_NEAR(gains[1], Kv, 0.005);
-  EXPECT_NEAR(gains[2], Ka, 0.005);
+  EXPECT_NEAR(gains[0], Ks, 0.003);
+  EXPECT_NEAR(gains[1], Kv, 0.003);
+  EXPECT_NEAR(gains[2], Ka, 0.003);
 }
 
 TEST(FeedforwardAnalysis, Simple2) {
@@ -209,7 +209,7 @@ TEST(FeedforwardAnalysis, Simple2) {
                                              sysid::analysis::kSimple);
   auto& gains = std::get<0>(ff);
 
-  EXPECT_NEAR(gains[0], Ks, 0.005);
-  EXPECT_NEAR(gains[1], Kv, 0.005);
-  EXPECT_NEAR(gains[2], Ka, 0.005);
+  EXPECT_NEAR(gains[0], Ks, 0.003);
+  EXPECT_NEAR(gains[1], Kv, 0.003);
+  EXPECT_NEAR(gains[2], Ka, 0.003);
 }
