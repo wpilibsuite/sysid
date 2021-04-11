@@ -95,8 +95,8 @@ std::vector<PreparedData> ComputeAcceleration(
     // Sometimes, if the encoder velocities are the same, it will register zero
     // acceleration. Do not include these values.
     if (acc != 0) {
-      prepared.push_back(PreparedData{pt[0], pt[Voltage], pt[Position],
-                                      pt[Velocity], acc, 0.0});
+      prepared.push_back(PreparedData{units::second_t{pt[0]}, pt[Voltage],
+                                      pt[Position], pt[Velocity], acc, 0.0});
     }
   }
   return prepared;
@@ -186,7 +186,7 @@ static void PrepareGeneralData(const wpi::json& json,
                                const AnalysisManager::Settings& settings,
                                double factor, wpi::StringRef unit,
                                wpi::StringMap<Storage>& datasets,
-                               std::array<double, 4>& startTimes) {
+                               std::array<units::second_t, 4>& startTimes) {
   using Data = std::array<double, 4>;
   wpi::StringMap<std::vector<Data>> data;
 
@@ -265,7 +265,7 @@ static void PrepareGeneralData(const wpi::json& json,
 static void PrepareAngularDrivetrainData(
     const wpi::json& json, const AnalysisManager::Settings& settings,
     double factor, std::optional<double>& tw, wpi::StringMap<Storage>& datasets,
-    std::array<double, 4>& startTimes) {
+    std::array<units::second_t, 4>& startTimes) {
   using Data = std::array<double, 9>;
   wpi::StringMap<std::vector<Data>> data;
 
@@ -345,7 +345,7 @@ static void PrepareAngularDrivetrainData(
 static void PrepareLinearDrivetrainData(
     const wpi::json& json, const AnalysisManager::Settings& settings,
     double factor, wpi::StringMap<Storage>& datasets,
-    std::array<double, 4>& startTimes) {
+    std::array<units::second_t, 4>& startTimes) {
   using Data = std::array<double, 9>;
   wpi::StringMap<std::vector<Data>> data;
 

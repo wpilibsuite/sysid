@@ -10,6 +10,7 @@
 #include <tuple>
 #include <vector>
 
+#include <units/time.h>
 #include <wpi/Logger.h>
 #include <wpi/StringMap.h>
 #include <wpi/StringRef.h>
@@ -26,7 +27,7 @@ namespace sysid {
  * calculated.
  */
 struct PreparedData {
-  double timestamp;
+  units::second_t timestamp;
   double voltage;
   double position;
   double velocity;
@@ -164,7 +165,7 @@ class AnalysisManager {
   /**
    * Returns the different start times of the recorded tests.
    */
-  const std::array<double, 4> GetStartTimes() { return m_startTimes; }
+  const std::array<units::second_t, 4> GetStartTimes() { return m_startTimes; }
 
  private:
   wpi::Logger& m_logger;
@@ -175,7 +176,7 @@ class AnalysisManager {
   wpi::StringMap<Storage> m_datasets;
 
   // Stores the various start times of the different tests.
-  std::array<double, 4> m_startTimes;
+  std::array<units::second_t, 4> m_startTimes;
 
   // The settings for this instance. This contains pointers to the feedback
   // controller preset, LQR parameters, acceleration window size, etc.

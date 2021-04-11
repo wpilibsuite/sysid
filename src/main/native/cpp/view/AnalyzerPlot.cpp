@@ -12,6 +12,7 @@
 
 #include <imgui.h>
 #include <implot.h>
+#include <units/math.h>
 #include <units/time.h>
 #include <wpi/raw_ostream.h>
 
@@ -30,7 +31,8 @@ static ImPlotPoint Getter(void* data, int idx) {
 template <typename Model>
 static std::vector<std::vector<ImPlotPoint>> PopulateTimeDomainSim(
     const std::vector<PreparedData>& data,
-    const std::array<double, 4>& startTimes, size_t step, Model model) {
+    const std::array<units::second_t, 4>& startTimes, size_t step,
+    Model model) {
   // Create the vector of ImPlotPoints that will contain our simulated data.
   std::vector<std::vector<ImPlotPoint>> pts;
   std::vector<ImPlotPoint> tmp;
@@ -39,22 +41,21 @@ static std::vector<std::vector<ImPlotPoint>> PopulateTimeDomainSim(
   model.Reset(data[0].position, data[0].velocity);
   units::second_t t = 0_s;
 
-  for (size_t i = step; i < data.size(); i += step) {
+  for (size_t i = 1; i < data.size(); ++i) {
     const auto& now = data[i];
-    const auto& pre = data[i - step];
+    const auto& pre = data[i - 1];
 
-    auto dt = units::second_t{now.timestamp} - units::second_t{pre.timestamp};
+    auto dt = now.timestamp - pre.timestamp;
     t += dt;
 
     // If the current time stamp and previous time stamp are across a test's
     // start timestamp, it is the start of a new test and the model needs to be
     // reset.
-    for (const auto& startTime : startTimes) {
-      if (now.timestamp >= startTime && pre.timestamp <= startTime) {
-        pts.emplace_back(std::move(tmp));
-        model.Reset(now.position, now.velocity);
-        continue;
-      }
+    if (dt < 0_s || std::find(startTimes.begin(), startTimes.end(),
+                              now.timestamp) != startTimes.end()) {
+      pts.emplace_back(std::move(tmp));
+      model.Reset(now.position, now.velocity);
+      continue;
     }
 
     model.Update(units::volt_t{pre.voltage}, dt);
@@ -73,7 +74,7 @@ AnalyzerPlot::AnalyzerPlot(wpi::Logger& logger) : m_logger(logger) {
 }
 
 void AnalyzerPlot::SetData(const Storage& data, const std::vector<double>& ff,
-                           const std::array<double, 4>& startTimes,
+                           const std::array<units::second_t, 4>& startTimes,
                            AnalysisType type, std::atomic<bool>& abort) {
   std::scoped_lock lock(m_mutex);
   auto& [slow, fast] = data;
@@ -114,10 +115,10 @@ void AnalyzerPlot::SetData(const Storage& data, const std::vector<double>& ff,
       })->acceleration;
 
   int dtSamples = 0;
-  double dtSum = 0;
+  auto dtSum = 0_s;
   // Populate quasistatic time-domain graphs and quasistatic velocity vs.
   // velocity-portion voltage graph.
-  double t = slow[0].timestamp;
+  auto t = slow[0].timestamp;
   for (size_t i = 0; i < slow.size(); i += sStep) {
     if (abort) {
       return;
@@ -137,9 +138,9 @@ void AnalyzerPlot::SetData(const Storage& data, const std::vector<double>& ff,
     m_KvFit[1] = ImPlotPoint(ff[1] * sMaxE, sMaxE);
 
     m_data[kChartTitles[0]].emplace_back(Vportion, slow[i].velocity);
-    m_data[kChartTitles[2]].emplace_back(slow[i].timestamp - t,
+    m_data[kChartTitles[2]].emplace_back((slow[i].timestamp - t).to<double>(),
                                          slow[i].velocity);
-    m_data[kChartTitles[3]].emplace_back(slow[i].timestamp - t,
+    m_data[kChartTitles[3]].emplace_back((slow[i].timestamp - t).to<double>(),
                                          slow[i].acceleration);
 
     if (i > 0) {
@@ -150,8 +151,10 @@ void AnalyzerPlot::SetData(const Storage& data, const std::vector<double>& ff,
       // calculations.
       if (std::find(startTimes.begin(), startTimes.end(), slow[i].timestamp) ==
           startTimes.end()) {
-        double dt = (slow[i].timestamp - slow[i - 1].timestamp) * 1000;
-        m_data[kChartTitles[6]].emplace_back(slow[i].timestamp - t, dt);
+        auto dt = slow[i].timestamp - slow[i - 1].timestamp;
+        m_data[kChartTitles[6]].emplace_back(
+            (slow[i].timestamp - t).to<double>(),
+            units::millisecond_t{dt}.to<double>());
         dtSum += dt;
         ++dtSamples;
       }
@@ -180,9 +183,9 @@ void AnalyzerPlot::SetData(const Storage& data, const std::vector<double>& ff,
     m_KaFit[1] = ImPlotPoint(ff[2] * fMaxE, fMaxE);
 
     m_data[kChartTitles[1]].emplace_back(Vportion, fast[i].acceleration);
-    m_data[kChartTitles[4]].emplace_back(fast[i].timestamp - t,
+    m_data[kChartTitles[4]].emplace_back((fast[i].timestamp - t).to<double>(),
                                          fast[i].velocity);
-    m_data[kChartTitles[5]].emplace_back(fast[i].timestamp - t,
+    m_data[kChartTitles[5]].emplace_back((fast[i].timestamp - t).to<double>(),
                                          fast[i].acceleration);
     if (i > 0) {
       // If the current timestamp is not in the startTimes array, it is the
@@ -190,10 +193,12 @@ void AnalyzerPlot::SetData(const Storage& data, const std::vector<double>& ff,
       // it is the beginning of a new test and the dt will be inflated.
       // Therefore we skip those to exclude that dt and effectively reset dt
       // calculations.
-      if (std::find(startTimes.begin(), startTimes.end(), fast[i].timestamp) ==
-          startTimes.end()) {
-        double dt = (fast[i].timestamp - fast[i - 1].timestamp) * 1000;
-        m_data[kChartTitles[6]].emplace_back(fast[i].timestamp - t, dt);
+      auto dt = fast[i].timestamp - fast[i - 1].timestamp;
+      if (dt > 0_s && std::find(startTimes.begin(), startTimes.end(),
+                                fast[i].timestamp) == startTimes.end()) {
+        m_data[kChartTitles[6]].emplace_back(
+            (fast[i].timestamp - t).to<double>(),
+            units::millisecond_t{dt}.to<double>());
         dtSum += dt;
         ++dtSamples;
       }
@@ -201,15 +206,17 @@ void AnalyzerPlot::SetData(const Storage& data, const std::vector<double>& ff,
   }
 
   // Load dt mean for plot data
-  double dtMean = dtSum / dtSamples;
-  double maxTime = std::max(slow.back().timestamp - slow.front().timestamp,
-                            fast.back().timestamp - fast.front().timestamp);
+  auto dtMean = dtSum / dtSamples;
+  auto maxTime =
+      units::math::max(slow.back().timestamp - slow.front().timestamp,
+                       fast.back().timestamp - fast.front().timestamp);
 
   // Set first recorded timestamp to mean
-  m_dtMeanLine.emplace_back(0.0, dtMean);
+  m_dtMeanLine.emplace_back(0.0, units::millisecond_t{dtMean}.to<double>());
 
   // Set last recorded timestamp to mean
-  m_dtMeanLine.emplace_back(maxTime, dtMean);
+  m_dtMeanLine.emplace_back(maxTime.to<double>(),
+                            units::millisecond_t{dtMean}.to<double>());
 
   // Populate simulated time-domain data.
   if (type == analysis::kElevator) {
