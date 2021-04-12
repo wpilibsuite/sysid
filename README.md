@@ -1,6 +1,33 @@
 # SysId: System Identification for Robot Mechanisms
+[![Build](https://github.com/wpilibsuite/sysid/actions/workflows/build.yml/badge.svg)](https://github.com/wpilibsuite/sysid/actions/workflows/build.yml)
 
 This is the C++ version of [frc-characterization](https://github.com/wpilibsuite/frc-characterization). It uses the [wpimath](https://github.com/wpilibsuite/allwpilib/tree/main/wpimath) backend for generating feedforward and feedback gains.
+
+## Downloading and Running Development Versions of SysId
+
+The SysID GitHub repository uses GitHub Actions to build and test each commit.
+
+### To download development version of SysId from the main branch (most stable):
+
+1. Click [here](https://github.com/wpilibsuite/sysid/actions/workflows/build.yml?query=branch%3Amain)
+2. Select the run of your choosing (the top most run is the latest)
+3. Scroll down to the artifacts section, and select the appropriate build for your operating system.
+
+### To download development version of SysId from all branches:
+
+1. Click [here](https://github.com/wpilibsuite/sysid/actions/workflows/build.yml)
+2. Select the run of your choosing (the top most run is the latest)
+3. Scroll down to artifacts section, and select the appropriate build for your operating system.
+
+### To run development versions of SysId
+
+1. Extract the files from the downloaded zip file
+2. Extract the files from the zip file located in the root of the extracted folder
+3. Open the folder named after your operating system (ex: linux, windows, macOS)
+4. Open the folder named x86_64
+5. Run the executable named sysid
+
+The SysID GitHub repository uses GitHub Actions to build and test each commit.
 
 ## Building and Running SysId
 
