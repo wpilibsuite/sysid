@@ -1,7 +1,11 @@
 # SysId: System Identification for Robot Mechanisms
+[![Build](https://github.com/wpilibsuite/sysid/actions/workflows/build.yml/badge.svg)](https://github.com/wpilibsuite/sysid/actions/workflows/build.yml)
 
 This is the C++ version of [frc-characterization](https://github.com/wpilibsuite/frc-characterization). It uses the [wpimath](https://github.com/wpilibsuite/allwpilib/tree/main/wpimath) backend for generating feedforward and feedback gains.
 
+## Downloading and Running Development Versions of SysID
+
+The SysID github repository uses github actions to build and test each commit. To download the latest development version of SysID, click on the Actions tab, select the branch that you want to view results for (main for least buggy), select the build action filter on the right, select the run of your choosing (the top most run is the latest), scroll down to artifacts, and select the appropriate build for your operating system. You can also click [here](https://github.com/wpilibsuite/sysid/actions/workflows/build.yml?query=branch%3Amain) to go directly to the listing of build action results for the main branch.  
 ## Building and Running SysId
 
 SysId uses Gradle to build. To build debug and release versions of the main executable and run tests, run `./gradlew build`. During development, you can use `./gradlew run` to build and run the debug executable.
