@@ -27,6 +27,20 @@ The SysID GitHub repository uses GitHub Actions to build and test each commit.
 4. Open the folder named x86_64
 5. Run the executable named sysid
 
+The SysID GitHub repository uses GitHub Actions to build and test each commit.
+
+### To download the latest development version of SysID from the main branch (most stable):
+
+1. Click [here](https://github.com/wpilibsuite/sysid/actions/workflows/build.yml?query=branch%3Amain)
+2. Select the run of your choosing (the top most run is the latest)
+3. Scroll down to artifacts, and select the appropriate build for your operating system.
+4.
+### To download the latest development version of SysID from all branches:
+
+1. Click [here](https://github.com/wpilibsuite/sysid/actions/workflows/build.yml)
+2. Select the run of your choosing (the top most run is the latest)
+3. 3. Scroll down to artifacts, and select the appropriate build for your operating system.
+
 ## Building and Running SysId
 
 SysId uses Gradle to build. To build debug and release versions of the main executable and run tests, run `./gradlew build`. During development, you can use `./gradlew run` to build and run the debug executable.
