@@ -49,8 +49,8 @@ class AnalyzerPlot {
    * Sets the raw data to be displayed on the plots.
    */
   void SetData(const Storage& data, const std::vector<double>& ff,
-               const std::array<double, 4>& startTimes, AnalysisType type,
-               std::atomic<bool>& abort);
+               const std::array<units::second_t, 4>& startTimes,
+               AnalysisType type, std::atomic<bool>& abort);
 
   /**
    * Displays voltage-domain plots.

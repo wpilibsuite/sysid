@@ -36,9 +36,8 @@ sysid::Storage CollectData(Model& model) {
   auto voltage = 0_V;
   for (int i = 0; i < (kTestDuration / T).to<double>(); ++i) {
     slow.emplace_back(sysid::PreparedData{
-        (i * T).to<double>(), voltage.to<double>(), model.GetPosition(),
-        model.GetVelocity(), model.GetAcceleration(voltage),
-        std::cos(model.GetPosition())});
+        i * T, voltage.to<double>(), model.GetPosition(), model.GetVelocity(),
+        model.GetAcceleration(voltage), std::cos(model.GetPosition())});
 
     model.Update(voltage, T);
     voltage += kUstep * T;
@@ -49,9 +48,8 @@ sysid::Storage CollectData(Model& model) {
   voltage = 0_V;
   for (int i = 0; i < (kTestDuration / T).to<double>(); ++i) {
     slow.emplace_back(sysid::PreparedData{
-        (i * T).to<double>(), voltage.to<double>(), model.GetPosition(),
-        model.GetVelocity(), model.GetAcceleration(voltage),
-        std::cos(model.GetPosition())});
+        i * T, voltage.to<double>(), model.GetPosition(), model.GetVelocity(),
+        model.GetAcceleration(voltage), std::cos(model.GetPosition())});
 
     model.Update(voltage, T);
     voltage -= kUstep * T;
@@ -62,9 +60,8 @@ sysid::Storage CollectData(Model& model) {
   voltage = 0_V;
   for (int i = 0; i < (kTestDuration / T).to<double>(); ++i) {
     fast.emplace_back(sysid::PreparedData{
-        (i * T).to<double>(), voltage.to<double>(), model.GetPosition(),
-        model.GetVelocity(), model.GetAcceleration(voltage),
-        std::cos(model.GetPosition())});
+        i * T, voltage.to<double>(), model.GetPosition(), model.GetVelocity(),
+        model.GetAcceleration(voltage), std::cos(model.GetPosition())});
 
     model.Update(voltage, T);
     voltage = kUmax;
@@ -75,9 +72,8 @@ sysid::Storage CollectData(Model& model) {
   voltage = 0_V;
   for (int i = 0; i < (kTestDuration / T).to<double>(); ++i) {
     fast.emplace_back(sysid::PreparedData{
-        (i * T).to<double>(), voltage.to<double>(), model.GetPosition(),
-        model.GetVelocity(), model.GetAcceleration(voltage),
-        std::cos(model.GetPosition())});
+        i * T, voltage.to<double>(), model.GetPosition(), model.GetVelocity(),
+        model.GetAcceleration(voltage), std::cos(model.GetPosition())});
 
     model.Update(voltage, T);
     voltage = -kUmax;

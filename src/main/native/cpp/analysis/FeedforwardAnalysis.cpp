@@ -7,6 +7,9 @@
 #include <cmath>
 #include <numeric>
 
+#include <units/math.h>
+#include <units/time.h>
+
 #include "sysid/analysis/AnalysisManager.h"
 #include "sysid/analysis/OLS.h"
 
@@ -53,7 +56,7 @@ static void PopulateAccelOLSVector(const std::vector<PreparedData>& d,
 static void PopulateNextVelOLSVector(const std::vector<PreparedData>& d,
                                      const AnalysisType& type,
                                      std::vector<double>& olsData,
-                                     std::vector<double>& dts) {
+                                     std::vector<units::second_t>& dts) {
   auto PushData = [&](int i) {
     // x_k+1 = alpha x_k + beta u_k + gamma sgn(x_k)
 
@@ -77,16 +80,16 @@ static void PopulateNextVelOLSVector(const std::vector<PreparedData>& d,
   };
 
   for (size_t i = 0; i < d.size() - 1; ++i) {
-    double dt = d[i + 1].timestamp - d[i].timestamp;
+    auto dt = d[i + 1].timestamp - d[i].timestamp;
     if (dts.size() == 0) {
       dts.emplace_back(dt);
       PushData(i);
     } else {
-      double dtMean = std::accumulate(dts.begin(), dts.end(), 0.0) / dts.size();
+      auto dtMean = std::accumulate(dts.begin(), dts.end(), 0_s) / dts.size();
 
       // Don't include velocity data with a large time gap in it. This usually
       // occurs between test runs.
-      if (std::abs(dt - dtMean) < dtMean / 2.0) {
+      if (units::math::abs(dt - dtMean) < dtMean / 2.0) {
         dts.emplace_back(dt);
         PushData(i);
       }
@@ -112,18 +115,19 @@ std::tuple<std::vector<double>, double> sysid::CalculateFeedforwardGains(
     // This implements the OLS algorithm defined in
     // https://file.tavsys.net/control/sysid-ols.pdf.
 
-    std::vector<double> dts;
+    std::vector<units::second_t> dts;
     PopulateNextVelOLSVector(std::get<0>(data), type, olsData, dts);
     PopulateNextVelOLSVector(std::get<1>(data), type, olsData, dts);
-    double dt = std::accumulate(dts.begin(), dts.end(), 0.0) / dts.size();
+    auto dt = std::accumulate(dts.begin(), dts.end(), 0_s) / dts.size();
 
     auto ols = sysid::OLS(olsData, type.independentVariables);
     double alpha = std::get<0>(ols)[0];
     double beta = std::get<0>(ols)[1];
     double gamma = std::get<0>(ols)[2];
 
-    std::vector<double> gains{{-gamma / beta, (1 - alpha) / beta,
-                               dt * (alpha - 1) / (beta * std::log(alpha))}};
+    std::vector<double> gains{
+        {-gamma / beta, (1 - alpha) / beta,
+         dt.to<double>() * (alpha - 1) / (beta * std::log(alpha))}};
 
     if (type == analysis::kElevator) {
       double delta = std::get<0>(ols)[3];
