@@ -68,6 +68,8 @@ void TelemetryManager::BeginTest(wpi::StringRef name) {
       nt::Value::MakeDouble((m_params.fast ? m_settings.stepVoltage
                                            : m_settings.quasistaticRampRate) *
                             (m_params.forward ? 1 : -1)));
+
+  // Set the test type
   nt::SetEntryValue(m_testType, nt::Value::MakeString(
                                     m_params.fast ? "Dynamic" : "Quasistatic"));
 
@@ -227,9 +229,12 @@ void TelemetryManager::Update() {
         m_params.data.push_back(std::move(d));
       }
 
-      WPI_INFO(m_logger, "Received data with size: "
-                             << m_params.data.size() << " for the "
-                             << m_tests.back() << " test.");
+      WPI_INFO(m_logger,
+               "Received data with size: "
+                   << m_params.data.size() << " for the " << m_tests.back()
+                   << " test in "
+                   << m_params.data.back()[0] - m_params.data.front()[0]
+                   << " seconds.");
       EndTest();
     }
 

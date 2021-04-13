@@ -17,11 +17,12 @@
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc2/Timer.h>
 
-SysIdLogger::SysIdLogger() : m_data(kDataVectorSize) {
+SysIdLogger::SysIdLogger() {
+  m_data.reserve(kDataVectorSize);
   frc::LiveWindow::GetInstance()->DisableAllTelemetry();
   frc::SmartDashboard::PutNumber("SysIdVoltageCommand", 0.0);
   frc::SmartDashboard::PutString("SysIdTestType", "");
-  frc::SmartDashboard::PutString("SysIdTelemetry", "");
+  // frc::SmartDashboard::PutString("SysIdTelemetry", "");
   frc::SmartDashboard::PutBoolean("SysIdRotate", false);
 }
 
@@ -30,6 +31,10 @@ void SysIdLogger::InitLogging() {
   m_voltageCommand = frc::SmartDashboard::GetNumber("SysIdVoltageCommand", 0.0);
   m_testType = frc::SmartDashboard::GetString("SysIdTestType", "");
   m_startTime = frc2::Timer::GetFPGATimestamp().to<double>();
+
+  // Reset telemetry string
+  // frc::SmartDashboard::PutString("SysIdTelemetry", "");
+  m_data.clear();
 }
 
 void SysIdLogger::SendData() {

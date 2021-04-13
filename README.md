@@ -3,7 +3,7 @@
 
 This is the C++ version of [frc-characterization](https://github.com/wpilibsuite/frc-characterization). It uses the [wpimath](https://github.com/wpilibsuite/allwpilib/tree/main/wpimath) backend for generating feedforward and feedback gains.
 
-## Downloading and Running Development Versions of SysId
+## Downloading and Running Development Versions of SysId (Analysis Only)
 
 The SysId GitHub repository uses GitHub Actions to build and test each commit.
 
@@ -27,6 +27,18 @@ The SysId GitHub repository uses GitHub Actions to build and test each commit.
 4. Open the folder named for your architecture.
 5. Run the executable named `sysid`.
 
+## Downloading and Running Full Development Versions of SysId (Generation, Logging, Analysis)
+
+Clone the SysId Github repository to get all the necessary code.
+
+Go to the directory that the repository is cloned in and run `./gradlew run` to start the executable.
+
+### Generating And Running SysId Robot Code
+
+1. Use the Generator Widget to create a config.json
+2. If you are characterizing a General Mechanism (Arm, Simple Motor, Elevator), deploy the project in `base_projects/GeneralMechanism` to your robot. For Drivetrain Charactarization (Drivetrains, Romi), deploy the project in `base_projects/Drivetrain` to your robot.
+3. Connect the logger to your robot and perform the required tests.
+
 ## Building and Running SysId
 
 SysId uses Gradle to build. To build debug and release versions of the main executable and run tests, run `./gradlew build`. During development, you can use `./gradlew run` to build and run the debug executable.
@@ -48,9 +60,11 @@ There is also a robot project in `integration_test_project` that you can use to 
     - On macOS, install the Xcode command-line build tools via `xcode-select --install`
 
 ## Logging Projects
+
 SysId comes with projects that interface with the telemetry manager to provide the necessary data for analysis. These projects are stored in the `base_projects` folder and take in a `config.json` file in the `src/main/deploy` directory to setup the robot hardware for analysis.
 
 There is a `Drivetrain` project for drivetrain analysis and a `GeneralMechanism` project for simple-motor, elevator, and arm analyses.
 
 ### Running the Projects
+
 The executable generated from building is currently hardcoded to save to the proper project and these projects can be run normally from VSCode or the command line.
