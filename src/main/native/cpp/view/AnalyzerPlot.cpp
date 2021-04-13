@@ -87,6 +87,8 @@ void AnalyzerPlot::SetData(const Storage& data, const std::vector<double>& ff,
     it->second.clear();
   }
 
+  m_dtMeanLine.clear();
+
   // Calculate step sizes to ensure that we only use the memory that we
   // allocated.
   auto sStep = std::ceil(slow.size() * 1.0 / kMaxSize);
