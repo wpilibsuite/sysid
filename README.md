@@ -5,9 +5,9 @@ This is the C++ version of [frc-characterization](https://github.com/wpilibsuite
 
 ## Downloading and Running Development Versions of SysId
 
-The SysID GitHub repository uses GitHub Actions to build and test each commit. 
+The SysID GitHub repository uses GitHub Actions to build and test each commit.
 
-### To download development version of SysId from the main branch (most stable): 
+### To download development version of SysId from the main branch (most stable):
 
 1. Click [here](https://github.com/wpilibsuite/sysid/actions/workflows/build.yml?query=branch%3Amain)
 2. Select the run of your choosing (the top most run is the latest)
@@ -21,7 +21,7 @@ The SysID GitHub repository uses GitHub Actions to build and test each commit.
 
 ### To run development versions of SysId
 
-1. Extract the files from the downloaded zip file 
+1. Extract the files from the downloaded zip file
 2. Extract the files from the zip file located in the root of the extracted folder
 3. Open the folder named after your operating system (ex: linux, windows, macOS)
 4. Open the folder named x86_64
