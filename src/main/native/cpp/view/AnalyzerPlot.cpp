@@ -74,12 +74,16 @@ AnalyzerPlot::AnalyzerPlot(wpi::Logger& logger) : m_logger(logger) {
 }
 
 void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
-                           const std::vector<double>& ff,
+                           const std::vector<double>& ffGains,
                            const std::array<units::second_t, 4>& startTimes,
                            AnalysisType type, std::atomic<bool>& abort) {
-  std::scoped_lock lock(m_mutex);
   auto& [slow, fast] = filteredData;
   auto& [rawSlow, rawFast] = rawData;
+  const auto& Ks = ffGains[0];
+  const auto& Kv = ffGains[1];
+  const auto& Ka = ffGains[2];
+
+  std::scoped_lock lock(m_mutex);
 
   // Clear all data vectors.
   for (auto it = m_filteredData.begin(); it != m_filteredData.end(); ++it) {
@@ -132,18 +136,20 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
       return;
     }
     // Calculate portion of voltage that corresponds to change in velocity.
-    double Vportion = slow[i].voltage - std::copysign(ff[0], slow[i].velocity) -
-                      ff[2] * slow[i].acceleration;
+    double Vportion = slow[i].voltage - std::copysign(Ks, slow[i].velocity) -
+                      Ka * slow[i].acceleration;
 
     if (type == analysis::kElevator) {
-      Vportion -= ff[3];
+      const auto& Kg = ffGains[3];
+      Vportion -= Kg;
     } else if (type == analysis::kArm) {
-      Vportion -= ff[3] * slow[i].cos;
+      const auto& Kcos = ffGains[3];
+      Vportion -= Kcos * slow[i].cos;
     }
 
     // Calculate points to show the line of best fit.
-    m_KvFit[0] = ImPlotPoint(ff[1] * slowMinElement, slowMinElement);
-    m_KvFit[1] = ImPlotPoint(ff[1] * slowMaxElement, slowMaxElement);
+    m_KvFit[0] = ImPlotPoint(Kv * slowMinElement, slowMinElement);
+    m_KvFit[1] = ImPlotPoint(Kv * slowMaxElement, slowMaxElement);
 
     m_filteredData[kChartTitles[0]].emplace_back(Vportion, slow[i].velocity);
     m_filteredData[kChartTitles[2]].emplace_back(
@@ -177,18 +183,20 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
       return;
     }
     // Calculate portion of voltage that corresponds to change in acceleration.
-    double Vportion = fast[i].voltage - std::copysign(ff[0], fast[i].velocity) -
-                      ff[1] * fast[i].velocity;
+    double Vportion = fast[i].voltage - std::copysign(Ks, fast[i].velocity) -
+                      Kv * fast[i].velocity;
 
     if (type == analysis::kElevator) {
-      Vportion -= ff[3];
+      const auto& Kg = ffGains[3];
+      Vportion -= Kg;
     } else if (type == analysis::kArm) {
-      Vportion -= ff[3] * fast[i].cos;
+      const auto& Kcos = ffGains[3];
+      Vportion -= Kcos * fast[i].cos;
     }
 
     // Calculate points to show the line of best fit.
-    m_KaFit[0] = ImPlotPoint(ff[2] * fastMinElement, fastMinElement);
-    m_KaFit[1] = ImPlotPoint(ff[2] * fastMaxElement, fastMaxElement);
+    m_KaFit[0] = ImPlotPoint(Ka * fastMinElement, fastMinElement);
+    m_KaFit[1] = ImPlotPoint(Ka * fastMaxElement, fastMaxElement);
 
     m_filteredData[kChartTitles[1]].emplace_back(Vportion,
                                                  fast[i].acceleration);
@@ -247,22 +255,22 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
 
   // Populate Simulated Time Series Data.
   if (type == analysis::kElevator) {
-    m_quasistaticSim =
-        PopulateTimeDomainSim(slow, startTimes, fastStep,
-                              sysid::ElevatorSim{ff[0], ff[1], ff[2], ff[3]});
-    m_dynamicSim =
-        PopulateTimeDomainSim(fast, startTimes, fastStep,
-                              sysid::ElevatorSim{ff[0], ff[1], ff[2], ff[3]});
+    const auto& Kg = ffGains[3];
+    m_quasistaticSim = PopulateTimeDomainSim(
+        slow, startTimes, fastStep, sysid::ElevatorSim{Ks, Kv, Ka, Kg});
+    m_dynamicSim = PopulateTimeDomainSim(fast, startTimes, fastStep,
+                                         sysid::ElevatorSim{Ks, Kv, Ka, Kg});
   } else if (type == analysis::kArm) {
-    m_quasistaticSim = PopulateTimeDomainSim(
-        slow, startTimes, fastStep, sysid::ArmSim{ff[0], ff[1], ff[2], ff[3]});
-    m_dynamicSim = PopulateTimeDomainSim(
-        fast, startTimes, fastStep, sysid::ArmSim{ff[0], ff[1], ff[2], ff[3]});
+    const auto& Kcos = ffGains[3];
+    m_quasistaticSim = PopulateTimeDomainSim(slow, startTimes, fastStep,
+                                             sysid::ArmSim{Ks, Kv, Ka, Kcos});
+    m_dynamicSim = PopulateTimeDomainSim(fast, startTimes, fastStep,
+                                         sysid::ArmSim{Ks, Kv, Ka, Kcos});
   } else {
-    m_quasistaticSim = PopulateTimeDomainSim(
-        slow, startTimes, fastStep, sysid::SimpleMotorSim{ff[0], ff[1], ff[2]});
-    m_dynamicSim = PopulateTimeDomainSim(
-        fast, startTimes, fastStep, sysid::SimpleMotorSim{ff[0], ff[1], ff[2]});
+    m_quasistaticSim = PopulateTimeDomainSim(slow, startTimes, fastStep,
+                                             sysid::SimpleMotorSim{Ks, Kv, Ka});
+    m_dynamicSim = PopulateTimeDomainSim(fast, startTimes, fastStep,
+                                         sysid::SimpleMotorSim{Ks, Kv, Ka});
   }
 
   FitPlots();
