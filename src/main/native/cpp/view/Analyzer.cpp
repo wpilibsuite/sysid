@@ -264,13 +264,8 @@ void Analyzer::Display() {
     }
   }
 
-  ImGui::SetNextWindowPos(
-      ImVec2(ImGui::GetWindowPos().x + ImGui::GetContentRegionAvail().x + 25,
-             ImGui::GetWindowPos().y),
-      ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(3 * ImGui::GetContentRegionAvail().x / 4,
-                                  ImGui::GetContentRegionAvail().y),
-                           ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowPos(ImVec2(895, 25), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(375, 660), ImGuiCond_FirstUseEver);
   ImGui::Begin("Diagnostic Plots");
   // If the plots were already loaded, store the scroll position. Else go to
   // the last recorded scroll position if they have just been initialized

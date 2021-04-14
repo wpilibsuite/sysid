@@ -12,10 +12,10 @@
 #include <wpi/Logger.h>
 
 namespace sysid {
-class JSONConverter : public glass::View {
+class JSONConverter {
  public:
   explicit JSONConverter(wpi::Logger& logger) : m_logger(logger) {}
-  void Display() override;
+  void Display();
 
  private:
   wpi::Logger& m_logger;
