@@ -166,38 +166,38 @@ static void PrepareGeneralData(const wpi::json& json,
                                                       settings.motionThreshold);
 
   // Compute acceleration on raw data
-  auto rawSf = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
+  auto rawSlowForward = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
       data["slow-forward"], settings.windowSize);
-  auto rawSb = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
+  auto rawSlowBackward = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
       data["slow-backward"], settings.windowSize);
-  auto rawFf = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
+  auto rawFastForward = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
       data["fast-forward"], settings.windowSize);
-  auto rawFb = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
+  auto rawFastBackward = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
       data["fast-backward"], settings.windowSize);
 
   // Compute acceleration on median filtered data sets.
-  auto sf = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
+  auto slowForward = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
       sysid::ApplyMedianFilter<4, kVelCol>(data["slow-forward"],
                                            settings.windowSize),
       settings.windowSize);
-  auto sb = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
+  auto slowBackward = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
       sysid::ApplyMedianFilter<4, kVelCol>(data["slow-backward"],
                                            settings.windowSize),
       settings.windowSize);
-  auto ff = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
+  auto fastForward = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
       sysid::ApplyMedianFilter<4, kVelCol>(data["fast-forward"],
                                            settings.windowSize),
       settings.windowSize);
-  auto fb = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
+  auto fastBackward = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
       sysid::ApplyMedianFilter<4, kVelCol>(data["fast-backward"],
                                            settings.windowSize),
       settings.windowSize);
 
   // Calculate cosine of position data.
-  CalculateCosine(&sf, unit);
-  CalculateCosine(&sb, unit);
-  CalculateCosine(&ff, unit);
-  CalculateCosine(&fb, unit);
+  CalculateCosine(&slowForward, unit);
+  CalculateCosine(&slowBackward, unit);
+  CalculateCosine(&fastForward, unit);
+  CalculateCosine(&fastBackward, unit);
 
   // Find the maximum Step Test Duration
   maxStepTime = GetMaxTime<4>(data, kTimeCol);
@@ -205,46 +205,48 @@ static void PrepareGeneralData(const wpi::json& json,
   // Trim the raw step voltage data.
   auto tempTime = units::second_t{
       0.0};  // Raw data shouldn't be used to calculate mininum step test time
-  sysid::TrimStepVoltageData(&rawFf, settings, tempTime, maxStepTime);
-  sysid::TrimStepVoltageData(&rawFb, settings, tempTime, maxStepTime);
+  sysid::TrimStepVoltageData(&rawFastForward, settings, tempTime, maxStepTime);
+  sysid::TrimStepVoltageData(&rawFastBackward, settings, tempTime, maxStepTime);
 
   // Trim the step voltage data.
-  sysid::TrimStepVoltageData(&ff, settings, minStepTime, maxStepTime);
-  sysid::TrimStepVoltageData(&fb, settings, minStepTime, maxStepTime);
+  sysid::TrimStepVoltageData(&fastForward, settings, minStepTime, maxStepTime);
+  sysid::TrimStepVoltageData(&fastBackward, settings, minStepTime, maxStepTime);
 
   // Store the raw datasets
-  rawDatasets["Forward"] = std::make_tuple(rawSf, rawFf);
-  rawDatasets["Backward"] = std::make_tuple(rawSb, rawFb);
-  rawDatasets["Combined"] = std::make_tuple(Concatenate(rawSf, {&rawSb}),
-                                            Concatenate(rawFf, {&rawFb}));
+  rawDatasets["Forward"] = Storage{rawSlowForward, rawFastForward};
+  rawDatasets["Backward"] = Storage{rawSlowBackward, rawFastBackward};
+  rawDatasets["Combined"] =
+      Storage{Concatenate(rawSlowForward, {&rawSlowBackward}),
+              Concatenate(rawFastForward, {&rawFastBackward})};
 
   // Create the distinct datasets and store them in our StringMap.
-  filteredDatasets["Forward"] = std::make_tuple(sf, ff);
-  filteredDatasets["Backward"] = std::make_tuple(sb, fb);
+  filteredDatasets["Forward"] = Storage{slowForward, fastForward};
+  filteredDatasets["Backward"] = Storage{slowBackward, fastBackward};
   filteredDatasets["Combined"] =
-      std::make_tuple(Concatenate(sf, {&sb}), Concatenate(ff, {&fb}));
-  startTimes = {sf[0].timestamp, sb[0].timestamp, ff[0].timestamp,
-                fb[0].timestamp};
+      Storage{Concatenate(slowForward, {&slowBackward}),
+              Concatenate(fastForward, {&fastBackward})};
+  startTimes = {slowForward[0].timestamp, slowBackward[0].timestamp,
+                fastForward[0].timestamp, fastBackward[0].timestamp};
 }
 
 /**
  * Prepares data for angular drivetrain test data and stores them in
  * the analysis manager dataset.
  *
- * @param json     A reference to the JSON containing all of the collected
- * data.
- * @param settings A reference to the settings being used by the analysis
- *                 manager instance.
- * @param factor   The units per rotation to multiply positions and velocities
- *                 by.
- * @param tw       A reference to the std::optional where the track width will
- *                 be stored.
- * @param datasets A reference to the datasets object of the relevant analysis
- *                 manager instance.
+ * @param json       A reference to the JSON containing all of the collected
+ *                   data.
+ * @param settings   A reference to the settings being used by the analysis
+ *                   manager instance.
+ * @param factor     The units per rotation to multiply positions and velocities
+ *                   by.
+ * @param trackWidth A reference to the std::optional where the track width will
+ *                   be stored.
+ * @param datasets   A reference to the datasets object of the relevant analysis
+ *                   manager instance.
  */
 static void PrepareAngularDrivetrainData(
     const wpi::json& json, AnalysisManager::Settings& settings, double factor,
-    std::optional<double>& tw, wpi::StringMap<Storage>& rawDatasets,
+    std::optional<double>& trackWidth, wpi::StringMap<Storage>& rawDatasets,
     wpi::StringMap<Storage>& filteredDatasets,
     std::array<units::second_t, 4>& startTimes, units::second_t& minStepTime,
     units::second_t& maxStepTime) {
@@ -282,36 +284,45 @@ static void PrepareAngularDrivetrainData(
       &data["slow-backward"], settings.motionThreshold);
 
   // Compute acceleration on all data sets.
-  auto sf = ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
-      data["slow-forward"], settings.windowSize);
-  auto sb = ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
-      data["slow-backward"], settings.windowSize);
-  auto ff = ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
-      data["fast-forward"], settings.windowSize);
-  auto fb = ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
-      data["fast-backward"], settings.windowSize);
+  auto slowForward =
+      ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
+          data["slow-forward"], settings.windowSize);
+  auto slowBackward =
+      ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
+          data["slow-backward"], settings.windowSize);
+  auto fastForward =
+      ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
+          data["fast-forward"], settings.windowSize);
+  auto fastBackward =
+      ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
+          data["fast-backward"], settings.windowSize);
 
   // Get Max Time
   maxStepTime = GetMaxTime<9>(data, kTimeCol);
 
   // Trim the step voltage data.
-  sysid::TrimStepVoltageData(&ff, settings, minStepTime, maxStepTime);
-  sysid::TrimStepVoltageData(&fb, settings, maxStepTime, maxStepTime);
+  sysid::TrimStepVoltageData(&fastForward, settings, minStepTime, maxStepTime);
+  sysid::TrimStepVoltageData(&fastBackward, settings, maxStepTime, maxStepTime);
 
   // Calculate track width from the slow-forward raw data.
-  auto& twd = data["slow-forward"];
-  double l = twd.back()[kLPosCol] - twd.front()[kLPosCol];
-  double r = twd.back()[kRPosCol] - twd.front()[kRPosCol];
-  double a = twd.back()[kAngleCol] - twd.front()[kAngleCol];
-  tw = sysid::CalculateTrackWidth(l, r, units::radian_t(a));
+  auto& trackWidthData = data["slow-forward"];
+  double leftDelta =
+      trackWidthData.back()[kLPosCol] - trackWidthData.front()[kLPosCol];
+  double rightDelta =
+      trackWidthData.back()[kRPosCol] - trackWidthData.front()[kRPosCol];
+  double angleDelta =
+      trackWidthData.back()[kAngleCol] - trackWidthData.front()[kAngleCol];
+  trackWidth = sysid::CalculateTrackWidth(leftDelta, rightDelta,
+                                          units::radian_t{angleDelta});
 
   // Create the distinct datasets and store them in our StringMap.
-  filteredDatasets["Forward"] = std::make_tuple(sf, ff);
-  filteredDatasets["Backward"] = std::make_tuple(sb, fb);
+  filteredDatasets["Forward"] = Storage{slowForward, fastForward};
+  filteredDatasets["Backward"] = Storage{slowBackward, fastBackward};
   filteredDatasets["Combined"] =
-      std::make_tuple(Concatenate(sf, {&sb}), Concatenate(ff, {&fb}));
-  startTimes = {sf[0].timestamp, sb[0].timestamp, ff[0].timestamp,
-                fb[0].timestamp};
+      Storage{Concatenate(slowForward, {&slowBackward}),
+              Concatenate(fastForward, {&fastBackward})};
+  startTimes = {slowForward[0].timestamp, slowBackward[0].timestamp,
+                fastForward[0].timestamp, fastBackward[0].timestamp};
 }
 
 /**
@@ -375,56 +386,72 @@ static void PrepareLinearDrivetrainData(
       &data["slow-backward"], settings.motionThreshold);
 
   // Compute acceleration on all raw data sets.
-  auto rawSfl = ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
-      data["slow-forward"], settings.windowSize);
-  auto rawSbl = ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
-      data["slow-backward"], settings.windowSize);
-  auto rawFfl = ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
-      data["fast-forward"], settings.windowSize);
-  auto rawFbl = ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
-      data["fast-backward"], settings.windowSize);
-  auto rawSfr = ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
-      data["slow-forward"], settings.windowSize);
-  auto rawSbr = ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
-      data["slow-backward"], settings.windowSize);
-  auto rawFfr = ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
-      data["fast-forward"], settings.windowSize);
-  auto rawFbr = ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
-      data["fast-backward"], settings.windowSize);
+  auto rawSlowForwardLeft =
+      ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
+          data["slow-forward"], settings.windowSize);
+  auto rawSlowBackwardLeft =
+      ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
+          data["slow-backward"], settings.windowSize);
+  auto rawFastForwardLeft =
+      ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
+          data["fast-forward"], settings.windowSize);
+  auto rawFastBackwardLeft =
+      ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
+          data["fast-backward"], settings.windowSize);
+  auto rawSlowForwardRight =
+      ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
+          data["slow-forward"], settings.windowSize);
+  auto rawSlowBackwardRight =
+      ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
+          data["slow-backward"], settings.windowSize);
+  auto rawFastForwardRight =
+      ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
+          data["fast-forward"], settings.windowSize);
+  auto rawFastBackwardRight =
+      ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
+          data["fast-backward"], settings.windowSize);
 
   // Compute acceleration on all data sets.
-  auto sfl = ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
-      sysid::ApplyMedianFilter<9, kLVelCol>(data["slow-forward"],
-                                            settings.windowSize),
-      settings.windowSize);
-  auto sbl = ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
-      sysid::ApplyMedianFilter<9, kLVelCol>(data["slow-backward"],
-                                            settings.windowSize),
-      settings.windowSize);
-  auto ffl = ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
-      sysid::ApplyMedianFilter<9, kLVelCol>(data["fast-forward"],
-                                            settings.windowSize),
-      settings.windowSize);
-  auto fbl = ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
-      sysid::ApplyMedianFilter<9, kLVelCol>(data["fast-backward"],
-                                            settings.windowSize),
-      settings.windowSize);
-  auto sfr = ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
-      sysid::ApplyMedianFilter<9, kRVelCol>(data["slow-forward"],
-                                            settings.windowSize),
-      settings.windowSize);
-  auto sbr = ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
-      sysid::ApplyMedianFilter<9, kRVelCol>(data["slow-backward"],
-                                            settings.windowSize),
-      settings.windowSize);
-  auto ffr = ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
-      sysid::ApplyMedianFilter<9, kRVelCol>(data["fast-forward"],
-                                            settings.windowSize),
-      settings.windowSize);
-  auto fbr = ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
-      sysid::ApplyMedianFilter<9, kRVelCol>(data["fast-backward"],
-                                            settings.windowSize),
-      settings.windowSize);
+  auto slowForwardLeft =
+      ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
+          sysid::ApplyMedianFilter<9, kLVelCol>(data["slow-forward"],
+                                                settings.windowSize),
+          settings.windowSize);
+  auto slowBackwardLeft =
+      ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
+          sysid::ApplyMedianFilter<9, kLVelCol>(data["slow-backward"],
+                                                settings.windowSize),
+          settings.windowSize);
+  auto fastForwardLeft =
+      ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
+          sysid::ApplyMedianFilter<9, kLVelCol>(data["fast-forward"],
+                                                settings.windowSize),
+          settings.windowSize);
+  auto fastBackwardLeft =
+      ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
+          sysid::ApplyMedianFilter<9, kLVelCol>(data["fast-backward"],
+                                                settings.windowSize),
+          settings.windowSize);
+  auto slowForwardRight =
+      ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
+          sysid::ApplyMedianFilter<9, kRVelCol>(data["slow-forward"],
+                                                settings.windowSize),
+          settings.windowSize);
+  auto slowBackwardRight =
+      ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
+          sysid::ApplyMedianFilter<9, kRVelCol>(data["slow-backward"],
+                                                settings.windowSize),
+          settings.windowSize);
+  auto fastForwardRight =
+      ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
+          sysid::ApplyMedianFilter<9, kRVelCol>(data["fast-forward"],
+                                                settings.windowSize),
+          settings.windowSize);
+  auto fastBackwardRight =
+      ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
+          sysid::ApplyMedianFilter<9, kRVelCol>(data["fast-backward"],
+                                                settings.windowSize),
+          settings.windowSize);
 
   // Get maximum dynamic test duration
   maxStepTime = GetMaxTime<9>(data, kTimeCol);
@@ -432,60 +459,82 @@ static void PrepareLinearDrivetrainData(
   // Trim raw step voltage data
   auto tempTime = units::second_t{
       0.0};  // Raw data shouldn't be used to calculate mininum step test time
-  sysid::TrimStepVoltageData(&rawFfl, settings, tempTime, maxStepTime);
-  sysid::TrimStepVoltageData(&rawFfr, settings, tempTime, maxStepTime);
-  sysid::TrimStepVoltageData(&rawFbl, settings, tempTime, maxStepTime);
-  sysid::TrimStepVoltageData(&rawFbr, settings, tempTime, maxStepTime);
+  sysid::TrimStepVoltageData(&rawFastForwardLeft, settings, tempTime,
+                             maxStepTime);
+  sysid::TrimStepVoltageData(&rawFastForwardRight, settings, tempTime,
+                             maxStepTime);
+  sysid::TrimStepVoltageData(&rawFastBackwardLeft, settings, tempTime,
+                             maxStepTime);
+  sysid::TrimStepVoltageData(&rawFastBackwardRight, settings, tempTime,
+                             maxStepTime);
 
   // Trim the step voltage data.
-  sysid::TrimStepVoltageData(&ffl, settings, minStepTime, maxStepTime);
-  sysid::TrimStepVoltageData(&ffr, settings, minStepTime, maxStepTime);
-  sysid::TrimStepVoltageData(&fbl, settings, minStepTime, maxStepTime);
-  sysid::TrimStepVoltageData(&fbr, settings, minStepTime, maxStepTime);
+  sysid::TrimStepVoltageData(&fastForwardLeft, settings, minStepTime,
+                             maxStepTime);
+  sysid::TrimStepVoltageData(&fastForwardRight, settings, minStepTime,
+                             maxStepTime);
+  sysid::TrimStepVoltageData(&fastBackwardLeft, settings, minStepTime,
+                             maxStepTime);
+  sysid::TrimStepVoltageData(&fastBackwardRight, settings, minStepTime,
+                             maxStepTime);
 
   // Create the distinct raw datasets and store them in our StringMap.
-  auto raw_sf = Concatenate(rawSfl, {&rawSfr});
-  auto raw_sb = Concatenate(rawSbl, {&rawSbr});
-  auto raw_ff = Concatenate(rawFfl, {&rawFfr});
-  auto raw_fb = Concatenate(rawFbl, {&rawFbr});
+  auto rawSlowForward = Concatenate(rawSlowForwardLeft, {&rawSlowForwardRight});
+  auto rawSlowBackward =
+      Concatenate(rawSlowBackwardLeft, {&rawSlowBackwardRight});
+  auto rawFastForward = Concatenate(rawFastForwardLeft, {&rawFastForwardRight});
+  auto rawFastBackward =
+      Concatenate(rawFastBackwardLeft, {&rawFastBackwardRight});
 
-  rawDatasets["Forward"] = std::make_tuple(raw_sf, raw_ff);
-  rawDatasets["Backward"] = std::make_tuple(raw_sb, raw_fb);
-  rawDatasets["Combined"] = std::make_tuple(Concatenate(raw_sf, {&raw_sb}),
-                                            Concatenate(raw_ff, {&raw_fb}));
+  rawDatasets["Forward"] = Storage{rawSlowForward, rawFastForward};
+  rawDatasets["Backward"] = Storage{rawSlowBackward, rawFastBackward};
+  rawDatasets["Combined"] =
+      Storage{Concatenate(rawSlowForward, {&rawSlowBackward}),
+              Concatenate(rawFastForward, {&rawFastBackward})};
 
-  rawDatasets["Left Forward"] = std::make_tuple(rawSfl, rawFfl);
-  rawDatasets["Left Backward"] = std::make_tuple(rawSbl, rawFbl);
-  rawDatasets["Left Combined"] = std::make_tuple(
-      Concatenate(rawSfl, {&rawSbl}), Concatenate(rawFfl, {&rawFbl}));
+  rawDatasets["Left Forward"] = Storage{rawSlowForwardLeft, rawFastForwardLeft};
+  rawDatasets["Left Backward"] =
+      Storage{rawSlowBackwardLeft, rawFastBackwardLeft};
+  rawDatasets["Left Combined"] =
+      Storage{Concatenate(rawSlowForwardLeft, {&rawSlowBackwardLeft}),
+              Concatenate(rawFastForwardLeft, {&rawFastBackwardLeft})};
 
-  rawDatasets["Right Forward"] = std::make_tuple(rawSfr, rawFfr);
-  rawDatasets["Right Backward"] = std::make_tuple(rawSbr, rawFbr);
-  rawDatasets["Right Combined"] = std::make_tuple(
-      Concatenate(rawSfr, {&rawSbr}), Concatenate(rawFfr, {&rawFbr}));
+  rawDatasets["Right Forward"] =
+      Storage{rawSlowForwardRight, rawFastForwardRight};
+  rawDatasets["Right Backward"] =
+      Storage{rawSlowBackwardRight, rawFastBackwardRight};
+  rawDatasets["Right Combined"] =
+      Storage{Concatenate(rawSlowForwardRight, {&rawSlowBackwardRight}),
+              Concatenate(rawFastForwardRight, {&rawFastBackwardRight})};
 
   // Create the distinct datasets and store them in our StringMap.
-  auto sf = Concatenate(sfl, {&sfr});
-  auto sb = Concatenate(sbl, {&sbr});
-  auto ff = Concatenate(ffl, {&ffr});
-  auto fb = Concatenate(fbl, {&fbr});
+  auto slowForward = Concatenate(slowForwardLeft, {&slowForwardRight});
+  auto slowBackward = Concatenate(slowBackwardLeft, {&slowBackwardRight});
+  auto fastForward = Concatenate(fastForwardLeft, {&fastForwardRight});
+  auto fastBackward = Concatenate(fastBackwardLeft, {&fastBackwardRight});
 
-  filteredDatasets["Forward"] = std::make_tuple(sf, ff);
-  filteredDatasets["Backward"] = std::make_tuple(sb, fb);
+  filteredDatasets["Forward"] = Storage{slowForward, fastForward};
+  filteredDatasets["Backward"] = Storage{slowBackward, fastBackward};
   filteredDatasets["Combined"] =
-      std::make_tuple(Concatenate(sf, {&sb}), Concatenate(ff, {&fb}));
+      Storage{Concatenate(slowForward, {&slowBackward}),
+              Concatenate(fastForward, {&fastBackward})};
 
-  filteredDatasets["Left Forward"] = std::make_tuple(sfl, ffl);
-  filteredDatasets["Left Backward"] = std::make_tuple(sbl, fbl);
+  filteredDatasets["Left Forward"] = Storage{slowForwardLeft, fastForwardLeft};
+  filteredDatasets["Left Backward"] =
+      Storage{slowBackwardLeft, fastBackwardLeft};
   filteredDatasets["Left Combined"] =
-      std::make_tuple(Concatenate(sfl, {&sbl}), Concatenate(ffl, {&fbl}));
+      Storage{Concatenate(slowForwardLeft, {&slowBackwardLeft}),
+              Concatenate(fastForwardLeft, {&fastBackwardLeft})};
 
-  filteredDatasets["Right Forward"] = std::make_tuple(sfr, ffr);
-  filteredDatasets["Right Backward"] = std::make_tuple(sbr, fbr);
+  filteredDatasets["Right Forward"] =
+      Storage{slowForwardRight, fastForwardRight};
+  filteredDatasets["Right Backward"] =
+      Storage{slowBackwardRight, fastBackwardRight};
   filteredDatasets["Right Combined"] =
-      std::make_tuple(Concatenate(sfr, {&sbr}), Concatenate(ffr, {&fbr}));
-  startTimes = {sf[0].timestamp, sb[0].timestamp, ff[0].timestamp,
-                fb[0].timestamp};
+      Storage{Concatenate(slowForwardRight, {&slowBackwardRight}),
+              Concatenate(fastForwardRight, {&fastBackwardRight})};
+  startTimes = {slowForward[0].timestamp, slowBackward[0].timestamp,
+                fastForward[0].timestamp, fastBackward[0].timestamp};
 }
 
 AnalysisManager::AnalysisManager(wpi::StringRef path, Settings& settings,

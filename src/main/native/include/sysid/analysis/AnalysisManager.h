@@ -21,20 +21,9 @@
 #include "sysid/analysis/FeedbackAnalysis.h"
 #include "sysid/analysis/FeedbackControllerPreset.h"
 #include "sysid/analysis/FeedforwardAnalysis.h"
+#include "sysid/analysis/Storage.h"
 
 namespace sysid {
-/**
- * Represents each data point after it is cleaned and various parameters are
- * calculated.
- */
-struct PreparedData {
-  units::second_t timestamp;
-  double voltage;
-  double position;
-  double velocity;
-  double acceleration;
-  double cos;
-};
 
 /**
  * Manages analysis of data. Each instance of this class represents a JSON file
@@ -93,10 +82,6 @@ class AnalysisManager {
       "Combined",      "Forward",        "Backward",
       "Left Forward",  "Left Backward",  "Left Combined",
       "Right Forward", "Right Backward", "Right Combined"};
-
-  /** Represents one "set" of data. 0 is slow tests, 1 is fast tests. */
-  using Storage =
-      std::tuple<std::vector<PreparedData>, std::vector<PreparedData>>;
 
   /**
    * Constructs an instance of the analysis manager with the given path (to the

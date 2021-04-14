@@ -8,14 +8,9 @@
 #include <vector>
 
 #include "sysid/analysis/AnalysisType.h"
+#include "sysid/analysis/Storage.h"
 
 namespace sysid {
-// The prepared data from the analysis manager.
-struct PreparedData;
-
-// The type of storage used by the analysis manger.
-using Storage =
-    std::tuple<std::vector<PreparedData>, std::vector<PreparedData>>;
 
 /**
  * Calculates feedforward gains given the data and the type of analysis to

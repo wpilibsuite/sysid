@@ -102,12 +102,12 @@ std::tuple<std::vector<double>, double> sysid::CalculateFeedforwardGains(
   // Create a raw vector of doubles with our data in it.
   std::vector<double> olsData;
   olsData.reserve((1 + type.independentVariables) *
-                  (std::get<0>(data).size() + std::get<1>(data).size()));
+                  (data.slow.size() + data.fast.size()));
 
   // Iterate through the data and add it to our raw vector.
   if (type == analysis::kArm) {
-    PopulateAccelOLSVector(std::get<0>(data), type, olsData);
-    PopulateAccelOLSVector(std::get<1>(data), type, olsData);
+    PopulateAccelOLSVector(data.slow, type, olsData);
+    PopulateAccelOLSVector(data.fast, type, olsData);
 
     // Gains are Ks, Kv, Ka, Kcos
     return sysid::OLS(olsData, type.independentVariables);
@@ -116,8 +116,8 @@ std::tuple<std::vector<double>, double> sysid::CalculateFeedforwardGains(
     // https://file.tavsys.net/control/sysid-ols.pdf.
 
     std::vector<units::second_t> dts;
-    PopulateNextVelOLSVector(std::get<0>(data), type, olsData, dts);
-    PopulateNextVelOLSVector(std::get<1>(data), type, olsData, dts);
+    PopulateNextVelOLSVector(data.slow, type, olsData, dts);
+    PopulateNextVelOLSVector(data.fast, type, olsData, dts);
     auto dt = std::accumulate(dts.begin(), dts.end(), 0_s) / dts.size();
 
     auto ols = sysid::OLS(olsData, type.independentVariables);
