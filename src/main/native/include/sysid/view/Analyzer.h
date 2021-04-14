@@ -72,7 +72,7 @@ class Analyzer : public glass::View {
 
   // Feedforward and feedback gains.
   std::vector<double> m_ff;
-  double m_rs;
+  double m_rSquared;
   double m_Kp;
   double m_Kd;
 

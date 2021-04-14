@@ -198,7 +198,7 @@ void Analyzer::Display() {
         ShowGain("Track Width", &*m_trackWidth);
       }
 
-      ShowGain("r-squared", &m_rs);
+      ShowGain("r-squared", &m_rSquared);
 
       double endY = ImGui::GetCursorPosY();
 
@@ -534,12 +534,12 @@ void Analyzer::PrepareData() {
 
 void Analyzer::Calculate() {
   try {
-    auto gains = m_manager->Calculate();
-    m_ff = std::get<0>(gains.ff);
-    m_rs = std::get<1>(gains.ff);
-    m_Kp = std::get<0>(gains.fb);
-    m_Kd = std::get<1>(gains.fb);
-    m_trackWidth = gains.trackWidth;
+    const auto& [ff, fb, trackWidth] = m_manager->Calculate();
+    m_ff = std::get<0>(ff);
+    m_rSquared = std::get<1>(ff);
+    m_Kp = fb.Kp;
+    m_Kd = fb.Kd;
+    m_trackWidth = trackWidth;
     m_unit = m_manager->GetUnit();
     m_factor = m_manager->GetFactor();
   } catch (const std::exception& e) {

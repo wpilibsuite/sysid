@@ -56,8 +56,8 @@ class AnalysisManager {
     /** The dataset that is being analyzed. */
     int dataset = 0;
 
-    units::second_t stepTestDuration =
-        units::second_t{0.0};  // Indicate that it hasn't been set yet
+    // 0 s indicates it hasn't been set yet
+    units::second_t stepTestDuration = 0_s;
 
     /** The conversion factors. These contain values to convert feedback gains
      * by gearing and cpr. */
@@ -68,8 +68,8 @@ class AnalysisManager {
 
   /** Stores feedforward and feedback gains */
   struct Gains {
-    std::tuple<std::vector<double>, double> ff;
-    std::tuple<double, double> fb;
+    std::tuple<std::vector<double>, double> ffGains;
+    FeedbackGains fbGains;
     std::optional<double> trackWidth;
   };
 

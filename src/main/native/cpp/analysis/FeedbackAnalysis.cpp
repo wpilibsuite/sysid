@@ -18,13 +18,9 @@ using namespace sysid;
 using Kv_t = decltype(1_V / 1_mps);
 using Ka_t = decltype(1_V / 1_mps_sq);
 
-std::tuple<double, double> sysid::CalculatePositionFeedbackGains(
+FeedbackGains sysid::CalculatePositionFeedbackGains(
     const FeedbackControllerPreset& preset, const LQRParameters& params,
-    const FeedforwardGains& feedforwardGains, double encFactor) {
-  // Get Ks, Kv, and Ka from the tuple.
-  auto& [Ks, Kv, Ka] = feedforwardGains;
-  static_cast<void>(Ks);
-
+    double Kv, double Ka, double encFactor) {
   // If acceleration requires no effort, velocity becomes an input for position
   // control. We choose an appropriate model in this case to avoid numerical
   // instabilities in the LQR.
@@ -39,10 +35,10 @@ std::tuple<double, double> sysid::CalculatePositionFeedbackGains(
     controller.LatencyCompensate(system, preset.period,
                                  preset.positionMeasurementDelay);
 
-    return std::make_tuple(
+    return {
         controller.K(0, 0) * preset.outputConversionFactor / encFactor,
         controller.K(0, 1) * preset.outputConversionFactor /
-            (encFactor * (preset.normalized ? 1 : preset.period.to<double>())));
+            (encFactor * (preset.normalized ? 1 : preset.period.to<double>()))};
   }
 
   // This is our special model to avoid instabilities in the LQR.
@@ -56,22 +52,18 @@ std::tuple<double, double> sysid::CalculatePositionFeedbackGains(
   controller.LatencyCompensate(system, preset.period,
                                preset.positionMeasurementDelay);
 
-  return std::make_tuple(
-      Kv * controller.K(0, 0) * preset.outputConversionFactor / encFactor, 0);
+  return {Kv * controller.K(0, 0) * preset.outputConversionFactor / encFactor,
+          0.0};
 }
 
-std::tuple<double, double> sysid::CalculateVelocityFeedbackGains(
+FeedbackGains sysid::CalculateVelocityFeedbackGains(
     const FeedbackControllerPreset& preset, const LQRParameters& params,
-    const FeedforwardGains& feedforwardGains, double encFactor) {
-  // Get Ks, Kv, and Ka from the tuple.
-  auto& [Ks, Kv, Ka] = feedforwardGains;
-  static_cast<void>(Ks);
-
+    double Kv, double Ka, double encFactor) {
   // If acceleration for velocity control requires no effort, the feedback
   // control gains approach zero. We special-case it here because numerical
   // instabilities arise in LQR otherwise.
   if (Ka < 1E-7) {
-    return std::make_tuple(0, 0);
+    return {0.0, 0.0};
   }
 
   // Create a velocity system from our feedforward gains.
@@ -84,7 +76,7 @@ std::tuple<double, double> sysid::CalculateVelocityFeedbackGains(
   controller.LatencyCompensate(system, preset.period,
                                preset.velocityMeasurementDelay);
 
-  return std::make_tuple(controller.K(0, 0) * preset.outputConversionFactor /
-                             (preset.outputVelocityTimeFactor * encFactor),
-                         0);
+  return {controller.K(0, 0) * preset.outputConversionFactor /
+              (preset.outputVelocityTimeFactor * encFactor),
+          0.0};
 }
