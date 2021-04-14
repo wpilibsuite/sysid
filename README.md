@@ -23,7 +23,7 @@ The SysId GitHub repository uses GitHub Actions to build and test each commit.
 
 1. Extract the files from the downloaded zip file.
 2. Extract the files from the zip file located in the root of the extracted folder.
-3. Open the folder named after your operating system (ex: linux, windows, macOS).
+3. Open the folder named after your operating system (ex: Linux, Windows, macOS).
 4. Open the folder named for your architecture.
 5. Run the executable named `sysid`.
 
