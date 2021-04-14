@@ -48,7 +48,8 @@ class AnalyzerPlot {
   /**
    * Sets the raw data to be displayed on the plots.
    */
-  void SetData(const Storage& data, const std::vector<double>& ff,
+  void SetData(const Storage& rawData, const Storage& filteredData,
+               const std::vector<double>& ff,
                const std::array<units::second_t, 4>& startTimes,
                AnalysisType type, std::atomic<bool>& abort);
 
@@ -77,7 +78,8 @@ class AnalyzerPlot {
   static constexpr size_t kMaxSize = 2048;
 
   // Stores ImPlotPoint vectors for all of the data.
-  wpi::StringMap<std::vector<ImPlotPoint>> m_data;
+  wpi::StringMap<std::vector<ImPlotPoint>> m_filteredData;
+  wpi::StringMap<std::vector<ImPlotPoint>> m_rawData;
 
   // Stores points for the lines of best fit.
   ImPlotPoint m_KvFit[2];

@@ -103,6 +103,7 @@ class IntegrationTest : public ::testing::Test {
     auto path = m_manager->SaveJSON(PROJECT_ROOT_DIR);
     try {
       auto analyzerSettings = sysid::AnalysisManager::Settings{};
+      analyzerSettings.windowSize = 15;
       if (m_settings.mechanism == sysid::analysis::kArm) {
         analyzerSettings.motionThreshold = 0.01;  // Reduce threshold for arm
                                                   // test
@@ -117,11 +118,8 @@ class IntegrationTest : public ::testing::Test {
       wpi::outs() << "Ks: " << ff[0] << "\n"
                   << "Kv: " << ff[1] << "\nKa: " << ff[2] << "\n";
       wpi::outs().flush();
-      EXPECT_NEAR(Kv, ff[1], 0.30);
-
-      // Due to scheduling jitter in integration test, Ka is extremely
-      // inaccurate
-      EXPECT_NEAR(Ka, ff[2], 0.60);
+      EXPECT_NEAR(Kv, ff[1], 0.05);
+      EXPECT_NEAR(Ka, ff[2], 0.20);
 
       if (m_settings.mechanism == sysid::analysis::kElevator) {
         wpi::outs() << "KG: " << ff[3] << "\n";
