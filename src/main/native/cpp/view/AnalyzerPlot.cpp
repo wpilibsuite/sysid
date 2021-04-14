@@ -94,31 +94,31 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
 
   // Calculate step sizes to ensure that we only use the memory that we
   // allocated.
-  auto sStep = std::ceil(slow.size() * 1.0 / kMaxSize * 4);
-  auto fStep = std::ceil(fast.size() * 1.0 / kMaxSize * 4);
+  auto slowStep = std::ceil(slow.size() * 1.0 / kMaxSize * 4);
+  auto fastStep = std::ceil(fast.size() * 1.0 / kMaxSize * 4);
 
-  auto rawSStep = std::ceil(rawSlow.size() * 1.0 / kMaxSize * 4);
-  auto rawFStep = std::ceil(rawFast.size() * 1.0 / kMaxSize * 4);
+  auto rawSlowStep = std::ceil(rawSlow.size() * 1.0 / kMaxSize * 4);
+  auto rawFastStep = std::ceil(rawFast.size() * 1.0 / kMaxSize * 4);
 
   // Calculate min and max velocities and accelerations of the slow and fast
   // datasets respectively.
-  auto sMinE =
-      std::min_element(slow.cbegin(), slow.end(), [](auto& a, auto& b) {
+  auto slowMinElement =
+      std::min_element(slow.cbegin(), slow.cend(), [](auto& a, auto& b) {
         return a.velocity < b.velocity;
       })->velocity;
 
-  auto sMaxE =
-      std::max_element(slow.cbegin(), slow.end(), [](auto& a, auto& b) {
+  auto slowMaxElement =
+      std::max_element(slow.cbegin(), slow.cend(), [](auto& a, auto& b) {
         return a.velocity < b.velocity;
       })->velocity;
 
-  auto fMinE =
-      std::min_element(fast.cbegin(), fast.end(), [](auto& a, auto& b) {
+  auto fastMinElement =
+      std::min_element(fast.cbegin(), fast.cend(), [](auto& a, auto& b) {
         return a.acceleration < b.acceleration;
       })->acceleration;
 
-  auto fMaxE =
-      std::max_element(fast.cbegin(), fast.end(), [](auto& a, auto& b) {
+  auto fastMaxElement =
+      std::max_element(fast.cbegin(), fast.cend(), [](auto& a, auto& b) {
         return a.acceleration < b.acceleration;
       })->acceleration;
 
@@ -127,7 +127,7 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
   // Populate quasistatic time-domain graphs and quasistatic velocity vs.
   // velocity-portion voltage graph.
   auto t = slow[0].timestamp;
-  for (size_t i = 0; i < slow.size(); i += sStep) {
+  for (size_t i = 0; i < slow.size(); i += slowStep) {
     if (abort) {
       return;
     }
@@ -142,8 +142,8 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
     }
 
     // Calculate points to show the line of best fit.
-    m_KvFit[0] = ImPlotPoint(ff[1] * sMinE, sMinE);
-    m_KvFit[1] = ImPlotPoint(ff[1] * sMaxE, sMaxE);
+    m_KvFit[0] = ImPlotPoint(ff[1] * slowMinElement, slowMinElement);
+    m_KvFit[1] = ImPlotPoint(ff[1] * slowMaxElement, slowMaxElement);
 
     m_filteredData[kChartTitles[0]].emplace_back(Vportion, slow[i].velocity);
     m_filteredData[kChartTitles[2]].emplace_back(
@@ -172,7 +172,7 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
   // Populate dynamic time-domain graphs and dynamic acceleration vs.
   // acceleration-portion voltage graph.
   t = fast[0].timestamp;
-  for (size_t i = 0; i < fast.size(); i += fStep) {
+  for (size_t i = 0; i < fast.size(); i += fastStep) {
     if (abort) {
       return;
     }
@@ -187,8 +187,8 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
     }
 
     // Calculate points to show the line of best fit.
-    m_KaFit[0] = ImPlotPoint(ff[2] * fMinE, fMinE);
-    m_KaFit[1] = ImPlotPoint(ff[2] * fMaxE, fMaxE);
+    m_KaFit[0] = ImPlotPoint(ff[2] * fastMinElement, fastMinElement);
+    m_KaFit[1] = ImPlotPoint(ff[2] * fastMaxElement, fastMaxElement);
 
     m_filteredData[kChartTitles[1]].emplace_back(Vportion,
                                                  fast[i].acceleration);
@@ -229,7 +229,7 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
 
   t = rawSlow[0].timestamp;
   // Populate Raw Slow Time Series Data
-  for (size_t i = 0; i < rawSlow.size(); i += rawSStep) {
+  for (size_t i = 0; i < rawSlow.size(); i += rawSlowStep) {
     m_rawData[kChartTitles[2]].emplace_back(
         (rawSlow[i].timestamp - t).to<double>(), rawSlow[i].velocity);
     m_rawData[kChartTitles[3]].emplace_back(
@@ -238,7 +238,7 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
 
   t = rawFast[0].timestamp;
   // Populate Raw fast Time Series Data
-  for (size_t i = 0; i < rawFast.size(); i += rawFStep) {
+  for (size_t i = 0; i < rawFast.size(); i += rawFastStep) {
     m_rawData[kChartTitles[4]].emplace_back(
         (rawFast[i].timestamp - t).to<double>(), rawFast[i].velocity);
     m_rawData[kChartTitles[5]].emplace_back(
@@ -248,21 +248,21 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
   // Populate Simulated Time Series Data.
   if (type == analysis::kElevator) {
     m_quasistaticSim =
-        PopulateTimeDomainSim(slow, startTimes, fStep,
+        PopulateTimeDomainSim(slow, startTimes, fastStep,
                               sysid::ElevatorSim{ff[0], ff[1], ff[2], ff[3]});
     m_dynamicSim =
-        PopulateTimeDomainSim(fast, startTimes, fStep,
+        PopulateTimeDomainSim(fast, startTimes, fastStep,
                               sysid::ElevatorSim{ff[0], ff[1], ff[2], ff[3]});
   } else if (type == analysis::kArm) {
     m_quasistaticSim = PopulateTimeDomainSim(
-        slow, startTimes, fStep, sysid::ArmSim{ff[0], ff[1], ff[2], ff[3]});
+        slow, startTimes, fastStep, sysid::ArmSim{ff[0], ff[1], ff[2], ff[3]});
     m_dynamicSim = PopulateTimeDomainSim(
-        fast, startTimes, fStep, sysid::ArmSim{ff[0], ff[1], ff[2], ff[3]});
+        fast, startTimes, fastStep, sysid::ArmSim{ff[0], ff[1], ff[2], ff[3]});
   } else {
     m_quasistaticSim = PopulateTimeDomainSim(
-        slow, startTimes, fStep, sysid::SimpleMotorSim{ff[0], ff[1], ff[2]});
+        slow, startTimes, fastStep, sysid::SimpleMotorSim{ff[0], ff[1], ff[2]});
     m_dynamicSim = PopulateTimeDomainSim(
-        fast, startTimes, fStep, sysid::SimpleMotorSim{ff[0], ff[1], ff[2]});
+        fast, startTimes, fastStep, sysid::SimpleMotorSim{ff[0], ff[1], ff[2]});
   }
 
   FitPlots();
