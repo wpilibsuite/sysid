@@ -10,6 +10,7 @@
 #include <glass/Window.h>
 #include <glass/WindowManager.h>
 #include <glass/other/Log.h>
+#include <imgui.h>
 #include <wpi/Logger.h>
 #include <wpi/Path.h>
 #include <wpi/StringRef.h>
@@ -25,9 +26,10 @@ static std::unique_ptr<glass::WindowManager> gWindowManager;
 
 glass::Window* gLoggerWindow;
 glass::Window* gAnalyzerWindow;
-glass::Window* gJSONConverterWindow;
 glass::Window* gGeneratorWindow;
 glass::Window* gProgramLogWindow;
+
+std::unique_ptr<sysid::JSONConverter> gJSONConverter;
 
 glass::LogData gLog;
 wpi::Logger gLogger;
@@ -92,25 +94,21 @@ int main() {
   gAnalyzerWindow = gWindowManager->AddWindow(
       "Analyzer", std::make_unique<sysid::Analyzer>(gLogger));
 
-  gJSONConverterWindow = gWindowManager->AddWindow(
-      "JSON Converter", std::make_unique<sysid::JSONConverter>(gLogger));
-
   gProgramLogWindow = gWindowManager->AddWindow(
       "Program Log", std::make_unique<glass::LogView>(&gLog));
 
   // Set default positions and sizes for windows.
-  gLoggerWindow->SetDefaultPos(35, 40);
-  gLoggerWindow->SetDefaultSize(350, 420);
+  gLoggerWindow->SetDefaultPos(5, 285);
+  gLoggerWindow->SetDefaultSize(350, 400);
 
-  gAnalyzerWindow->SetDefaultPos(400, 40);
-  gAnalyzerWindow->SetDefaultSize(500, 530);
+  gAnalyzerWindow->SetDefaultPos(360, 25);
+  gAnalyzerWindow->SetDefaultSize(530, 530);
 
-  gJSONConverterWindow->SetDefaultPos(35, 485);
-  gJSONConverterWindow->SetDefaultSize(350, 80);
-
-  gProgramLogWindow->SetDefaultPos(40, 580);
-  gProgramLogWindow->SetDefaultSize(1180, 125);
+  gProgramLogWindow->SetDefaultPos(360, 560);
+  gProgramLogWindow->SetDefaultSize(530, 125);
   gProgramLogWindow->DisableRenamePopup();
+
+  gJSONConverter = std::make_unique<sysid::JSONConverter>(gLogger);
 
   // Configure save file.
   gui::ConfigurePlatformSaveFile("sysid.ini");
@@ -133,7 +131,29 @@ int main() {
       ImGui::EndMenu();
     }
 
+    bool frcCharConvert = false;
+    if (ImGui::BeginMenu("JSON Converters")) {
+      if (ImGui::MenuItem("FRC-Char Converter")) {
+        frcCharConvert = true;
+      }
+
+      ImGui::EndMenu();
+    }
+
     ImGui::EndMainMenuBar();
+
+    if (frcCharConvert) {
+      ImGui::OpenPopup("FRC-Char Converter");
+      frcCharConvert = false;
+    }
+
+    if (ImGui::BeginPopupModal("FRC-Char Converter")) {
+      gJSONConverter->Display();
+      if (ImGui::Button("Close")) {
+        ImGui::CloseCurrentPopup();
+      }
+      ImGui::EndPopup();
+    }
 
     if (about) {
       ImGui::OpenPopup("About");
