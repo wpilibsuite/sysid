@@ -47,6 +47,15 @@ class AnalyzerPlot {
 
   /**
    * Sets the raw data to be displayed on the plots.
+   *
+   * @param rawData      Raw data storage.
+   * @param filteredData Filtered data storage.
+   * @param ff           List of feedforward gains (Ks, Kv, Ka, and optionally
+   *                     either Kg or Kcos).
+   * @param startTimes   Array of dataset start times.
+   * @param type         Type of analysis.
+   * @param abort        Aborts analysis early if set to true from another
+   *                     thread.
    */
   void SetData(const Storage& rawData, const Storage& filteredData,
                const std::vector<double>& ff,
