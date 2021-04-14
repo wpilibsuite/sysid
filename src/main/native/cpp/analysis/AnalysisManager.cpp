@@ -591,29 +591,28 @@ void AnalysisManager::PrepareData() {
 
 AnalysisManager::Gains AnalysisManager::Calculate() {
   // Calculate feedforward gains from the data.
-  auto ff = sysid::CalculateFeedforwardGains(
+  auto ffGains = sysid::CalculateFeedforwardGains(
       m_filteredDatasets[kDatasets[m_settings.dataset]], m_type);
 
-  // Create the struct that we need for feedback analysis.
-  auto& f = std::get<0>(ff);
-  FeedforwardGains gains = {f[0], f[1], f[2]};
+  const auto& Kv = std::get<0>(ffGains)[1];
+  const auto& Ka = std::get<0>(ffGains)[2];
 
   // Calculate the appropriate gains.
-  std::tuple<double, double> fb;
+  FeedbackGains fbGains;
   if (m_settings.type == FeedbackControllerLoopType::kPosition) {
-    fb = sysid::CalculatePositionFeedbackGains(
-        m_settings.preset, m_settings.lqr, gains,
+    fbGains = sysid::CalculatePositionFeedbackGains(
+        m_settings.preset, m_settings.lqr, Kv, Ka,
         m_settings.convertGainsToEncTicks
             ? m_settings.gearing * m_settings.cpr * m_factor
             : 1);
   } else {
-    fb = sysid::CalculateVelocityFeedbackGains(
-        m_settings.preset, m_settings.lqr, gains,
+    fbGains = sysid::CalculateVelocityFeedbackGains(
+        m_settings.preset, m_settings.lqr, Kv, Ka,
         m_settings.convertGainsToEncTicks
             ? m_settings.gearing * m_settings.cpr * m_factor
             : 1);
   }
-  return {ff, fb, m_trackWidth};
+  return {ffGains, fbGains, m_trackWidth};
 }
 
 void AnalysisManager::OverrideUnits(const std::string& unit,

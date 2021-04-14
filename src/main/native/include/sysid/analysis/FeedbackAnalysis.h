@@ -4,11 +4,8 @@
 
 #pragma once
 
-#include <tuple>
-
 namespace sysid {
 
-using FeedforwardGains = std::tuple<double, double, double>;
 struct FeedbackControllerPreset;
 
 /**
@@ -27,20 +24,30 @@ struct LQRParameters {
 };
 
 /**
+ * Stores feedback controller gains.
+ */
+struct FeedbackGains {
+  double Kp;
+  double Kd;
+};
+
+/**
  * Calculates position feedback gains for the given controller preset, LQR
  * controller gain parameters and feedforward gains.
  *
  * @param preset           The feedback controller preset.
  * @param params           The parameters for calculating optimal feedback
  *                         gains.
+ * @param Kv               Velocity feedforward gain.
+ * @param Ka               Acceleration feedforward gain.
  * @param feedforwardGains The feedforward gains for the system.
  * @param encFactor        The factor to convert the gains from output units to
  *                         encoder units. This is usually encoder EPR * gearing
  *                         * units per rotation.
  */
-std::tuple<double, double> CalculatePositionFeedbackGains(
+FeedbackGains CalculatePositionFeedbackGains(
     const FeedbackControllerPreset& preset, const LQRParameters& params,
-    const FeedforwardGains& feedforwardGains, double encFactor = 1.0);
+    double Kv, double Ka, double encFactor = 1.0);
 
 /**
  * Calculates velocity feedback gains for the given controller preset, LQR
@@ -49,12 +56,13 @@ std::tuple<double, double> CalculatePositionFeedbackGains(
  * @param preset           The feedback controller preset.
  * @param params           The parameters for calculating optimal feedback
  *                         gains.
- * @param feedforwardGains The feedforward gains for the system.
+ * @param Kv               Velocity feedforward gain.
+ * @param Ka               Acceleration feedforward gain.
  * @param encFactor        The factor to convert the gains from output units to
  *                         encoder units. This is usually encoder EPR * gearing
  *                         * units per rotation.
  */
-std::tuple<double, double> CalculateVelocityFeedbackGains(
+FeedbackGains CalculateVelocityFeedbackGains(
     const FeedbackControllerPreset& preset, const LQRParameters& params,
-    const FeedforwardGains& feedforwardGains, double encFactor = 1.0);
+    double Kv, double Ka, double encFactor = 1.0);
 }  // namespace sysid

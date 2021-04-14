@@ -110,25 +110,23 @@ class IntegrationTest : public ::testing::Test {
       }
       sysid::AnalysisManager analyzer{path, analyzerSettings, m_logger};
 
-      auto output = analyzer.Calculate();
+      const auto& [ff, fb, trackWidth] = analyzer.Calculate();
+      const auto& ffGains = std::get<0>(ff);
 
-      auto ff = std::get<0>(output.ff);
-      auto trackWidth = output.trackWidth;
-
-      wpi::outs() << "Ks: " << ff[0] << "\n"
-                  << "Kv: " << ff[1] << "\nKa: " << ff[2] << "\n";
+      wpi::outs() << "Ks: " << ffGains[0] << "\n"
+                  << "Kv: " << ffGains[1] << "\nKa: " << ffGains[2] << "\n";
       wpi::outs().flush();
-      EXPECT_NEAR(Kv, ff[1], 0.05);
-      EXPECT_NEAR(Ka, ff[2], 0.20);
+      EXPECT_NEAR(Kv, ffGains[1], 0.05);
+      EXPECT_NEAR(Ka, ffGains[2], 0.20);
 
       if (m_settings.mechanism == sysid::analysis::kElevator) {
-        wpi::outs() << "KG: " << ff[3] << "\n";
+        wpi::outs() << "KG: " << ffGains[3] << "\n";
         wpi::outs().flush();
-        EXPECT_NEAR(kG, ff[3], 0.2);
+        EXPECT_NEAR(kG, ffGains[3], 0.2);
       } else if (m_settings.mechanism == sysid::analysis::kArm) {
-        wpi::outs() << "KCos: " << ff[3] << "\n";
+        wpi::outs() << "KCos: " << ffGains[3] << "\n";
         wpi::outs().flush();
-        EXPECT_NEAR(kCos, ff[3], 0.15);
+        EXPECT_NEAR(kCos, ffGains[3], 0.15);
       }
 
       if (trackWidth) {

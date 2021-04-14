@@ -125,11 +125,13 @@ std::tuple<std::vector<double>, double> sysid::CalculateFeedforwardGains(
     double beta = std::get<0>(ols)[1];
     double gamma = std::get<0>(ols)[2];
 
+    // Initialize gains list with Ks, Kv, and Ka
     std::vector<double> gains{
         {-gamma / beta, (1 - alpha) / beta,
          dt.to<double>() * (alpha - 1) / (beta * std::log(alpha))}};
 
     if (type == analysis::kElevator) {
+      // Add Kg to gains list
       double delta = std::get<0>(ols)[3];
       gains.emplace_back(-delta / beta);
     }
