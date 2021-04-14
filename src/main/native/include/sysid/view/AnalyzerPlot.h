@@ -50,7 +50,7 @@ class AnalyzerPlot {
    *
    * @param rawData      Raw data storage.
    * @param filteredData Filtered data storage.
-   * @param ff           List of feedforward gains (Ks, Kv, Ka, and optionally
+   * @param ffGains      List of feedforward gains (Ks, Kv, Ka, and optionally
    *                     either Kg or Kcos).
    * @param startTimes   Array of dataset start times.
    * @param type         Type of analysis.
