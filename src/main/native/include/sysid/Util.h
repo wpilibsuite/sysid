@@ -25,4 +25,5 @@
 namespace sysid {
 void CreateTooltip(const char* text);
 std::vector<std::string> Split(const std::string& s, char c);
+std::string GetAbbreviation(std::string unit);
 }  // namespace sysid

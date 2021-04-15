@@ -4,20 +4,27 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <string>
 
 #include <glass/View.h>
 #include <portable-file-dialogs.h>
 #include <wpi/Logger.h>
+#include <wpi/StringRef.h>
 
 namespace sysid {
 class JSONConverter {
  public:
   explicit JSONConverter(wpi::Logger& logger) : m_logger(logger) {}
-  void Display();
+  void DisplayFRCCharConvert();
+  void DisplayCSVConvert();
 
  private:
+  void DisplayConverter(
+      const char* tooltip,
+      std::function<std::string(wpi::StringRef, wpi::Logger&)>);
+
   wpi::Logger& m_logger;
 
   std::string m_location;

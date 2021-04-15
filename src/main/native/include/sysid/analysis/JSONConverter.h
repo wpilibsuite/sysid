@@ -20,4 +20,6 @@ namespace sysid {
  * @return The full file path of the newly saved JSON.
  */
 std::string ConvertJSON(wpi::StringRef path, wpi::Logger& logger);
+
+std::string ToCSV(wpi::StringRef path, wpi::Logger& logger);
 }  // namespace sysid
