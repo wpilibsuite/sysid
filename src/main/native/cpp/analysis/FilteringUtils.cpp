@@ -4,6 +4,9 @@
 
 #include "sysid/analysis/FilteringUtils.h"
 
+#include <numeric>
+#include <vector>
+
 #include <frc/LinearFilter.h>
 
 using namespace sysid;
@@ -68,4 +71,24 @@ double sysid::GetAccelNoiseFloor(const std::vector<PreparedData>& data,
     }
   }
   return std::sqrt(sum / (data.size() - step));
+}
+
+units::second_t sysid::GetMeanTimeDelta(const Storage& data) {
+  std::vector<units::second_t> dts;
+
+  const auto& [slow, fast] = data;
+  for (size_t i = 0; i < slow.size() - 1; ++i) {
+    auto dt = slow[i + 1].timestamp - slow[i].timestamp;
+    if (dt > 0_s && dt < 500_ms) {
+      dts.emplace_back(dt);
+    }
+  }
+  for (size_t i = 0; i < fast.size() - 1; ++i) {
+    auto dt = fast[i + 1].timestamp - fast[i].timestamp;
+    if (dt > 0_s && dt < 500_ms) {
+      dts.emplace_back(dt);
+    }
+  }
+
+  return std::accumulate(dts.begin(), dts.end(), 0_s) / dts.size();
 }

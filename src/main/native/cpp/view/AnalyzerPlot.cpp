@@ -20,6 +20,7 @@
 #include "sysid/analysis/AnalysisType.h"
 #include "sysid/analysis/ArmSim.h"
 #include "sysid/analysis/ElevatorSim.h"
+#include "sysid/analysis/FilteringUtils.h"
 #include "sysid/analysis/SimpleMotorSim.h"
 
 using namespace sysid;
@@ -126,8 +127,8 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
         return a.acceleration < b.acceleration;
       })->acceleration;
 
-  int dtSamples = 0;
-  auto dtSum = 0_s;
+  units::second_t dtMean = GetMeanTimeDelta(filteredData);
+
   // Populate quasistatic time-domain graphs and quasistatic velocity vs.
   // velocity-portion voltage graph.
   auto t = slow[0].timestamp;
@@ -163,14 +164,12 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
       // it is the beginning of a new test and the dt will be inflated.
       // Therefore we skip those to exclude that dt and effectively reset dt
       // calculations.
-      if (std::find(startTimes.begin(), startTimes.end(), slow[i].timestamp) ==
-          startTimes.end()) {
-        auto dt = slow[i].timestamp - slow[i - 1].timestamp;
+      auto dt = slow[i].timestamp - slow[i - 1].timestamp;
+      if (dt > 0_s && std::find(startTimes.begin(), startTimes.end(),
+                                slow[i].timestamp) == startTimes.end()) {
         m_filteredData[kChartTitles[6]].emplace_back(
             (slow[i].timestamp - t).to<double>(),
             units::millisecond_t{dt}.to<double>());
-        dtSum += dt;
-        ++dtSamples;
       }
     }
   }
@@ -216,14 +215,10 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
         m_filteredData[kChartTitles[6]].emplace_back(
             (fast[i].timestamp - t).to<double>(),
             units::millisecond_t{dt}.to<double>());
-        dtSum += dt;
-        ++dtSamples;
       }
     }
   }
 
-  // Load dt mean for plot data
-  auto dtMean = dtSum / dtSamples;
   auto maxTime =
       units::math::max(slow.back().timestamp - slow.front().timestamp,
                        fast.back().timestamp - fast.front().timestamp);

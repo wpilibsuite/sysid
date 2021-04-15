@@ -10,8 +10,10 @@
 #include <vector>
 
 #include <frc/MedianFilter.h>
+#include <units/time.h>
 
 #include "sysid/analysis/AnalysisManager.h"
+#include "sysid/analysis/Storage.h"
 
 namespace sysid {
 
@@ -89,4 +91,10 @@ void TrimStepVoltageData(std::vector<PreparedData>* data,
                          AnalysisManager::Settings& settings,
                          units::second_t& minStepTime,
                          units::second_t maxStepTime);
+
+/**
+ * Compute the mean time delta of the given data.
+ */
+units::second_t GetMeanTimeDelta(const Storage& data);
+
 }  // namespace sysid
