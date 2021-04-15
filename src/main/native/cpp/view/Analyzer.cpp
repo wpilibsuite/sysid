@@ -562,7 +562,8 @@ void Analyzer::PrepareGraphs() {
     AbortDataPrep();
     m_dataThread = std::thread([&] {
       m_plot.SetData(m_manager->GetRawData(), m_manager->GetFilteredData(),
-                     m_ff, m_manager->GetStartTimes(), m_type, m_abortDataPrep);
+                     m_manager->GetUnit(), m_ff, m_manager->GetStartTimes(),
+                     m_type, m_abortDataPrep);
     });
   } catch (const std::exception& e) {
     m_exception = e.what();

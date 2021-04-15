@@ -36,7 +36,7 @@ std::vector<std::string> sysid::Split(const std::string& s, char c) {
   return result;
 }
 
-std::string sysid::GetAbbreviation(std::string unit) {
+std::string sysid::GetAbbreviation(const std::string& unit) {
   if (unit == "Meters") {
     return "m";
   } else if (unit == "Feet") {

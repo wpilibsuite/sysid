@@ -6,6 +6,7 @@
 
 #include <array>
 #include <atomic>
+#include <string>
 #include <vector>
 
 #include <imgui.h>
@@ -58,7 +59,7 @@ class AnalyzerPlot {
    *                     thread.
    */
   void SetData(const Storage& rawData, const Storage& filteredData,
-               const std::vector<double>& ff,
+               const std::string& unit, const std::vector<double>& ff,
                const std::array<units::second_t, 4>& startTimes,
                AnalysisType type, std::atomic<bool>& abort);
 
@@ -89,6 +90,9 @@ class AnalyzerPlot {
   // Stores ImPlotPoint vectors for all of the data.
   wpi::StringMap<std::vector<ImPlotPoint>> m_filteredData;
   wpi::StringMap<std::vector<ImPlotPoint>> m_rawData;
+
+  std::string m_velocityLabel;
+  std::string m_accelerationLabel;
 
   // Stores points for the lines of best fit.
   ImPlotPoint m_KvFit[2];
