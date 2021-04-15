@@ -5,12 +5,12 @@
 #include "sysid/analysis/FeedforwardAnalysis.h"
 
 #include <cmath>
-#include <numeric>
 
 #include <units/math.h>
 #include <units/time.h>
 
 #include "sysid/analysis/AnalysisManager.h"
+#include "sysid/analysis/FilteringUtils.h"
 #include "sysid/analysis/OLS.h"
 
 using namespace sysid;
@@ -21,26 +21,39 @@ using namespace sysid;
  * @param d        List of characterization data.
  * @param type     Type of system being identified.
  * @param olsData  Vector of OLS data.
+ * @param dtMean   Mean period of data.
  */
 static void PopulateAccelOLSVector(const std::vector<PreparedData>& d,
                                    const AnalysisType& type,
-                                   std::vector<double>& olsData) {
-  for (auto&& pt : d) {
+                                   std::vector<double>& olsData,
+                                   units::second_t dtMean) {
+  auto PushData = [&](int i) {
+    // u = Ks sgn(v) + K_v v + Ka a
+
     // Add the dependent variable (voltage)
-    olsData.push_back(pt.voltage);
+    olsData.push_back(d[i].voltage);
 
     // Add the intercept term (for Ks)
-    olsData.push_back(std::copysign(1, pt.velocity));
+    olsData.push_back(std::copysign(1, d[i].velocity));
 
     // Add the velocity term (for Kv)
-    olsData.push_back(pt.velocity);
+    olsData.push_back(d[i].velocity);
 
     // Add the acceleration term (for Ka)
-    olsData.push_back(pt.acceleration);
+    olsData.push_back(d[i].acceleration);
 
     if (type == analysis::kArm) {
       // Add the cosine term (for Kcos)
-      olsData.push_back(pt.cos);
+      olsData.push_back(d[i].cos);
+    }
+  };
+
+  for (size_t i = 0; i < d.size() - 1; ++i) {
+    // If dt is isn't in tolerance, ignore the data point. This gives a better
+    // OLS fit.
+    auto dt = d[i + 1].timestamp - d[i].timestamp;
+    if (units::math::abs(dt - dtMean) < 1_ms) {
+      PushData(i);
     }
   }
 }
@@ -51,12 +64,12 @@ static void PopulateAccelOLSVector(const std::vector<PreparedData>& d,
  * @param d        List of characterization data.
  * @param type     Type of system being identified.
  * @param olsData  Vector of OLS data.
- * @param dts      List of periods.
+ * @param dtMean   Mean period of data.
  */
 static void PopulateNextVelOLSVector(const std::vector<PreparedData>& d,
                                      const AnalysisType& type,
                                      std::vector<double>& olsData,
-                                     std::vector<units::second_t>& dts) {
+                                     units::second_t dtMean) {
   auto PushData = [&](int i) {
     // x_k+1 = alpha x_k + beta u_k + gamma sgn(x_k)
 
@@ -80,34 +93,29 @@ static void PopulateNextVelOLSVector(const std::vector<PreparedData>& d,
   };
 
   for (size_t i = 0; i < d.size() - 1; ++i) {
+    // If dt is isn't in tolerance, ignore the data point. This gives a better
+    // OLS fit.
     auto dt = d[i + 1].timestamp - d[i].timestamp;
-    if (dts.size() == 0) {
-      dts.emplace_back(dt);
+    if (units::math::abs(dt - dtMean) < 1_ms) {
       PushData(i);
-    } else {
-      auto dtMean = std::accumulate(dts.begin(), dts.end(), 0_s) / dts.size();
-
-      // Don't include velocity data with a large time gap in it. This usually
-      // occurs between test runs.
-      if (units::math::abs(dt - dtMean) < dtMean / 2.0) {
-        dts.emplace_back(dt);
-        PushData(i);
-      }
     }
   }
 }
 
 std::tuple<std::vector<double>, double> sysid::CalculateFeedforwardGains(
     const Storage& data, const AnalysisType& type) {
+  units::second_t dtMean = GetMeanTimeDelta(data);
+
   // Create a raw vector of doubles with our data in it.
   std::vector<double> olsData;
   olsData.reserve((1 + type.independentVariables) *
                   (data.slow.size() + data.fast.size()));
 
   // Iterate through the data and add it to our raw vector.
+  const auto& [slow, fast] = data;
   if (type == analysis::kArm) {
-    PopulateAccelOLSVector(data.slow, type, olsData);
-    PopulateAccelOLSVector(data.fast, type, olsData);
+    PopulateAccelOLSVector(slow, type, olsData, dtMean);
+    PopulateAccelOLSVector(fast, type, olsData, dtMean);
 
     // Gains are Ks, Kv, Ka, Kcos
     return sysid::OLS(olsData, type.independentVariables);
@@ -115,10 +123,8 @@ std::tuple<std::vector<double>, double> sysid::CalculateFeedforwardGains(
     // This implements the OLS algorithm defined in
     // https://file.tavsys.net/control/sysid-ols.pdf.
 
-    std::vector<units::second_t> dts;
-    PopulateNextVelOLSVector(data.slow, type, olsData, dts);
-    PopulateNextVelOLSVector(data.fast, type, olsData, dts);
-    auto dt = std::accumulate(dts.begin(), dts.end(), 0_s) / dts.size();
+    PopulateNextVelOLSVector(slow, type, olsData, dtMean);
+    PopulateNextVelOLSVector(fast, type, olsData, dtMean);
 
     auto ols = sysid::OLS(olsData, type.independentVariables);
     double alpha = std::get<0>(ols)[0];
@@ -128,7 +134,7 @@ std::tuple<std::vector<double>, double> sysid::CalculateFeedforwardGains(
     // Initialize gains list with Ks, Kv, and Ka
     std::vector<double> gains{
         {-gamma / beta, (1 - alpha) / beta,
-         dt.to<double>() * (alpha - 1) / (beta * std::log(alpha))}};
+         dtMean.to<double>() * (alpha - 1) / (beta * std::log(alpha))}};
 
     if (type == analysis::kElevator) {
       // Add Kg to gains list
