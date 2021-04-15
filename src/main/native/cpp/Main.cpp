@@ -132,9 +132,13 @@ int main() {
     }
 
     bool frcCharConvert = false;
+    bool toCSV = false;
     if (ImGui::BeginMenu("JSON Converters")) {
       if (ImGui::MenuItem("FRC-Char Converter")) {
         frcCharConvert = true;
+      }
+      if (ImGui::MenuItem("JSON to CSV Converter")) {
+        toCSV = true;
       }
 
       ImGui::EndMenu();
@@ -147,8 +151,21 @@ int main() {
       frcCharConvert = false;
     }
 
+    if (toCSV) {
+      ImGui::OpenPopup("SysId JSON to CSV Converter");
+      toCSV = false;
+    }
+
     if (ImGui::BeginPopupModal("FRC-Char Converter")) {
-      gJSONConverter->Display();
+      gJSONConverter->DisplayFRCCharConvert();
+      if (ImGui::Button("Close")) {
+        ImGui::CloseCurrentPopup();
+      }
+      ImGui::EndPopup();
+    }
+
+    if (ImGui::BeginPopupModal("SysId JSON to CSV Converter")) {
+      gJSONConverter->DisplayCSVConvert();
       if (ImGui::Button("Close")) {
         ImGui::CloseCurrentPopup();
       }

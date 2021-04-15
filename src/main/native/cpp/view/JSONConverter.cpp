@@ -15,18 +15,19 @@
 
 using namespace sysid;
 
-void JSONConverter::Display() {
-  if (ImGui::Button("Select frc-characterization JSON")) {
+void JSONConverter::DisplayConverter(
+    const char* tooltip,
+    std::function<std::string(wpi::StringRef, wpi::Logger&)> converter) {
+  if (ImGui::Button(tooltip)) {
     m_opener = std::make_unique<pfd::open_file>(
-        "Select frc-characterization JSON", "",
-        std::vector<std::string>{"JSON File", SYSID_PFD_JSON_EXT});
+        tooltip, "", std::vector<std::string>{"JSON File", SYSID_PFD_JSON_EXT});
   }
 
   if (m_opener && m_opener->ready()) {
     if (!m_opener->result().empty()) {
       m_location = m_opener->result()[0];
       try {
-        sysid::ConvertJSON(m_location, m_logger);
+        converter(m_location, m_logger);
         m_timestamp = wpi::Now() * 1E-6;
       } catch (const std::exception& e) {
         ImGui::OpenPopup("Exception Caught!");
@@ -53,4 +54,12 @@ void JSONConverter::Display() {
     }
     ImGui::EndPopup();
   }
+}
+
+void JSONConverter::DisplayFRCCharConvert() {
+  DisplayConverter("Select FRC-Char JSON", sysid::ConvertJSON);
+}
+
+void JSONConverter::DisplayCSVConvert() {
+  DisplayConverter("Select SysId JSON", sysid::ToCSV);
 }

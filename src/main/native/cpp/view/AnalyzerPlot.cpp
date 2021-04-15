@@ -16,6 +16,7 @@
 #include <units/time.h>
 #include <wpi/raw_ostream.h>
 
+#include "sysid/Util.h"
 #include "sysid/analysis/AnalysisManager.h"
 #include "sysid/analysis/AnalysisType.h"
 #include "sysid/analysis/ArmSim.h"
@@ -75,6 +76,7 @@ AnalyzerPlot::AnalyzerPlot(wpi::Logger& logger) : m_logger(logger) {
 }
 
 void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
+                           const std::string& unit,
                            const std::vector<double>& ffGains,
                            const std::array<units::second_t, 4>& startTimes,
                            AnalysisType type, std::atomic<bool>& abort) {
@@ -83,6 +85,10 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
   const auto& Ks = ffGains[0];
   const auto& Kv = ffGains[1];
   const auto& Ka = ffGains[2];
+
+  auto abbreviation = GetAbbreviation(unit);
+  m_velocityLabel = "Velocity (" + abbreviation + " / s)";
+  m_accelerationLabel = "Acceleration (" + abbreviation + " / s^2)";
 
   std::scoped_lock lock(m_mutex);
 
@@ -374,7 +380,7 @@ bool AnalyzerPlot::DisplayTimeDomainPlots(ImVec2 plotSize) {
   for (size_t i = 2; i < 6; ++i) {
     const char* x = "Time (s)";
     const char* y =
-        i % 2 == 0 ? "Velocity (units / s)" : "Acceleration (units / s / s)";
+        i % 2 == 0 ? m_velocityLabel.c_str() : m_accelerationLabel.c_str();
     bool isVelocity = (i == 2 || i == 4);
 
     // Get a reference to the data we are plotting.

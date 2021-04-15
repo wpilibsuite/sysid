@@ -5,6 +5,7 @@
 #include "sysid/Util.h"
 
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -33,4 +34,22 @@ std::vector<std::string> sysid::Split(const std::string& s, char c) {
   }
 
   return result;
+}
+
+std::string sysid::GetAbbreviation(const std::string& unit) {
+  if (unit == "Meters") {
+    return "m";
+  } else if (unit == "Feet") {
+    return "ft";
+  } else if (unit == "Inches") {
+    return "in";
+  } else if (unit == "Radians") {
+    return "rad";
+  } else if (unit == "Degrees") {
+    return "deg";
+  } else if (unit == "Rotations") {
+    return "rot";
+  } else {
+    throw std::runtime_error("Invalid Unit");
+  }
 }
