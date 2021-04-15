@@ -120,7 +120,7 @@ class IntegrationTest : public ::testing::Test {
         // The acceleration fit (used only for arms) is worse than the next
         // velocity fit
         EXPECT_NEAR(Kv, ffGains[1], 0.015);
-        EXPECT_NEAR(Ka, ffGains[2], 0.025);
+        EXPECT_NEAR(Ka, ffGains[2], 0.04);
       } else {
         EXPECT_NEAR(Kv, ffGains[1], 0.003);
         EXPECT_NEAR(Ka, ffGains[2], 0.003);
@@ -133,7 +133,7 @@ class IntegrationTest : public ::testing::Test {
       } else if (m_settings.mechanism == sysid::analysis::kArm) {
         wpi::outs() << "KCos: " << ffGains[3] << "\n";
         wpi::outs().flush();
-        EXPECT_NEAR(kCos, ffGains[3], 0.025);
+        EXPECT_NEAR(kCos, ffGains[3], 0.04);
       }
 
       if (trackWidth) {
