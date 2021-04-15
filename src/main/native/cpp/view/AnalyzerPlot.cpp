@@ -164,9 +164,9 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
       // it is the beginning of a new test and the dt will be inflated.
       // Therefore we skip those to exclude that dt and effectively reset dt
       // calculations.
-      if (std::find(startTimes.begin(), startTimes.end(), slow[i].timestamp) ==
-          startTimes.end()) {
-        auto dt = slow[i].timestamp - slow[i - 1].timestamp;
+      auto dt = slow[i].timestamp - slow[i - 1].timestamp;
+      if (dt > 0_s && std::find(startTimes.begin(), startTimes.end(),
+                                slow[i].timestamp) == startTimes.end()) {
         m_filteredData[kChartTitles[6]].emplace_back(
             (slow[i].timestamp - t).to<double>(),
             units::millisecond_t{dt}.to<double>());
@@ -209,9 +209,9 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
       // it is the beginning of a new test and the dt will be inflated.
       // Therefore we skip those to exclude that dt and effectively reset dt
       // calculations.
-      if (std::find(startTimes.begin(), startTimes.end(), fast[i].timestamp) ==
-          startTimes.end()) {
-        auto dt = fast[i].timestamp - fast[i - 1].timestamp;
+      auto dt = fast[i].timestamp - fast[i - 1].timestamp;
+      if (dt > 0_s && std::find(startTimes.begin(), startTimes.end(),
+                                fast[i].timestamp) == startTimes.end()) {
         m_filteredData[kChartTitles[6]].emplace_back(
             (fast[i].timestamp - t).to<double>(),
             units::millisecond_t{dt}.to<double>());
