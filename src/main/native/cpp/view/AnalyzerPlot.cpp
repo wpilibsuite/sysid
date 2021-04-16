@@ -422,8 +422,8 @@ bool AnalyzerPlot::DisplayTimeDomainPlots(ImVec2 plotSize) {
     ImGui::SameLine();
   }
 
+  ImPlot::SetNextPlotLimitsY(0, 50);
   if (m_fitNextPlot[6]) {
-    ImPlot::SetNextPlotLimitsY(0, 50);
     ImPlot::FitNextPlotAxes(true, false, false, false);
   }
   if (ImPlot::BeginPlot(kChartTitles[6], "Time (s)", "Change in Time (ms)",
