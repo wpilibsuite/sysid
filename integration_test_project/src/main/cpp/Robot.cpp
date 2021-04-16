@@ -49,8 +49,9 @@ class Robot : public frc::TimedRobot {
       wpi::outs() << "Collected " << m_counter << " data points.\n";
 
       std::stringstream ss;
-      std::for_each(m_data.begin(), m_data.end(),
-                    [&ss](auto& pt) { ss << std::to_string(pt) << ", "; });
+      for (const auto& pt : m_data) {
+        ss << std::to_string(pt) << ", ";
+      }
 
       frc::SmartDashboard::PutString("SysIdTelemetry", ss.str());
 

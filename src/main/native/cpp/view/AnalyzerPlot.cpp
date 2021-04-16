@@ -279,8 +279,9 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
 
 void AnalyzerPlot::FitPlots() {
   // Set the "fit" flag to true.
-  std::for_each(m_fitNextPlot.begin(), m_fitNextPlot.end(),
-                [](auto& f) { f = true; });
+  for (auto& f : m_fitNextPlot) {
+    f = true;
+  }
 }
 
 bool AnalyzerPlot::DisplayVoltageDomainPlots(ImVec2 plotSize) {
