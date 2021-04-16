@@ -83,6 +83,8 @@ class AnalyzerPlot {
 
   void FitPlots();
 
+  double* GetRMSE() { return &m_RMSE; }
+
  private:
   // The maximum size of each vector (dataset to plot).
   static constexpr size_t kMaxSize = 2048;
@@ -101,6 +103,8 @@ class AnalyzerPlot {
   // Stores points for simulated time-domain data.
   std::vector<std::vector<ImPlotPoint>> m_quasistaticSim;
   std::vector<std::vector<ImPlotPoint>> m_dynamicSim;
+
+  double m_RMSE;
 
   // Stores differences in time deltas
   std::vector<std::vector<ImPlotPoint>> m_dt;
