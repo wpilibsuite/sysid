@@ -199,6 +199,11 @@ void Analyzer::Display() {
       }
 
       ShowGain("r-squared", &m_rSquared);
+      ShowGain("Sim RMSE", m_plot.GetRMSE());
+      CreateTooltip(
+          "The Root Mean Squared Error (RMSE) of the simulation "
+          "predictions compared to the recorded data. It is essentially the "
+          "error of the simulated model in the recorded units.");
 
       double endY = ImGui::GetCursorPosY();
 

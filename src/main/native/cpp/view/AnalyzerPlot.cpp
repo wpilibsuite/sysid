@@ -30,6 +30,9 @@ static ImPlotPoint Getter(void* data, int idx) {
   return static_cast<ImPlotPoint*>(data)[idx];
 }
 
+static double simSquaredErrorSum = 0.0;
+static int timeSeriesPoints = 0;
+
 template <typename Model>
 static std::vector<std::vector<ImPlotPoint>> PopulateTimeDomainSim(
     const std::vector<PreparedData>& data,
@@ -62,6 +65,8 @@ static std::vector<std::vector<ImPlotPoint>> PopulateTimeDomainSim(
 
     model.Update(units::volt_t{pre.voltage}, dt);
     tmp.emplace_back(t.to<double>(), model.GetVelocity());
+    simSquaredErrorSum += std::pow(now.velocity - model.GetVelocity(), 2);
+    timeSeriesPoints++;
   }
 
   pts.emplace_back(std::move(tmp));
@@ -102,6 +107,8 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
   }
 
   m_dtMeanLine.clear();
+  simSquaredErrorSum = 0;
+  timeSeriesPoints = 0;
 
   // Calculate step sizes to ensure that we only use the memory that we
   // allocated.
@@ -274,6 +281,11 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
                                          sysid::SimpleMotorSim{Ks, Kv, Ka});
   }
 
+  // RMSE = std::sqrt(sum((x_i - x^_i)^2) / N) where sum represents the sum of
+  // all time series points, x_i represents the velocity at a timestep, x^_i
+  // represents the prediction at the timestep, and N represents the number of
+  // points
+  m_RMSE = std::sqrt(simSquaredErrorSum / timeSeriesPoints);
   FitPlots();
 }
 
