@@ -35,6 +35,24 @@ using namespace sysid;
  *
  * @tparam T The type of data that is stored within a StringMap
  *
+ * @param data   A StringMap representing a specific dataset
+ * @param action A void function that takes a StringRef representing a StringMap
+ *               key and performs an action to the dataset stored with that
+ *               passed key (e.g. applying a median filter)
+ */
+template <typename T>
+void ApplyToData(const wpi::StringMap<T>& data,
+                 std::function<void(wpi::StringRef)> action) {
+  for (const auto& it : data) {
+    action(it.first());
+  }
+}
+
+/**
+ * Helper method that applies a function onto a dataset.
+ *
+ * @tparam T The type of data that is stored within a StringMap
+ *
  * @param data      A StringMap representing a specific dataset
  * @param action    A void function that takes a StringRef representing a
  *                  StringMap key and performs an action to the dataset stored
@@ -44,11 +62,9 @@ using namespace sysid;
  *                  the dataset stored with that key
  */
 template <typename T>
-void ApplyToData(
-    wpi::StringMap<T> data, std::function<void(wpi::StringRef)> action,
-    std::function<bool(wpi::StringRef)> specifier = [](wpi::StringRef key) {
-      return true;
-    }) {
+void ApplyToData(const wpi::StringMap<T>& data,
+                 std::function<void(wpi::StringRef)> action,
+                 std::function<bool(wpi::StringRef)> specifier) {
   for (const auto& it : data) {
     auto key = it.first();
     if (specifier(key)) {
@@ -445,8 +461,8 @@ static void PrepareLinearDrivetrainData(
 
   // Get Accel Data
   ApplyToData(data, [&](wpi::StringRef key) {
-    std::string leftName{std::string{"left-"} + key.str()};
-    std::string rightName{std::string{"right-"} + key.str()};
+    std::string leftName{"left-" + key.str()};
+    std::string rightName{"right-" + key.str()};
     preparedData[leftName] =
         ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
             data[key], settings.windowSize);
@@ -625,7 +641,7 @@ AnalysisManager::Gains AnalysisManager::Calculate() {
   return {ffGains, fbGains, m_trackWidth};
 }
 
-void AnalysisManager::OverrideUnits(const std::string& unit,
+void AnalysisManager::OverrideUnits(wpi::StringRef unit,
                                     double unitsPerRotation) {
   m_unit = unit;
   m_factor = unitsPerRotation;
