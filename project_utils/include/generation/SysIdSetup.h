@@ -23,6 +23,10 @@
 #define PATH_SEPARATOR "/"
 #endif
 
+// Based on https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html
+#define EXPAND_STRINGIZE(s) STRINGIZE(s)
+#define STRINGIZE(s) #s
+
 constexpr const char* filename = "config.json";
 
 wpi::json GetConfigJson();

@@ -110,8 +110,8 @@ void ConfigManager::SaveJSON(wpi::StringRef path, size_t portCount,
 
   wpi::SmallString<128> gradleInPath;
   wpi::raw_svector_ostream gradleIn{gradleInPath};
-  gradleIn << PROJECT_ROOT_DIR << SYSID_PATH_SEPARATOR << m_gradlePath
-           << (isRomi ? "romi.txt" : "general.txt");
+  gradleIn << EXPAND_STRINGIZE(PROJECT_ROOT_DIR) << SYSID_PATH_SEPARATOR
+           << m_gradlePath << (isRomi ? "romi.txt" : "general.txt");
 
   wpi::SmallString<128> gradleOutPath;
   wpi::raw_svector_ostream gradleOut{gradleOutPath};

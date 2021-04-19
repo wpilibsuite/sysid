@@ -50,7 +50,8 @@ class GenerationTest : public ::testing::Test {
     wpi::SmallString<128> path;
     wpi::raw_svector_ostream os(path);
 
-    os << PROJECT_ROOT_DIR << SYSID_PATH_SEPARATOR << directory;
+    os << EXPAND_STRINGIZE(PROJECT_ROOT_DIR) << SYSID_PATH_SEPARATOR
+       << directory;
 
     m_directory = path.c_str();
 

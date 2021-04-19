@@ -178,7 +178,7 @@ model {
   binaries {
     withType(NativeBinarySpec).all {
       nativeUtils.useRequiredLibrary(it, "gui")
-      it.cppCompiler.define("PROJECT_ROOT_DIR", "\"$projectDir\"")
+      it.cppCompiler.define("PROJECT_ROOT_DIR", "$projectDir")
       // Add platform-specific renderer dependencies.
       if (it.targetPlatform.operatingSystem.isWindows()) {
         it.linker.args << 'Gdi32.lib' << 'Shell32.lib' << 'd3d11.lib' << 'd3dcompiler.lib'

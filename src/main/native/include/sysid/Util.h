@@ -28,6 +28,10 @@
 #define LAUNCHSIM "./gradlew simulateCpp"
 #endif
 
+// Based on https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html
+#define EXPAND_STRINGIZE(s) STRINGIZE(s)
+#define STRINGIZE(s) #s
+
 namespace sysid {
 static constexpr const char* kUnits[] = {"Meters",  "Feet",      "Inches",
                                          "Radians", "Rotations", "Degrees"};

@@ -22,7 +22,7 @@ wpi::json GetConfigJson() {
 #ifdef PROJECT_ROOT_DIR
 // TODO: Fix problems with this so that we don't need this ifdef
 #ifdef INTEGRATION
-    os << PROJECT_ROOT_DIR << "/src/main/deploy/" << filename;
+    os << EXPAND_STRINGIZE(PROJECT_ROOT_DIR) << "/src/main/deploy/" << filename;
 #endif
 #endif
   } else {

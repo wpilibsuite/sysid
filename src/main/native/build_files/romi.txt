@@ -98,7 +98,7 @@ model {
             wpi.deps.wpilib(it)
 
             binaries.all {
-              it.cppCompiler.define("PROJECT_ROOT_DIR", "\"$projectDir\"")
+              it.cppCompiler.define("PROJECT_ROOT_DIR", "$projectDir")
               if (project.hasProperty("integration")) {
                 it.cppCompiler.define("INTEGRATION")
               }
