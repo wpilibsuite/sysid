@@ -52,7 +52,7 @@ static void PopulateAccelOLSVector(const std::vector<PreparedData>& d,
     // If dt is isn't in tolerance, ignore the data point. This gives a better
     // OLS fit.
     auto dt = d[i + 1].timestamp - d[i].timestamp;
-    if (units::math::abs(dt - dtMean) < 1_ms) {
+    if (units::math::abs(dt - dtMean) < 0.1_ms) {
       PushData(i);
     }
   }
