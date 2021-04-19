@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <exception>
+#include <utility>
 #include <vector>
 
 #include <frc/MedianFilter.h>
@@ -60,37 +62,39 @@ double GetAccelNoiseFloor(const std::vector<PreparedData>& data, int window);
  * @param window the size of the window of the median filter (must be odd)
  */
 template <size_t S, size_t Velocity>
-std::vector<std::array<double, S>> ApplyMedianFilter(
-    const std::vector<std::array<double, S>>& data, int window) {
+void ApplyMedianFilter(std::vector<std::array<double, S>>* data, int window) {
   size_t step = window / 2;
   std::vector<std::array<double, S>> prepared;
   frc::MedianFilter<double> medianFilter(window);
-  for (size_t i = 0; i < data.size(); i++) {
-    std::array<double, S> latestData{data[i]};
-    double median = medianFilter.Calculate(latestData[Velocity]);
+  for (size_t i = 0; i < data->size(); i++) {
+    double median = medianFilter.Calculate(data->at(i)[Velocity]);
     if (i > step) {
-      std::array<double, S> updateData{data[i - step]};
+      std::array<double, S> updateData{data->at(i - step)};
       updateData[Velocity] = median;
       prepared.push_back(updateData);
     }
   }
-
-  return prepared;
+  *data = std::move(prepared);
 }
 
 /**
  * Trims the step voltage data to discard all points before the maximum
- * acceleration and after reaching stead-state velocity.
+ * acceleration and after reaching stead-state velocity. Also trims the end of
+ * the test based off of user specified test durations, but it will determine a
+ * default duration if the requested duration is less than the minimum step test
+ * duration.
  *
  * @param data A pointer to the step voltage data.
- * @param stepTestDuration A reference to the step test duration that will be
- * used.
- * @param minStepTime A reference to the minimum step time that will be used.
+ * @param settings A pointer to the settings of an analysis manager object.
+ * @param minStepTime The current minimum step test duration.
+ * @param maxStepTime The maximum step test duration.
+ *
+ * @return The updated minimum step test duration.
  */
-void TrimStepVoltageData(std::vector<PreparedData>* data,
-                         AnalysisManager::Settings& settings,
-                         units::second_t& minStepTime,
-                         units::second_t maxStepTime);
+units::second_t TrimStepVoltageData(std::vector<PreparedData>* data,
+                                    AnalysisManager::Settings* settings,
+                                    units::second_t minStepTime,
+                                    units::second_t maxStepTime);
 
 /**
  * Compute the mean time delta of the given data.

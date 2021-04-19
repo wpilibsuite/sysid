@@ -8,6 +8,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <functional>
 #include <initializer_list>
 #include <iostream>
 #include <limits>
@@ -24,9 +25,53 @@
 #include "sysid/analysis/AnalysisType.h"
 #include "sysid/analysis/FilteringUtils.h"
 #include "sysid/analysis/JSONConverter.h"
+#include "sysid/analysis/Storage.h"
 #include "sysid/analysis/TrackWidthAnalysis.h"
 
 using namespace sysid;
+
+/**
+ * Helper method that applies a function onto a dataset.
+ *
+ * @tparam T The type of data that is stored within a StringMap
+ *
+ * @param data   A StringMap representing a specific dataset
+ * @param action A void function that takes a StringRef representing a StringMap
+ *               key and performs an action to the dataset stored with that
+ *               passed key (e.g. applying a median filter)
+ */
+template <typename T>
+void ApplyToData(const wpi::StringMap<T>& data,
+                 std::function<void(wpi::StringRef)> action) {
+  for (const auto& it : data) {
+    action(it.first());
+  }
+}
+
+/**
+ * Helper method that applies a function onto a dataset.
+ *
+ * @tparam T The type of data that is stored within a StringMap
+ *
+ * @param data      A StringMap representing a specific dataset
+ * @param action    A void function that takes a StringRef representing a
+ *                  StringMap key and performs an action to the dataset stored
+ *                  with that passed key (e.g. applying a median filter)
+ * @param specifier A boolean function that takes a StringRef representing a
+ *                  StringMap key and returns true if `action` should be run on
+ *                  the dataset stored with that key
+ */
+template <typename T>
+void ApplyToData(const wpi::StringMap<T>& data,
+                 std::function<void(wpi::StringRef)> action,
+                 std::function<bool(wpi::StringRef)> specifier) {
+  for (const auto& it : data) {
+    auto key = it.first();
+    if (specifier(key)) {
+      action(key);
+    }
+  }
+}
 
 /**
  * Concatenates a list of vectors to the end of a vector. The contents of the
@@ -136,6 +181,7 @@ static void PrepareGeneralData(const wpi::json& json,
                                units::second_t& maxStepTime) {
   using Data = std::array<double, 4>;
   wpi::StringMap<std::vector<Data>> data;
+  wpi::StringMap<std::vector<PreparedData>> preparedData;
 
   // Store the raw data columns.
   static constexpr size_t kTimeCol = 0;
@@ -158,68 +204,74 @@ static void PrepareGeneralData(const wpi::json& json,
     }
   }
 
+  // Loads the Raw Data
+  ApplyToData(data, [&](wpi::StringRef key) {
+    std::string rawName{"raw-" + key.str()};
+    data[rawName] = std::vector<Data>(data[key]);
+  });
+
   // Trim quasistatic test data to remove all points where voltage is zero or
   // velocity < motion threshold.
-  sysid::TrimQuasistaticData<4, kVoltageCol, kVelCol>(&data["slow-forward"],
-                                                      settings.motionThreshold);
-  sysid::TrimQuasistaticData<4, kVoltageCol, kVelCol>(&data["slow-backward"],
-                                                      settings.motionThreshold);
+  ApplyToData(
+      data,
+      [&](wpi::StringRef key) {
+        sysid::TrimQuasistaticData<4, kVoltageCol, kVelCol>(
+            &data[key], settings.motionThreshold);
+      },
+      [](wpi::StringRef key) { return key.contains("slow"); });
 
-  // Compute acceleration on raw data
-  auto rawSlowForward = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
-      data["slow-forward"], settings.windowSize);
-  auto rawSlowBackward = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
-      data["slow-backward"], settings.windowSize);
-  auto rawFastForward = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
-      data["fast-forward"], settings.windowSize);
-  auto rawFastBackward = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
-      data["fast-backward"], settings.windowSize);
+  // Apply Median filter
+  ApplyToData(
+      data,
+      [&](wpi::StringRef key) {
+        sysid::ApplyMedianFilter<4, kVelCol>(&data[key], settings.windowSize);
+      },
+      [](wpi::StringRef key) { return !key.startswith("raw"); });
 
-  // Compute acceleration on median filtered data sets.
-  auto slowForward = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
-      sysid::ApplyMedianFilter<4, kVelCol>(data["slow-forward"],
-                                           settings.windowSize),
-      settings.windowSize);
-  auto slowBackward = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
-      sysid::ApplyMedianFilter<4, kVelCol>(data["slow-backward"],
-                                           settings.windowSize),
-      settings.windowSize);
-  auto fastForward = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
-      sysid::ApplyMedianFilter<4, kVelCol>(data["fast-forward"],
-                                           settings.windowSize),
-      settings.windowSize);
-  auto fastBackward = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
-      sysid::ApplyMedianFilter<4, kVelCol>(data["fast-backward"],
-                                           settings.windowSize),
-      settings.windowSize);
+  // Get accel
+  ApplyToData(data, [&](wpi::StringRef key) {
+    preparedData[key] = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
+        data[key], settings.windowSize);
+  });
 
-  // Calculate cosine of position data.
-  CalculateCosine(&slowForward, unit);
-  CalculateCosine(&slowBackward, unit);
-  CalculateCosine(&fastForward, unit);
-  CalculateCosine(&fastBackward, unit);
+  // Calculate cosine of position data for filtered data
+  ApplyToData(
+      preparedData,
+      [&](wpi::StringRef key) { CalculateCosine(&preparedData[key], unit); },
+      [](wpi::StringRef key) { return !key.startswith("raw"); });
 
   // Find the maximum Step Test Duration
   maxStepTime = GetMaxTime<4>(data, kTimeCol);
 
-  // Trim the raw step voltage data.
-  auto tempTime = units::second_t{
-      0.0};  // Raw data shouldn't be used to calculate mininum step test time
-  sysid::TrimStepVoltageData(&rawFastForward, settings, tempTime, maxStepTime);
-  sysid::TrimStepVoltageData(&rawFastBackward, settings, tempTime, maxStepTime);
-
-  // Trim the step voltage data.
-  sysid::TrimStepVoltageData(&fastForward, settings, minStepTime, maxStepTime);
-  sysid::TrimStepVoltageData(&fastBackward, settings, minStepTime, maxStepTime);
+  // Trims all Dynamic Test Data but excludes raw data from calculation of
+  // minimum step time
+  ApplyToData(
+      preparedData,
+      [&](wpi::StringRef key) {
+        auto tempMinStepTime = sysid::TrimStepVoltageData(
+            &preparedData[key], &settings, minStepTime, maxStepTime);
+        if (!key.startswith("raw")) {
+          minStepTime = tempMinStepTime;
+        }
+      },
+      [](wpi::StringRef key) { return key.contains("fast"); });
 
   // Store the raw datasets
-  rawDatasets["Forward"] = Storage{rawSlowForward, rawFastForward};
-  rawDatasets["Backward"] = Storage{rawSlowBackward, rawFastBackward};
+  rawDatasets["Forward"] = Storage{preparedData["raw-slow-forward"],
+                                   preparedData["raw-fast-forward"]};
+  rawDatasets["Backward"] = Storage{preparedData["raw-slow-backward"],
+                                    preparedData["raw-fast-backward"]};
   rawDatasets["Combined"] =
-      Storage{Concatenate(rawSlowForward, {&rawSlowBackward}),
-              Concatenate(rawFastForward, {&rawFastBackward})};
+      Storage{Concatenate(preparedData["raw-slow-forward"],
+                          {&preparedData["raw-slow-backward"]}),
+              Concatenate(preparedData["raw-fast-forward"],
+                          {&preparedData["raw-fast-backward"]})};
 
-  // Create the distinct datasets and store them in our StringMap.
+  // Store the filtered datasets
+  auto slowForward = preparedData["slow-forward"];
+  auto slowBackward = preparedData["slow-backward"];
+  auto fastForward = preparedData["fast-forward"];
+  auto fastBackward = preparedData["fast-backward"];
   filteredDatasets["Forward"] = Storage{slowForward, fastForward};
   filteredDatasets["Backward"] = Storage{slowBackward, fastBackward};
   filteredDatasets["Combined"] =
@@ -252,6 +304,7 @@ static void PrepareAngularDrivetrainData(
     units::second_t& maxStepTime) {
   using Data = std::array<double, 9>;
   wpi::StringMap<std::vector<Data>> data;
+  wpi::StringMap<std::vector<PreparedData>> preparedData;
 
   // Store the relevant raw data columns.
   static constexpr size_t kTimeCol = 0;
@@ -278,31 +331,32 @@ static void PrepareAngularDrivetrainData(
 
   // Trim quasistatic test data to remove all points where voltage is zero or
   // velocity < motion threshold.
-  sysid::TrimQuasistaticData<9, kVoltageCol, kAngularRateCol>(
-      &data["slow-forward"], settings.motionThreshold);
-  sysid::TrimQuasistaticData<9, kVoltageCol, kAngularRateCol>(
-      &data["slow-backward"], settings.motionThreshold);
+  ApplyToData(
+      data,
+      [&](wpi::StringRef key) {
+        sysid::TrimQuasistaticData<9, kVoltageCol, kAngularRateCol>(
+            &data[key], settings.motionThreshold);
+      },
+      [](wpi::StringRef key) { return key.contains("slow"); });
 
   // Compute acceleration on all data sets.
-  auto slowForward =
-      ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
-          data["slow-forward"], settings.windowSize);
-  auto slowBackward =
-      ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
-          data["slow-backward"], settings.windowSize);
-  auto fastForward =
-      ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
-          data["fast-forward"], settings.windowSize);
-  auto fastBackward =
-      ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
-          data["fast-backward"], settings.windowSize);
+  ApplyToData(data, [&](wpi::StringRef key) {
+    preparedData[key] =
+        ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
+            data[key], settings.windowSize);
+  });
 
   // Get Max Time
   maxStepTime = GetMaxTime<9>(data, kTimeCol);
 
   // Trim the step voltage data.
-  sysid::TrimStepVoltageData(&fastForward, settings, minStepTime, maxStepTime);
-  sysid::TrimStepVoltageData(&fastBackward, settings, maxStepTime, maxStepTime);
+  ApplyToData(
+      preparedData,
+      [&](wpi::StringRef key) {
+        minStepTime = sysid::TrimStepVoltageData(&preparedData[key], &settings,
+                                                 minStepTime, maxStepTime);
+      },
+      [](wpi::StringRef key) { return key.contains("fast"); });
 
   // Calculate track width from the slow-forward raw data.
   auto& trackWidthData = data["slow-forward"];
@@ -316,6 +370,10 @@ static void PrepareAngularDrivetrainData(
                                           units::radian_t{angleDelta});
 
   // Create the distinct datasets and store them in our StringMap.
+  auto slowForward = preparedData["slow-forward"];
+  auto fastForward = preparedData["fast-forward"];
+  auto slowBackward = preparedData["slow-backward"];
+  auto fastBackward = preparedData["fast-backward"];
   filteredDatasets["Forward"] = Storage{slowForward, fastForward};
   filteredDatasets["Backward"] = Storage{slowBackward, fastBackward};
   filteredDatasets["Combined"] =
@@ -346,6 +404,7 @@ static void PrepareLinearDrivetrainData(
     units::second_t& maxStepTime) {
   using Data = std::array<double, 9>;
   wpi::StringMap<std::vector<Data>> data;
+  wpi::StringMap<std::vector<PreparedData>> preparedData;
 
   // Store the relevant raw data columns.
   static constexpr size_t kTimeCol = 0;
@@ -374,109 +433,68 @@ static void PrepareLinearDrivetrainData(
     }
   }
 
-  // Trim quasistatic test data to remove all points where voltage is zero or
-  // velocity < motion threshold.
-  sysid::TrimQuasistaticData<9, kLVoltageCol, kLVelCol>(
-      &data["slow-forward"], settings.motionThreshold);
-  sysid::TrimQuasistaticData<9, kLVoltageCol, kLVelCol>(
-      &data["slow-backward"], settings.motionThreshold);
-  sysid::TrimQuasistaticData<9, kRVoltageCol, kRVelCol>(
-      &data["slow-forward"], settings.motionThreshold);
-  sysid::TrimQuasistaticData<9, kRVoltageCol, kRVelCol>(
-      &data["slow-backward"], settings.motionThreshold);
+  // Load Raw Data
+  ApplyToData(data, [&](wpi::StringRef key) {
+    std::string rawName{"raw-" + key.str()};
+    data[rawName] = std::vector<Data>(data[key]);
+  });
 
-  // Compute acceleration on all raw data sets.
-  auto rawSlowForwardLeft =
-      ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
-          data["slow-forward"], settings.windowSize);
-  auto rawSlowBackwardLeft =
-      ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
-          data["slow-backward"], settings.windowSize);
-  auto rawFastForwardLeft =
-      ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
-          data["fast-forward"], settings.windowSize);
-  auto rawFastBackwardLeft =
-      ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
-          data["fast-backward"], settings.windowSize);
-  auto rawSlowForwardRight =
-      ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
-          data["slow-forward"], settings.windowSize);
-  auto rawSlowBackwardRight =
-      ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
-          data["slow-backward"], settings.windowSize);
-  auto rawFastForwardRight =
-      ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
-          data["fast-forward"], settings.windowSize);
-  auto rawFastBackwardRight =
-      ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
-          data["fast-backward"], settings.windowSize);
+  // Trim Quasistatic Data
+  ApplyToData(
+      data,
+      [&](wpi::StringRef key) {
+        sysid::TrimQuasistaticData<9, kLVoltageCol, kLVelCol>(
+            &data[key], settings.motionThreshold);
+        sysid::TrimQuasistaticData<9, kRVoltageCol, kRVelCol>(
+            &data[key], settings.motionThreshold);
+      },
+      [](wpi::StringRef key) { return key.contains("slow"); });
 
-  // Compute acceleration on all data sets.
-  auto slowForwardLeft =
-      ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
-          sysid::ApplyMedianFilter<9, kLVelCol>(data["slow-forward"],
-                                                settings.windowSize),
-          settings.windowSize);
-  auto slowBackwardLeft =
-      ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
-          sysid::ApplyMedianFilter<9, kLVelCol>(data["slow-backward"],
-                                                settings.windowSize),
-          settings.windowSize);
-  auto fastForwardLeft =
-      ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
-          sysid::ApplyMedianFilter<9, kLVelCol>(data["fast-forward"],
-                                                settings.windowSize),
-          settings.windowSize);
-  auto fastBackwardLeft =
-      ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
-          sysid::ApplyMedianFilter<9, kLVelCol>(data["fast-backward"],
-                                                settings.windowSize),
-          settings.windowSize);
-  auto slowForwardRight =
-      ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
-          sysid::ApplyMedianFilter<9, kRVelCol>(data["slow-forward"],
-                                                settings.windowSize),
-          settings.windowSize);
-  auto slowBackwardRight =
-      ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
-          sysid::ApplyMedianFilter<9, kRVelCol>(data["slow-backward"],
-                                                settings.windowSize),
-          settings.windowSize);
-  auto fastForwardRight =
-      ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
-          sysid::ApplyMedianFilter<9, kRVelCol>(data["fast-forward"],
-                                                settings.windowSize),
-          settings.windowSize);
-  auto fastBackwardRight =
-      ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
-          sysid::ApplyMedianFilter<9, kRVelCol>(data["fast-backward"],
-                                                settings.windowSize),
-          settings.windowSize);
+  // Apply Median Filter
+  ApplyToData(
+      data,
+      [&](wpi::StringRef key) {
+        sysid::ApplyMedianFilter<9, kLVelCol>(&data[key], settings.windowSize);
+        sysid::ApplyMedianFilter<9, kRVelCol>(&data[key], settings.windowSize);
+      },
+      [](wpi::StringRef key) { return !key.contains("raw"); });
+
+  // Get Accel Data
+  ApplyToData(data, [&](wpi::StringRef key) {
+    std::string leftName{"left-" + key.str()};
+    std::string rightName{"right-" + key.str()};
+    preparedData[leftName] =
+        ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
+            data[key], settings.windowSize);
+    preparedData[rightName] =
+        ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
+            data[key], settings.windowSize);
+  });
 
   // Get maximum dynamic test duration
   maxStepTime = GetMaxTime<9>(data, kTimeCol);
 
-  // Trim raw step voltage data
-  auto tempTime = units::second_t{
-      0.0};  // Raw data shouldn't be used to calculate mininum step test time
-  sysid::TrimStepVoltageData(&rawFastForwardLeft, settings, tempTime,
-                             maxStepTime);
-  sysid::TrimStepVoltageData(&rawFastForwardRight, settings, tempTime,
-                             maxStepTime);
-  sysid::TrimStepVoltageData(&rawFastBackwardLeft, settings, tempTime,
-                             maxStepTime);
-  sysid::TrimStepVoltageData(&rawFastBackwardRight, settings, tempTime,
-                             maxStepTime);
+  // Trim step test data but exclude raw data from calculating min step time
+  ApplyToData(
+      preparedData,
+      [&](wpi::StringRef key) {
+        auto tempMinStepTime = sysid::TrimStepVoltageData(
+            &preparedData[key], &settings, minStepTime, maxStepTime);
+        if (!key.contains("raw")) {
+          minStepTime = tempMinStepTime;
+        }
+      },
+      [](wpi::StringRef key) { return key.contains("fast"); });
 
-  // Trim the step voltage data.
-  sysid::TrimStepVoltageData(&fastForwardLeft, settings, minStepTime,
-                             maxStepTime);
-  sysid::TrimStepVoltageData(&fastForwardRight, settings, minStepTime,
-                             maxStepTime);
-  sysid::TrimStepVoltageData(&fastBackwardLeft, settings, minStepTime,
-                             maxStepTime);
-  sysid::TrimStepVoltageData(&fastBackwardRight, settings, minStepTime,
-                             maxStepTime);
+  // Store raw data as variables
+  auto rawSlowForwardLeft = preparedData["left-raw-slow-forward"];
+  auto rawSlowForwardRight = preparedData["right-raw-slow-forward"];
+  auto rawSlowBackwardLeft = preparedData["left-raw-slow-backward"];
+  auto rawSlowBackwardRight = preparedData["right-raw-slow-backward"];
+  auto rawFastForwardLeft = preparedData["left-raw-fast-forward"];
+  auto rawFastForwardRight = preparedData["right-raw-fast-forward"];
+  auto rawFastBackwardLeft = preparedData["left-raw-fast-backward"];
+  auto rawFastBackwardRight = preparedData["right-raw-fast-backward"];
 
   // Create the distinct raw datasets and store them in our StringMap.
   auto rawSlowForward = Concatenate(rawSlowForwardLeft, {&rawSlowForwardRight});
@@ -507,25 +525,33 @@ static void PrepareLinearDrivetrainData(
       Storage{Concatenate(rawSlowForwardRight, {&rawSlowBackwardRight}),
               Concatenate(rawFastForwardRight, {&rawFastBackwardRight})};
 
-  // Create the distinct datasets and store them in our StringMap.
+  // Store filtered data
+  auto slowForwardLeft = preparedData["left-slow-forward"];
+  auto slowForwardRight = preparedData["right-slow-forward"];
+  auto slowBackwardLeft = preparedData["left-slow-backward"];
+  auto slowBackwardRight = preparedData["right-slow-backward"];
+  auto fastForwardLeft = preparedData["left-fast-forward"];
+  auto fastForwardRight = preparedData["right-fast-forward"];
+  auto fastBackwardLeft = preparedData["left-fast-backward"];
+  auto fastBackwardRight = preparedData["right-fast-backward"];
+
   auto slowForward = Concatenate(slowForwardLeft, {&slowForwardRight});
   auto slowBackward = Concatenate(slowBackwardLeft, {&slowBackwardRight});
   auto fastForward = Concatenate(fastForwardLeft, {&fastForwardRight});
   auto fastBackward = Concatenate(fastBackwardLeft, {&fastBackwardRight});
 
+  // Create the distinct filtered datasets and store them in our StringMap.
   filteredDatasets["Forward"] = Storage{slowForward, fastForward};
   filteredDatasets["Backward"] = Storage{slowBackward, fastBackward};
   filteredDatasets["Combined"] =
       Storage{Concatenate(slowForward, {&slowBackward}),
               Concatenate(fastForward, {&fastBackward})};
-
   filteredDatasets["Left Forward"] = Storage{slowForwardLeft, fastForwardLeft};
   filteredDatasets["Left Backward"] =
       Storage{slowBackwardLeft, fastBackwardLeft};
   filteredDatasets["Left Combined"] =
       Storage{Concatenate(slowForwardLeft, {&slowBackwardLeft}),
               Concatenate(fastForwardLeft, {&fastBackwardLeft})};
-
   filteredDatasets["Right Forward"] =
       Storage{slowForwardRight, fastForwardRight};
   filteredDatasets["Right Backward"] =
@@ -533,8 +559,8 @@ static void PrepareLinearDrivetrainData(
   filteredDatasets["Right Combined"] =
       Storage{Concatenate(slowForwardRight, {&slowBackwardRight}),
               Concatenate(fastForwardRight, {&fastBackwardRight})};
-  startTimes = {slowForward[0].timestamp, slowBackward[0].timestamp,
-                fastForward[0].timestamp, fastBackward[0].timestamp};
+  startTimes = {slowForward.front().timestamp, slowBackward.front().timestamp,
+                fastForward.front().timestamp, fastBackward.front().timestamp};
 }
 
 AnalysisManager::AnalysisManager(wpi::StringRef path, Settings& settings,
@@ -615,7 +641,7 @@ AnalysisManager::Gains AnalysisManager::Calculate() {
   return {ffGains, fbGains, m_trackWidth};
 }
 
-void AnalysisManager::OverrideUnits(const std::string& unit,
+void AnalysisManager::OverrideUnits(wpi::StringRef unit,
                                     double unitsPerRotation) {
   m_unit = unit;
   m_factor = unitsPerRotation;

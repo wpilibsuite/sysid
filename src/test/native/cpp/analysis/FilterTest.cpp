@@ -17,9 +17,9 @@ TEST(FilterTest, MedianFilter) {
                                                  {0}, {1000}, {7},  {6}, {5}};
   std::vector<std::array<double, 1>> expectedData = {{1}, {5}, {5}, {3},
                                                      {3}, {7}, {7}, {6}};
-  std::vector<std::array<double, 1>> filteredData =
-      sysid::ApplyMedianFilter<1, 0>(testData, 3);
-  EXPECT_EQ(expectedData, filteredData);
+
+  sysid::ApplyMedianFilter<1, 0>(&testData, 3);
+  EXPECT_EQ(expectedData, testData);
 }
 
 TEST(FilterTest, QuasistaticTrim) {
@@ -57,7 +57,7 @@ TEST(FilterTest, StepTrim) {
   auto minTime = maxTime;
 
   sysid::AnalysisManager::Settings settings;
-  sysid::TrimStepVoltageData(&testData, settings, minTime, maxTime);
+  minTime = sysid::TrimStepVoltageData(&testData, &settings, minTime, maxTime);
 
   EXPECT_EQ(expectedData[0].acceleration, testData[0].acceleration);
   EXPECT_EQ(expectedData.back().acceleration, testData.back().acceleration);

@@ -113,7 +113,7 @@ class AnalysisManager {
    * @param unitsPerRotation The conversion factor between rotations and the
    *                         selected unit.
    */
-  void OverrideUnits(const std::string& unit, double unitsPerRotation);
+  void OverrideUnits(wpi::StringRef unit, double unitsPerRotation);
 
   /**
    * Resets the units back to those defined in the JSON.

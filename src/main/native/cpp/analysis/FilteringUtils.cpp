@@ -11,10 +11,10 @@
 
 using namespace sysid;
 
-void sysid::TrimStepVoltageData(std::vector<PreparedData>* data,
-                                AnalysisManager::Settings& settings,
-                                units::second_t& minStepTime,
-                                units::second_t maxStepTime) {
+units::second_t sysid::TrimStepVoltageData(std::vector<PreparedData>* data,
+                                           AnalysisManager::Settings* settings,
+                                           units::second_t minStepTime,
+                                           units::second_t maxStepTime) {
   auto firstTimestamp = data->at(0).timestamp;
 
   // Trim data before max acceleration
@@ -28,10 +28,10 @@ void sysid::TrimStepVoltageData(std::vector<PreparedData>* data,
 
   // If step duration hasn't been set yet, set calculate a default (find the
   // entry before the acceleration first hits zero)
-  if (settings.stepTestDuration <= minStepTime) {
+  if (settings->stepTestDuration <= minStepTime) {
     // Get noise floor
     const double accelNoiseFloor =
-        GetAccelNoiseFloor(*data, settings.windowSize);
+        GetAccelNoiseFloor(*data, settings->windowSize);
     // Find latest element with nonzero acceleration
     auto endIt = std::find_if(
         std::reverse_iterator{data->end()},
@@ -40,7 +40,7 @@ void sysid::TrimStepVoltageData(std::vector<PreparedData>* data,
         });
 
     // Calculate default duration
-    settings.stepTestDuration =
+    settings->stepTestDuration =
         std::min(endIt->timestamp - data->front().timestamp + minStepTime + 1_s,
                  maxStepTime);
   }
@@ -49,13 +49,14 @@ void sysid::TrimStepVoltageData(std::vector<PreparedData>* data,
   auto maxIt =
       std::find_if(data->begin(), data->end(), [&](PreparedData entry) {
         return entry.timestamp - data->front().timestamp + minStepTime >
-               settings.stepTestDuration;
+               settings->stepTestDuration;
       });
 
   // Trim data beyond desired step test duration
   if (maxIt != data->end()) {
     data->erase(maxIt, data->end());
   }
+  return minStepTime;
 }
 
 double sysid::GetAccelNoiseFloor(const std::vector<PreparedData>& data,
