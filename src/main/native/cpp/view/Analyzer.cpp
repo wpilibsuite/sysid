@@ -14,6 +14,7 @@
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 #include <wpi/FileSystem.h>
+#include <wpi/Format.h>
 #include <wpi/json.h>
 #include <wpi/math>
 #include <wpi/raw_ostream.h>
@@ -39,6 +40,17 @@ Analyzer::Analyzer(wpi::Logger& logger) : m_logger(logger) {
 
   // Load the last file location from storage if it exists.
   m_location = glass::GetStorage().GetStringRef("AnalyzerJSONLocation");
+}
+
+static void DisplayGain(const char* text, double* data) {
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
+  ImGui::InputDouble(text, data, 0.0, 0.0, "%.5G",
+                     ImGuiInputTextFlags_ReadOnly);
+}
+
+static void SetPosition(double beginX, double beginY, int xShift, int yShift) {
+  ImGui::SetCursorPos(ImVec2(beginX + xShift * 10 * ImGui::GetFontSize(),
+                             beginY + yShift * 1.75 * ImGui::GetFontSize()));
 }
 
 void Analyzer::Display() {
@@ -167,12 +179,6 @@ void Analyzer::Display() {
   }
 
   // Function that displays a read-only value.
-  auto ShowGain = [](const char* text, double* data) {
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
-    ImGui::InputDouble(text, data, 0.0, 0.0, "%.5G",
-                       ImGuiInputTextFlags_ReadOnly);
-  };
-
   ImGui::Spacing();
   ImGui::Spacing();
 
@@ -183,63 +189,7 @@ void Analyzer::Display() {
     if (!m_manager) {
       ImGui::Text("Please Select a JSON File");
     } else {
-      float beginY = ImGui::GetCursorPosY();
-      ShowGain("Ks", &m_ff[0]);
-      ShowGain("Kv", &m_ff[1]);
-      ShowGain("Ka", &m_ff[2]);
-
-      if (m_type == analysis::kElevator) {
-        ShowGain("Kg", &m_ff[3]);
-      } else if (m_type == analysis::kArm) {
-        ShowGain("Kcos", &m_ff[3]);
-      }
-
-      if (m_trackWidth) {
-        ShowGain("Track Width", &*m_trackWidth);
-      }
-
-      ShowGain("r-squared", &m_rSquared);
-      ShowGain("Sim RMSE", m_plot.GetRMSE());
-      CreateTooltip(
-          "The Root Mean Squared Error (RMSE) of the simulation "
-          "predictions compared to the recorded data. It is essentially the "
-          "error of the simulated model in the recorded units.");
-
-      double endY = ImGui::GetCursorPosY();
-
-      // Come back to the starting y pos.
-      ImGui::SetCursorPosY(beginY);
-
-      ImGui::SetCursorPosX(ImGui::GetFontSize() * 15);
-      if (ImGui::Button("Combined Diagnostics")) {
-        ImGui::OpenPopup("Combined Diagnostics");
-      }
-
-      ImGui::SetCursorPosX(ImGui::GetFontSize() * 15);
-      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-      int window = m_settings.windowSize;
-      if (ImGui::InputInt("Window Size", &window, 0, 0)) {
-        m_settings.windowSize = std::clamp(window, 2, 15);
-        RefreshInformation();
-      }
-      ImGui::SetCursorPosX(ImGui::GetFontSize() * 15);
-      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-      double threshold = m_settings.motionThreshold;
-      if (ImGui::InputDouble("Velocity Threshold", &threshold, 0.0, 0.0,
-                             "%.3f")) {
-        m_settings.motionThreshold = std::max(0.0, threshold);
-        RefreshInformation();
-      }
-
-      ImGui::SetCursorPosX(ImGui::GetFontSize() * 15);
-      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-      if (ImGui::SliderFloat("Test Duration", &m_stepTestDuration,
-                             m_manager->GetMinDuration(),
-                             m_manager->GetMaxDuration(), "%.2f")) {
-        m_settings.stepTestDuration = units::second_t{m_stepTestDuration};
-        RefreshInformation();
-      }
-
+      DisplayFeedforwardGains();
       ImGui::SetNextWindowSize(ImVec2(m_plot.kCombinedPlotSize * 4 + 50,
                                       m_plot.kCombinedPlotSize * 2 + 25),
                                ImGuiCond_Once);
@@ -252,7 +202,8 @@ void Analyzer::Display() {
           combinedGraphFit = true;
         }
         m_plot.DisplayCombinedPlots();
-
+        ImGui::SameLine();
+        DisplayFeedforwardGains(true);
         // Button to close popup.
         if (ImGui::Button("Close")) {
           ImGui::CloseCurrentPopup();
@@ -263,8 +214,6 @@ void Analyzer::Display() {
         }
         ImGui::EndPopup();
       }
-
-      ImGui::SetCursorPosY(endY);
       ImGui::Separator();
     }
   }
@@ -442,10 +391,10 @@ void Analyzer::Display() {
       // Show Kp and Kd.
       beginY = ImGui::GetCursorPosY();
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-      ShowGain("Kp", &m_Kp);
+      DisplayGain("Kp", &m_Kp);
 
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-      ShowGain("Kd", &m_Kd);
+      DisplayGain("Kd", &m_Kd);
 
       // Come back to the starting y pos.
       ImGui::SetCursorPosY(beginY);
@@ -586,4 +535,89 @@ void Analyzer::RefreshInformation() {
 void Analyzer::ResetManagerState() {
   m_manager.reset();
   *m_location = "";
+}
+
+void Analyzer::DisplayFeedforwardGains(bool combined) {
+  float beginX = ImGui::GetCursorPosX();
+  float beginY = ImGui::GetCursorPosY();
+  const char* gainNames[] = {"Ks", "Kv", "Ka"};
+  for (size_t i = 0; i < 3; i++) {
+    SetPosition(beginX, beginY, 0, i);
+    DisplayGain(gainNames[i], &m_ff[i]);
+  }
+
+  SetPosition(beginX, beginY, 0, 3);
+
+  if (m_type == analysis::kElevator) {
+    DisplayGain("Kg", &m_ff[3]);
+  } else if (m_type == analysis::kArm) {
+    DisplayGain("Kcos", &m_ff[3]);
+  } else if (m_trackWidth) {
+    DisplayGain("Track Width", &*m_trackWidth);
+  }
+
+  SetPosition(beginX, beginY, 0, 4);
+  DisplayGain("r-squared", &m_rSquared);
+
+  SetPosition(beginX, beginY, 0, 5);
+  DisplayGain("Sim RMSE", m_plot.GetRMSE());
+
+  if (!combined) {
+    CreateTooltip(
+        "The Root Mean Squared Error (RMSE) of the simulation "
+        "predictions compared to the recorded data. It is essentially the "
+        "error of the simulated model in the recorded units.");
+  }
+
+  double endY = ImGui::GetCursorPosY();
+  SetPosition(beginX, beginY, 1, 0);
+
+  if (!combined) {
+    if (ImGui::Button("Combined Diagnostics")) {
+      ImGui::OpenPopup("Combined Diagnostics");
+    }
+    SetPosition(beginX, beginY, 1, 1);
+  }
+
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+  int window = m_settings.windowSize;
+  if (ImGui::InputInt(
+          "Window Size", &window, 0, 0,
+          combined ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None)) {
+    m_settings.windowSize = std::clamp(window, 2, 15);
+    RefreshInformation();
+  }
+
+  SetPosition(beginX, beginY, 1, combined ? 1 : 2);
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+  double threshold = m_settings.motionThreshold;
+  if (ImGui::InputDouble(
+          "Velocity Threshold", &threshold, 0.0, 0.0, "%.3f",
+          combined ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None)) {
+    m_settings.motionThreshold = std::max(0.0, threshold);
+    RefreshInformation();
+  }
+
+  SetPosition(beginX, beginY, 1, combined ? 2 : 3);
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+  if (!combined) {
+    if (ImGui::SliderFloat("Test Duration", &m_stepTestDuration,
+                           m_manager->GetMinDuration(),
+                           m_manager->GetMaxDuration(), "%.2f")) {
+      m_settings.stepTestDuration = units::second_t{m_stepTestDuration};
+      RefreshInformation();
+    }
+
+    ImGui::SetCursorPosY(endY);
+  } else {
+    std::string message;
+    wpi::raw_string_ostream ss{message};
+    ss << wpi::format("%.2f of %.2f", m_stepTestDuration,
+                      m_manager->GetMaxDuration());
+    ss.str();
+    // Pass to rvalue
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);
+    ImGui::InputText("Duration (s)", &message, ImGuiInputTextFlags_ReadOnly);
+    SetPosition(beginX, beginY, 0, 12);
+  }
 }
