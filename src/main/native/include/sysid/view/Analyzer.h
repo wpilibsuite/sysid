@@ -51,6 +51,7 @@ class Analyzer : public glass::View {
   void PrepareGraphs();
   void RefreshInformation();
   void AbortDataPrep();
+  void DisplayFeedforwardGains(bool combined = false);
 
   /**
    * Loads the diagnostic plots.
