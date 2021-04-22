@@ -37,9 +37,10 @@ sysid::Storage CollectData(Model& model) {
   for (int i = 0; i < (kTestDuration / T).to<double>(); ++i) {
     slow.emplace_back(sysid::PreparedData{
         i * T, voltage.to<double>(), model.GetPosition(), model.GetVelocity(),
-        model.GetAcceleration(voltage), std::cos(model.GetPosition())});
+        0.0, T, model.GetAcceleration(voltage), std::cos(model.GetPosition())});
 
     model.Update(voltage, T);
+    slow.back().nextVelocity = model.GetVelocity();
     voltage += kUstep * T;
   }
 
@@ -49,9 +50,10 @@ sysid::Storage CollectData(Model& model) {
   for (int i = 0; i < (kTestDuration / T).to<double>(); ++i) {
     slow.emplace_back(sysid::PreparedData{
         i * T, voltage.to<double>(), model.GetPosition(), model.GetVelocity(),
-        model.GetAcceleration(voltage), std::cos(model.GetPosition())});
+        0.0, T, model.GetAcceleration(voltage), std::cos(model.GetPosition())});
 
     model.Update(voltage, T);
+    slow.back().nextVelocity = model.GetVelocity();
     voltage -= kUstep * T;
   }
 
@@ -61,9 +63,10 @@ sysid::Storage CollectData(Model& model) {
   for (int i = 0; i < (kTestDuration / T).to<double>(); ++i) {
     fast.emplace_back(sysid::PreparedData{
         i * T, voltage.to<double>(), model.GetPosition(), model.GetVelocity(),
-        model.GetAcceleration(voltage), std::cos(model.GetPosition())});
+        0.0, T, model.GetAcceleration(voltage), std::cos(model.GetPosition())});
 
     model.Update(voltage, T);
+    fast.back().nextVelocity = model.GetVelocity();
     voltage = kUmax;
   }
 
@@ -73,9 +76,10 @@ sysid::Storage CollectData(Model& model) {
   for (int i = 0; i < (kTestDuration / T).to<double>(); ++i) {
     fast.emplace_back(sysid::PreparedData{
         i * T, voltage.to<double>(), model.GetPosition(), model.GetVelocity(),
-        model.GetAcceleration(voltage), std::cos(model.GetPosition())});
+        0.0, T, model.GetAcceleration(voltage), std::cos(model.GetPosition())});
 
     model.Update(voltage, T);
+    fast.back().nextVelocity = model.GetVelocity();
     voltage = -kUmax;
   }
 

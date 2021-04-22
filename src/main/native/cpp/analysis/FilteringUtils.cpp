@@ -77,17 +77,15 @@ double sysid::GetAccelNoiseFloor(const std::vector<PreparedData>& data,
 units::second_t sysid::GetMeanTimeDelta(const Storage& data) {
   std::vector<units::second_t> dts;
 
-  const auto& [slow, fast] = data;
-  for (size_t i = 0; i < slow.size() - 1; ++i) {
-    auto dt = slow[i + 1].timestamp - slow[i].timestamp;
-    if (dt > 0_s && dt < 500_ms) {
-      dts.emplace_back(dt);
+  for (const auto& pt : data.slow) {
+    if (pt.dt > 0_s && pt.dt < 500_ms) {
+      dts.emplace_back(pt.dt);
     }
   }
-  for (size_t i = 0; i < fast.size() - 1; ++i) {
-    auto dt = fast[i + 1].timestamp - fast[i].timestamp;
-    if (dt > 0_s && dt < 500_ms) {
-      dts.emplace_back(dt);
+
+  for (const auto& pt : data.fast) {
+    if (pt.dt > 0_s && pt.dt < 500_ms) {
+      dts.emplace_back(pt.dt);
     }
   }
 

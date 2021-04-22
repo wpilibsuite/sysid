@@ -16,6 +16,7 @@
 #include <system_error>
 
 #include <units/angle.h>
+#include <units/math.h>
 #include <wpi/StringMap.h>
 #include <wpi/json.h>
 #include <wpi/math>
@@ -90,17 +91,78 @@ static std::vector<PreparedData> Concatenate(
 }
 
 /**
- * Computes acceleration from a vector of raw data and returns prepared data.
+ * Generates general prepared data from a vector of raw data.
  *
  * @tparam S        The size of the raw data array.
  * @tparam Voltage  The index of the voltage entry in the raw data.
  * @tparam Position The index of the position entry in the raw data.
  * @tparam Velocity The index of the velocity entry in the raw data.
  *
- * @param data A reference to a vector of the raw data.
+ * @param data   A reference to a vector of the raw data.
+ * @param window The window across which to compute the acceleration.
+ * @param unit   The units that the data is in (rotations, radians, or degrees).
  */
 template <size_t S, size_t Voltage, size_t Position, size_t Velocity>
-std::vector<PreparedData> ComputeAcceleration(
+std::vector<PreparedData> PrepareGeneralData(
+    const std::vector<std::array<double, S>>& data, int window,
+    wpi::StringRef unit) {
+  // Calculate the step size for acceleration data.
+  size_t step = window / 2;
+
+  // Create our prepared data vector.
+  std::vector<PreparedData> prepared;
+  if (data.size() <= static_cast<size_t>(window)) {
+    throw std::runtime_error(
+        "The data collected is too small! This can be caused by too high of a "
+        "motion threshold or bad data collection.");
+  }
+  prepared.reserve(data.size());
+
+  // Compute acceleration and add it to the vector.
+  for (size_t i = step; i < data.size() - step; ++i) {
+    const auto& pt1 = data[i];
+    const auto& pt2 = data[i + 1];
+
+    double accel = (data[i + step][Velocity] - data[i - step][Velocity]) /
+                   (data[i + step][0] - data[i - step][0]);
+    // Sometimes, if the encoder velocities are the same, it will register zero
+    // acceleration. Do not include these values.
+    if (accel == 0.0) {
+      continue;
+    }
+
+    // Calculates the cosine of the position data for single jointed arm
+    // analysis
+    double cos;
+    if (unit == "Radians") {
+      cos = std::cos(pt1[Position]);
+    } else if (unit == "Degrees") {
+      cos = std::cos(pt1[Position] * wpi::math::pi / 180.0);
+    } else if (unit == "Rotations") {
+      cos = std::cos(pt1[Position] * 2 * wpi::math::pi);
+    }
+
+    prepared.push_back(PreparedData{
+        units::second_t{pt1[0]}, pt1[Voltage], pt1[Position], pt1[Velocity],
+        pt2[Velocity], units::second_t{pt2[0] - pt1[0]}, accel, cos});
+  }
+  return prepared;
+}
+
+/**
+ * Generates general prepared data from a vector of raw data.
+ *
+ * @tparam S        The size of the raw data array.
+ * @tparam Voltage  The index of the voltage entry in the raw data.
+ * @tparam Position The index of the position entry in the raw data.
+ * @tparam Velocity The index of the velocity entry in the raw data.
+ *
+ * @param data   A reference to a vector of the raw data.
+ * @param window The window across which to compute the acceleration.
+ * @param unit   The units that the data is in (rotations, radians, or degrees).
+ */
+template <size_t S, size_t Voltage, size_t Position, size_t Velocity>
+std::vector<PreparedData> PrepareDrivetrainData(
     const std::vector<std::array<double, S>>& data, int window) {
   // Calculate the step size for acceleration data.
   size_t step = window / 2;
@@ -116,42 +178,44 @@ std::vector<PreparedData> ComputeAcceleration(
 
   // Compute acceleration and add it to the vector.
   for (size_t i = step; i < data.size() - step; ++i) {
-    const auto& pt = data[i];
-    double acc = (data[i + step][Velocity] - data[i - step][Velocity]) /
-                 (data[i + step][0] - data[i - step][0]);
+    const auto& pt1 = data[i];
+    const auto& pt2 = data[i + 1];
 
+    double accel = (data[i + step][Velocity] - data[i - step][Velocity]) /
+                   (data[i + step][0] - data[i - step][0]);
     // Sometimes, if the encoder velocities are the same, it will register zero
     // acceleration. Do not include these values.
-    if (acc != 0) {
-      prepared.push_back(PreparedData{units::second_t{pt[0]}, pt[Voltage],
-                                      pt[Position], pt[Velocity], acc, 0.0});
+    if (accel == 0.0) {
+      continue;
     }
+
+    prepared.push_back(PreparedData{
+        units::second_t{pt1[0]}, pt1[Voltage], pt1[Position], pt1[Velocity],
+        pt2[Velocity], units::second_t{pt2[0] - pt1[0]}, accel, 0.0});
   }
   return prepared;
 }
 
 /**
- * Calculates the cosine of the position data for single jointed arm analysis.
+ * Trims data with dt too far from mean.
  *
- * @param data The data to calculate the cosine on.
- * @param unit The units that the data is in (rotations, radians, or degrees).
+ * @param data      The data to filter.
+ * @param dtMean    The mean dt.
+ * @param tolerance The tolerance outside of which to trim.
  */
-static void CalculateCosine(std::vector<PreparedData>* data,
-                            wpi::StringRef unit) {
-  for (auto&& pt : *data) {
-    if (unit == "Radians") {
-      pt.cos = std::cos(pt.position);
-    } else if (unit == "Degrees") {
-      pt.cos = std::cos(pt.position * wpi::math::pi / 180.0);
-    } else if (unit == "Rotations") {
-      pt.cos = std::cos(pt.position * 2 * wpi::math::pi);
-    }
-  }
+static void TrimByTimeDelta(std::vector<PreparedData>* data,
+                            units::second_t dtMean, units::second_t tolerance) {
+  data->erase(std::remove_if(data->begin(), data->end(),
+                             [dtMean, tolerance](const auto& pt) {
+                               return units::math::abs(pt.dt - dtMean) >
+                                      tolerance;
+                             }),
+              data->end());
 }
 
 template <size_t S>
 static units::second_t GetMaxTime(
-    wpi::StringMap<std::vector<std::array<double, S>>> data, size_t timeCol) {
+    wpi::StringMap<std::vector<std::array<double, S>>>& data, size_t timeCol) {
   return units::second_t{std::max(
       data["fast-forward"].back()[timeCol] - data["fast-forward"][0][timeCol],
       data["fast-backward"].back()[timeCol] -
@@ -220,24 +284,18 @@ static void PrepareGeneralData(const wpi::json& json,
       },
       [](wpi::StringRef key) { return key.contains("slow"); });
 
+  // Convert raw data to prepared data
+  ApplyToData(data, [&](wpi::StringRef key) {
+    preparedData[key] = PrepareGeneralData<4, kVoltageCol, kPosCol, kVelCol>(
+        data[key], settings.windowSize, unit);
+  });
+
   // Apply Median filter
   ApplyToData(
       data,
       [&](wpi::StringRef key) {
         sysid::ApplyMedianFilter<4, kVelCol>(&data[key], settings.windowSize);
       },
-      [](wpi::StringRef key) { return !key.startswith("raw"); });
-
-  // Get accel
-  ApplyToData(data, [&](wpi::StringRef key) {
-    preparedData[key] = ComputeAcceleration<4, kVoltageCol, kPosCol, kVelCol>(
-        data[key], settings.windowSize);
-  });
-
-  // Calculate cosine of position data for filtered data
-  ApplyToData(
-      preparedData,
-      [&](wpi::StringRef key) { CalculateCosine(&preparedData[key], unit); },
       [](wpi::StringRef key) { return !key.startswith("raw"); });
 
   // Find the maximum Step Test Duration
@@ -256,6 +314,23 @@ static void PrepareGeneralData(const wpi::json& json,
       },
       [](wpi::StringRef key) { return key.contains("fast"); });
 
+  // Compute mean dt
+  auto& slowForward = preparedData["slow-forward"];
+  auto& slowBackward = preparedData["slow-backward"];
+  auto& fastForward = preparedData["fast-forward"];
+  auto& fastBackward = preparedData["fast-backward"];
+  Storage tempCombined{Concatenate(slowForward, {&slowBackward}),
+                       Concatenate(fastForward, {&fastBackward})};
+  units::second_t dtMean = GetMeanTimeDelta(tempCombined);
+
+  // Remove points with dt too far from mean
+  ApplyToData(
+      preparedData,
+      [&](wpi::StringRef key) {
+        TrimByTimeDelta(&preparedData[key], dtMean, 1_ms);
+      },
+      [](wpi::StringRef key) { return !key.startswith("raw"); });
+
   // Store the raw datasets
   rawDatasets["Forward"] = Storage{preparedData["raw-slow-forward"],
                                    preparedData["raw-fast-forward"]};
@@ -268,10 +343,6 @@ static void PrepareGeneralData(const wpi::json& json,
                           {&preparedData["raw-fast-backward"]})};
 
   // Store the filtered datasets
-  auto slowForward = preparedData["slow-forward"];
-  auto slowBackward = preparedData["slow-backward"];
-  auto fastForward = preparedData["fast-forward"];
-  auto fastBackward = preparedData["fast-backward"];
   filteredDatasets["Forward"] = Storage{slowForward, fastForward};
   filteredDatasets["Backward"] = Storage{slowBackward, fastBackward};
   filteredDatasets["Combined"] =
@@ -339,10 +410,10 @@ static void PrepareAngularDrivetrainData(
       },
       [](wpi::StringRef key) { return key.contains("slow"); });
 
-  // Compute acceleration on all data sets.
+  // Convert raw data to prepared data
   ApplyToData(data, [&](wpi::StringRef key) {
     preparedData[key] =
-        ComputeAcceleration<9, kVoltageCol, kAngleCol, kAngularRateCol>(
+        PrepareDrivetrainData<9, kVoltageCol, kAngleCol, kAngularRateCol>(
             data[key], settings.windowSize);
   });
 
@@ -358,6 +429,29 @@ static void PrepareAngularDrivetrainData(
       },
       [](wpi::StringRef key) { return key.contains("fast"); });
 
+  // Compute mean dt
+  auto& slowForward = preparedData["slow-forward"];
+  auto& slowBackward = preparedData["slow-backward"];
+  auto& fastForward = preparedData["fast-forward"];
+  auto& fastBackward = preparedData["fast-backward"];
+  Storage tempCombined{Concatenate(slowForward, {&slowBackward}),
+                       Concatenate(fastForward, {&fastBackward})};
+  units::second_t dtMean = GetMeanTimeDelta(tempCombined);
+
+  // Remove points with dt too far from mean
+  ApplyToData(
+      preparedData,
+      [&](wpi::StringRef key) {
+        TrimByTimeDelta(&preparedData[key], dtMean, 1_ms);
+      },
+      [](wpi::StringRef key) { return !key.startswith("raw"); });
+
+  // Confirm there's still data
+  if (std::all_of(preparedData.begin(), preparedData.end(),
+                  [](const auto& it) { return it.first().empty(); })) {
+    throw std::runtime_error("Trimming removed all data");
+  }
+
   // Calculate track width from the slow-forward raw data.
   auto& trackWidthData = data["slow-forward"];
   double leftDelta =
@@ -370,10 +464,6 @@ static void PrepareAngularDrivetrainData(
                                           units::radian_t{angleDelta});
 
   // Create the distinct datasets and store them in our StringMap.
-  auto slowForward = preparedData["slow-forward"];
-  auto fastForward = preparedData["fast-forward"];
-  auto slowBackward = preparedData["slow-backward"];
-  auto fastBackward = preparedData["fast-backward"];
   filteredDatasets["Forward"] = Storage{slowForward, fastForward};
   filteredDatasets["Backward"] = Storage{slowBackward, fastBackward};
   filteredDatasets["Combined"] =
@@ -450,6 +540,18 @@ static void PrepareLinearDrivetrainData(
       },
       [](wpi::StringRef key) { return key.contains("slow"); });
 
+  // Convert raw data to prepared data
+  ApplyToData(data, [&](wpi::StringRef key) {
+    std::string leftName{"left-" + key.str()};
+    std::string rightName{"right-" + key.str()};
+    preparedData[leftName] =
+        PrepareDrivetrainData<9, kLVoltageCol, kLPosCol, kLVelCol>(
+            data[key], settings.windowSize);
+    preparedData[rightName] =
+        PrepareDrivetrainData<9, kRVoltageCol, kRPosCol, kRVelCol>(
+            data[key], settings.windowSize);
+  });
+
   // Apply Median Filter
   ApplyToData(
       data,
@@ -458,18 +560,6 @@ static void PrepareLinearDrivetrainData(
         sysid::ApplyMedianFilter<9, kRVelCol>(&data[key], settings.windowSize);
       },
       [](wpi::StringRef key) { return !key.contains("raw"); });
-
-  // Get Accel Data
-  ApplyToData(data, [&](wpi::StringRef key) {
-    std::string leftName{"left-" + key.str()};
-    std::string rightName{"right-" + key.str()};
-    preparedData[leftName] =
-        ComputeAcceleration<9, kLVoltageCol, kLPosCol, kLVelCol>(
-            data[key], settings.windowSize);
-    preparedData[rightName] =
-        ComputeAcceleration<9, kRVoltageCol, kRPosCol, kRVelCol>(
-            data[key], settings.windowSize);
-  });
 
   // Get maximum dynamic test duration
   maxStepTime = GetMaxTime<9>(data, kTimeCol);
@@ -485,6 +575,40 @@ static void PrepareLinearDrivetrainData(
         }
       },
       [](wpi::StringRef key) { return key.contains("fast"); });
+
+  // Store filtered data
+  auto slowForwardLeft = preparedData["left-slow-forward"];
+  auto slowForwardRight = preparedData["right-slow-forward"];
+  auto slowBackwardLeft = preparedData["left-slow-backward"];
+  auto slowBackwardRight = preparedData["right-slow-backward"];
+  auto fastForwardLeft = preparedData["left-fast-forward"];
+  auto fastForwardRight = preparedData["right-fast-forward"];
+  auto fastBackwardLeft = preparedData["left-fast-backward"];
+  auto fastBackwardRight = preparedData["right-fast-backward"];
+
+  auto slowForward = Concatenate(slowForwardLeft, {&slowForwardRight});
+  auto slowBackward = Concatenate(slowBackwardLeft, {&slowBackwardRight});
+  auto fastForward = Concatenate(fastForwardLeft, {&fastForwardRight});
+  auto fastBackward = Concatenate(fastBackwardLeft, {&fastBackwardRight});
+
+  // Compute mean dt
+  Storage tempCombined{Concatenate(slowForward, {&slowBackward}),
+                       Concatenate(fastForward, {&fastBackward})};
+  units::second_t dtMean = GetMeanTimeDelta(tempCombined);
+
+  // Remove points with dt too far from mean
+  ApplyToData(
+      preparedData,
+      [&](wpi::StringRef key) {
+        TrimByTimeDelta(&preparedData[key], dtMean, 1_ms);
+      },
+      [](wpi::StringRef key) { return !key.startswith("raw"); });
+
+  // Confirm there's still data
+  if (std::all_of(preparedData.begin(), preparedData.end(),
+                  [](const auto& it) { return it.first().empty(); })) {
+    throw std::runtime_error("Trimming removed all data");
+  }
 
   // Store raw data as variables
   auto rawSlowForwardLeft = preparedData["left-raw-slow-forward"];
@@ -524,21 +648,6 @@ static void PrepareLinearDrivetrainData(
   rawDatasets["Right Combined"] =
       Storage{Concatenate(rawSlowForwardRight, {&rawSlowBackwardRight}),
               Concatenate(rawFastForwardRight, {&rawFastBackwardRight})};
-
-  // Store filtered data
-  auto slowForwardLeft = preparedData["left-slow-forward"];
-  auto slowForwardRight = preparedData["right-slow-forward"];
-  auto slowBackwardLeft = preparedData["left-slow-backward"];
-  auto slowBackwardRight = preparedData["right-slow-backward"];
-  auto fastForwardLeft = preparedData["left-fast-forward"];
-  auto fastForwardRight = preparedData["right-fast-forward"];
-  auto fastBackwardLeft = preparedData["left-fast-backward"];
-  auto fastBackwardRight = preparedData["right-fast-backward"];
-
-  auto slowForward = Concatenate(slowForwardLeft, {&slowForwardRight});
-  auto slowBackward = Concatenate(slowBackwardLeft, {&slowBackwardRight});
-  auto fastForward = Concatenate(fastForwardLeft, {&fastForwardRight});
-  auto fastBackward = Concatenate(fastBackwardLeft, {&fastBackwardRight});
 
   // Create the distinct filtered datasets and store them in our StringMap.
   filteredDatasets["Forward"] = Storage{slowForward, fastForward};

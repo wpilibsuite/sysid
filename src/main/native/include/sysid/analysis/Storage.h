@@ -19,6 +19,8 @@ struct PreparedData {
   double voltage;
   double position;
   double velocity;
+  double nextVelocity;
+  units::second_t dt;
   double acceleration;
   double cos;
 };
