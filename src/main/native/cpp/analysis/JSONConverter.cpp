@@ -137,23 +137,23 @@ std::string sysid::ToCSV(wpi::StringRef path, wpi::Logger& logger) {
       auto tempData =
           json.at(key).get<std::vector<std::array<double, kDrivetrainSize>>>();
       for (auto&& pt : tempData) {
-        outputFile << pt[0] << ", " << key << ", "    // Timestamp, Test
-                   << pt[1] << ", " << pt[2] << ", "  // Left and Right Voltages
-                   << pt[3] * factor << ", " << pt[4] * factor
-                   << ", "  // Left and Right Positions
-                   << pt[5] * factor << ", " << pt[6] * factor
-                   << ", "                    // Left and Right Velocities
-                   << pt[7] << ", " << pt[8]  // Gyro Position and Velocity
+        outputFile << pt[0] << "," << key << ","    // Timestamp, Test
+                   << pt[1] << "," << pt[2] << ","  // Left and Right Voltages
+                   << pt[3] * factor << "," << pt[4] * factor
+                   << ","  // Left and Right Positions
+                   << pt[5] * factor << "," << pt[6] * factor
+                   << ","                    // Left and Right Velocities
+                   << pt[7] << "," << pt[8]  // Gyro Position and Velocity
                    << "\n";
       }
     } else {
       auto tempData =
           json.at(key).get<std::vector<std::array<double, kGeneralSize>>>();
       for (auto&& pt : tempData) {
-        outputFile << pt[0] << ", " << key << ", "  // Timestamp, Test
-                   << pt[1] << ", "                 // Voltage
-                   << pt[2] * factor << ", "        // Position
-                   << pt[3] * factor                // Velocity
+        outputFile << pt[0] << "," << key << ","  // Timestamp, Test
+                   << pt[1] << ","                // Voltage
+                   << pt[2] * factor << ","       // Position
+                   << pt[3] * factor              // Velocity
                    << "\n";
       }
     }
