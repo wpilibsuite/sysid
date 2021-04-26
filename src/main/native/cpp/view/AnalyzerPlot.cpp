@@ -50,20 +50,19 @@ static std::vector<std::vector<ImPlotPoint>> PopulateTimeDomainSim(
     const auto& now = data[i];
     const auto& pre = data[i - 1];
 
-    auto dt = now.timestamp - pre.timestamp;
-    t += dt;
+    t += now.timestamp - pre.timestamp;
 
     // If the current time stamp and previous time stamp are across a test's
     // start timestamp, it is the start of a new test and the model needs to be
     // reset.
-    if (dt < 0_s || std::find(startTimes.begin(), startTimes.end(),
-                              now.timestamp) != startTimes.end()) {
+    if (now.dt < 0_s || std::find(startTimes.begin(), startTimes.end(),
+                                  now.timestamp) != startTimes.end()) {
       pts.emplace_back(std::move(tmp));
       model.Reset(now.position, now.velocity);
       continue;
     }
 
-    model.Update(units::volt_t{pre.voltage}, dt);
+    model.Update(units::volt_t{pre.voltage}, pre.dt);
     tmp.emplace_back(t.to<double>(), model.GetVelocity());
     simSquaredErrorSum += std::pow(now.velocity - model.GetVelocity(), 2);
     timeSeriesPoints++;
@@ -177,12 +176,12 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
       // it is the beginning of a new test and the dt will be inflated.
       // Therefore we skip those to exclude that dt and effectively reset dt
       // calculations.
-      auto dt = slow[i].timestamp - slow[i - 1].timestamp;
-      if (dt > 0_s && std::find(startTimes.begin(), startTimes.end(),
-                                slow[i].timestamp) == startTimes.end()) {
+      if (slow[i].dt > 0_s &&
+          std::find(startTimes.begin(), startTimes.end(), slow[i].timestamp) ==
+              startTimes.end()) {
         m_filteredData[kChartTitles[6]].emplace_back(
             (slow[i].timestamp - t).to<double>(),
-            units::millisecond_t{dt}.to<double>());
+            units::millisecond_t{slow[i].dt}.to<double>());
       }
     }
   }
@@ -222,12 +221,12 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
       // it is the beginning of a new test and the dt will be inflated.
       // Therefore we skip those to exclude that dt and effectively reset dt
       // calculations.
-      auto dt = fast[i].timestamp - fast[i - 1].timestamp;
-      if (dt > 0_s && std::find(startTimes.begin(), startTimes.end(),
-                                fast[i].timestamp) == startTimes.end()) {
+      if (fast[i].dt > 0_s &&
+          std::find(startTimes.begin(), startTimes.end(), fast[i].timestamp) ==
+              startTimes.end()) {
         m_filteredData[kChartTitles[6]].emplace_back(
             (fast[i].timestamp - t).to<double>(),
-            units::millisecond_t{dt}.to<double>());
+            units::millisecond_t{fast[i].dt}.to<double>());
       }
     }
   }
