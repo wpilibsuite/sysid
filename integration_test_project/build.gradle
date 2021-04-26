@@ -4,6 +4,10 @@ plugins {
     id "edu.wpi.first.GradleRIO" version "2021.2.2"
 }
 
+wpi.maven.useDevelopment = true
+wpi.wpilibVersion = '2021.+'
+wpi.wpimathVersion = '2021.+'
+
 // Define my targets (RoboRIO) and artifacts (deployable files)
 // This is added by GradleRIO's backing project EmbeddedTools.
 deploy {
@@ -61,6 +65,8 @@ sim {
     // envVar "HALSIMWS_HOST", "10.0.0.2"
 }
 
+def loggingUtils = projectDir.getParent() + "/project_utils"
+
 model {
     components {
         frcUserProgram(NativeExecutableSpec) {
@@ -71,13 +77,13 @@ model {
 
             sources.cpp {
                 source {
-                    srcDir 'src/main/cpp'
+                    srcDirs 'src/main/cpp', "$loggingUtils/cpp"
                     include '**/*.cpp', '**/*.cc'
                 }
                 exportedHeaders {
-                    srcDir 'src/main/include'
+                    srcDirs 'src/main/include', "$loggingUtils/include"
                     if (includeSrcInIncludeRoot) {
-                        srcDir 'src/main/cpp'
+                        srcDirs 'src/main/cpp', "$loggingUtils/cpp"
                     }
                 }
             }

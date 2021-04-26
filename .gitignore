@@ -291,3 +291,11 @@ gradle-app.setting
 
 # Failed JSONS
 jsons/
+
+# Generated Config Files
+base_projects/GeneralMechanism/src/main/deploy/config.json
+base_projects/Drivetrain/src/main/deploy/config.json
+
+# Generated gradle files
+base_projects/GeneralMechanism/build.gradle
+base_projects/Drivetrain/build.gradle

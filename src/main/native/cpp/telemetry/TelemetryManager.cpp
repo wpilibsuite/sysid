@@ -32,7 +32,9 @@ TelemetryManager::TelemetryManager(const Settings& settings,
       m_logger(logger),
       m_inst(instance),
       m_poller(nt::CreateEntryListenerPoller(m_inst)),
-      m_autospeed(nt::GetEntry(m_inst, "/SmartDashboard/SysIdAutoSpeed")),
+      m_voltageCommand(
+          nt::GetEntry(m_inst, "/SmartDashboard/SysIdVoltageCommand")),
+      m_testType(nt::GetEntry(m_inst, "/SmartDashboard/SysIdTestType")),
       m_rotate(nt::GetEntry(m_inst, "/SmartDashboard/SysIdRotate")),
       m_telemetry(nt::GetEntry(m_inst, "/SmartDashboard/SysIdTelemetry")),
       m_telemetryOld(nt::GetEntry(m_inst, "/robot/telemetry")),
@@ -60,9 +62,26 @@ void TelemetryManager::BeginTest(wpi::StringRef name) {
   m_tests.push_back(name);
   m_isRunningTest = true;
 
+  // Set the Voltage Command Entry
+  nt::SetEntryValue(
+      m_voltageCommand,
+      nt::Value::MakeDouble((m_params.fast ? m_settings.stepVoltage
+                                           : m_settings.quasistaticRampRate) *
+                            (m_params.forward ? 1 : -1)));
+
+  // Set the test type
+  nt::SetEntryValue(m_testType, nt::Value::MakeString(
+                                    m_params.fast ? "Dynamic" : "Quasistatic"));
+
+  // Set the rotate entry
+  nt::SetEntryValue(m_rotate, nt::Value::MakeBoolean(m_params.rotate));
+
   // Set the current mechanism in NT.
   nt::SetEntryValue(m_mechanism,
                     nt::Value::MakeString(m_settings.mechanism.name));
+  // Clear the telemetry entry
+  nt::SetEntryValue(m_telemetry, nt::Value::MakeString(""));
+  nt::Flush(m_inst);
 
   // Display the warning message.
   for (auto&& func : m_callbacks) {
@@ -115,7 +134,7 @@ void TelemetryManager::EndTest() {
   }
 
   // Send a zero command over NT.
-  nt::SetEntryValue(m_autospeed, nt::Value::MakeDouble(0.0));
+  nt::SetEntryValue(m_voltageCommand, nt::Value::MakeDouble(0.0));
   nt::Flush(m_inst);
 }
 
@@ -163,15 +182,6 @@ void TelemetryManager::Update() {
   }
 
   if (m_params.state == State::RunningTest) {
-    double qrv = m_settings.quasistaticRampRate *
-                 (wpi::Now() * 1E-6 - m_params.enableStart);
-    double spd = (m_params.fast ? m_settings.stepVoltage : qrv) *
-                 (m_params.forward ? 1 : -1);
-
-    nt::SetEntryValue(m_autospeed, nt::Value::MakeDouble(spd / 12.0));
-    nt::SetEntryValue(m_rotate, nt::Value::MakeBoolean(m_params.rotate));
-    nt::Flush(m_inst);
-
     // If for some reason we've disconnected, end the test.
     if (!nt::IsConnected(m_inst)) {
       WPI_WARNING(m_logger,
@@ -189,7 +199,7 @@ void TelemetryManager::Update() {
 
   if (m_params.state == State::WaitingForData) {
     double now = wpi::Now() * 1E-6;
-    nt::SetEntryValue(m_autospeed, nt::Value::MakeDouble(0.0));
+    nt::SetEntryValue(m_voltageCommand, nt::Value::MakeDouble(0.0));
     nt::Flush(m_inst);
 
     // We have the data that we need, so we can parse it and end the test.
@@ -219,9 +229,12 @@ void TelemetryManager::Update() {
         m_params.data.push_back(std::move(d));
       }
 
-      WPI_INFO(m_logger, "Received data with size: "
-                             << m_params.data.size() << " for the "
-                             << m_tests.back() << " test.");
+      WPI_INFO(m_logger,
+               "Received data with size: "
+                   << m_params.data.size() << " for the " << m_tests.back()
+                   << " test in "
+                   << m_params.data.back()[0] - m_params.data.front()[0]
+                   << " seconds.");
       EndTest();
     }
 

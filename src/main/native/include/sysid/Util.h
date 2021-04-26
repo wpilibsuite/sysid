@@ -22,7 +22,19 @@
 #define SYSID_PFD_JSON_EXT "*.json"
 #endif
 
+#ifdef _WIN32
+#define LAUNCHSIM "gradlew simulateCpp"
+#else
+#define LAUNCHSIM "./gradlew simulateCpp"
+#endif
+
+// Based on https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html
+#define EXPAND_STRINGIZE(s) STRINGIZE(s)
+#define STRINGIZE(s) #s
+
 namespace sysid {
+static constexpr const char* kUnits[] = {"Meters",  "Feet",      "Inches",
+                                         "Radians", "Rotations", "Degrees"};
 void CreateTooltip(const char* text);
 std::vector<std::string> Split(const std::string& s, char c);
 std::string GetAbbreviation(const std::string& unit);

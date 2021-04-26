@@ -22,12 +22,6 @@
 #include "sysid/analysis/AnalysisType.h"
 #include "sysid/telemetry/TelemetryManager.h"
 
-#ifdef _WIN32
-#define LAUNCHSIM "gradlew simulateCpp"
-#else
-#define LAUNCHSIM "./gradlew simulateCpp"
-#endif
-
 using namespace std::chrono_literals;
 
 // The constants that are defined in our integration test program.
@@ -61,7 +55,7 @@ class IntegrationTest : public ::testing::Test {
     wpi::SmallString<128> cmd;
     wpi::raw_svector_ostream os(cmd);
 
-    os << "cd " << PROJECT_ROOT_DIR << SYSID_PATH_SEPARATOR
+    os << "cd " << EXPAND_STRINGIZE(PROJECT_ROOT_DIR) << SYSID_PATH_SEPARATOR
        << "integration_test_project"
        << " && " << LAUNCHSIM << " -Pintegration";
     wpi::outs() << "Executing: " << cmd.c_str() << "\n";
@@ -100,7 +94,7 @@ class IntegrationTest : public ::testing::Test {
 
   void TearDown() override {
     // Save the JSON and make sure that everything checks out.
-    auto path = m_manager->SaveJSON(PROJECT_ROOT_DIR);
+    auto path = m_manager->SaveJSON(EXPAND_STRINGIZE(PROJECT_ROOT_DIR));
     try {
       auto analyzerSettings = sysid::AnalysisManager::Settings{};
       analyzerSettings.windowSize = 15;
@@ -146,7 +140,8 @@ class IntegrationTest : public ::testing::Test {
                            // upload
         wpi::SmallString<128> jsonFolderPath;
         wpi::raw_svector_ostream os(jsonFolderPath);
-        os << PROJECT_ROOT_DIR << SYSID_PATH_SEPARATOR << "jsons/";
+        os << EXPAND_STRINGIZE(PROJECT_ROOT_DIR) << SYSID_PATH_SEPARATOR
+           << "jsons/";
 
         wpi::SmallString<128> failCommand;
         wpi::raw_svector_ostream cmdOs(failCommand);
@@ -183,6 +178,9 @@ class IntegrationTest : public ::testing::Test {
     while (nt::IsConnected(m_nt)) {
       nt::Flush(m_nt);
     }
+
+    // Set kill to false for future tests.
+    nt::SetEntryValue(m_kill, nt::Value::MakeBoolean(false));
 
     wpi::outs() << "Killed robot program"
                 << "\n";

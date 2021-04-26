@@ -169,7 +169,8 @@ class TelemetryManager {
   // NetworkTables instance and entries.
   NT_Inst m_inst;
   NT_EntryListenerPoller m_poller;
-  NT_Entry m_autospeed;
+  NT_Entry m_voltageCommand;
+  NT_Entry m_testType;
   NT_Entry m_rotate;
   NT_Entry m_telemetry;
   NT_Entry m_telemetryOld;
