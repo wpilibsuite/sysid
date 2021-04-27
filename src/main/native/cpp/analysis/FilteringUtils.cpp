@@ -8,6 +8,7 @@
 #include <vector>
 
 #include <frc/LinearFilter.h>
+#include <frc/MedianFilter.h>
 
 using namespace sysid;
 
@@ -90,4 +91,48 @@ units::second_t sysid::GetMeanTimeDelta(const Storage& data) {
   }
 
   return std::accumulate(dts.begin(), dts.end(), 0_s) / dts.size();
+}
+
+void sysid::TrimQuasistaticData(std::vector<PreparedData>* data,
+                                double motionThreshold) {
+  data->erase(std::remove_if(data->begin(), data->end(),
+                             [motionThreshold](const auto& pt) {
+                               return std::abs(pt.voltage) <= 0 ||
+                                      std::abs(pt.velocity) < motionThreshold;
+                             }),
+              data->end());
+}
+
+void sysid::ApplyMedianFilter(std::vector<PreparedData>* data, int window) {
+  size_t step = window / 2;
+  frc::MedianFilter<double> medianFilter(window);
+
+  // Load the median filter with the first value, step times for accurate
+  // behaviour at the start.
+
+  for (int i = 0; i < step; i++) {
+    medianFilter.Calculate(data->at(i).velocity);
+  }
+
+  for (size_t i = 0; i < data->size(); i++) {
+    double median = medianFilter.Calculate(data->at(i).velocity);
+    if (i >= step) {
+      data->at(i - step).velocity = median;
+    }
+  }
+
+  // Run the median filter for the last values and fill it with the last value
+  for (int i = data->size() - step; i < data->size(); i++) {
+    double median = medianFilter.Calculate(data->at(data->size() - 1).velocity);
+    data->at(i).velocity = median;
+  }
+}
+
+void sysid::FilterAccelData(std::vector<PreparedData>* data) {
+  for (int i = 0; i < data->size(); i++) {
+    if (data->at(i).acceleration == 0.0) {
+      data->erase(data->begin() + i);
+      i--;
+    }
+  }
 }

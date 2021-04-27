@@ -11,7 +11,6 @@
 #include <utility>
 #include <vector>
 
-#include <frc/MedianFilter.h>
 #include <units/time.h>
 
 #include "sysid/analysis/AnalysisManager.h"
@@ -23,23 +22,11 @@ namespace sysid {
  * Trims quasistatic data so that no point has a voltage of zero or a velocity
  * less than the motion threshold.
  *
- * @tparam S        The size of the raw data array.
- * @tparam Voltage  The index of the voltage entry in the raw data.
- * @tparam Velocity The index of the velocity entry in the raw data.
- *
- * @param data            A pointer to the vector of raw data.
+ * @param data            A pointer to the vector of the prepared data.
  * @param motionThreshold The velocity threshold under which to delete data.
  */
-template <size_t S, size_t Voltage, size_t Velocity>
-void TrimQuasistaticData(std::vector<std::array<double, S>>* data,
-                         double motionThreshold) {
-  data->erase(std::remove_if(data->begin(), data->end(),
-                             [motionThreshold](const auto& pt) {
-                               return std::abs(pt[Voltage]) <= 0 ||
-                                      std::abs(pt[Velocity]) < motionThreshold;
-                             }),
-              data->end());
-}
+void TrimQuasistaticData(std::vector<PreparedData>* data,
+                         double motionThreshold);
 
 /**
  * Calculates the expected acceleration noise to be used as the floor of the
@@ -48,6 +35,8 @@ void TrimQuasistaticData(std::vector<std::array<double, S>>* data,
  *
  * @param data the prepared data vector containing acceleration data
  * @param window the size of the window for the moving average
+ *
+ * @return The expected acceleration noise
  */
 double GetAccelNoiseFloor(const std::vector<PreparedData>& data, int window);
 
@@ -61,21 +50,7 @@ double GetAccelNoiseFloor(const std::vector<PreparedData>& data, int window);
  * velocity data)
  * @param window the size of the window of the median filter (must be odd)
  */
-template <size_t S, size_t Velocity>
-void ApplyMedianFilter(std::vector<std::array<double, S>>* data, int window) {
-  size_t step = window / 2;
-  std::vector<std::array<double, S>> prepared;
-  frc::MedianFilter<double> medianFilter(window);
-  for (size_t i = 0; i < data->size(); i++) {
-    double median = medianFilter.Calculate(data->at(i)[Velocity]);
-    if (i > step) {
-      std::array<double, S> updateData{data->at(i - step)};
-      updateData[Velocity] = median;
-      prepared.push_back(updateData);
-    }
-  }
-  *data = std::move(prepared);
-}
+void ApplyMedianFilter(std::vector<PreparedData>* data, int window);
 
 /**
  * Trims the step voltage data to discard all points before the maximum
@@ -98,7 +73,19 @@ units::second_t TrimStepVoltageData(std::vector<PreparedData>* data,
 
 /**
  * Compute the mean time delta of the given data.
+ *
+ * @param data A reference to all of the collected PreparedData
+ *
+ * @return The mean time delta for all the data points
  */
 units::second_t GetMeanTimeDelta(const Storage& data);
+
+/**
+ * Filters out data with acceleration = 0
+ *
+ * @param data A pointer to a PreparedData vector that needs acceleration
+ *             filtering.
+ */
+void FilterAccelData(std::vector<PreparedData>* data);
 
 }  // namespace sysid

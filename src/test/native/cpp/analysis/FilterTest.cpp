@@ -11,22 +11,34 @@
 #include "sysid/analysis/AnalysisManager.h"
 #include "sysid/analysis/FeedforwardAnalysis.h"
 #include "sysid/analysis/FilteringUtils.h"
+#include "sysid/analysis/Storage.h"
 
 TEST(FilterTest, MedianFilter) {
-  std::vector<std::array<double, 1>> testData = {{0}, {1},    {10}, {5}, {3},
-                                                 {0}, {1000}, {7},  {6}, {5}};
-  std::vector<std::array<double, 1>> expectedData = {{1}, {5}, {5}, {3},
-                                                     {3}, {7}, {7}, {6}};
+  std::vector<sysid::PreparedData> testData{
+      sysid::PreparedData{0_s, 0, 0, 0},    sysid::PreparedData{0_s, 0, 0, 1},
+      sysid::PreparedData{0_s, 0, 0, 10},   sysid::PreparedData{0_s, 0, 0, 5},
+      sysid::PreparedData{0_s, 0, 0, 3},    sysid::PreparedData{0_s, 0, 0, 0},
+      sysid::PreparedData{0_s, 0, 0, 1000}, sysid::PreparedData{0_s, 0, 0, 7},
+      sysid::PreparedData{0_s, 0, 0, 6},    sysid::PreparedData{0_s, 0, 0, 5}};
+  std::vector<sysid::PreparedData> expectedData{
+      sysid::PreparedData{0_s, 0, 0, 0}, sysid::PreparedData{0_s, 0, 0, 1},
+      sysid::PreparedData{0_s, 0, 0, 5}, sysid::PreparedData{0_s, 0, 0, 5},
+      sysid::PreparedData{0_s, 0, 0, 3}, sysid::PreparedData{0_s, 0, 0, 3},
+      sysid::PreparedData{0_s, 0, 0, 7}, sysid::PreparedData{0_s, 0, 0, 7},
+      sysid::PreparedData{0_s, 0, 0, 6}, sysid::PreparedData{0_s, 0, 0, 5}};
 
-  sysid::ApplyMedianFilter<1, 0>(&testData, 3);
+  sysid::ApplyMedianFilter(&testData, 3);
   EXPECT_EQ(expectedData, testData);
 }
 
 TEST(FilterTest, QuasistaticTrim) {
-  std::vector<std::array<double, 2>> testData = {
-      {0, 1}, {.5, 2}, {2, 0.1}, {4, 4}, {0, 5}};
-  std::vector<std::array<double, 2>> expectedData = {{.5, 2}, {4, 4}};
-  sysid::TrimQuasistaticData<2, 0, 1>(&testData, 0.2);
+  std::vector<sysid::PreparedData> testData{
+      {sysid::PreparedData{0_s, 0, 0, 1}, sysid::PreparedData{0_s, .5, 0, 2},
+       sysid::PreparedData{0_s, 2, 0, 0.1}, sysid::PreparedData{0_s, 4, 0, 4},
+       sysid::PreparedData{0_s, 0, 0, 5}}};
+  std::vector<sysid::PreparedData> expectedData{
+      sysid::PreparedData{0_s, .5, 0, 2}, sysid::PreparedData{0_s, 4, 0, 4}};
+  sysid::TrimQuasistaticData(&testData, 0.2);
   EXPECT_EQ(expectedData, testData);
 }
 
