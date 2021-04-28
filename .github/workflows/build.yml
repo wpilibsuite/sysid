@@ -34,7 +34,7 @@ jobs:
 
       - name: Build with Gradle
         run: ./gradlew build -PbuildServer
-        if: ${{ !github.repository_owner == 'wpilibsuite' || !startsWith(github.ref, 'refs/tags/v') }}
+        if: ${{ github.repository_owner != 'wpilibsuite' || !startsWith(github.ref, 'refs/tags/v') }}
 
       - name: Build with Gradle (Release)
         run: ./gradlew build -PbuildServer -PreleaseMode
@@ -60,7 +60,7 @@ jobs:
 
       - name: Build with Gradle
         run: ./gradlew build -PbuildServer
-        if: ${{ !github.repository_owner == 'wpilibsuite' || !startsWith(github.ref, 'refs/tags/v') }}
+        if: ${{ github.repository_owner != 'wpilibsuite' || !startsWith(github.ref, 'refs/tags/v') }}
 
       - name: Build with Gradle (Release)
         run: ./gradlew build -PbuildServer -PreleaseMode
