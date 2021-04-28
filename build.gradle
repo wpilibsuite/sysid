@@ -160,10 +160,24 @@ model {
         it.cppCompiler.define("RUNNING_SYSID_TESTS")
       }
     }
-    sysidIntegrationTest(GoogleTestTestSuiteSpec) {
+    sysidAnalysisIntegrationTest(GoogleTestTestSuiteSpec) {
       testing $.components.sysid
       sources.cpp.source {
-        srcDirs "src/integrationtest/native/cpp"
+        srcDirs "src/integrationtest_analysis/native/cpp"
+        include "**/*.cpp"
+      }
+      binaries.all {
+        nativeUtils.useRequiredLibrary(it, "googletest_static");
+        it.cppCompiler.define("RUNNING_SYSID_TESTS")
+        if (!project.hasProperty("withIntegration")) {
+          it.buildable = false
+        }
+      }
+    }
+    sysidGenerationIntegrationTest(GoogleTestTestSuiteSpec) {
+      testing $.components.sysid
+      sources.cpp.source {
+        srcDirs "src/integrationtest_generation/native/cpp"
         include "**/*.cpp"
       }
       binaries.all {
@@ -201,9 +215,17 @@ model {
         run.dependsOn bin.tasks.install
       }
     }
-    $.testSuites.sysidIntegrationTest.binaries.each { bin ->
+    $.testSuites.sysidAnalysisIntegrationTest.binaries.each { bin ->
       if (bin.buildable && bin.name.contains("release")) {
-        Task run = project.tasks.create("runIntegrationTests", Exec) {
+        Task run = project.tasks.create("runAnalysisIntegrationTests", Exec) {
+          commandLine bin.tasks.install.runScriptFile.get().asFile.toString()
+        }
+        run.dependsOn bin.tasks.install
+      }
+    }
+    $.testSuites.sysidGenerationIntegrationTest.binaries.each { bin ->
+      if (bin.buildable && bin.name.contains("release")) {
+        Task run = project.tasks.create("runGenerationIntegrationTests", Exec) {
           commandLine bin.tasks.install.runScriptFile.get().asFile.toString()
         }
         run.dependsOn bin.tasks.install
