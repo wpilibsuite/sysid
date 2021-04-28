@@ -11,14 +11,29 @@ jobs:
           - os: windows-latest
             artifact-name: Windows x86-64
             architecture: x64
+            test-type: Analysis
           - os: macos-latest
             artifact-name: macOS x86-64
             architecture: x64
+            test-type: Analysis
           - os: ubuntu-latest
             artifact-name: Linux x86-64
             architecture: x64
+            test-type: Analysis
+          - os: windows-latest
+            artifact-name: Windows x86-64
+            architecture: x64
+            test-type: Generation
+          - os: macos-latest
+            artifact-name: macOS x86-64
+            architecture: x64
+            test-type: Generation
+          - os: ubuntu-latest
+            artifact-name: Linux x86-64
+            architecture: x64
+            test-type: Generation
 
-    name: "Test - ${{ matrix.artifact-name }}"
+    name: "${{ matrix.test-type }} - ${{ matrix.artifact-name }}"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -32,7 +47,7 @@ jobs:
         working-directory: integration_test_project
 
       - name: Run Integration Tests
-        run: ./gradlew runIntegrationTests -PwithIntegration
+        run: ./gradlew run${{ matrix.test-type }}IntegrationTests -PwithIntegration
 
       - uses: actions/upload-artifact@v2
         if: ${{ failure() }}

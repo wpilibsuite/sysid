@@ -36,7 +36,7 @@ constexpr double kG = .002;
 
 // Create our test fixture class so we can reuse the same logic for various test
 // mechanisms.
-class IntegrationTest : public ::testing::Test {
+class AnalysisTest : public ::testing::Test {
  public:
   static constexpr const char* kTests[] = {"slow-forward", "slow-backward",
                                            "fast-forward", "fast-backward"};
@@ -230,32 +230,32 @@ class IntegrationTest : public ::testing::Test {
   static wpi::Logger m_logger;
 };
 
-NT_Inst IntegrationTest::m_nt;
+NT_Inst AnalysisTest::m_nt;
 
-NT_Entry IntegrationTest::m_enable;
-NT_Entry IntegrationTest::m_kill;
+NT_Entry AnalysisTest::m_enable;
+NT_Entry AnalysisTest::m_kill;
 
-std::unique_ptr<sysid::TelemetryManager> IntegrationTest::m_manager;
-sysid::TelemetryManager::Settings IntegrationTest::m_settings;
+std::unique_ptr<sysid::TelemetryManager> AnalysisTest::m_manager;
+sysid::TelemetryManager::Settings AnalysisTest::m_settings;
 
-wpi::Logger IntegrationTest::m_logger;
+wpi::Logger AnalysisTest::m_logger;
 
-TEST_F(IntegrationTest, Drivetrain) {
+TEST_F(AnalysisTest, Drivetrain) {
   SetUp(sysid::analysis::kDrivetrain);
   Run();
 }
 
-TEST_F(IntegrationTest, Flywheel) {
+TEST_F(AnalysisTest, Flywheel) {
   SetUp(sysid::analysis::kSimple);
   Run();
 }
 
-TEST_F(IntegrationTest, Elevator) {
+TEST_F(AnalysisTest, Elevator) {
   SetUp(sysid::analysis::kElevator);
   Run();
 }
 
-TEST_F(IntegrationTest, Arm) {
+TEST_F(AnalysisTest, Arm) {
   SetUp(sysid::analysis::kArm);
   Run();
 }
