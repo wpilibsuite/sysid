@@ -88,4 +88,76 @@ units::second_t GetMeanTimeDelta(const Storage& data);
  */
 void FilterAccelData(std::vector<PreparedData>* data);
 
+/**
+ * Helper method that applies a function onto a dataset.
+ *
+ * @tparam T The type of data that is stored within a StringMap
+ *
+ * @param data   A StringMap representing a specific dataset
+ * @param action A void function that takes a StringRef representing a StringMap
+ *               key and performs an action to the dataset stored with that
+ *               passed key (e.g. applying a median filter)
+ */
+template <typename T>
+void ApplyToData(const wpi::StringMap<T>& data,
+                 std::function<void(wpi::StringRef)> action) {
+  for (const auto& it : data) {
+    action(it.first());
+  }
+}
+
+/**
+ * Helper method that applies a function onto a dataset.
+ *
+ * @tparam T The type of data that is stored within a StringMap
+ *
+ * @param data      A StringMap representing a specific dataset
+ * @param action    A void function that takes a StringRef representing a
+ *                  StringMap key and performs an action to the dataset stored
+ *                  with that passed key (e.g. applying a median filter)
+ * @param specifier A boolean function that takes a StringRef representing a
+ *                  StringMap key and returns true if `action` should be run on
+ *                  the dataset stored with that key
+ */
+template <typename T>
+void ApplyToData(const wpi::StringMap<T>& data,
+                 std::function<void(wpi::StringRef)> action,
+                 std::function<bool(wpi::StringRef)> specifier) {
+  for (const auto& it : data) {
+    auto key = it.first();
+    if (specifier(key)) {
+      action(key);
+    }
+  }
+}
+
+/**
+ * Trims the quasistatic tests, applies a median filter to the velocity data,
+ * calculates acceleration and cosine (arm only) data, and trims the dynamic
+ * tests.
+ *
+ * @param data A pointer to a data vector recently created by the
+ *             ConvertToPrepared method
+ * @param settings A reference to the analysis settings
+ * @param minStepTime A reference to the minimum dynamic test duration
+ * @param maxStepTime A reference to the maximum dynamic test duration
+ * @param unit The angular unit that the arm test is in (only for calculating
+ *             cosine data)
+ */
+void InitialTrimAndFilter(wpi::StringMap<std::vector<PreparedData>>* data,
+                          AnalysisManager::Settings& settings,
+                          units::second_t& minStepTime,
+                          units::second_t& maxStepTime,
+                          wpi::StringRef unit = "");
+
+/**
+ * Removes all points with accel = 0 and points with dt's greater than 1ms from
+ * the mean dt.
+ *
+ * @param data A pointer to a PreparedData vector
+ * @param tempCombined A reference to the combined filtered datasets
+ */
+void AccelAndTimeFilter(wpi::StringMap<std::vector<PreparedData>>* data,
+                        const Storage& tempCombined);
+
 }  // namespace sysid
