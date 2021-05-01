@@ -17,44 +17,41 @@ using namespace sysid;
 /**
  * Fills in the rest of the PreparedData Structs for a PreparedData Vector.
  *
- * @param data   A reference to a vector of the raw data.
- * @param window The window across which to compute the acceleration.
- * @param unit   The units that the data is in (rotations, radians, or degrees)
- * for arm mechanisms.
+ * @param data A reference to a vector of the raw data.
+ * @param unit The units that the data is in (rotations, radians, or degrees)
+ *             for arm mechanisms.
  */
-static void PrepareMechData(std::vector<PreparedData>* data, int window,
+static void PrepareMechData(std::vector<PreparedData>* data,
                             wpi::StringRef unit = "") {
-  // Calculate the step size for acceleration data.
-  size_t step = window / 2;
+  constexpr size_t kOrder = 6;
+  constexpr size_t kWindow = kOrder + 1;
 
-  if (data->size() <= static_cast<size_t>(window)) {
+  if (data->size() < kWindow) {
     throw std::runtime_error(
         "The data collected is too small! This can be caused by too high of a "
         "motion threshold or bad data collection.");
   }
 
+  const double h = GetMeanTimeDelta(*data).to<double>();
+
   // Compute acceleration and add it to the vector.
-  for (size_t i = step; i < data->size() - step; ++i) {
-    auto& pt1 = data->at(i);
-    const auto& pt2 = data->at(i + 1);
+  for (size_t i = kWindow / 2; i < data->size() - kWindow / 2; ++i) {
+    auto& pt = data->at(i);
 
-    double accel = (data->at(i + step).velocity - data->at(i - step).velocity) /
-                   (data->at(i + step).timestamp - data->at(i - step).timestamp)
-                       .to<double>();
-
-    pt1.acceleration = accel;
+    pt.acceleration = CentralFiniteDifference<kOrder>(
+        [&](size_t i) { return data->at(i).velocity; }, i, h);
 
     // Calculates the cosine of the position data for single jointed arm
     // analysis
     double cos = 0.0;
     if (unit == "Radians") {
-      cos = std::cos(pt1.position);
+      cos = std::cos(pt.position);
     } else if (unit == "Degrees") {
-      cos = std::cos(pt1.position * wpi::math::pi / 180.0);
+      cos = std::cos(pt.position * wpi::math::pi / 180.0);
     } else if (unit == "Rotations") {
-      cos = std::cos(pt1.position * 2 * wpi::math::pi);
+      cos = std::cos(pt.position * 2 * wpi::math::pi);
     }
-    pt1.cos = cos;
+    pt.cos = cos;
   }
 }
 
@@ -119,6 +116,18 @@ double sysid::GetAccelNoiseFloor(const std::vector<PreparedData>& data,
     }
   }
   return std::sqrt(sum / (data.size() - step));
+}
+
+units::second_t sysid::GetMeanTimeDelta(const std::vector<PreparedData>& data) {
+  std::vector<units::second_t> dts;
+
+  for (const auto& pt : data) {
+    if (pt.dt > 0_s && pt.dt < 500_ms) {
+      dts.emplace_back(pt.dt);
+    }
+  }
+
+  return std::accumulate(dts.begin(), dts.end(), 0_s) / dts.size();
 }
 
 units::second_t sysid::GetMeanTimeDelta(const Storage& data) {
@@ -237,7 +246,7 @@ void sysid::InitialTrimAndFilter(
 
   // Recalculate Accel and Cosine
   sysid::ApplyToData(preparedData, [&](wpi::StringRef key) {
-    PrepareMechData(&preparedData[key], settings.windowSize, unit);
+    PrepareMechData(&preparedData[key], unit);
   });
 
   // Find the maximum Step Test Duration

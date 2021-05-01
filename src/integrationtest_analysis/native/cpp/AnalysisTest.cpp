@@ -110,15 +110,8 @@ class AnalysisTest : public ::testing::Test {
       wpi::outs() << "Ks: " << ffGains[0] << "\n"
                   << "Kv: " << ffGains[1] << "\nKa: " << ffGains[2] << "\n";
       wpi::outs().flush();
-      if (m_settings.mechanism == sysid::analysis::kArm) {
-        // The acceleration fit (used only for arms) is worse than the next
-        // velocity fit
-        EXPECT_NEAR(Kv, ffGains[1], 0.015);
-        EXPECT_NEAR(Ka, ffGains[2], 0.04);
-      } else {
-        EXPECT_NEAR(Kv, ffGains[1], 0.003);
-        EXPECT_NEAR(Ka, ffGains[2], 0.003);
-      }
+      EXPECT_NEAR(Kv, ffGains[1], 0.003);
+      EXPECT_NEAR(Ka, ffGains[2], 0.003);
 
       if (m_settings.mechanism == sysid::analysis::kElevator) {
         wpi::outs() << "KG: " << ffGains[3] << "\n";
