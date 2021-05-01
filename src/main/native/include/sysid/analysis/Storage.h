@@ -19,10 +19,17 @@ struct PreparedData {
   double voltage;
   double position;
   double velocity;
-  double nextVelocity;
-  units::second_t dt;
-  double acceleration;
-  double cos;
+  double nextVelocity = 0.0;
+  units::second_t dt = 0_s;
+  double acceleration = 0.0;
+  double cos = 0.0;
+
+  constexpr bool operator==(const PreparedData& rhs) const {
+    return timestamp == rhs.timestamp && voltage == rhs.voltage &&
+           position == rhs.position && velocity == rhs.velocity &&
+           nextVelocity == rhs.nextVelocity && dt == rhs.dt &&
+           acceleration == rhs.acceleration && cos == rhs.cos;
+  }
 };
 
 /**

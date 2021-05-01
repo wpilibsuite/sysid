@@ -55,8 +55,8 @@ static std::vector<std::vector<ImPlotPoint>> PopulateTimeDomainSim(
     // If the current time stamp and previous time stamp are across a test's
     // start timestamp, it is the start of a new test and the model needs to be
     // reset.
-    if (now.dt < 0_s || std::find(startTimes.begin(), startTimes.end(),
-                                  now.timestamp) != startTimes.end()) {
+    if (std::find(startTimes.begin(), startTimes.end(), now.timestamp) !=
+        startTimes.end()) {
       pts.emplace_back(std::move(tmp));
       model.Reset(now.position, now.velocity);
       continue;
@@ -264,19 +264,19 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
   if (type == analysis::kElevator) {
     const auto& Kg = ffGains[3];
     m_quasistaticSim = PopulateTimeDomainSim(
-        slow, startTimes, fastStep, sysid::ElevatorSim{Ks, Kv, Ka, Kg});
-    m_dynamicSim = PopulateTimeDomainSim(fast, startTimes, fastStep,
+        rawSlow, startTimes, fastStep, sysid::ElevatorSim{Ks, Kv, Ka, Kg});
+    m_dynamicSim = PopulateTimeDomainSim(rawFast, startTimes, fastStep,
                                          sysid::ElevatorSim{Ks, Kv, Ka, Kg});
   } else if (type == analysis::kArm) {
     const auto& Kcos = ffGains[3];
-    m_quasistaticSim = PopulateTimeDomainSim(slow, startTimes, fastStep,
+    m_quasistaticSim = PopulateTimeDomainSim(rawSlow, startTimes, fastStep,
                                              sysid::ArmSim{Ks, Kv, Ka, Kcos});
-    m_dynamicSim = PopulateTimeDomainSim(fast, startTimes, fastStep,
+    m_dynamicSim = PopulateTimeDomainSim(rawFast, startTimes, fastStep,
                                          sysid::ArmSim{Ks, Kv, Ka, Kcos});
   } else {
-    m_quasistaticSim = PopulateTimeDomainSim(slow, startTimes, fastStep,
+    m_quasistaticSim = PopulateTimeDomainSim(rawSlow, startTimes, fastStep,
                                              sysid::SimpleMotorSim{Ks, Kv, Ka});
-    m_dynamicSim = PopulateTimeDomainSim(fast, startTimes, fastStep,
+    m_dynamicSim = PopulateTimeDomainSim(rawFast, startTimes, fastStep,
                                          sysid::SimpleMotorSim{Ks, Kv, Ka});
   }
 
