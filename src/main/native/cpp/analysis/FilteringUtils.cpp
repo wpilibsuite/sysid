@@ -271,35 +271,9 @@ void sysid::InitialTrimAndFilter(
   }
 }
 
-/**
- * Trims data with dt too far from mean.
- *
- * @param data      The data to filter.
- * @param dtMean    The mean dt.
- * @param tolerance The tolerance outside of which to trim.
- */
-static void TrimByTimeDelta(std::vector<PreparedData>* data,
-                            units::second_t dtMean, units::second_t tolerance) {
-  data->erase(std::remove_if(data->begin(), data->end(),
-                             [dtMean, tolerance](const auto& pt) {
-                               return units::math::abs(pt.dt - dtMean) >
-                                      tolerance;
-                             }),
-              data->end());
-}
-
 void sysid::AccelAndTimeFilter(wpi::StringMap<std::vector<PreparedData>>* data,
                                const Storage& tempCombined) {
   auto& preparedData = *data;
-  units::second_t dtMean = GetMeanTimeDelta(tempCombined);
-
-  // Remove points with dt too far from mean
-  sysid::ApplyToData(
-      preparedData,
-      [&](wpi::StringRef key) {
-        TrimByTimeDelta(&preparedData[key], dtMean, 1_ms);
-      },
-      [](wpi::StringRef key) { return !key.startswith("raw"); });
 
   // Remove points with accel = 0
   sysid::ApplyToData(preparedData, [&](wpi::StringRef key) {
