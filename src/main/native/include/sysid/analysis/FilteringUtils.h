@@ -78,7 +78,58 @@ units::second_t TrimStepVoltageData(std::vector<PreparedData>* data,
  *
  * @return The mean time delta for all the data points
  */
+units::second_t GetMeanTimeDelta(const std::vector<PreparedData>& data);
+
+/**
+ * Compute the mean time delta of the given data.
+ *
+ * @param data A reference to all of the collected PreparedData
+ *
+ * @return The mean time delta for all the data points
+ */
 units::second_t GetMeanTimeDelta(const Storage& data);
+
+/**
+ * Computes the first derivative of f(x_i) via central finite difference.
+ *
+ * @tparam order The order of accuracy. The window size is order + 1.
+ * @param f      The function for which to compute the finite difference.
+ * @param i      The point around which to compute the finite difference.
+ * @param h      The grid spacing (e.g., x_{i+1} - x_i for all i).
+ */
+template <size_t Order, typename F>
+constexpr double CentralFiniteDifference(F&& f, size_t i, double h) {
+  static_assert(Order % 2 == 0 && Order >= 2 && Order <= 8,
+                "Central finite difference order not supported");
+
+  double result = 0.0;
+
+  // See the following link for coefficients:
+  // https://en.wikipedia.org/wiki/Finite_difference_coefficient#Central_finite_difference
+  if constexpr (Order == 2) {
+    constexpr std::array kA{0.5};
+    for (int j = 0; j < kA.size(); ++j) {
+      result += kA[j] * f(i + (j + 1)) - kA[j] * f(i - (j + 1));
+    }
+  } else if constexpr (Order == 4) {
+    constexpr std::array kA{2.0 / 3.0, -1.0 / 12.0};
+    for (int j = 0; j < kA.size(); ++j) {
+      result += kA[j] * f(i + (j + 1)) - kA[j] * f(i - (j + 1));
+    }
+  } else if constexpr (Order == 6) {
+    constexpr std::array kA{3.0 / 4.0, -3.0 / 20.0, 1.0 / 60.0};
+    for (int j = 0; j < kA.size(); ++j) {
+      result += kA[j] * f(i + (j + 1)) - kA[j] * f(i - (j + 1));
+    }
+  } else if constexpr (Order == 8) {
+    constexpr std::array kA{4.0 / 5.0, -1.0 / 5.0, 4.0 / 105.0, -1.0 / 280.0};
+    for (int j = 0; j < kA.size(); ++j) {
+      result += kA[j] * f(i + (j + 1)) - kA[j] * f(i - (j + 1));
+    }
+  }
+
+  return result / h;
+}
 
 /**
  * Filters out data with acceleration = 0
