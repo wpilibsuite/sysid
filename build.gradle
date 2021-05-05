@@ -162,9 +162,12 @@ model {
     }
     sysidAnalysisIntegrationTest(GoogleTestTestSuiteSpec) {
       testing $.components.sysid
-      sources.cpp.source {
-        srcDirs "src/integrationtest_analysis/native/cpp"
-        include "**/*.cpp"
+      sources.cpp {
+        source {
+          srcDirs "src/integrationtest_analysis/native/cpp", "src/integrationtest_utils/native/cpp"
+          include "**/*.cpp", "**/*.h"
+        }
+        exportedHeaders.srcDirs "src/integrationtest_utils/native/include"
       }
       binaries.all {
         nativeUtils.useRequiredLibrary(it, "googletest_static");
@@ -176,9 +179,12 @@ model {
     }
     sysidGenerationIntegrationTest(GoogleTestTestSuiteSpec) {
       testing $.components.sysid
-      sources.cpp.source {
-        srcDirs "src/integrationtest_generation/native/cpp"
-        include "**/*.cpp"
+      sources.cpp {
+        source {
+          srcDirs "src/integrationtest_generation/native/cpp", "src/integrationtest_utils/native/cpp"
+          include "**/*.cpp", "**/*.h"
+        }
+        exportedHeaders.srcDirs "src/integrationtest_utils/native/include"
       }
       binaries.all {
         nativeUtils.useRequiredLibrary(it, "googletest_static");

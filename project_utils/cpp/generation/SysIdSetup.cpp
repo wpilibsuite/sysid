@@ -32,7 +32,6 @@ wpi::json GetConfigJson() {
 
   std::error_code ec;
   wpi::raw_fd_istream is{path.c_str(), ec};
-
   if (ec) {
     wpi::outs() << "File error: " << path.c_str() << "\n";
     wpi::outs().flush();
