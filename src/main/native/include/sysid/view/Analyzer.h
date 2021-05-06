@@ -50,6 +50,7 @@ class Analyzer : public glass::View {
   void RefreshInformation();
   void AbortDataPrep();
   void DisplayFeedforwardGains(bool combined = false);
+  void ConfigParamsOnFileSelect();
 
   /**
    * Loads the diagnostic plots.

@@ -53,6 +53,15 @@ static void SetPosition(double beginX, double beginY, int xShift, int yShift) {
                              beginY + yShift * 1.75 * ImGui::GetFontSize()));
 }
 
+void Analyzer::ConfigParamsOnFileSelect() {
+  m_stepTestDuration = m_settings.stepTestDuration.to<float>();
+
+  // Estimate qp as 1/8 * units-per-rot
+  m_settings.lqr.qp = 0.125 * m_manager->GetFactor();
+  // Estimate qv as 1/4 * max velocity = 1/4 * (12V - kS) / kV
+  m_settings.lqr.qv = 0.25 * (12.0 - m_ff[0]) / m_ff[1];
+}
+
 void Analyzer::Display() {
   // Get the current width of the window. This will be used to scale
   // our UI elements.
@@ -69,7 +78,7 @@ void Analyzer::Display() {
         Calculate();
         PrepareData();
         PrepareGraphs();
-        m_stepTestDuration = m_settings.stepTestDuration.to<float>();
+        ConfigParamsOnFileSelect();
       } catch (const std::exception& e) {
         // If we run into an error here, let's just ignore it and make the user
         // explicitly select their file.
@@ -459,7 +468,7 @@ void Analyzer::SelectFile() {
           std::make_unique<AnalysisManager>(*m_location, m_settings, m_logger);
       m_type = m_manager->GetAnalysisType();
       RefreshInformation();
-      m_stepTestDuration = m_settings.stepTestDuration.to<float>();
+      ConfigParamsOnFileSelect();
     } catch (const wpi::json::exception& e) {
       m_exception =
           "The provided JSON was invalid! You may need to rerun the logger.\n" +
