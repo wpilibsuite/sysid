@@ -15,6 +15,7 @@
 #include <wpi/raw_ostream.h>
 #include <wpi/timestamp.h>
 
+#include "IntegrationUtils.h"
 #include "gtest/gtest.h"
 #include "networktables/NetworkTableValue.h"
 #include "sysid/Util.h"
@@ -51,29 +52,9 @@ class AnalysisTest : public ::testing::Test {
                           unsigned int line,
                           const char* msg) { wpi::outs() << msg << "\n"; });
 
-    // Start the robot program.
-    wpi::SmallString<128> cmd;
-    wpi::raw_svector_ostream os(cmd);
+    LaunchSim("integration_test_project");
 
-    os << "cd " << EXPAND_STRINGIZE(PROJECT_ROOT_DIR) << SYSID_PATH_SEPARATOR
-       << "integration_test_project"
-       << " && " << LAUNCHSIM << " -Pintegration";
-    wpi::outs() << "Executing: " << cmd.c_str() << "\n";
-    wpi::outs().flush();
-
-    int result = std::system(cmd.c_str());
-    ASSERT_EQ(0, result) << "The robot program couldn't be started";
-
-    nt::StartClient(m_nt, "localhost", NT_DEFAULT_PORT);
-
-    // Wait for NT to connect or until it times out.
-    auto time = wpi::Now();
-    while (!nt::IsConnected(m_nt)) {
-      ASSERT_LT(wpi::Now() - time, 1.5E7);
-    }
-
-    nt::SetEntryValue(m_kill, nt::Value::MakeBoolean(false));
-    nt::Flush(m_nt);
+    Connect(m_nt, m_kill);
   }
 
   void SetUp(sysid::AnalysisType mechanism) {
@@ -165,22 +146,7 @@ class AnalysisTest : public ::testing::Test {
     std::system(del.c_str());
   }
 
-  static void TearDownTestSuite() {
-    nt::SetEntryValue(m_kill, nt::Value::MakeBoolean(true));
-
-    while (nt::IsConnected(m_nt)) {
-      nt::Flush(m_nt);
-    }
-
-    // Set kill to false for future tests.
-    nt::SetEntryValue(m_kill, nt::Value::MakeBoolean(false));
-
-    wpi::outs() << "Killed robot program"
-                << "\n";
-
-    // Stop NT Client.
-    nt::StopClient(m_nt);
-  }
+  static void TearDownTestSuite() { KillNT(m_nt, m_kill); }
 
   void Run() {
     for (int i = 0; i < 4; i++) {

@@ -20,6 +20,7 @@
 #include <wpi/raw_ostream.h>
 #include <wpi/timestamp.h>
 
+#include "IntegrationUtils.h"
 #include "gtest/gtest.h"
 #include "networktables/NetworkTableValue.h"
 #include "sysid/Util.h"
@@ -50,42 +51,21 @@ class GenerationTest : public ::testing::Test {
     wpi::SmallString<128> path;
     wpi::raw_svector_ostream os(path);
 
-    os << EXPAND_STRINGIZE(PROJECT_ROOT_DIR) << SYSID_PATH_SEPARATOR
-       << directory;
-
-    m_directory = path.c_str();
-
     // Get the path to write the json
-
-    os << SYSID_PATH_SEPARATOR;
+    os << EXPAND_STRINGIZE(PROJECT_ROOT_DIR) << SYSID_PATH_SEPARATOR
+       << directory << SYSID_PATH_SEPARATOR;
     m_jsonPath = path.c_str();
+
+    m_directory = directory;
 
     // Wait between tests
     std::this_thread::sleep_for(2s);
   }
 
   void Run() {
-    // Start the robot program.
-    wpi::SmallString<128> cmd;
-    wpi::raw_svector_ostream os(cmd);
+    LaunchSim(m_directory);
 
-    os << "cd " << m_directory << " && " << LAUNCHSIM << " -Pintegration";
-    wpi::outs() << "Executing: " << cmd.c_str() << "\n";
-    wpi::outs().flush();
-
-    int result = std::system(cmd.c_str());
-    ASSERT_EQ(0, result) << "The robot program couldn't be started";
-
-    nt::StartClient(m_nt, "localhost", NT_DEFAULT_PORT);
-
-    nt::SetEntryValue(m_kill, nt::Value::MakeBoolean(false));
-    nt::Flush(m_nt);
-
-    // Wait for NT to connect or until it times out.
-    auto time = wpi::Now();
-    while (!nt::IsConnected(m_nt)) {
-      ASSERT_LT(wpi::Now() - time, 1.5E7);
-    }
+    Connect(m_nt, m_kill);
 
     wpi::outs() << "waiting for .25 seconds after connecting to see if program "
                    "doesn't crash\n";
@@ -99,28 +79,7 @@ class GenerationTest : public ::testing::Test {
 
     std::this_thread::sleep_for(1s);
 
-    wpi::outs() << "Killing program\n";
-    wpi::outs().flush();
-    time = wpi::Now();
-
-    while (nt::IsConnected(m_nt)) {
-      // Kill program
-      nt::SetEntryValue(m_kill, nt::Value::MakeBoolean(true));
-      nt::Flush(m_nt);
-      if (wpi::Now() - time > 3E7) {
-        FAIL();
-        break;
-      }
-    }
-
-    wpi::outs() << "Killed robot program"
-                << "\n";
-    wpi::outs().flush();
-
-    // Set kill entry to false for future tests
-    nt::SetEntryValue(m_kill, nt::Value::MakeBoolean(false));
-    // Stop NT Client.
-    nt::StopClient(m_nt);
+    KillNT(m_nt, m_kill);
   }
 
   void TearDown() override {
