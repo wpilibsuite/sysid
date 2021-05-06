@@ -18,10 +18,185 @@ Here is a list of the NT entries that are used to send and collect data between 
 There are two formats used to send telemetry from the robot program. One format is for non-drivetrain mechanisms, whereas the other is for all drivetrain tests (linear and angular).
 
 ### Non-Drivetrain Mechanisms
+
 `timestamp, voltage, position, velocity`
 
+Example JSON:
+
+```json
+{
+"fast-backward": [
+[
+timestamp 1,
+voltage 1,
+position 1,
+velocity 1
+],
+[
+timestamp 2,
+voltage 2,
+position 2,
+velocity 2
+]
+],
+"fast-forward": [
+[
+timestamp 1,
+voltage 1,
+position 1,
+velocity 1
+],
+[
+timestamp 2,
+voltage 2,
+position 2,
+velocity 2
+]
+],
+"slow-backward": [
+[
+timestamp 1,
+voltage 1,
+position 1,
+velocity 1
+],
+[
+timestamp 2,
+voltage 2,
+position 2,
+velocity 2
+]
+],
+"slow-forward": [
+[
+timestamp 1,
+voltage 1,
+position 1,
+velocity 1
+],
+[
+timestamp 2,
+voltage 2,
+position 2,
+velocity 2
+]
+],
+"sysid": true,
+"test": "Simple",
+"units": "Rotations",
+"unitsPerRotation": 1.0
+}
+```
 
 ### Drivetrain
+
 `timestamp, l voltage, r voltage, l position, r position, l velocity, r velocity, angle, angular rate`
 
 Note that all positions and velocities should be in rotations of the output and rotations/sec of the output respectively. If there is a gearing between the encoder and the output, that should be taken into account.
+
+Example JSON:
+
+```json
+{
+"fast-backward": [
+[
+timestamp 1,
+l voltage 1,
+r voltage 1,
+l position 1,
+r position 1,
+l velocity 1,
+r velocity 1,
+angle 1,
+angular rate 1
+],
+[
+timestamp 2,
+l voltage 2,
+r voltage 2,
+l position 2,
+r position 2,
+l velocity 2,
+r velocity 2,
+angle 2,
+angular rate 2
+]
+],
+"fast-forward": [
+[
+timestamp 1,
+l voltage 1,
+r voltage 1,
+l position 1,
+r position 1,
+l velocity 1,
+r velocity 1,
+angle 1,
+angular rate 1
+],
+[
+timestamp 2,
+l voltage 2,
+r voltage 2,
+l position 2,
+r position 2,
+l velocity 2,
+r velocity 2,
+angle 2,
+angular rate 2
+]
+],
+"slow-backward": [
+[
+timestamp 1,
+l voltage 1,
+r voltage 1,
+l position 1,
+r position 1,
+l velocity 1,
+r velocity 1,
+angle 1,
+angular rate 1
+],
+[
+timestamp 2,
+l voltage 2,
+r voltage 2,
+l position 2,
+r position 2,
+l velocity 2,
+r velocity 2,
+angle 2,
+angular rate 2
+]
+],
+"slow-forward": [
+[
+timestamp 1,
+l voltage 1,
+r voltage 1,
+l position 1,
+r position 1,
+l velocity 1,
+r velocity 1,
+angle 1,
+angular rate 1
+],
+[
+timestamp 2,
+l voltage 2,
+r voltage 2,
+l position 2,
+r position 2,
+l velocity 2,
+r velocity 2,
+angle 2,
+angular rate 2
+]
+],
+"sysid": true,
+"test": "Drivetrain",
+"units": "Rotations",
+"unitsPerRotation": 1.0
+}
+```
