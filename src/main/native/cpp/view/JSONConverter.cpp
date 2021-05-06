@@ -43,12 +43,15 @@ void JSONConverter::DisplayConverter(
   }
 
   // Handle exceptions.
+  ImGui::SetNextWindowSize(ImVec2(480.f, 0.0f));
   if (ImGui::BeginPopupModal("Exception Caught!")) {
+    ImGui::PushTextWrapPos(0.0f);
     ImGui::Text(
         "An error occurred when parsing the JSON. This most likely means that "
-        "the JSON\ndata is incorrectly formatted.");
+        "the JSON data is incorrectly formatted.");
     ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s",
                        m_exception.c_str());
+    ImGui::PopTextWrapPos();
     if (ImGui::Button("Close")) {
       ImGui::CloseCurrentPopup();
     }
