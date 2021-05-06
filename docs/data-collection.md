@@ -88,6 +88,10 @@ velocity 2
 }
 ```
 
+Supported test types for the "test" field in this data format include "Arm",
+"Elevator", and "Simple". Supported unit types include "Meters", "Feet",
+"Inches", "Radians", "Rotations", and "Degrees".
+
 ### Drivetrain
 
 `timestamp, l voltage, r voltage, l position, r position, l velocity, r velocity, angle, angular rate`
@@ -200,3 +204,7 @@ angular rate 2
 "unitsPerRotation": 1.0
 }
 ```
+
+Supported test types for the "test" field in this data format include
+"Drivetrain" and "Drivetrain (Angular)". Supported unit types include "Meters",
+"Feet", "Inches", "Radians", "Rotations", and "Degrees".
