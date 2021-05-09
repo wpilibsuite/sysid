@@ -193,6 +193,19 @@ void sysid::FilterAccelData(std::vector<PreparedData>* data) {
 }
 
 /**
+ * Removes a substring from a string reference
+ *
+ * @param str The wpi::StringRef that needs modification
+ * @param removeStr The substring that needs to be removed
+ *
+ * @return an std::string without the specified substring
+ */
+static std::string RemoveStr(wpi::StringRef str, wpi::StringRef removeStr) {
+  auto pair = str.split(removeStr);
+  return pair.first.str() + pair.second.str();
+}
+
+/**
  * Figures out the max duration of the Dynamic tests
  *
  * @tparam S The size of the arrays in the raw data vector
@@ -242,7 +255,7 @@ void sysid::InitialTrimAndFilter(
       [&](wpi::StringRef key) {
         sysid::ApplyMedianFilter(&preparedData[key], settings.windowSize);
       },
-      [](wpi::StringRef key) { return !key.startswith("raw"); });
+      [](wpi::StringRef key) { return !key.contains("raw"); });
 
   // Recalculate Accel and Cosine
   sysid::ApplyToData(preparedData, [&](wpi::StringRef key) {
@@ -252,18 +265,29 @@ void sysid::InitialTrimAndFilter(
   // Find the maximum Step Test Duration
   maxStepTime = GetMaxTime(preparedData);
 
-  // Trims all Dynamic Test Data but excludes raw data from calculation of
-  // minimum step time
+  // Trims filtered Dynamic Test Data and lines up the Raw Data to facilitate
+  // plotting
   sysid::ApplyToData(
       preparedData,
       [&](wpi::StringRef key) {
+        // Get the filtered dataset name
+        auto filteredKey = RemoveStr(key, "raw-");
+
+        // Trim Filtered Data
         auto tempMinStepTime = sysid::TrimStepVoltageData(
-            &preparedData[key], &settings, minStepTime, maxStepTime);
-        if (!key.startswith("raw")) {
-          minStepTime = tempMinStepTime;
-        }
+            &preparedData[filteredKey], &settings, minStepTime, maxStepTime);
+        minStepTime = tempMinStepTime;
+
+        // Set the Raw Data to start at the same time as the Filtered Data
+        auto startTime = preparedData[filteredKey].front().timestamp;
+        auto rawStart =
+            std::find_if(preparedData[key].begin(), preparedData[key].end(),
+                         [&](auto&& pt) { return pt.timestamp == startTime; });
+        preparedData[key].erase(preparedData[key].begin(), rawStart);
       },
-      [](wpi::StringRef key) { return key.contains("fast"); });
+      [](wpi::StringRef key) {
+        return key.contains("fast") && key.contains("raw");
+      });
   // Confirm there's still data
   if (std::any_of(preparedData.begin(), preparedData.end(),
                   [](const auto& it) { return it.first().empty(); })) {

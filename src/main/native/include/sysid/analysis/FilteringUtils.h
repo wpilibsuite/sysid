@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <units/time.h>
+#include <wpi/StringRef.h>
 
 #include "sysid/analysis/AnalysisManager.h"
 #include "sysid/analysis/Storage.h"
