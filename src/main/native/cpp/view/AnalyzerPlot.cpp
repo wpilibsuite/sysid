@@ -41,7 +41,10 @@ static std::vector<std::vector<ImPlotPoint>> PopulateTimeDomainSim(
   // Create the vector of ImPlotPoints that will contain our simulated data.
   std::vector<std::vector<ImPlotPoint>> pts;
   std::vector<ImPlotPoint> tmp;
-  tmp.emplace_back(0.0, data[0].velocity);
+
+  auto startTime = data[0].timestamp;
+
+  tmp.emplace_back(startTime.to<double>(), data[0].velocity);
 
   model.Reset(data[0].position, data[0].velocity);
   units::second_t t = 0_s;
@@ -63,7 +66,7 @@ static std::vector<std::vector<ImPlotPoint>> PopulateTimeDomainSim(
     }
 
     model.Update(units::volt_t{pre.voltage}, pre.dt);
-    tmp.emplace_back(t.to<double>(), model.GetVelocity());
+    tmp.emplace_back((startTime + t).to<double>(), model.GetVelocity());
     simSquaredErrorSum += std::pow(now.velocity - model.GetVelocity(), 2);
     timeSeriesPoints++;
   }
@@ -143,7 +146,7 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
 
   // Populate quasistatic time-domain graphs and quasistatic velocity vs.
   // velocity-portion voltage graph.
-  auto t = slow[0].timestamp;
+
   for (size_t i = 0; i < slow.size(); i += slowStep) {
     if (abort) {
       return;
@@ -166,9 +169,9 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
 
     m_filteredData[kChartTitles[0]].emplace_back(Vportion, slow[i].velocity);
     m_filteredData[kChartTitles[2]].emplace_back(
-        (slow[i].timestamp - t).to<double>(), slow[i].velocity);
+        (slow[i].timestamp).to<double>(), slow[i].velocity);
     m_filteredData[kChartTitles[3]].emplace_back(
-        (slow[i].timestamp - t).to<double>(), slow[i].acceleration);
+        (slow[i].timestamp).to<double>(), slow[i].acceleration);
 
     if (i > 0) {
       // If the current timestamp is not in the startTimes array, it is the
@@ -180,7 +183,7 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
           std::find(startTimes.begin(), startTimes.end(), slow[i].timestamp) ==
               startTimes.end()) {
         m_filteredData[kChartTitles[6]].emplace_back(
-            (slow[i].timestamp - t).to<double>(),
+            (slow[i].timestamp).to<double>(),
             units::millisecond_t{slow[i].dt}.to<double>());
       }
     }
@@ -188,7 +191,6 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
 
   // Populate dynamic time-domain graphs and dynamic acceleration vs.
   // acceleration-portion voltage graph.
-  t = fast[0].timestamp;
   for (size_t i = 0; i < fast.size(); i += fastStep) {
     if (abort) {
       return;
@@ -212,9 +214,9 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
     m_filteredData[kChartTitles[1]].emplace_back(Vportion,
                                                  fast[i].acceleration);
     m_filteredData[kChartTitles[4]].emplace_back(
-        (fast[i].timestamp - t).to<double>(), fast[i].velocity);
+        (fast[i].timestamp).to<double>(), fast[i].velocity);
     m_filteredData[kChartTitles[5]].emplace_back(
-        (fast[i].timestamp - t).to<double>(), fast[i].acceleration);
+        (fast[i].timestamp).to<double>(), fast[i].acceleration);
     if (i > 0) {
       // If the current timestamp is not in the startTimes array, it is the
       // during a test and should be included. If it is in the startTimes array,
@@ -225,39 +227,38 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
           std::find(startTimes.begin(), startTimes.end(), fast[i].timestamp) ==
               startTimes.end()) {
         m_filteredData[kChartTitles[6]].emplace_back(
-            (fast[i].timestamp - t).to<double>(),
+            (fast[i].timestamp).to<double>(),
             units::millisecond_t{fast[i].dt}.to<double>());
       }
     }
   }
 
-  auto maxTime =
-      units::math::max(slow.back().timestamp - slow.front().timestamp,
-                       fast.back().timestamp - fast.front().timestamp);
+  auto minTime =
+      units::math::min(slow.front().timestamp, fast.front().timestamp);
+  auto maxTime = units::math::max(slow.back().timestamp, fast.back().timestamp);
 
   // Set first recorded timestamp to mean
-  m_dtMeanLine.emplace_back(0.0, units::millisecond_t{dtMean}.to<double>());
+  m_dtMeanLine.emplace_back(minTime.to<double>(),
+                            units::millisecond_t{dtMean}.to<double>());
 
   // Set last recorded timestamp to mean
   m_dtMeanLine.emplace_back(maxTime.to<double>(),
                             units::millisecond_t{dtMean}.to<double>());
 
-  t = rawSlow[0].timestamp;
   // Populate Raw Slow Time Series Data
   for (size_t i = 0; i < rawSlow.size(); i += rawSlowStep) {
-    m_rawData[kChartTitles[2]].emplace_back(
-        (rawSlow[i].timestamp - t).to<double>(), rawSlow[i].velocity);
-    m_rawData[kChartTitles[3]].emplace_back(
-        (rawSlow[i].timestamp - t).to<double>(), rawSlow[i].acceleration);
+    m_rawData[kChartTitles[2]].emplace_back((rawSlow[i].timestamp).to<double>(),
+                                            rawSlow[i].velocity);
+    m_rawData[kChartTitles[3]].emplace_back((rawSlow[i].timestamp).to<double>(),
+                                            rawSlow[i].acceleration);
   }
 
-  t = rawFast[0].timestamp;
   // Populate Raw fast Time Series Data
   for (size_t i = 0; i < rawFast.size(); i += rawFastStep) {
-    m_rawData[kChartTitles[4]].emplace_back(
-        (rawFast[i].timestamp - t).to<double>(), rawFast[i].velocity);
-    m_rawData[kChartTitles[5]].emplace_back(
-        (rawFast[i].timestamp - t).to<double>(), rawFast[i].acceleration);
+    m_rawData[kChartTitles[4]].emplace_back((rawFast[i].timestamp).to<double>(),
+                                            rawFast[i].velocity);
+    m_rawData[kChartTitles[5]].emplace_back((rawFast[i].timestamp).to<double>(),
+                                            rawFast[i].acceleration);
   }
 
   // Populate Simulated Time Series Data.

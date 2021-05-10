@@ -133,10 +133,13 @@ static void PrepareGeneralData(const wpi::json& json,
   }
 
   // Loads the Raw Data
-  sysid::ApplyToData(data, [&](wpi::StringRef key) {
-    std::string rawName{"raw-" + key.str()};
-    data[rawName] = std::vector<Data>(data[key]);
-  });
+  sysid::ApplyToData(
+      data,
+      [&](wpi::StringRef key) {
+        std::string rawName{"raw-" + key.str()};
+        data[rawName] = std::vector<Data>(data[key]);
+      },
+      [](wpi::StringRef key) { return !key.contains("raw"); });
 
   // Convert data to PreparedData structs
   sysid::ApplyToData(data, [&](wpi::StringRef key) {
@@ -319,10 +322,13 @@ static void PrepareLinearDrivetrainData(
   }
 
   // Load Raw Data
-  sysid::ApplyToData(data, [&](wpi::StringRef key) {
-    std::string rawName{"raw-" + key.str()};
-    data[rawName] = std::vector<Data>(data[key]);
-  });
+  sysid::ApplyToData(
+      data,
+      [&](wpi::StringRef key) {
+        std::string rawName{"raw-" + key.str()};
+        data[rawName] = std::vector<Data>(data[key]);
+      },
+      [](wpi::StringRef key) { return !key.contains("raw"); });
 
   // Convert data to PreparedData
   sysid::ApplyToData(data, [&](wpi::StringRef key) {
