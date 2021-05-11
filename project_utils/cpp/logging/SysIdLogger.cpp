@@ -31,9 +31,6 @@ void SysIdLogger::InitLogging() {
   m_voltageCommand = frc::SmartDashboard::GetNumber("SysIdVoltageCommand", 0.0);
   m_testType = frc::SmartDashboard::GetString("SysIdTestType", "");
   m_startTime = frc2::Timer::GetFPGATimestamp().to<double>();
-
-  // Reset telemetry string
-  // frc::SmartDashboard::PutString("SysIdTelemetry", "");
   m_data.clear();
 }
 
@@ -53,6 +50,8 @@ void SysIdLogger::SendData() {
   m_motorVoltage = 0.0;
   m_timestamp = 0.0;
   m_startTime = 0.0;
+  m_primaryMotorVoltage = 0_V;
+  m_secondaryMotorVoltage = 0_V;
 }
 
 void SysIdLogger::UpdateThreadPriority() {
