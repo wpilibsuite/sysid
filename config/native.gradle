@@ -9,7 +9,7 @@ nativeUtils.addWpiNativeUtils()
 nativeUtils.wpi.configureDependencies {
   wpiVersion = wpilibVersion
   wpimathVersion = wpilibVersion
-  imguiVersion = "1.79-2"
+  imguiVersion = "1.82-1"
   googleTestVersion = "1.9.0-5-437e100-1"
 }
 
