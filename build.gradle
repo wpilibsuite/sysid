@@ -21,7 +21,7 @@ wpilibVersioning.releaseMode = project.hasProperty("releaseMode")
 wpilibVersioning.useAllTags = true
 
 ext {
-  wpilibVersion = "2021.+"
+  wpilibVersion = "2022.+"
 }
 
 // Apply NativeUtils configuration.
