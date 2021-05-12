@@ -68,3 +68,13 @@ There is a `Drivetrain` project for drivetrain analysis and a `GeneralMechanism`
 ### Running the Projects
 
 The executable generated from building is currently hardcoded to save to the proper project and these projects can be run normally from VSCode or the command line.
+
+### Time Plotting Script
+
+There is a python script in the `scripts` directory that will plot sysid data with respect to time. This is mainly intended for developers in the case that a dataset breaks sysid.
+
+In order to run it, pandas and matplotlib must be installed via pip.
+
+Then run `python3 scripts/time_plots.py "file path"` to get the time plots for your desired datasets.
+
+Matplotlib windows will appear containing the different plots.
