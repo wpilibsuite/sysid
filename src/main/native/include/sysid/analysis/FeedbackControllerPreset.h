@@ -76,5 +76,10 @@ constexpr FeedbackControllerPreset kREVBrushless{1.0 / 12.0, 60.0, 1_ms,
 // 64-tap FIR = (64 - 1) / 2 ms = 31.5 ms delay.
 constexpr FeedbackControllerPreset kREVBrushed{1.0 / 12.0, 60.0, 1_ms,
                                                false,      0_s,  31.5_ms};
+
+// https://github.com/wpilibsuite/sysid/pull/138#issuecomment-841734229
+// (10 - 0) / 2 = 5ms velocity measurement delay
+constexpr FeedbackControllerPreset kVenom{4096.0 / 12.0, 60.0, 1_ms,
+                                          false,         0_s,  5_ms};
 }  // namespace presets
 }  // namespace sysid

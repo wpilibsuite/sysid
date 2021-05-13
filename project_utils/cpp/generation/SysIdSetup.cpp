@@ -6,6 +6,9 @@
 
 #include <rev/CANSparkMax.h>
 
+#include <memory>
+
+#include <CANVenom.h>
 #include <frc/Filesystem.h>
 #include <frc/Spark.h>
 #include <frc/TimedRobot.h>
@@ -72,6 +75,12 @@ void AddMotorController(
         ->SetInverted(inverted);
     static_cast<rev::CANSparkMax*>(controllers->back().get())
         ->SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
+  } else if (controller == "Venom") {
+    controllers->emplace_back(std::make_unique<frc::CANVenom>(port));
+    static_cast<frc::CANVenom*>(controllers->back().get())
+        ->SetInverted(inverted);
+    static_cast<frc::CANVenom*>(controllers->back().get())
+        ->SetBrakeCoastMode(frc::CANVenom::BrakeCoastMode::kBrake);
   } else {
     controllers->emplace_back(std::make_unique<frc::Spark>(port));
     static_cast<frc::Spark*>(controllers->back().get())->SetInverted(inverted);
@@ -132,6 +141,14 @@ void SetupEncoders(std::string encoderType, bool isEncoding, int period,
         return dynamic_cast<WPI_BaseMotorController*>(controller)
                    ->GetSelectedSensorVelocity() /
                cpr / 0.1;  // Conversion factor from 100 ms to seconds
+      };
+    } else if (controllerName == "Venom") {
+      position = [=] {
+        return dynamic_cast<frc::CANVenom*>(controller)->GetPosition();
+      };
+      rate = [=] {
+        return dynamic_cast<frc::CANVenom*>(controller)->GetSpeed() /
+               60;  // Conversion from RPM to rotations per second
       };
     } else {
       if (controllerName != "SPARK MAX (Brushless)") {

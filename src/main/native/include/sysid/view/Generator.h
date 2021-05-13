@@ -23,7 +23,8 @@ static constexpr const char* kMotorControllers[] = {"PWM",
                                                     "VictorSPX",
                                                     "TalonFX",
                                                     "SPARK MAX (Brushless)",
-                                                    "SPARK MAX (Brushed)"};
+                                                    "SPARK MAX (Brushed)",
+                                                    "Venom"};
 
 static constexpr const char* kEncoders[] = {"Built-In", "CANCoder / Alternate",
                                             "roboRIO"};
@@ -60,7 +61,6 @@ class Generator : public glass::View {
 
   // Indices for combo boxes.
   int m_analysisIdx = 0;
-  int m_motorControllerIdx = 1;
   int m_encoderIdx = 2;
   int m_gyroIdx = 2;
   int m_unitsIdx = 0;
