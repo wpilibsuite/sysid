@@ -32,7 +32,7 @@ class Analyzer : public glass::View {
  public:
   static constexpr const char* kPresetNames[] = {
       "Default",    "WPILib (2020-)",  "WPILib (Pre-2020)", "CTRE (New)",
-      "CTRE (Old)", "REV (Brushless)", "REV (Brushed)"};
+      "CTRE (Old)", "REV (Brushless)", "REV (Brushed)",     "Venom"};
 
   static constexpr const char* kLoopTypes[] = {"Position", "Velocity"};
 

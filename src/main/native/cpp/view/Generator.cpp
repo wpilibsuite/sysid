@@ -128,12 +128,8 @@ void Generator::GeneratorUI() {
   ImGui::Spacing();
 
   // Add encoder selection.
-  if (m_motorControllerIdx > 0) {
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
-    ImGui::Combo("Encoder", &m_encoderIdx, kEncoders, IM_ARRAYSIZE(kEncoders));
-  } else {
-    m_encoderIdx = 2;
-  }
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
+  ImGui::Combo("Encoder", &m_encoderIdx, kEncoders, IM_ARRAYSIZE(kEncoders));
 
   // Add encoder port selection if roboRIO is selected.
   if (m_encoderIdx > 1) {
@@ -164,8 +160,7 @@ void Generator::GeneratorUI() {
   }
 
   // Add CANCoder port selection.
-  if (m_encoderIdx == 1 && m_motorControllerIdx > 0 &&
-      m_motorControllerIdx < 4) {
+  if (m_encoderIdx == 1) {
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
     ImGui::InputInt(drive ? "L CANCoder Port" : "CANCoder Port",
                     &m_settings.m_primaryEncoderPorts[0], 0, 0);
@@ -180,22 +175,25 @@ void Generator::GeneratorUI() {
     }
   }
 
-  // Samples Per Average Setting
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-  ImGui::InputInt("Samples Per Average", &m_settings.m_numSamples, 0, 0);
-  CreateTooltip(
-      "This helps reduce encoder noise by averaging collected samples "
-      "together. A value from 5-10 is reccomended for encoders with high "
-      "CPRs.");
+  // Venom built-in encoders can't change sampling or measurement period
+  if (!(m_settings.m_motorControllers[0] == "Venom" && m_encoderIdx == 0)) {
+    // Samples Per Average Setting
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
+    ImGui::InputInt("Samples Per Average", &m_settings.m_numSamples, 0, 0);
+    CreateTooltip(
+        "This helps reduce encoder noise by averaging collected samples "
+        "together. A value from 5-10 is reccomended for encoders with high "
+        "CPRs.");
 
-  m_settings.m_encoderType = std::string{kEncoders[m_encoderIdx]};
+    m_settings.m_encoderType = std::string{kEncoders[m_encoderIdx]};
 
-  // Add Velocity Measurement Period
-  if (m_encoderIdx <= 1) {
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-    ImGui::Combo("Time Measurement Window", &m_periodIdx, kCTREPeriods,
-                 IM_ARRAYSIZE(kCTREPeriods));
-    m_settings.m_period = std::stoi(std::string{kCTREPeriods[m_periodIdx]});
+    // Add Velocity Measurement Period
+    if (m_encoderIdx <= 1) {
+      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+      ImGui::Combo("Time Measurement Window", &m_periodIdx, kCTREPeriods,
+                   IM_ARRAYSIZE(kCTREPeriods));
+      m_settings.m_period = std::stoi(std::string{kCTREPeriods[m_periodIdx]});
+    }
   }
 
   // Add gyro selection if selected is drivetrain.

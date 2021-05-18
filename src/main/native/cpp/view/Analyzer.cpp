@@ -24,6 +24,7 @@
 #include "sysid/analysis/AnalysisType.h"
 #include "sysid/analysis/ArmSim.h"
 #include "sysid/analysis/ElevatorSim.h"
+#include "sysid/analysis/FeedbackControllerPreset.h"
 #include "sysid/analysis/SimpleMotorSim.h"
 
 using namespace sysid;
@@ -37,6 +38,7 @@ Analyzer::Analyzer(wpi::Logger& logger) : m_logger(logger) {
   m_presets["CTRE (Old)"] = presets::kCTREOld;
   m_presets["REV (Brushless)"] = presets::kREVBrushless;
   m_presets["REV (Brushed)"] = presets::kREVBrushed;
+  m_presets["Venom"] = presets::kVenom;
 
   // Load the last file location from storage if it exists.
   m_location = glass::GetStorage().GetStringRef("AnalyzerJSONLocation");
