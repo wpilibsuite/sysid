@@ -1,0 +1,194 @@
+import org.gradle.internal.os.OperatingSystem
+
+plugins {
+  id "cpp"
+  id "google-test-test-suite"
+  id "maven-publish"
+  id "edu.wpi.first.NativeUtils" version "2022.0.0"
+}
+
+// Support RC files on Windows.
+if (OperatingSystem.current().isWindows())
+  apply plugin: "windows-resources"
+
+ext {
+  wpilibVersion = "2022.+"
+}
+
+// Apply NativeUtils configuration.
+apply from: "config/native.gradle"
+
+// Generate the version number on each build.
+def wpilibVersionFileInput = file("src/generate/WPILibVersion.cpp.in")
+def wpilibVersionFileOutput = file("$buildDir/generated/main/cpp/WPILibVersion.cpp")
+
+task generateCppVersion() {
+  description = 'Generates the wpilib version class'
+  group = 'WPILib'
+
+  outputs.file wpilibVersionFileOutput
+  inputs.file wpilibVersionFileInput
+
+  if (wpilibVersioning.releaseMode) {
+    outputs.upToDateWhen { false }
+  }
+
+  // We follow a simple set of checks to determine whether we should generate a new version file:
+  // 1. If the release type is not development, we generate a new version file
+  // 2. If there is no generated version number, we generate a new version file
+  // 3. If there is a generated build number, and the release type is development, then we will
+  //    only generate if the publish task is run.
+  doLast {
+    def version = wpilibVersioning.version.get()
+    println "Writing version ${version} to $wpilibVersionFileOutput"
+
+    if (wpilibVersionFileOutput.exists()) {
+      wpilibVersionFileOutput.delete()
+    }
+    def read = wpilibVersionFileInput.text.replace('${wpilib_version}', version)
+    wpilibVersionFileOutput.write(read)
+  }
+}
+
+gradle.taskGraph.addTaskExecutionGraphListener { graph ->
+  def willPublish = graph.hasTask(publish)
+  if (willPublish) {
+    generateCppVersion.outputs.upToDateWhen { false }
+  }
+}
+
+tasks.withType(CppCompile) {
+  dependsOn generateCppVersion
+}
+
+// Generate resources.
+apply from: "config/resources.gradle"
+def generateTask = createGenerateResourcesTask('main', 'SYSID', 'sysid', project)
+
+// Before we generate resources, we need to make sure that the RIO executables are built and copied.
+generateTask.dependsOn ":sysid-projects:drive:installRioExe"
+generateTask.dependsOn ":sysid-projects:mechanism:installRioExe"
+
+// Configure application.
+model {
+  components {
+    sysid(NativeExecutableSpec) {
+      sources.cpp {
+        source {
+          srcDirs "src/main/native/cpp", "$buildDir/generated/main/cpp"
+          include "**/*.cpp"
+        }
+        exportedHeaders.srcDirs "src/main/native/include"
+      }
+      if (OperatingSystem.current().isWindows()) {
+        sources.rc {
+          source {
+            srcDirs "src/main/native/win"
+            include "*.rc"
+          }
+        }
+      }
+      // Make sure that all resources are generated before we build the final application.
+      binaries.all {
+        it.tasks.withType(CppCompile) { dependsOn generateTask }
+      }
+    }
+  }
+  testSuites {
+    sysidTest(GoogleTestTestSuiteSpec) {
+      testing $.components.sysid
+      sources.cpp.source {
+        srcDirs "src/test/native/cpp"
+        include "**/*.cpp"
+      }
+      binaries.all {
+        // Only build/run release version of tests
+        if (it.buildType.name.contains('debug')) {
+          it.buildable = false
+        }
+        nativeUtils.useRequiredLibrary(it, "googletest_static")
+        it.cppCompiler.define("RUNNING_SYSID_TESTS")
+      }
+    }
+    sysidAnalysisIntegrationTest(GoogleTestTestSuiteSpec) {
+      testing $.components.sysid
+      sources.cpp {
+        source {
+          srcDirs "src/integrationtest_analysis/native/cpp", "src/integrationtest_utils/native/cpp"
+          include "**/*.cpp", "**/*.h"
+        }
+        exportedHeaders.srcDirs "src/integrationtest_utils/native/include"
+      }
+      binaries.all {
+        nativeUtils.useRequiredLibrary(it, "googletest_static");
+        it.cppCompiler.define("RUNNING_SYSID_TESTS")
+        if (!project.hasProperty("withIntegration")) {
+          it.buildable = false
+        }
+      }
+    }
+    sysidGenerationIntegrationTest(GoogleTestTestSuiteSpec) {
+      testing $.components.sysid
+      sources.cpp {
+        source {
+          srcDirs "src/integrationtest_generation/native/cpp", "src/integrationtest_utils/native/cpp"
+          include "**/*.cpp", "**/*.h"
+        }
+        exportedHeaders.srcDirs "src/integrationtest_utils/native/include"
+      }
+      binaries.all {
+        nativeUtils.useRequiredLibrary(it, "googletest_static")
+        it.cppCompiler.define("RUNNING_SYSID_TESTS")
+        if (!project.hasProperty("withIntegration")) {
+          it.buildable = false
+        }
+      }
+    }
+  }
+  binaries {
+    withType(NativeBinarySpec).all {
+      nativeUtils.useRequiredLibrary(it, "gui")
+      it.cppCompiler.define("PROJECT_ROOT_DIR", "$rootDir")
+      // Add platform-specific renderer dependencies.
+      if (it.targetPlatform.operatingSystem.isWindows()) {
+        it.linker.args << 'Gdi32.lib' << 'Shell32.lib' << 'd3d11.lib' << 'd3dcompiler.lib'
+      } else if (it.targetPlatform.operatingSystem.isMacOsX()) {
+        it.linker.args << '-framework' << 'Metal' << '-framework' << 'MetalKit' <<
+            '-framework' << 'Cocoa' << '-framework' << 'IOKit' << '-framework' <<
+            'CoreFoundation' << '-framework' << 'CoreVideo' << '-framework' << 'QuartzCore'
+      } else {
+        it.linker.args << '-lX11'
+      }
+    }
+  }
+  tasks {
+    // Create the run task.
+    $.components.sysid.binaries.each { bin ->
+      if (bin.buildable && bin.name.contains("debug")) {
+        Task run = project.tasks.create("run", Exec) {
+          commandLine bin.tasks.install.runScriptFile.get().asFile.toString()
+        }
+        run.dependsOn bin.tasks.install
+      }
+    }
+    $.testSuites.sysidAnalysisIntegrationTest.binaries.each { bin ->
+      if (bin.buildable && bin.name.contains("release")) {
+        Task run = project.tasks.create("runAnalysisIntegrationTests", Exec) {
+          commandLine bin.tasks.install.runScriptFile.get().asFile.toString()
+        }
+        run.dependsOn bin.tasks.install
+      }
+    }
+    $.testSuites.sysidGenerationIntegrationTest.binaries.each { bin ->
+      if (bin.buildable && bin.name.contains("release")) {
+        Task run = project.tasks.create("runGenerationIntegrationTests", Exec) {
+          commandLine bin.tasks.install.runScriptFile.get().asFile.toString()
+        }
+        run.dependsOn bin.tasks.install
+      }
+    }
+  }
+}
+
+// Configure publishing.
+apply from: "config/publish.gradle"

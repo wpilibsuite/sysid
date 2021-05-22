@@ -1,0 +1,35 @@
+plugins {
+  id "cpp"
+  id "edu.wpi.first.GradleRIO"
+}
+
+model {
+  components {
+    libsysid(NativeLibrarySpec) {
+      targetPlatform wpi.platforms.roborio
+      if (!project.hasProperty("skipDesktopRobots"))
+        targetPlatform wpi.platforms.desktop
+
+      sources.cpp {
+        source {
+          srcDirs "src/main/cpp"
+          include "**/*.cpp"
+        }
+        exportedHeaders.srcDirs "src/main/include"
+      }
+
+      binaries.all {
+        if (it instanceof SharedLibraryBinarySpec)
+          it.buildable = false
+
+        it.cppCompiler.define("PROJECT_ROOT_DIR", "$rootDir")
+
+        if (project.hasProperty("integration"))
+          it.cppCompiler.define("INTEGRATION")
+      }
+
+      wpi.deps.vendor.cpp(it)
+      wpi.deps.wpilib(it)
+    }
+  }
+}
