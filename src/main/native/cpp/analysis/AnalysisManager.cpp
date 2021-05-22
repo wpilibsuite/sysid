@@ -87,6 +87,36 @@ static std::vector<PreparedData> Concatenate(
 }
 
 /**
+ * Assigns the forward, backward, and combined datasets for a Storage String
+ * Map.
+ *
+ * @param dataset The Storage String Map that will store the datasets
+ * @param slowForward The slow forward dataset
+ * @param slowBackward The slow backward dataset
+ * @param fastForward The fast forward dataset
+ * @param fastBackward The fast backward dataset
+ * @param prefix The prefix for the stored datasets (e.g. "Left" if you are
+ *               storing data for the left side of the drivetrain)
+ */
+static void StoreDatasets(wpi::StringMap<Storage>* dataset,
+                          const std::vector<PreparedData>& slowForward,
+                          const std::vector<PreparedData>& slowBackward,
+                          const std::vector<PreparedData>& fastForward,
+                          const std::vector<PreparedData>& fastBackward,
+                          std::string prefix = "") {
+  if (prefix != "") {
+    prefix += std::string{" "};
+  }
+
+  auto& outputData = *dataset;
+  outputData[prefix + "Forward"] = Storage{slowForward, fastForward};
+  outputData[prefix + "Backward"] = Storage{slowBackward, slowForward};
+  outputData[prefix + "Combined"] =
+      Storage{Concatenate(slowForward, {&slowBackward}),
+              Concatenate(fastForward, {&fastBackward})};
+}
+
+/**
  * Prepares data for general mechanisms (i.e. not drivetrain) and stores them
  * in the analysis manager dataset.
  *
@@ -161,22 +191,15 @@ static void PrepareGeneralData(const wpi::json& json,
   sysid::AccelAndTimeFilter(&preparedData, tempCombined);
 
   // Store the raw datasets
-  rawDatasets["Forward"] = Storage{preparedData["raw-slow-forward"],
-                                   preparedData["raw-fast-forward"]};
-  rawDatasets["Backward"] = Storage{preparedData["raw-slow-backward"],
-                                    preparedData["raw-fast-backward"]};
-  rawDatasets["Combined"] =
-      Storage{Concatenate(preparedData["raw-slow-forward"],
-                          {&preparedData["raw-slow-backward"]}),
-              Concatenate(preparedData["raw-fast-forward"],
-                          {&preparedData["raw-fast-backward"]})};
+  StoreDatasets(&rawDatasets, preparedData["raw-slow-forward"],
+                preparedData["raw-slow-backward"],
+                preparedData["raw-fast-forward"],
+                preparedData["raw-fast-backward"]);
 
   // Store the filtered datasets
-  filteredDatasets["Forward"] = Storage{slowForward, fastForward};
-  filteredDatasets["Backward"] = Storage{slowBackward, fastBackward};
-  filteredDatasets["Combined"] =
-      Storage{Concatenate(slowForward, {&slowBackward}),
-              Concatenate(fastForward, {&fastBackward})};
+  StoreDatasets(&filteredDatasets, slowForward, slowBackward, fastForward,
+                fastBackward);
+
   startTimes = {preparedData["raw-slow-forward"][0].timestamp,
                 preparedData["raw-slow-backward"][0].timestamp,
                 preparedData["raw-fast-forward"][0].timestamp,
@@ -262,11 +285,8 @@ static void PrepareAngularDrivetrainData(
                                           units::radian_t{angleDelta});
 
   // Create the distinct datasets and store them in our StringMap.
-  filteredDatasets["Forward"] = Storage{slowForward, fastForward};
-  filteredDatasets["Backward"] = Storage{slowBackward, fastBackward};
-  filteredDatasets["Combined"] =
-      Storage{Concatenate(slowForward, {&slowBackward}),
-              Concatenate(fastForward, {&fastBackward})};
+  StoreDatasets(&filteredDatasets, slowForward, slowBackward, fastForward,
+                fastBackward);
   startTimes = {slowForward[0].timestamp, slowBackward[0].timestamp,
                 fastForward[0].timestamp, fastBackward[0].timestamp};
 }
@@ -383,46 +403,21 @@ static void PrepareLinearDrivetrainData(
   auto rawFastBackward =
       Concatenate(rawFastBackwardLeft, {&rawFastBackwardRight});
 
-  rawDatasets["Forward"] = Storage{rawSlowForward, rawFastForward};
-  rawDatasets["Backward"] = Storage{rawSlowBackward, rawFastBackward};
-  rawDatasets["Combined"] =
-      Storage{Concatenate(rawSlowForward, {&rawSlowBackward}),
-              Concatenate(rawFastForward, {&rawFastBackward})};
-
-  rawDatasets["Left Forward"] = Storage{rawSlowForwardLeft, rawFastForwardLeft};
-  rawDatasets["Left Backward"] =
-      Storage{rawSlowBackwardLeft, rawFastBackwardLeft};
-  rawDatasets["Left Combined"] =
-      Storage{Concatenate(rawSlowForwardLeft, {&rawSlowBackwardLeft}),
-              Concatenate(rawFastForwardLeft, {&rawFastBackwardLeft})};
-
-  rawDatasets["Right Forward"] =
-      Storage{rawSlowForwardRight, rawFastForwardRight};
-  rawDatasets["Right Backward"] =
-      Storage{rawSlowBackwardRight, rawFastBackwardRight};
-  rawDatasets["Right Combined"] =
-      Storage{Concatenate(rawSlowForwardRight, {&rawSlowBackwardRight}),
-              Concatenate(rawFastForwardRight, {&rawFastBackwardRight})};
+  StoreDatasets(&rawDatasets, rawSlowForward, rawSlowBackward, rawFastForward,
+                rawFastBackward);
+  StoreDatasets(&rawDatasets, rawSlowForwardLeft, rawSlowBackwardLeft,
+                rawFastForwardLeft, rawFastBackwardLeft, "Left");
+  StoreDatasets(&rawDatasets, rawSlowForwardRight, rawSlowBackwardRight,
+                rawFastForwardRight, rawFastBackwardRight, "Right");
 
   // Create the distinct filtered datasets and store them in our StringMap.
-  filteredDatasets["Forward"] = Storage{slowForward, fastForward};
-  filteredDatasets["Backward"] = Storage{slowBackward, fastBackward};
-  filteredDatasets["Combined"] =
-      Storage{Concatenate(slowForward, {&slowBackward}),
-              Concatenate(fastForward, {&fastBackward})};
-  filteredDatasets["Left Forward"] = Storage{slowForwardLeft, fastForwardLeft};
-  filteredDatasets["Left Backward"] =
-      Storage{slowBackwardLeft, fastBackwardLeft};
-  filteredDatasets["Left Combined"] =
-      Storage{Concatenate(slowForwardLeft, {&slowBackwardLeft}),
-              Concatenate(fastForwardLeft, {&fastBackwardLeft})};
-  filteredDatasets["Right Forward"] =
-      Storage{slowForwardRight, fastForwardRight};
-  filteredDatasets["Right Backward"] =
-      Storage{slowBackwardRight, fastBackwardRight};
-  filteredDatasets["Right Combined"] =
-      Storage{Concatenate(slowForwardRight, {&slowBackwardRight}),
-              Concatenate(fastForwardRight, {&fastBackwardRight})};
+  StoreDatasets(&filteredDatasets, slowForward, slowBackward, fastForward,
+                fastBackward);
+  StoreDatasets(&filteredDatasets, slowForwardLeft, slowBackwardLeft,
+                fastForwardLeft, fastBackwardLeft, "Left");
+  StoreDatasets(&filteredDatasets, slowForwardRight, slowBackwardRight,
+                fastForwardRight, fastBackwardRight, "Right");
+
   startTimes = {
       rawSlowForward.front().timestamp, rawSlowBackward.front().timestamp,
       rawFastForward.front().timestamp, rawFastBackward.front().timestamp};
