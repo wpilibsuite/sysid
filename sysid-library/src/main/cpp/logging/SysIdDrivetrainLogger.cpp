@@ -19,16 +19,18 @@ void SysIdDrivetrainLogger::Log(double leftPosition, double rightPosition,
                                 double leftVelocity, double rightVelocity,
                                 double measuredAngle, double angularRate) {
   UpdateData();
-  std::array<double, 9> arr = {m_timestamp,
-                               m_primaryMotorVoltage.to<double>(),
-                               m_secondaryMotorVoltage.to<double>(),
-                               leftPosition,
-                               rightPosition,
-                               leftVelocity,
-                               rightVelocity,
-                               measuredAngle,
-                               angularRate};
-  m_data.insert(m_data.end(), arr.cbegin(), arr.cend());
+  if (m_data.size() < kDataVectorSize) {
+    std::array<double, 9> arr = {m_timestamp,
+                                 m_primaryMotorVoltage.to<double>(),
+                                 m_secondaryMotorVoltage.to<double>(),
+                                 leftPosition,
+                                 rightPosition,
+                                 leftVelocity,
+                                 rightVelocity,
+                                 measuredAngle,
+                                 angularRate};
+    m_data.insert(m_data.end(), arr.cbegin(), arr.cend());
+  }
 
   m_primaryMotorVoltage = units::volt_t{(m_rotate ? -1 : 1) * m_motorVoltage};
   m_secondaryMotorVoltage = units::volt_t{m_motorVoltage};

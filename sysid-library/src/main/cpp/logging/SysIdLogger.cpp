@@ -22,8 +22,8 @@ SysIdLogger::SysIdLogger() {
   frc::LiveWindow::GetInstance()->DisableAllTelemetry();
   frc::SmartDashboard::PutNumber("SysIdVoltageCommand", 0.0);
   frc::SmartDashboard::PutString("SysIdTestType", "");
-  // frc::SmartDashboard::PutString("SysIdTelemetry", "");
   frc::SmartDashboard::PutBoolean("SysIdRotate", false);
+  frc::SmartDashboard::PutBoolean("SysIdOverflow", false);
 }
 
 void SysIdLogger::InitLogging() {
@@ -37,6 +37,9 @@ void SysIdLogger::InitLogging() {
 void SysIdLogger::SendData() {
   wpi::outs() << "Collected: " << m_data.size() << " Data points.\n";
   wpi::outs().flush();
+
+  frc::SmartDashboard::PutBoolean("SysIdOverflow",
+                                  m_data.size() >= kDataVectorSize);
 
   std::stringstream ss;
   for (const auto& pt : m_data) {

@@ -30,6 +30,9 @@ constexpr double Kv = 1.98;
 constexpr double Ka = 0.2;
 constexpr double kTrackWidth = 0.762;
 
+// 36000 max samples / 9 samples per entry
+constexpr size_t kMaxDataSize = 4000;
+
 // Calculated by finding the voltage required to hold the arm horizontal in the
 // simulation program.
 constexpr double kCos = .250;
@@ -46,6 +49,7 @@ class AnalysisTest : public ::testing::Test {
     m_nt = nt::GetDefaultInstance();
     m_enable = nt::GetEntry(m_nt, "/SmartDashboard/SysIdRun");
     m_kill = nt::GetEntry(m_nt, "/SmartDashboard/SysIdKill");
+    m_overflow = nt::GetEntry(m_nt, "/SmartDashboard/SysIdOverflow");
 
     // Setup logger.
     m_logger.SetLogger([](unsigned int level, const char* file,
@@ -73,7 +77,7 @@ class AnalysisTest : public ::testing::Test {
     }
   }
 
-  void TearDown() override {
+  void AnalyzeJSON() {
     // Save the JSON and make sure that everything checks out.
     auto path = m_manager->SaveJSON(EXPAND_STRINGIZE(PROJECT_ROOT_DIR));
     try {
@@ -146,42 +150,64 @@ class AnalysisTest : public ::testing::Test {
     std::system(del.c_str());
   }
 
+  void VerifyOverflow() {
+    // Make sure overflow is true
+    auto overflow = nt::GetEntryValue(m_overflow);
+    ASSERT_TRUE(overflow->IsBoolean() && overflow->GetBoolean());
+
+    // Make sure the sent data isn't too large
+    ASSERT_TRUE(m_manager->GetCurrentDataSize() <= kMaxDataSize);
+  }
+
   static void TearDownTestSuite() { KillNT(m_nt, m_kill); }
 
-  void Run() {
-    for (int i = 0; i < 4; i++) {
-      auto test = kTests[i];
-      m_manager->BeginTest(test);
+  void RunTest(const char* test, double duration) {
+    m_manager->BeginTest(test);
 
-      // Enable the robot.
-      nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(true));
-      wpi::outs() << "Running: " << test << "\n";
-      wpi::outs().flush();
+    // Enable the robot.
+    nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(true));
+    wpi::outs() << "Running: " << test << "\n";
+    wpi::outs().flush();
 
-      // Start the test and let it run for 3 seconds.
-      auto start = wpi::Now() * 1E-6;
-      while (wpi::Now() * 1E-6 - start < 3) {
-        m_manager->Update();
-        std::this_thread::sleep_for(0.005s);
-        nt::Flush(m_nt);
-      }
+    // Make sure overflow is false
+    auto overflow = nt::GetEntryValue(m_overflow);
+    ASSERT_TRUE(overflow->IsBoolean() && !overflow->GetBoolean());
 
-      // Wait at least one second while the mechanism stops.
-      start = wpi::Now() * 1E-6;
-      while (m_manager->IsActive() || wpi::Now() * 1E-6 - start < 1) {
-        nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(false));
-        m_manager->Update();
-        std::this_thread::sleep_for(0.005s);
-        nt::Flush(m_nt);
-      }
+    // Start the test and let it run for specified duration.
+    auto start = wpi::Now() * 1E-6;
+    while (wpi::Now() * 1E-6 - start < duration) {
+      m_manager->Update();
+      std::this_thread::sleep_for(0.005s);
+      nt::Flush(m_nt);
+    }
+
+    // Wait at least one second while the mechanism stops.
+    start = wpi::Now() * 1E-6;
+    while (m_manager->IsActive() || wpi::Now() * 1E-6 - start < 1) {
+      nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(false));
+      m_manager->Update();
+      std::this_thread::sleep_for(0.005s);
+      nt::Flush(m_nt);
     }
   }
+
+  void RunFullTests() {
+    for (int i = 0; i < 4; i++) {
+      auto test = kTests[i];
+
+      // Run each test for 3 seconds
+      RunTest(test, 3);
+    }
+  }
+
+  void RunOverflowTest() { RunTest(kTests[0], 25); }
 
  private:
   static NT_Inst m_nt;
 
   static NT_Entry m_enable;
   static NT_Entry m_kill;
+  static NT_Entry m_overflow;
 
   static std::unique_ptr<sysid::TelemetryManager> m_manager;
   static sysid::TelemetryManager::Settings m_settings;
@@ -193,6 +219,7 @@ NT_Inst AnalysisTest::m_nt;
 
 NT_Entry AnalysisTest::m_enable;
 NT_Entry AnalysisTest::m_kill;
+NT_Entry AnalysisTest::m_overflow;
 
 std::unique_ptr<sysid::TelemetryManager> AnalysisTest::m_manager;
 sysid::TelemetryManager::Settings AnalysisTest::m_settings;
@@ -201,20 +228,30 @@ wpi::Logger AnalysisTest::m_logger;
 
 TEST_F(AnalysisTest, Drivetrain) {
   SetUp(sysid::analysis::kDrivetrain);
-  Run();
+  RunFullTests();
+  AnalyzeJSON();
 }
 
 TEST_F(AnalysisTest, Flywheel) {
   SetUp(sysid::analysis::kSimple);
-  Run();
+  RunFullTests();
+  AnalyzeJSON();
 }
 
 TEST_F(AnalysisTest, Elevator) {
   SetUp(sysid::analysis::kElevator);
-  Run();
+  RunFullTests();
+  AnalyzeJSON();
 }
 
 TEST_F(AnalysisTest, Arm) {
   SetUp(sysid::analysis::kArm);
-  Run();
+  RunFullTests();
+  AnalyzeJSON();
+}
+
+TEST_F(AnalysisTest, Overflow) {
+  SetUp(sysid::analysis::kDrivetrain);
+  RunOverflowTest();
+  VerifyOverflow();
 }

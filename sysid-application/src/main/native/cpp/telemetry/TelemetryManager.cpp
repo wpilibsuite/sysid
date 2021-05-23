@@ -37,11 +37,13 @@ TelemetryManager::TelemetryManager(const Settings& settings,
       m_testType(nt::GetEntry(m_inst, "/SmartDashboard/SysIdTestType")),
       m_rotate(nt::GetEntry(m_inst, "/SmartDashboard/SysIdRotate")),
       m_telemetry(nt::GetEntry(m_inst, "/SmartDashboard/SysIdTelemetry")),
+      m_overflow(nt::GetEntry(m_inst, "/SmartDashboard/SysIdOverflow")),
       m_telemetryOld(nt::GetEntry(m_inst, "/robot/telemetry")),
       m_mechanism(nt::GetEntry(m_inst, "/SmartDashboard/SysIdTest")),
       m_fieldInfo(nt::GetEntry(m_inst, "/FMSInfo/FMSControlData")) {
   // Add listeners for our readable entries.
   nt::AddPolledEntryListener(m_poller, m_telemetry, kNTFlags);
+  nt::AddPolledEntryListener(m_poller, m_overflow, kNTFlags);
   nt::AddPolledEntryListener(m_poller, m_fieldInfo, kNTFlags);
   nt::AddPolledEntryListener(m_poller, m_telemetryOld,
                              NT_NOTIFY_NEW | NT_NOTIFY_UPDATE);
@@ -81,6 +83,8 @@ void TelemetryManager::BeginTest(wpi::StringRef name) {
                     nt::Value::MakeString(m_settings.mechanism.name));
   // Clear the telemetry entry
   nt::SetEntryValue(m_telemetry, nt::Value::MakeString(""));
+  // Set Overflow to False
+  nt::SetEntryValue(m_overflow, nt::Value::MakeBoolean(false));
   nt::Flush(m_inst);
 
   // Display the warning message.
@@ -129,6 +133,11 @@ void TelemetryManager::EndTest() {
                    m_settings.unitsPerRotation;
         stream << "The encoder reported traveling " << p << " " << units << ".";
       }
+
+      if (m_params.overflow) {
+        stream << "\nNOTE: the robot stopped recording data early because the "
+                  "entry storage was exceeded.";
+      }
       func(stream.str());
     }
   }
@@ -159,6 +168,10 @@ void TelemetryManager::Update() {
         m_params.raw = std::move(value);
         nt::SetEntryValue(m_telemetry, nt::Value::MakeString(""));
       }
+    }
+    // Get the overflow flag
+    if (event.entry == m_overflow && event.value && event.value->IsBoolean()) {
+      m_params.overflow = event.value->GetBoolean();
     }
     // Check if we got frc-characterization data.
     if (event.entry == m_telemetryOld) {

@@ -43,6 +43,11 @@ class SysIdLogger {
   std::string m_testType;
   std::vector<double> m_data;
 
+  // 20 seconds of test data * 200 samples/second * 9 doubles/sample (320kB of
+  // reserved data) provides a large initial vector size to avoid reallocating
+  // during a test
+  static constexpr size_t kDataVectorSize = 36000;
+
   /**
    * Updates the autospeed and robotVoltage
    */
@@ -51,9 +56,4 @@ class SysIdLogger {
  private:
   static constexpr int kThreadPriority = 15;
   static constexpr int kHALThreadPriority = 40;
-
-  // 20 seconds of test data * 200 samples/second * 10 doubles/sample (320kB of
-  // reserved data) provides a large initial vector size to avoid reallocating
-  // during a test
-  static constexpr size_t kDataVectorSize = 40000;
 };
