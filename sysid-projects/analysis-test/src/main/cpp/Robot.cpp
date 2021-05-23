@@ -154,7 +154,6 @@ class Robot : public frc::TimedRobot {
 
   std::string m_test = "Drivetrain";
   std::vector<double> m_data;
-  size_t m_counter = 0;
 };
 
 #ifndef RUNNING_FRC_TESTS

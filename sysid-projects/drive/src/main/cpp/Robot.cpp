@@ -187,8 +187,8 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
       };
     } else {
       // Default behaviour is to make the gyro functions return zero
-      m_gyroPosition = [&, this] { return 0.0; };
-      m_gyroRate = [&, this] { return 0.0; };
+      m_gyroPosition = [&] { return 0.0; };
+      m_gyroRate = [&] { return 0.0; };
     }
   } catch (std::exception& e) {
     wpi::outs() << "Project failed: " << e.what() << "\n";

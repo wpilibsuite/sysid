@@ -119,7 +119,7 @@ class AnalysisTest : public ::testing::Test {
 
         wpi::SmallString<128> failCommand;
         wpi::raw_svector_ostream cmdOs(failCommand);
-#ifdef _WIN32 || _WIN64
+#ifdef _WIN32
         cmdOs << "if not exist \"" << jsonFolderPath.c_str() << "\" mkdir \""
               << jsonFolderPath.c_str() << "\" && copy \"" << path << "\" \""
               << jsonFolderPath.c_str() << "\"";
