@@ -125,9 +125,9 @@ jobs:
         with:
           java-version: 11
       - name: Create compile_commands.json
-        run: ./gradlew generateCompileCommands -Ptoolchain-optional-roboRio -PwithIntegration
+        run: ./gradlew generateCompileCommands -Ptoolchain-optional-roboRio -PwithIntegration -PskipDesktopRobots
       - name: Run clang-tidy
-        run: wpiformat -clang 10 -no-format -tidy-all -compile-commands=build/compile_commands/linuxx86-64 -vv
+        run: wpiformat -clang 10 -no-format -tidy-changed -compile-commands=build/compile_commands/linuxx86-64 -vv
 
   # combine:
   #   runs-on: ubuntu-latest
