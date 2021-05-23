@@ -1,0 +1,118 @@
+plugins {
+  id "cpp"
+  id "google-test-test-suite"
+  id "edu.wpi.first.GradleRIO"
+}
+
+// Define my targets (RoboRIO) and artifacts (deployable files)
+// This is added by GradleRIO's backing project EmbeddedTools.
+deploy {
+  targets {
+    roboRIO("roborio") {
+      // Team number is loaded either from the .wpilib/wpilib_preferences.json
+      // or from command line. If not found an exception will be thrown.
+      // You can use getTeamOrDefault(team) instead of getTeamNumber if you
+      // want to store a team number in this file.
+      team = frc.getTeamNumber()
+    }
+  }
+  artifacts {
+    frcNativeArtifact('frcCpp') {
+      targets << "roborio"
+      component = 'frcUserProgram'
+      // Debug can be overridden by command line, for use with VSCode
+      debug = frc.getDebugOrDefault(false)
+    }
+    // Built in artifact to deploy arbitrary files to the roboRIO.
+    fileTreeArtifact('frcStaticFileDeploy') {
+      // The directory below is the local directory to deploy
+      files = fileTree(dir: '../deploy')
+      // Deploy to RoboRIO target, into /home/lvuser/deploy
+      targets << "roborio"
+      directory = '/home/lvuser/deploy'
+    }
+  }
+}
+
+// Enable simulation gui support. Must check the box in vscode to enable support
+// upon debugging
+dependencies {
+  if (System.getenv()["CI"] == null) {
+    simulation wpi.deps.sim.gui(wpi.platforms.desktop, false)
+    simulation wpi.deps.sim.driverstation(wpi.platforms.desktop, false)
+  }
+
+  if (project.hasProperty("romi"))
+    simulation wpi.deps.sim.ws_client(wpi.platforms.desktop, false)
+}
+
+if (project.hasProperty("romi")) {
+  sim {
+    envVar "HALSIMWS_HOST", "10.0.0.2"
+  }
+}
+
+model {
+  components {
+    frcUserProgram(NativeExecutableSpec) {
+      targetPlatform wpi.platforms.roborio
+      if (!project.hasProperty("skipDesktopRobots"))
+        targetPlatform wpi.platforms.desktop
+
+      sources.cpp {
+        source {
+          srcDirs 'src/main/cpp'
+          include '**/*.cpp'
+        }
+        exportedHeaders.srcDirs 'src/main/include'
+      }
+
+      binaries.all {
+        it.cppCompiler.define("PROJECT_ROOT_DIR", "$projectDir")
+        if (project.hasProperty("integration")) {
+          it.cppCompiler.define("INTEGRATION")
+        }
+        lib project: ":sysid-library", library: "libsysid", linkage: "static"
+
+        wpi.deps.vendor.cpp(it)
+
+        // We must build statically for roboRIO; however, we have to build shared for desktop
+        // in order for simulation modules to work correctly.
+        // TODO: Remove project name check once GR and NU are updated.
+        if (it.targetPlatform.name == wpi.platforms.roborio && project.name != "analysis-test")
+          wpi.deps.wpilibStatic(it)
+        else
+          wpi.deps.wpilib(it)
+
+      }
+    }
+  }
+  tasks {
+    $.components.frcUserProgram.binaries.each { bin ->
+      // Create a task that installs the desktop executable with shared linking.
+      if (bin.targetPlatform.name == wpi.platforms.desktop && bin.name.toLowerCase().contains("release"))
+        project.tasks.create("installDesktopExe") {
+          dependsOn bin.tasks.install
+          ext.setProperty("runScriptFile${project.name}",
+              bin.tasks.install.runScriptFile.get().asFile.toString())
+        }
+
+      // Create a task that installs and copies the roboRIO executable with static linking.
+      if (project.name != "analysis-test" && bin.targetPlatform.name == wpi.platforms.roborio &&
+          bin.name.toLowerCase().contains("release")) {
+        Task copy = project.tasks.create("installRioExe", Copy) {
+          from(bin.tasks.install.executableFile)
+          into("$rootDir/sysid-application/src/main/native/resources")
+
+          rename { _ -> "frcUserProgram${project.name.capitalize()}.out" }
+          dependsOn bin.tasks.install
+        }
+        project.build.dependsOn copy
+      }
+    }
+  }
+}
+
+task simulateCpp {
+  dependsOn 'simulateFrcUserProgram' + wpi.platforms.desktop.capitalize() + 'ReleaseExecutable'
+}

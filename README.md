@@ -36,7 +36,7 @@ Go to the directory that the repository is cloned in and run `./gradlew run` to 
 ### Generating And Running SysId Robot Code
 
 1. Use the Generator Widget to create a config.json
-2. If you are characterizing a General Mechanism (Arm, Simple Motor, Elevator), deploy the project in `base_projects/GeneralMechanism` to your robot. For Drivetrain Charactarization (Drivetrains, Romi), deploy the project in `base_projects/Drivetrain` to your robot.
+2. If you are characterizing a mechanism (Arm, Simple Motor, Elevator), deploy the project in `sysid-projects/mechanism` to your robot (`./gradlew :sysid-projects:mechanism:deploy`). For drivetrain charactarization (Drivetrains, Romi), deploy the project in `sysid-projects/drive` to your robot.
 3. Connect the logger to your robot and perform the required tests.
 
 ## Building and Running SysId
@@ -45,7 +45,7 @@ SysId uses Gradle to build. To build debug and release versions of the main exec
 
 SysId also has integration tests, which involves launching a robot program with simulation physics, characterizing it and verifying the gains. These tests are not enabled by default; instead, you need to pass the `-PwithIntegration` flag into Gradle. Use `./gradlew runAnalysisIntegrationTests -PwithIntegration` or `./gradlew runGenerationIntegrationTests -PwithIntegration` to run just the analysis or project generation integration tests respectively.
 
-There is also a robot project in `integration_test_project` that you can use to test out SysId. To launch the robot program, simply `cd` into it and run `./gradlew simulateCpp`.
+There is also a robot project in `sysid-projects/analysis-test` that you can use to test out SysId. To launch the robot program, simply run `./gradlew :sysid-projects:analysis-test:simulateCpp`.
 
 ### Requirements
 
@@ -61,9 +61,9 @@ There is also a robot project in `integration_test_project` that you can use to 
 
 ## Logging Projects
 
-SysId comes with projects that interface with the telemetry manager to provide the necessary data for analysis. These projects are stored in the `base_projects` folder and take in a `config.json` file in the `src/main/deploy` directory to setup the robot hardware for analysis.
+SysId comes with projects that interface with the telemetry manager to provide the necessary data for analysis. These projects are stored in the `sysid-projects` folder and take in a `config.json` file in the `sysid-projects/deploy` directory to setup the robot hardware for analysis.
 
-There is a `Drivetrain` project for drivetrain analysis and a `GeneralMechanism` project for simple-motor, elevator, and arm analyses.
+There is a `drivetrain` project for drivetrain analysis and a `mechanism` project for simple-motor, elevator, and arm analyses.
 
 ### Running the Projects
 

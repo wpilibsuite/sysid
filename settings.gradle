@@ -1,2 +1,51 @@
-Properties props = System.getProperties();
-props.setProperty("org.gradle.internal.native.headers.unresolved.dependencies.ignore", "true");
+import org.gradle.internal.os.OperatingSystem
+
+pluginManagement {
+  plugins {
+    id "edu.wpi.first.GradleRIO" version "2021.3.1"
+  }
+  repositories {
+    mavenLocal()
+    gradlePluginPortal()
+    String frcYear = '2021'
+    File frcHome
+    if (OperatingSystem.current().isWindows()) {
+      String publicFolder = System.getenv('PUBLIC')
+      if (publicFolder == null) {
+        publicFolder = "C:\\Users\\Public"
+      }
+      def homeRoot = new File(publicFolder, "wpilib")
+      frcHome = new File(homeRoot, frcYear)
+    } else {
+      def userFolder = System.getProperty("user.home")
+      def homeRoot = new File(userFolder, "wpilib")
+      frcHome = new File(homeRoot, frcYear)
+    }
+    def frcHomeMaven = new File(frcHome, 'maven')
+    maven {
+      name 'frcHome'
+      url frcHomeMaven
+    }
+  }
+}
+
+Properties props = System.getProperties()
+props.setProperty("org.gradle.internal.native.headers.unresolved.dependencies.ignore", "true")
+
+// Add libsysid (common library used by robot projects)
+include "sysid-library"
+
+// Add project used for analysis integration tests.
+include "sysid-projects:analysis-test"
+
+// Add robot projects
+include "sysid-projects:drive"
+include "sysid-projects:mechanism"
+
+// Make sure each child in sysid-projects points to the correct build file.
+project(":sysid-projects").children.each { child ->
+  child.setBuildFileName("../build.gradle")
+}
+
+// Add the main application.
+include "sysid-application"

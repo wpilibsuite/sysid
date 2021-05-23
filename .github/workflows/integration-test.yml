@@ -44,7 +44,6 @@ jobs:
 
       - name: Install RoboRIO Toolchain
         run: ./gradlew installRoborioToolchain
-        working-directory: integration_test_project
 
       - name: Run Integration Tests
         run: ./gradlew run${{ matrix.test-type }}IntegrationTests -PwithIntegration
