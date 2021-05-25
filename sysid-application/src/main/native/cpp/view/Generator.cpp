@@ -291,7 +291,7 @@ void Generator::Display() {
   ImGui::Separator();
   wpi::SmallString<128> path;
   wpi::raw_svector_ostream os{path};
-  os << "base_projects/";
+  os << "base-projects/";
   if (*m_pAnalysisType == "General Mechanism") {
     os << "GeneralMechanism";
   } else {
