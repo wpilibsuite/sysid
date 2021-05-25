@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <functional>
 #include <string>
 #include <utility>
@@ -116,6 +117,8 @@ class TelemetryManager {
     return std::find(m_tests.cbegin(), m_tests.cend(), name) != m_tests.end();
   }
 
+  size_t GetCurrentDataSize() const { return m_params.data.size(); }
+
  private:
   enum class State { WaitingForEnable, RunningTest, WaitingForData };
 
@@ -141,6 +144,7 @@ class TelemetryManager {
 
     std::string raw;
     std::vector<std::vector<double>> data{};
+    bool overflow = false;
 
     TestParameters() = default;
     TestParameters(bool fast, bool forward, bool rotate, State state)
@@ -173,6 +177,7 @@ class TelemetryManager {
   NT_Entry m_testType;
   NT_Entry m_rotate;
   NT_Entry m_telemetry;
+  NT_Entry m_overflow;
   NT_Entry m_telemetryOld;
   NT_Entry m_mechanism;
   NT_Entry m_fieldInfo;

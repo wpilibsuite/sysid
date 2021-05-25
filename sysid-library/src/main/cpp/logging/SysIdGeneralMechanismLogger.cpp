@@ -14,8 +14,12 @@ units::volt_t SysIdGeneralMechanismLogger::GetMotorVoltage() {
 void SysIdGeneralMechanismLogger::Log(double measuredPosition,
                                       double measuredVelocity) {
   UpdateData();
-  std::array<double, 4> arr = {m_timestamp, m_primaryMotorVoltage.to<double>(),
-                               measuredPosition, measuredVelocity};
-  m_data.insert(m_data.end(), arr.cbegin(), arr.cend());
+  if (m_data.size() < kDataVectorSize) {
+    std::array<double, 4> arr = {m_timestamp,
+                                 m_primaryMotorVoltage.to<double>(),
+                                 measuredPosition, measuredVelocity};
+    m_data.insert(m_data.end(), arr.cbegin(), arr.cend());
+  }
+
   m_primaryMotorVoltage = units::volt_t{m_motorVoltage};
 }
