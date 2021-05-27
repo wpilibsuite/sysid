@@ -6,9 +6,9 @@
 
 #include <algorithm>
 #include <exception>
-#include <stdexcept>
 #include <thread>
 
+#include <fmt/core.h>
 #include <glass/Context.h>
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -16,8 +16,7 @@
 #include <wpi/FileSystem.h>
 #include <wpi/Format.h>
 #include <wpi/json.h>
-#include <wpi/math>
-#include <wpi/raw_ostream.h>
+#include <wpi/numbers>
 
 #include "sysid/Util.h"
 #include "sysid/analysis/AnalysisManager.h"
@@ -166,7 +165,7 @@ void Analyzer::Display() {
       if (m_unit == "Degrees") {
         m_factor = 360.0;
       } else if (m_unit == "Radians") {
-        m_factor = 2 * wpi::math::pi;
+        m_factor = 2 * wpi::numbers::pi;
       } else if (m_unit == "Rotations") {
         m_factor = 1.0;
       }
@@ -519,8 +518,7 @@ void Analyzer::SelectFile() {
 
 void Analyzer::PrepareData() {
   if (!m_enabled) {
-    wpi::outs() << "returning early prepdata\n";
-    wpi::outs().flush();
+    fmt::print(stderr, "Returning early prepdata\n");
     return;
   }
   try {
@@ -540,8 +538,7 @@ void Analyzer::PrepareData() {
 
 void Analyzer::Calculate() {
   if (!m_enabled) {
-    wpi::outs() << "returning early calculate\n";
-    wpi::outs().flush();
+    fmt::print(stderr, "Returning early calculate\n");
     return;
   }
   try {
@@ -570,8 +567,7 @@ void Analyzer::AbortDataPrep() {
 
 void Analyzer::PrepareGraphs() {
   if (!m_enabled) {
-    wpi::outs() << "returning early graphs\n";
-    wpi::outs().flush();
+    fmt::print(stderr, "Returning early graphs\n");
     return;
   }
   try {

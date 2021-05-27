@@ -5,13 +5,10 @@
 #include "sysid/generation/ConfigManager.h"
 
 #include <cstddef>
-#include <fstream>
 #include <stdexcept>
-#include <string>
 
+#include <fmt/format.h>
 #include <wpi/Logger.h>
-#include <wpi/SmallString.h>
-#include <wpi/StringRef.h>
 #include <wpi/json.h>
 #include <wpi/raw_ostream.h>
 
@@ -28,7 +25,7 @@ std::vector<T> ConfigManager::SliceVector(wpi::SmallVector<T, 3> m_data,
   return std::vector<T>(m_data.begin(), m_data.begin() + size);
 }
 
-void ConfigManager::SaveJSON(wpi::StringRef path, size_t portCount,
+void ConfigManager::SaveJSON(std::string_view path, size_t portCount,
                              bool isRomi) {
   wpi::json json;
   json["primary motor ports"] =
@@ -66,15 +63,12 @@ void ConfigManager::SaveJSON(wpi::StringRef path, size_t portCount,
 
   json["velocity measurement period"] = m_config.m_period;
 
-  wpi::SmallString<128> jsonDirectory;
-  wpi::raw_svector_ostream jsonOs{jsonDirectory};
-
-  jsonOs << path << "config.json";
+  std::string jsonDirectory = fmt::format("{}config.json", path);
 
   std::error_code ec;
   wpi::raw_fd_ostream os{jsonDirectory, ec};
 
-  WPI_INFO(m_logger, "Writing JSON to: " << jsonDirectory.c_str());
+  WPI_INFO(m_logger, "Writing JSON to: " << jsonDirectory);
 
   if (ec) {
     throw std::runtime_error("Cannot write to file");

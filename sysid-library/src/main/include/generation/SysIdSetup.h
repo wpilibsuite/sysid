@@ -9,6 +9,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <frc/Encoder.h>
@@ -37,7 +38,7 @@ void SetMotorControllers(
     units::volt_t motorVoltage,
     const std::vector<std::unique_ptr<frc::SpeedController>>& controllers);
 void SetupEncoders(std::string encoderType, bool isEncoding, int period,
-                   double cpr, int numSamples, wpi::StringRef controllerName,
+                   double cpr, int numSamples, std::string_view controllerName,
                    frc::SpeedController* controller, bool encoderInverted,
                    const std::vector<int>& encoderPorts,
                    std::unique_ptr<CANCoder>& cancoder,

@@ -4,30 +4,21 @@
 
 #include "Robot.h"
 
-#include <rev/CANSparkMax.h>
-
 #include <algorithm>
 #include <cstddef>
-#include <iostream>
-#include <sstream>
+#include <exception>
+#include <string>
+#include <string_view>
 
 #include <frc/ADXRS450_Gyro.h>
 #include <frc/AnalogGyro.h>
-#include <frc/Filesystem.h>
-#include <frc/RobotController.h>
-#include <frc/Spark.h>
-#include <frc/TimedRobot.h>
 // #include <frc/romi/RomiGyro.h>
 #include <frc/smartdashboard/SmartDashboard.h>
+#include <units/angle.h>
 #include <units/angular_velocity.h>
-#include <wpi/FileSystem.h>
-#include <wpi/SmallString.h>
-#include <wpi/StringMap.h>
-#include <wpi/StringRef.h>
 
 // #include "AHRS.h"
 #include "generation/SysIdSetup.h"
-#include "rev/CANEncoder.h"
 
 Robot::Robot() : frc::TimedRobot(5_ms) {
   m_json = GetConfigJson();
@@ -59,8 +50,7 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
     double cpr = m_json.at("counts per shaft revolution").get<double>();
 
     std::string gyroType = m_json.at("gyro").get<std::string>();
-    std::string gyroCtorString = m_json.at("gyro ctor").get<std::string>();
-    wpi::StringRef gyroCtor{gyroCtorString};
+    std::string gyroCtor = m_json.at("gyro ctor").get<std::string>();
 
     bool isEncoding = m_json.at("encoding").get<bool>();
 
@@ -91,45 +81,44 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
     wpi::outs() << "setup gyro\n";
     wpi::outs().flush();
     if (gyroType == "Pigeon") {
-      std::string port_str = "";
-      if (gyroCtor.contains("WPI_TalonSRX")) {
-        port_str = std::string{gyroCtor[gyroCtor.find("-") + 1]};
+      std::string portStr = "";
+      if (gyroCtor.find("WPI_TalonSRX") != std::string_view::npos) {
+        portStr = gyroCtor[gyroCtor.find("-") + 1];
       } else {
-        port_str = std::string{gyroCtor};
+        portStr = gyroCtor;
       }
 
-      wpi::outs() << port_str << "\n";
+      wpi::outs() << portStr << "\n";
       wpi::outs().flush();
       // converts gyroCtor into port #
-      int srx_port = std::stoi(port_str);
-      if (gyroCtor.contains("WPI_TalonSRX")) {
+      int srxPort = std::stoi(portStr);
+      if (gyroCtor.find("WPI_TalonSRX") != std::string_view::npos) {
         bool talonDeclared = false;
         // Check if there is a Talon Port in Left Ports
-        auto find_port =
-            std::find(leftPorts.begin(), leftPorts.end(), srx_port);
+        auto findPort = std::find(leftPorts.begin(), leftPorts.end(), srxPort);
 
         // Check Right Ports if not found
-        if (find_port == leftPorts.end()) {
-          find_port = std::find(rightPorts.begin(), rightPorts.end(), srx_port);
-          if (find_port != rightPorts.end() &&
-              controllerNames[find_port - rightPorts.begin()] == "TalonSRX") {
+        if (findPort == leftPorts.end()) {
+          findPort = std::find(rightPorts.begin(), rightPorts.end(), srxPort);
+          if (findPort != rightPorts.end() &&
+              controllerNames[findPort - rightPorts.begin()] == "TalonSRX") {
             m_pigeon = std::make_unique<PigeonIMU>(dynamic_cast<WPI_TalonSRX*>(
-                m_rightControllers.at(find_port - rightPorts.begin()).get()));
+                m_rightControllers.at(findPort - rightPorts.begin()).get()));
             talonDeclared = true;
           }
-        } else if (controllerNames[find_port - leftPorts.begin()] ==
+        } else if (controllerNames[findPort - leftPorts.begin()] ==
                    "TalonSRX") {
           m_pigeon = std::make_unique<PigeonIMU>(dynamic_cast<WPI_TalonSRX*>(
-              m_leftControllers.at(find_port - leftPorts.begin()).get()));
+              m_leftControllers.at(findPort - leftPorts.begin()).get()));
           talonDeclared = true;
         }
 
         // If it isn't tied to an existing Talon, create a new object
         if (!talonDeclared) {
-          m_pigeon = std::make_unique<PigeonIMU>(new WPI_TalonSRX(srx_port));
+          m_pigeon = std::make_unique<PigeonIMU>(new WPI_TalonSRX(srxPort));
         }
       } else {
-        m_pigeon = std::make_unique<PigeonIMU>(srx_port);
+        m_pigeon = std::make_unique<PigeonIMU>(srxPort);
       }
 
       // setup functions
@@ -169,10 +158,11 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
         // } else if (gyroType == "Romi") {
         //   m_gyro = std::make_unique<frc::RomiGyro>();
       } else {
-        std::stringstream ss(gyroCtor);
-        int port = 0;
-        ss >> port;
-        m_gyro = std::make_unique<frc::AnalogGyro>(port);
+        try {
+          m_gyro = std::make_unique<frc::AnalogGyro>(std::stoi(gyroCtor));
+        } catch (std::invalid_argument& e) {
+          m_gyro = std::make_unique<frc::AnalogGyro>(0);
+        }
       }
 
       m_gyroPosition = [&, this] {
@@ -262,8 +252,8 @@ void Robot::TeleopInit() {}
 void Robot::TeleopPeriodic() {}
 
 void Robot::DisabledInit() {
-  SetMotorControllers(units::volt_t{0}, m_leftControllers);
-  SetMotorControllers(units::volt_t{0}, m_rightControllers);
+  SetMotorControllers(0_V, m_leftControllers);
+  SetMotorControllers(0_V, m_rightControllers);
   wpi::outs() << "Robot disabled\n";
   m_logger.SendData();
 }

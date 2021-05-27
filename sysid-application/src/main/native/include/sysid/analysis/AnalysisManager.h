@@ -8,13 +8,13 @@
 #include <limits>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <vector>
 
 #include <units/time.h>
 #include <wpi/Logger.h>
 #include <wpi/StringMap.h>
-#include <wpi/StringRef.h>
 #include <wpi/json.h>
 
 #include "sysid/analysis/AnalysisType.h"
@@ -91,7 +91,8 @@ class AnalysisManager {
    * @param settings The settings for this instance of the analysis manager.
    * @param logger   The logger instance to use for log data.
    */
-  AnalysisManager(wpi::StringRef path, Settings& settings, wpi::Logger& logger);
+  AnalysisManager(std::string_view path, Settings& settings,
+                  wpi::Logger& logger);
 
   /**
    * Prepares data from the JSON and stores the output in the StringMap.
@@ -113,7 +114,7 @@ class AnalysisManager {
    * @param unitsPerRotation The conversion factor between rotations and the
    *                         selected unit.
    */
-  void OverrideUnits(wpi::StringRef unit, double unitsPerRotation);
+  void OverrideUnits(std::string_view unit, double unitsPerRotation);
 
   /**
    * Resets the units back to those defined in the JSON.

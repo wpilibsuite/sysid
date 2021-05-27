@@ -4,28 +4,16 @@
 
 #include "Robot.h"
 
-#include <hal/HAL.h>
-#include <rev/CANSparkMax.h>
-#include <signal.h>
-
 #include <cstddef>
 #include <exception>
-#include <iostream>
-#include <memory>
 #include <string>
 
-#include <frc/Filesystem.h>
-#include <frc/RobotController.h>
-#include <frc/Spark.h>
-#include <frc/TimedRobot.h>
 #include <frc/smartdashboard/SmartDashboard.h>
-#include <wpi/FileSystem.h>
-#include <wpi/SmallString.h>
-#include <wpi/StringMap.h>
+#include <rev/CANEncoder.h>
+#include <units/voltage.h>
 #include <wpi/raw_ostream.h>
 
 #include "generation/SysIdSetup.h"
-#include "rev/CANEncoder.h"
 
 Robot::Robot() : frc::TimedRobot(5_ms) {
   m_json = GetConfigJson();
@@ -127,7 +115,7 @@ void Robot::TeleopInit() {}
 void Robot::TeleopPeriodic() {}
 
 void Robot::DisabledInit() {
-  SetMotorControllers(units::volt_t{0}, m_controllers);
+  SetMotorControllers(0_V, m_controllers);
   wpi::outs() << "Robot disabled\n";
   m_logger.SendData();
 }

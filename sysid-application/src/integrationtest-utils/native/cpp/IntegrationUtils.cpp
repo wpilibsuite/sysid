@@ -4,30 +4,26 @@
 
 #include "IntegrationUtils.h"
 
-#include <wpi/SmallString.h>
-#include <wpi/SmallVector.h>
-#include <wpi/raw_ostream.h>
+#include <string>
+
+#include <fmt/core.h>
 #include <wpi/timestamp.h>
 
 #include "gtest/gtest.h"
 
 void LaunchSim(std::string projectDirectory) {
   // Start the robot program.
-  wpi::SmallString<128> cmd;
-  wpi::raw_svector_ostream os(cmd);
+  std::string cmd =
+      fmt::format("cd {}/ && {} :{}:simulateCpp -Pintegration",
+                  EXPAND_STRINGIZE(PROJECT_ROOT_DIR), LAUNCH, projectDirectory);
 
-  os << "cd " << EXPAND_STRINGIZE(PROJECT_ROOT_DIR) << SYSID_PATH_SEPARATOR
-     << " && " << LAUNCH << " :" << projectDirectory
-     << ":simulateCpp -Pintegration";
-  wpi::outs() << "Executing: " << cmd.c_str() << "\n";
-  wpi::outs().flush();
+  fmt::print(stderr, "Executing: {}\n", cmd);
 
   int result = std::system(cmd.c_str());
 
   // Exit Test if Sim is unable to start
   if (result != 0) {
-    wpi::outs() << "The robot program could not be started\n";
-    wpi::outs().flush();
+    fmt::print(stderr, "The robot program could not be started\n");
     std::exit(1);
   }
 }
@@ -46,8 +42,7 @@ void Connect(NT_Inst nt, NT_Entry kill) {
 }
 
 void KillNT(NT_Inst nt, NT_Entry kill) {
-  wpi::outs() << "Killing program\n";
-  wpi::outs().flush();
+  fmt::print(stderr, "Killing program\n");
   auto time = wpi::Now();
 
   while (nt::IsConnected(nt)) {
@@ -60,9 +55,7 @@ void KillNT(NT_Inst nt, NT_Entry kill) {
     }
   }
 
-  wpi::outs() << "Killed robot program"
-              << "\n";
-  wpi::outs().flush();
+  fmt::print(stderr, "Killed robot program\n");
 
   // Set kill entry to false for future tests
   nt::SetEntryValue(kill, nt::Value::MakeBoolean(false));

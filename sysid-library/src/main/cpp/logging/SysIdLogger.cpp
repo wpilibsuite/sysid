@@ -4,14 +4,12 @@
 
 #include "logging/SysIdLogger.h"
 
-#include <array>
 #include <cstddef>
 #include <sstream>
 #include <stdexcept>
 
 #include <frc/Notifier.h>
 #include <frc/RobotBase.h>
-#include <frc/RobotController.h>
 #include <frc/Threads.h>
 #include <frc/livewindow/LiveWindow.h>
 #include <frc/smartdashboard/SmartDashboard.h>
@@ -42,8 +40,11 @@ void SysIdLogger::SendData() {
                                   m_data.size() >= kDataVectorSize);
 
   std::stringstream ss;
-  for (const auto& pt : m_data) {
-    ss << std::to_string(pt) << ", ";
+  for (size_t i = 0; i < m_data.size(); ++i) {
+    ss << std::to_string(m_data[i]);
+    if (i < m_data.size() - 1) {
+      ss << ",";
+    }
   }
 
   frc::SmartDashboard::PutString("SysIdTelemetry", ss.str());

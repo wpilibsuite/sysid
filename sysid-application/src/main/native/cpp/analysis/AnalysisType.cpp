@@ -4,11 +4,9 @@
 
 #include "sysid/analysis/AnalysisType.h"
 
-#include <wpi/StringRef.h>
-
 using namespace sysid;
 
-AnalysisType sysid::analysis::FromName(wpi::StringRef name) {
+AnalysisType sysid::analysis::FromName(std::string_view name) {
   if (name == "Drivetrain") {
     return sysid::analysis::kDrivetrain;
   }

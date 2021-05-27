@@ -7,11 +7,11 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <string_view>
 
 #include <glass/View.h>
 #include <portable-file-dialogs.h>
 #include <wpi/Logger.h>
-#include <wpi/StringRef.h>
 
 namespace sysid {
 class JSONConverter {
@@ -23,7 +23,7 @@ class JSONConverter {
  private:
   void DisplayConverter(
       const char* tooltip,
-      std::function<std::string(wpi::StringRef, wpi::Logger&)>);
+      std::function<std::string(std::string_view, wpi::Logger&)>);
 
   wpi::Logger& m_logger;
 

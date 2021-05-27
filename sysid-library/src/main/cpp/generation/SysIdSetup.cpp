@@ -4,30 +4,31 @@
 
 #include "generation/SysIdSetup.h"
 
-#include <rev/CANSparkMax.h>
-
-#include <memory>
+#include <stdexcept>
 
 #include <CANVenom.h>
 #include <frc/Filesystem.h>
 #include <frc/Spark.h>
 #include <frc/TimedRobot.h>
+#include <rev/CANSparkMax.h>
 #include <wpi/FileSystem.h>
 #include <wpi/SmallString.h>
-#include <wpi/StringMap.h>
-#include <wpi/StringRef.h>
+
+// C++20 shim for std::string_view::starts_with()
+static constexpr bool starts_with(std::string_view obj,
+                                  std::string_view x) noexcept {
+  return obj.substr(0, x.size()) == x;
+}
 
 wpi::json GetConfigJson() {
   wpi::SmallString<128> path;
   wpi::raw_svector_ostream os{path};
 
   if constexpr (frc::RobotBase::IsSimulation()) {
-#ifdef PROJECT_ROOT_DIR
-// TODO: Fix problems with this so that we don't need this ifdef
-#ifdef INTEGRATION
+#if defined(PROJECT_ROOT_DIR) && defined(INTEGRATION)
+    // TODO: Fix problems with this so that we don't need this ifdef
     os << EXPAND_STRINGIZE(PROJECT_ROOT_DIR) << "/sysid-projects/deploy/"
        << filename;
-#endif
 #endif
   } else {
     frc::filesystem::GetDeployDirectory(path);
@@ -89,7 +90,7 @@ void AddMotorController(
 }
 
 void SetupEncoders(std::string encoderType, bool isEncoding, int period,
-                   double cpr, int numSamples, wpi::StringRef controllerName,
+                   double cpr, int numSamples, std::string_view controllerName,
                    frc::SpeedController* controller, bool encoderInverted,
                    const std::vector<int>& encoderPorts,
                    std::unique_ptr<CANCoder>& cancoder,
@@ -99,7 +100,7 @@ void SetupEncoders(std::string encoderType, bool isEncoding, int period,
   if (encoderType == "Built-In") {
     wpi::outs() << "Initializing talon \n";
     wpi::outs().flush();
-    if (controllerName.startswith("Talon")) {
+    if (starts_with(controllerName, "Talon")) {
       if (controllerName == "TalonSRX") {
         dynamic_cast<WPI_BaseMotorController*>(controller)
             ->ConfigSelectedFeedbackSensor(FeedbackDevice::QuadEncoder);
@@ -180,7 +181,7 @@ void SetupEncoders(std::string encoderType, bool isEncoding, int period,
       };
     }
   } else if (encoderType == "CANCoder / Alternate") {
-    if (controllerName.startswith("SPARK MAX")) {
+    if (starts_with(controllerName, "SPARK MAX")) {
       static_cast<rev::CANSparkMax*>(controller)
           ->GetAlternateEncoder(
               rev::CANEncoder::AlternateEncoderType::kQuadrature, cpr);

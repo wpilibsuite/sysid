@@ -6,10 +6,9 @@
 
 #include <stdexcept>
 #include <string>
-#include <system_error>
 
+#include <fmt/format.h>
 #include <wpi/Logger.h>
-#include <wpi/Twine.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
 #include <wpi/raw_ostream.h>
@@ -31,12 +30,12 @@ static constexpr size_t kRPosCol = 6;
 static constexpr size_t kLVelCol = 7;
 static constexpr size_t kRVelCol = 8;
 
-static wpi::json GetJSON(wpi::StringRef path, wpi::Logger& logger) {
+static wpi::json GetJSON(std::string_view path, wpi::Logger& logger) {
   std::error_code ec;
   wpi::raw_fd_istream input{path, ec};
 
   if (ec) {
-    throw std::runtime_error("Unable to read: " + path.str());
+    throw std::runtime_error(fmt::format("Unable to read: {}", path));
   }
 
   wpi::json json;
@@ -45,7 +44,7 @@ static wpi::json GetJSON(wpi::StringRef path, wpi::Logger& logger) {
   return json;
 }
 
-std::string sysid::ConvertJSON(wpi::StringRef path, wpi::Logger& logger) {
+std::string sysid::ConvertJSON(std::string_view path, wpi::Logger& logger) {
   wpi::json ojson = GetJSON(path, logger);
 
   auto type = sysid::analysis::FromName(ojson.at("test").get<std::string>());
@@ -89,7 +88,8 @@ std::string sysid::ConvertJSON(wpi::StringRef path, wpi::Logger& logger) {
   json["sysid"] = true;
 
   // Write the new file with "_new" appended to it.
-  std::string loc = path.rsplit(".json").first.str() + "_new.json";
+  path.remove_suffix(std::string_view{".json"}.size());
+  std::string loc = fmt::format("{}_new.json", path);
   std::error_code ec;
   wpi::raw_fd_ostream output{loc, ec};
   output << json;
@@ -99,7 +99,7 @@ std::string sysid::ConvertJSON(wpi::StringRef path, wpi::Logger& logger) {
   return loc;
 }
 
-std::string sysid::ToCSV(wpi::StringRef path, wpi::Logger& logger) {
+std::string sysid::ToCSV(std::string_view path, wpi::Logger& logger) {
   wpi::json json = GetJSON(path, logger);
 
   auto type = sysid::analysis::FromName(json.at("test").get<std::string>());
@@ -109,8 +109,8 @@ std::string sysid::ToCSV(wpi::StringRef path, wpi::Logger& logger) {
 
   std::error_code ec;
   // Naming: {sysid-json-name}(Test, Units).csv
-  std::string loc = path.rsplit(".json").first.str() + "(" + type.name + ", " +
-                    unit + ").csv";
+  path.remove_suffix(std::string_view{".json"}.size());
+  std::string loc = fmt::format("{} ({}, {}).csv", path, type.name, unit);
   wpi::raw_fd_ostream outputFile{loc, ec};
 
   if (ec) {

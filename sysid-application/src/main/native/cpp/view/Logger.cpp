@@ -12,7 +12,7 @@
 #include <imgui_stdlib.h>
 #include <ntcore_cpp.h>
 #include <units/angle.h>
-#include <wpi/math>
+#include <wpi/numbers>
 #include <wpi/raw_ostream.h>
 #include <wpigui.h>
 
@@ -93,7 +93,7 @@ void Logger::Display() {
   if (m_settings.units == "Degrees") {
     m_settings.unitsPerRotation = 360.0;
   } else if (m_settings.units == "Radians") {
-    m_settings.unitsPerRotation = 2 * wpi::math::pi;
+    m_settings.unitsPerRotation = 2 * wpi::numbers::pi;
   } else if (m_settings.units == "Rotations") {
     m_settings.unitsPerRotation = 1.0;
   }

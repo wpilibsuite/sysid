@@ -8,11 +8,11 @@
 #include <array>
 #include <cmath>
 #include <exception>
+#include <string_view>
 #include <utility>
 #include <vector>
 
 #include <units/time.h>
-#include <wpi/StringRef.h>
 
 #include "sysid/analysis/AnalysisManager.h"
 #include "sysid/analysis/Storage.h"
@@ -146,13 +146,13 @@ void FilterAccelData(std::vector<PreparedData>* data);
  * @tparam T The type of data that is stored within a StringMap
  *
  * @param data   A StringMap representing a specific dataset
- * @param action A void function that takes a StringRef representing a StringMap
- *               key and performs an action to the dataset stored with that
- *               passed key (e.g. applying a median filter)
+ * @param action A void function that takes a std::string_view representing a
+ *               StringMap key and performs an action to the dataset stored with
+ *               that passed key (e.g. applying a median filter)
  */
 template <typename T>
 void ApplyToData(const wpi::StringMap<T>& data,
-                 std::function<void(wpi::StringRef)> action) {
+                 std::function<void(std::string_view)> action) {
   for (const auto& it : data) {
     action(it.first());
   }
@@ -164,17 +164,17 @@ void ApplyToData(const wpi::StringMap<T>& data,
  * @tparam T The type of data that is stored within a StringMap
  *
  * @param data      A StringMap representing a specific dataset
- * @param action    A void function that takes a StringRef representing a
+ * @param action    A void function that takes a std::string_view representing a
  *                  StringMap key and performs an action to the dataset stored
  *                  with that passed key (e.g. applying a median filter)
- * @param specifier A boolean function that takes a StringRef representing a
- *                  StringMap key and returns true if `action` should be run on
- *                  the dataset stored with that key
+ * @param specifier A boolean function that takes a std::string_view
+ *                  representing a StringMap key and returns true if `action`
+ *                  should be run on the dataset stored with that key
  */
 template <typename T>
 void ApplyToData(const wpi::StringMap<T>& data,
-                 std::function<void(wpi::StringRef)> action,
-                 std::function<bool(wpi::StringRef)> specifier) {
+                 std::function<void(std::string_view)> action,
+                 std::function<bool(std::string_view)> specifier) {
   for (const auto& it : data) {
     auto key = it.first();
     if (specifier(key)) {
@@ -200,7 +200,7 @@ void InitialTrimAndFilter(wpi::StringMap<std::vector<PreparedData>>* data,
                           AnalysisManager::Settings& settings,
                           units::second_t& minStepTime,
                           units::second_t& maxStepTime,
-                          wpi::StringRef unit = "");
+                          std::string_view unit = "");
 
 /**
  * Removes all points with accel = 0 and points with dt's greater than 1ms from

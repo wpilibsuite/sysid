@@ -5,9 +5,9 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 
 #include <wpi/Logger.h>
-#include <wpi/StringRef.h>
 
 namespace sysid {
 /**
@@ -19,7 +19,7 @@ namespace sysid {
  *
  * @return The full file path of the newly saved JSON.
  */
-std::string ConvertJSON(wpi::StringRef path, wpi::Logger& logger);
+std::string ConvertJSON(std::string_view path, wpi::Logger& logger);
 
-std::string ToCSV(wpi::StringRef path, wpi::Logger& logger);
+std::string ToCSV(std::string_view path, wpi::Logger& logger);
 }  // namespace sysid
