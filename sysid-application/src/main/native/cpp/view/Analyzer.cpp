@@ -29,6 +29,8 @@
 
 using namespace sysid;
 
+static double kBadDataGain = -9999.0;
+
 Analyzer::Analyzer(wpi::Logger& logger) : m_logger(logger) {
   // Fill the StringMap with preset values.
   m_presets["Default"] = presets::kDefault;
@@ -44,8 +46,11 @@ Analyzer::Analyzer(wpi::Logger& logger) : m_logger(logger) {
   m_location = glass::GetStorage().GetStringRef("AnalyzerJSONLocation");
 }
 
-static void DisplayGain(const char* text, double* data) {
+void Analyzer::DisplayGain(const char* text, double* data) {
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
+  if (!m_enabled) {
+    data = &kBadDataGain;
+  }
   ImGui::InputDouble(text, data, 0.0, 0.0, "%.5G",
                      ImGuiInputTextFlags_ReadOnly);
 }
@@ -56,12 +61,14 @@ static void SetPosition(double beginX, double beginY, int xShift, int yShift) {
 }
 
 void Analyzer::ConfigParamsOnFileSelect() {
-  m_stepTestDuration = m_settings.stepTestDuration.to<float>();
+  if (m_enabled) {
+    m_stepTestDuration = m_settings.stepTestDuration.to<float>();
 
-  // Estimate qp as 1/8 * units-per-rot
-  m_settings.lqr.qp = 0.125 * m_manager->GetFactor();
-  // Estimate qv as 1/4 * max velocity = 1/4 * (12V - kS) / kV
-  m_settings.lqr.qv = 0.25 * (12.0 - m_ff[0]) / m_ff[1];
+    // Estimate qp as 1/8 * units-per-rot
+    m_settings.lqr.qp = 0.125 * m_manager->GetFactor();
+    // Estimate qv as 1/4 * max velocity = 1/4 * (12V - kS) / kV
+    m_settings.lqr.qv = 0.25 * (12.0 - m_ff[0]) / m_ff[1];
+  }
 }
 
 void Analyzer::Display() {
@@ -77,10 +84,17 @@ void Analyzer::Display() {
         m_manager = std::make_unique<AnalysisManager>(*m_location, m_settings,
                                                       m_logger);
         m_type = m_manager->GetAnalysisType();
+
         Calculate();
         PrepareData();
         PrepareGraphs();
         ConfigParamsOnFileSelect();
+
+        // Since the data preparation methods catch errors, the error needs to
+        // be rethrown so the logger can report it.
+        if (!m_enabled) {
+          throw std::runtime_error(m_exception);
+        }
       } catch (const std::exception& e) {
         // If we run into an error here, let's just ignore it and make the user
         // explicitly select their file.
@@ -88,7 +102,6 @@ void Analyzer::Display() {
         WPI_ERROR(
             m_logger,
             "An error occurred when attempting to load the previous JSON.");
-        static_cast<void>(e);
       }
     } else {
       *m_location = "";
@@ -112,6 +125,7 @@ void Analyzer::Display() {
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 15);
     if (ImGui::Combo("Dataset", &m_settings.dataset, AnalysisManager::kDatasets,
                      m_type == analysis::kDrivetrain ? 9 : 3)) {
+      m_enabled = true;
       Calculate();
       PrepareGraphs();
     }
@@ -119,6 +133,7 @@ void Analyzer::Display() {
     if (ImGui::Button("Reset")) {
       m_manager.reset();
       *m_location = "";
+      m_enabled = true;
     }
     ImGui::Spacing();
     ImGui::Text(
@@ -169,6 +184,7 @@ void Analyzer::Display() {
         ImGui::CloseCurrentPopup();
         try {
           m_manager->OverrideUnits(m_unit, m_factor);
+          m_enabled = true;
           Calculate();
         } catch (const std::exception& e) {
           ex = true;
@@ -178,13 +194,14 @@ void Analyzer::Display() {
 
       ImGui::EndPopup();
       if (ex) {
-        ImGui::OpenPopup("Exception Caught!");
+        m_errorPopup = true;
       }
     }
 
     ImGui::SameLine();
     if (ImGui::Button("Reset Units from JSON")) {
       m_manager->ResetUnitsFromJSON();
+      m_enabled = true;
       Calculate();
     }
   }
@@ -258,6 +275,7 @@ void Analyzer::Display() {
                        IM_ARRAYSIZE(kPresetNames))) {
         m_settings.preset = m_presets[kPresetNames[m_selectedPreset]];
         m_settings.convertGainsToEncTicks = m_selectedPreset > 2;
+        m_enabled = true;
         Calculate();
       }
       ImGui::SameLine();
@@ -290,6 +308,7 @@ void Analyzer::Display() {
                              "%.1f") &&
           value > 0) {
         m_settings.preset.outputConversionFactor = value / 12.0;
+        m_enabled = true;
         Calculate();
       }
 
@@ -299,6 +318,7 @@ void Analyzer::Display() {
                              "%.1f") &&
           value > 0) {
         m_settings.preset.outputVelocityTimeFactor = value;
+        m_enabled = true;
         Calculate();
       }
 
@@ -314,6 +334,7 @@ void Analyzer::Display() {
 
         ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
         if (ImGui::InputDouble(text, data, 0.0, 0.0, "%.4f") && *data > 0) {
+          m_enabled = true;
           Calculate();
         }
       };
@@ -324,6 +345,7 @@ void Analyzer::Display() {
 
       // Show whether the controller gains are time-normalized.
       if (ImGui::Checkbox("Time-Normalized?", &m_settings.preset.normalized)) {
+        m_enabled = true;
         Calculate();
       }
       float endY = ImGui::GetCursorPosY();
@@ -347,6 +369,7 @@ void Analyzer::Display() {
 
       if (ImGui::Checkbox("Convert Gains to Encoder Counts",
                           &m_settings.convertGainsToEncTicks)) {
+        m_enabled = true;
         Calculate();
       }
       sysid::CreateTooltip(
@@ -365,6 +388,7 @@ void Analyzer::Display() {
         if (ImGui::InputDouble("Gearing", &m_settings.gearing, 0.0, 0.0,
                                "%.4f") &&
             m_settings.gearing > 0) {
+          m_enabled = true;
           Calculate();
         }
         sysid::CreateTooltip(
@@ -373,6 +397,7 @@ void Analyzer::Display() {
 
         ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
         if (ImGui::InputInt("CPR", &m_settings.cpr, 0) && m_settings.cpr > 0) {
+          m_enabled = true;
           Calculate();
         }
         sysid::CreateTooltip(
@@ -394,6 +419,7 @@ void Analyzer::Display() {
                        IM_ARRAYSIZE(kLoopTypes))) {
         m_settings.type =
             static_cast<FeedbackControllerLoopType>(m_selectedLoopType);
+        m_enabled = true;
         Calculate();
       }
 
@@ -421,6 +447,7 @@ void Analyzer::Display() {
                 ImGuiSliderFlags_None |
                     (power ? ImGuiSliderFlags_Logarithmic : 0))) {
           *data = static_cast<double>(val);
+          m_enabled = true;
           Calculate();
         }
       };
@@ -443,6 +470,10 @@ void Analyzer::Display() {
   } catch (const std::exception& e) {
     m_exception = e.what();
     ResetManagerState();
+    m_errorPopup = true;
+  }
+
+  if (m_errorPopup) {
     ImGui::OpenPopup("Exception Caught!");
   }
 
@@ -455,6 +486,7 @@ void Analyzer::Display() {
     ImGui::PopTextWrapPos();
     if (ImGui::Button("Close")) {
       ImGui::CloseCurrentPopup();
+      m_errorPopup = false;
     }
     ImGui::EndPopup();
   }
@@ -466,6 +498,7 @@ void Analyzer::SelectFile() {
     // Store the location of the file and reset the selector.
     *m_location = m_selector->result()[0];
     m_selector.reset();
+    m_enabled = true;
 
     // Create the analysis manager.
     try {
@@ -479,12 +512,17 @@ void Analyzer::SelectFile() {
           "The provided JSON was invalid! You may need to rerun the logger.\n" +
           std::string(e.what());
       ResetManagerState();
-      ImGui::OpenPopup("Exception Caught!");
+      m_errorPopup = true;
     }
   }
 }
 
 void Analyzer::PrepareData() {
+  if (!m_enabled) {
+    wpi::outs() << "returning early prepdata\n";
+    wpi::outs().flush();
+    return;
+  }
   try {
     m_manager->PrepareData();
   } catch (const wpi::json::exception& e) {
@@ -492,15 +530,20 @@ void Analyzer::PrepareData() {
         "The provided JSON was invalid! You may need to rerun the logger.\n" +
         std::string(e.what());
     ResetManagerState();
-    ImGui::OpenPopup("Exception Caught!");
+    m_errorPopup = true;
   } catch (const std::exception& e) {
     m_exception = e.what();
     ResetManagerState();
-    ImGui::OpenPopup("Exception Caught!");
+    m_errorPopup = true;
   }
 }
 
 void Analyzer::Calculate() {
+  if (!m_enabled) {
+    wpi::outs() << "returning early calculate\n";
+    wpi::outs().flush();
+    return;
+  }
   try {
     const auto& [ff, fb, trackWidth] = m_manager->Calculate();
     m_ff = std::get<0>(ff);
@@ -513,7 +556,7 @@ void Analyzer::Calculate() {
   } catch (const std::exception& e) {
     m_exception = e.what();
     ResetManagerState();
-    ImGui::OpenPopup("Exception Caught!");
+    m_errorPopup = true;
   }
 }
 
@@ -526,6 +569,11 @@ void Analyzer::AbortDataPrep() {
 }
 
 void Analyzer::PrepareGraphs() {
+  if (!m_enabled) {
+    wpi::outs() << "returning early graphs\n";
+    wpi::outs().flush();
+    return;
+  }
   try {
     AbortDataPrep();
     m_dataThread = std::thread([&] {
@@ -536,7 +584,7 @@ void Analyzer::PrepareGraphs() {
   } catch (const std::exception& e) {
     m_exception = e.what();
     ResetManagerState();
-    ImGui::OpenPopup("Exception Caught!");
+    m_errorPopup = true;
   }
 }
 
@@ -547,14 +595,14 @@ void Analyzer::RefreshInformation() {
 }
 
 void Analyzer::ResetManagerState() {
-  m_manager.reset();
-  *m_location = "";
+  m_enabled = false;
 }
 
 void Analyzer::DisplayFeedforwardGains(bool combined) {
   float beginX = ImGui::GetCursorPosX();
   float beginY = ImGui::GetCursorPosY();
   const char* gainNames[] = {"Ks", "Kv", "Ka"};
+
   for (size_t i = 0; i < 3; i++) {
     SetPosition(beginX, beginY, 0, i);
     DisplayGain(gainNames[i], &m_ff[i]);
@@ -601,6 +649,7 @@ void Analyzer::DisplayFeedforwardGains(bool combined) {
                       combined ? ImGuiInputTextFlags_ReadOnly
                                : ImGuiInputTextFlags_EnterReturnsTrue)) {
     m_settings.windowSize = std::clamp(window, 2, 15);
+    m_enabled = true;
     RefreshInformation();
   }
 
@@ -617,6 +666,7 @@ void Analyzer::DisplayFeedforwardGains(bool combined) {
                          combined ? ImGuiInputTextFlags_ReadOnly
                                   : ImGuiInputTextFlags_EnterReturnsTrue)) {
     m_settings.motionThreshold = std::max(0.0, threshold);
+    m_enabled = true;
     RefreshInformation();
   }
 
@@ -629,6 +679,7 @@ void Analyzer::DisplayFeedforwardGains(bool combined) {
                            m_manager->GetMinDuration(),
                            m_manager->GetMaxDuration(), "%.2f")) {
       m_settings.stepTestDuration = units::second_t{m_stepTestDuration};
+      m_enabled = true;
       RefreshInformation();
     }
 
