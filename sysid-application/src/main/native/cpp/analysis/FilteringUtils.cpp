@@ -15,6 +15,21 @@
 using namespace sysid;
 
 /**
+ * Helper function that throws if it detects that the data vector is too small
+ * for an operation of a certain window size.
+ *
+ * @param data The data that is being used.
+ * @param window The window size for the operation.
+ */
+static void CheckSize(const std::vector<PreparedData>& data, int window) {
+  if (data.size() < window) {
+    throw std::runtime_error(
+        "The data collected is too small! This can be caused by too high of a "
+        "motion threshold or bad data collection.");
+  }
+}
+
+/**
  * Fills in the rest of the PreparedData Structs for a PreparedData Vector.
  *
  * @param data A reference to a vector of the raw data.
@@ -26,11 +41,7 @@ static void PrepareMechData(std::vector<PreparedData>* data,
   constexpr size_t kOrder = 6;
   constexpr size_t kWindow = kOrder + 1;
 
-  if (data->size() < kWindow) {
-    throw std::runtime_error(
-        "The data collected is too small! This can be caused by too high of a "
-        "motion threshold or bad data collection.");
-  }
+  CheckSize(*data, kWindow);
 
   const double h = GetMeanTimeDelta(*data).to<double>();
 
@@ -159,6 +170,8 @@ void sysid::TrimQuasistaticData(std::vector<PreparedData>* data,
 }
 
 void sysid::ApplyMedianFilter(std::vector<PreparedData>* data, int window) {
+  CheckSize(*data, window);
+
   size_t step = window / 2;
   frc::MedianFilter<double> medianFilter(window);
 

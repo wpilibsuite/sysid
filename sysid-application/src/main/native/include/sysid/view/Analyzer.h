@@ -51,6 +51,7 @@ class Analyzer : public glass::View {
   void AbortDataPrep();
   void DisplayFeedforwardGains(bool combined = false);
   void ConfigParamsOnFileSelect();
+  void DisplayGain(const char* text, double* data);
 
   /**
    * Loads the diagnostic plots.
@@ -59,6 +60,12 @@ class Analyzer : public glass::View {
    * have just finished loading.
    */
   bool LoadPlots();
+
+  // This is true when the analysis is allowed to occur.
+  bool m_enabled = true;
+
+  // This is true if the error popup needs to be displayed
+  bool m_errorPopup = false;
 
   bool first = true;
   std::string m_exception;
