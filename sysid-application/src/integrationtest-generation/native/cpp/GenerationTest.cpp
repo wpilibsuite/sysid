@@ -31,8 +31,10 @@ using namespace std::chrono_literals;
 
 const wpi::SmallVector<std::string, 4> kPigeonCtors{"0", "WPI_TalonSRX-1"};
 const wpi::SmallVector<std::string, 4> kAnalogCtors{"0"};
-const wpi::SmallVector<std::string, 4> kNavXCtors{"SPI.kMXP"};
-const wpi::SmallVector<std::string, 4> kADXRS450Ctors{"SPI.kMXP"};
+const wpi::SmallVector<std::string, 4> kNavXCtors{
+    "SerialPort.kUSB", "I2C", "SerialPort.kMXP", "SPI.kMXP"};
+const wpi::SmallVector<std::string, 4> kADXRS450Ctors{"SPI.kMXP",
+                                                      "kOnboardCS0"};
 wpi::StringMap<wpi::SmallVector<std::string, 4>> gyroCtorMap = {
     {"AnalogGyro", kAnalogCtors},
     {"Pigeon", kPigeonCtors},
@@ -105,7 +107,7 @@ class GenerationTest : public ::testing::Test {
 };
 wpi::Logger GenerationTest::m_logger;
 
-TEST_F(GenerationTest, SingleSided) {
+TEST_F(GenerationTest, GeneralMechanism) {
   SetUp("sysid-projects:mechanism");
   constexpr size_t size = 2;
   for (auto&& motorController : sysid::kMotorControllers) {
