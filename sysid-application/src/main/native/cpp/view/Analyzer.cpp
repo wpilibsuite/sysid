@@ -627,13 +627,16 @@ void Analyzer::DisplayFeedforwardGains(bool combined) {
   }
 
   double endY = ImGui::GetCursorPosY();
-  SetPosition(beginX, beginY, 1, 0);
+
+  // Increase spacing to not run into trackwidth in the normal analyzer view
+  auto horizontalSpacing = combined ? 1 : 2;
+  SetPosition(beginX, beginY, horizontalSpacing, 0);
 
   if (!combined) {
     if (ImGui::Button("Combined Diagnostics")) {
       ImGui::OpenPopup("Combined Diagnostics");
     }
-    SetPosition(beginX, beginY, 1, 1);
+    SetPosition(beginX, beginY, horizontalSpacing, 1);
   }
 
   // Wait for enter before refresh so double digit entries like "15" don't
@@ -654,7 +657,7 @@ void Analyzer::DisplayFeedforwardGains(bool combined) {
 
   // Wait for enter before refresh so decimal inputs like "0.2" don't
   // prematurely refresh with a velocity threshold of "0".
-  SetPosition(beginX, beginY, 1, combined ? 1 : 2);
+  SetPosition(beginX, beginY, horizontalSpacing, combined ? 1 : 2);
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
   double threshold = m_settings.motionThreshold;
   if (ImGui::InputDouble("Velocity Threshold", &threshold, 0.0, 0.0, "%.3f",
@@ -667,7 +670,7 @@ void Analyzer::DisplayFeedforwardGains(bool combined) {
 
   CreateTooltip("Velocity data below this threshold will be ignored.");
 
-  SetPosition(beginX, beginY, 1, combined ? 2 : 3);
+  SetPosition(beginX, beginY, horizontalSpacing, combined ? 2 : 3);
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
   if (!combined) {
     if (ImGui::SliderFloat("Test Duration", &m_stepTestDuration,

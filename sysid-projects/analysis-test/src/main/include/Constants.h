@@ -38,8 +38,10 @@ constexpr int kEncoderResolution = 4096;
 // Feedforward Gains
 constexpr auto kV = 1.98_V / 1_mps;
 constexpr auto kA = 0.2_V / 1_mps_sq;
-constexpr auto kAngularKV = 1.98_V / 1_rad_per_s;
-constexpr auto kAngularKA = 0.2_V / 1_rad_per_s_sq;
+
+// FIXME: The actual units should be in meters per sec
+constexpr auto kAngularKV = 1.5_V / 1_rad_per_s;
+constexpr auto kAngularKA = 0.3_V / 1_rad_per_s_sq;
 
 }  // namespace Drivetrain
 

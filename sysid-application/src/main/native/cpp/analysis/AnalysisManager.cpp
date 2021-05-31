@@ -11,6 +11,7 @@
 #include <functional>
 #include <initializer_list>
 #include <stdexcept>
+#include <string_view>
 #include <vector>
 
 #include <fmt/format.h>
@@ -81,6 +82,22 @@ static std::vector<PreparedData> Concatenate(
 
   // Return the dest vector.
   return dest;
+}
+
+template <size_t S>
+static void CopyRawData(
+    wpi::StringMap<std::vector<std::array<double, S>>>* dataset) {
+  using Data = std::array<double, S>;
+  auto& data = *dataset;
+  // Loads the Raw Data
+  sysid::ApplyToData(
+      data,
+      [&](std::string_view key) {
+        data[fmt::format("raw-{}", key)] = std::vector<Data>(data[key]);
+      },
+      [](std::string_view key) {
+        return key.find("raw") == std::string_view::npos;
+      });
 }
 
 /**
@@ -161,14 +178,7 @@ static void PrepareGeneralData(const wpi::json& json,
   }
 
   // Loads the Raw Data
-  sysid::ApplyToData(
-      data,
-      [&](std::string_view key) {
-        data[fmt::format("raw-{}", key)] = std::vector<Data>(data[key]);
-      },
-      [](std::string_view key) {
-        return key.find("raw") == std::string_view::npos;
-      });
+  CopyRawData(&data);
 
   // Convert data to PreparedData structs
   sysid::ApplyToData(data, [&](std::string_view key) {
@@ -232,7 +242,8 @@ static void PrepareAngularDrivetrainData(
 
   // Store the relevant raw data columns.
   static constexpr size_t kTimeCol = 0;
-  static constexpr size_t kVoltageCol = 1;
+  static constexpr size_t kLVoltageCol = 1;
+  static constexpr size_t kRVoltageCol = 2;
   static constexpr size_t kLPosCol = 3;
   static constexpr size_t kRPosCol = 4;
   static constexpr size_t kAngleCol = 7;
@@ -247,17 +258,24 @@ static void PrepareAngularDrivetrainData(
   // positions and velocities by the factor.
   for (auto it = data.begin(); it != data.end(); ++it) {
     for (auto&& pt : it->second) {
-      pt[kVoltageCol] = 2 * std::copysign(pt[kVoltageCol], pt[kAngularRateCol]);
       pt[kLPosCol] *= factor;
       pt[kRPosCol] *= factor;
+
+      // Store the summarized average voltages in the left voltage column
+      pt[kLVoltageCol] =
+          (std::copysign(pt[kLVoltageCol], pt[kAngularRateCol]) +
+           std::copysign(pt[kRVoltageCol], pt[kAngularRateCol])) /
+          2;
     }
   }
 
+  // Load Raw Data
+  CopyRawData(&data);
+
   // Convert raw data to prepared data
   sysid::ApplyToData(data, [&](std::string_view key) {
-    preparedData[key] =
-        ConvertToPrepared<9, kTimeCol, kVoltageCol, kAngleCol, kAngularRateCol>(
-            data[key]);
+    preparedData[key] = ConvertToPrepared<9, kTimeCol, kLVoltageCol, kAngleCol,
+                                          kAngularRateCol>(data[key]);
   });
 
   sysid::InitialTrimAndFilter(&preparedData, settings, minStepTime,
@@ -283,9 +301,27 @@ static void PrepareAngularDrivetrainData(
   trackWidth = sysid::CalculateTrackWidth(leftDelta, rightDelta,
                                           units::radian_t{angleDelta});
 
+  // To convert the angular rates into translational velocities (to work with
+  // the model + OLS), v = ωr => v = ω * trackwidth / 2
+  double translationalFactor = trackWidth.value() / 2.0;
+
+  // Scale Angular Rate Data
+  sysid::ApplyToData(preparedData, [&](std::string_view key) {
+    for (auto& pt : preparedData[key]) {
+      pt.velocity *= translationalFactor;
+      pt.nextVelocity *= translationalFactor;
+      pt.acceleration *= translationalFactor;
+    }
+  });
+
   // Create the distinct datasets and store them in our StringMap.
+  StoreDatasets(&rawDatasets, preparedData["raw-slow-forward"],
+                preparedData["raw-slow-backward"],
+                preparedData["raw-fast-forward"],
+                preparedData["raw-fast-backward"]);
   StoreDatasets(&filteredDatasets, slowForward, slowBackward, fastForward,
                 fastBackward);
+
   startTimes = {slowForward[0].timestamp, slowBackward[0].timestamp,
                 fastForward[0].timestamp, fastBackward[0].timestamp};
 }
@@ -341,14 +377,7 @@ static void PrepareLinearDrivetrainData(
   }
 
   // Load Raw Data
-  sysid::ApplyToData(
-      data,
-      [&](std::string_view key) {
-        data[fmt::format("raw-{}", key)] = std::vector<Data>(data[key]);
-      },
-      [](std::string_view key) {
-        return key.find("raw") == std::string_view::npos;
-      });
+  CopyRawData(&data);
 
   // Convert data to PreparedData
   sysid::ApplyToData(data, [&](std::string_view key) {

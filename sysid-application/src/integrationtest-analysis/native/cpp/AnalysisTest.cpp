@@ -26,6 +26,8 @@ using namespace std::chrono_literals;
 // The constants that are defined in our integration test program.
 constexpr double Kv = 1.98;
 constexpr double Ka = 0.2;
+constexpr double Kv_angular = 1.5;
+constexpr double Ka_angular = 0.3;
 constexpr double kTrackWidth = 0.762;
 
 // 36000 max samples / 9 samples per entry
@@ -92,8 +94,13 @@ class AnalysisTest : public ::testing::Test {
 
       fmt::print(stderr, "Ks: {}\nKv: {}\nKa: {}\n", ffGains[0], ffGains[1],
                  ffGains[2]);
-      EXPECT_NEAR(Kv, ffGains[1], 0.003);
-      EXPECT_NEAR(Ka, ffGains[2], 0.003);
+      if (m_settings.mechanism != sysid::analysis::kDrivetrainAngular) {
+        EXPECT_NEAR(Kv, ffGains[1], 0.003);
+        EXPECT_NEAR(Ka, ffGains[2], 0.003);
+      } else {
+        EXPECT_NEAR(Kv_angular, ffGains[1], 0.003);
+        EXPECT_NEAR(Ka_angular, ffGains[2], 0.003);
+      }
 
       if (m_settings.mechanism == sysid::analysis::kElevator) {
         fmt::print(stderr, "Kg: {}\n", ffGains[3]);
@@ -215,6 +222,12 @@ wpi::Logger AnalysisTest::m_logger;
 
 TEST_F(AnalysisTest, Drivetrain) {
   SetUp(sysid::analysis::kDrivetrain);
+  RunFullTests();
+  AnalyzeJSON();
+}
+
+TEST_F(AnalysisTest, DrivetrainAngular) {
+  SetUp(sysid::analysis::kDrivetrainAngular);
   RunFullTests();
   AnalyzeJSON();
 }
