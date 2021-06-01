@@ -35,7 +35,8 @@ wpi::StringMap<wpi::SmallVector<std::string, 4>> gyroCtorMap = {
     {"AnalogGyro", kAnalogCtors},
     {"Pigeon", kPigeonCtors},
     {"ADXRS450", kADXRS450Ctors},
-    {"NavX", kNavXCtors},
+    // FIXME: Waiting on Linux and macOS builds for navX AHRS
+    // {"NavX", kNavXCtors},
     {"None", kAnalogCtors}};
 
 class GenerationTest : public ::testing::Test {
@@ -148,8 +149,9 @@ TEST_F(GenerationTest, Drivetrain) {
     }
   }
 
-  m_settings = sysid::kRomiConfig;
-  m_manager.SaveJSON(m_jsonPath, 1, true);
-  fmt::print(stderr, "Testing: Romi Config\n");
-  Run();
+  // FIXME: Uncomment once Romi vendordep is available
+  // m_settings = sysid::kRomiConfig;
+  // m_manager.SaveJSON(m_jsonPath, 1, true);
+  // fmt::print(stderr, "Testing: Romi Config\n");
+  // Run();
 }
