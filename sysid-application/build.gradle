@@ -159,6 +159,11 @@ model {
       } else {
         it.linker.args << '-lX11'
       }
+
+      // Define NDEBUG in Release Mode (needed for proper wpi::Logger functionality).
+      if (it.buildType.getName() == "release") {
+        it.cppCompiler.define("NDEBUG")
+      }
     }
   }
   tasks {
