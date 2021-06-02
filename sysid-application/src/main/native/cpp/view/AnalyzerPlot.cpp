@@ -14,7 +14,6 @@
 #include <implot.h>
 #include <units/math.h>
 #include <units/time.h>
-#include <wpi/raw_ostream.h>
 
 #include "sysid/Util.h"
 #include "sysid/analysis/AnalysisManager.h"
