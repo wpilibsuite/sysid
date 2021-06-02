@@ -13,8 +13,8 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
-#include <wpi/FileSystem.h>
 #include <wpi/Format.h>
+#include <wpi/fs.h>
 #include <wpi/json.h>
 #include <wpi/numbers>
 
@@ -78,7 +78,7 @@ void Analyzer::Display() {
   // If this is the first call to Display() and there's a valid m_location, load
   // it.
   if (first) {
-    if (!m_location->empty() && wpi::sys::fs::exists(*m_location)) {
+    if (!m_location->empty() && fs::exists(*m_location)) {
       try {
         m_manager = std::make_unique<AnalysisManager>(*m_location, m_settings,
                                                       m_logger);
