@@ -16,7 +16,7 @@
 #include <glass/other/Log.h>
 #include <imgui.h>
 #include <wpi/Logger.h>
-#include <wpi/Path.h>
+#include <wpi/fs.h>
 #include <wpigui.h>
 
 #include "sysid/view/Analyzer.h"
@@ -84,8 +84,7 @@ int main() {
     } else if (level >= wpi::WPI_LOG_INFO) {
       lvl = "INFO: ";
     }
-    const char* filename = wpi::sys::path::filename(file).data();
-
+    std::string filename = fs::path{file}.filename().string();
     gLog.Append(fmt::format("{}{} ({}:{})\n", lvl, msg, filename, line));
   });
 
