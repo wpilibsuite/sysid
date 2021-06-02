@@ -7,10 +7,6 @@
 #include <cstddef>
 #include <string_view>
 
-namespace wpi {
-class StringRef;
-}  // namespace wpi
-
 namespace sysid {
 
 struct AnalysisType {
@@ -25,7 +21,7 @@ struct AnalysisType {
 
   /** Compares equality of two AnalysisType structs. */
   constexpr bool operator==(const AnalysisType& rhs) const {
-    return std::string_view(name) == rhs.name &&
+    return std::string_view{name} == rhs.name &&
            independentVariables == rhs.independentVariables &&
            rawDataSize == rhs.rawDataSize;
   }
@@ -43,6 +39,6 @@ constexpr AnalysisType kElevator{4, 4, "Elevator"};
 constexpr AnalysisType kArm{4, 4, "Arm"};
 constexpr AnalysisType kSimple{3, 4, "Simple"};
 
-AnalysisType FromName(wpi::StringRef name);
+AnalysisType FromName(std::string_view name);
 }  // namespace analysis
 }  // namespace sysid

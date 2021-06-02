@@ -8,21 +8,17 @@
 
 #include <functional>
 #include <memory>
-#include <stdexcept>
 #include <string>
-#include <system_error>
 #include <vector>
 
 #include <frc/Encoder.h>
 #include <frc/SpeedController.h>
 #include <frc/TimedRobot.h>
 #include <frc/smartdashboard/SendableChooser.h>
-#include <units/voltage.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
 
 #include "logging/SysIdGeneralMechanismLogger.h"
-#include "rev/CANEncoder.h"
 
 class Robot : public frc::TimedRobot {
  public:

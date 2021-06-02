@@ -10,17 +10,15 @@
 #include <cstddef>
 #include <functional>
 #include <initializer_list>
-#include <iostream>
-#include <limits>
 #include <stdexcept>
-#include <system_error>
 #include <vector>
 
+#include <fmt/format.h>
 #include <units/angle.h>
 #include <units/math.h>
 #include <wpi/StringMap.h>
 #include <wpi/json.h>
-#include <wpi/math>
+#include <wpi/numbers>
 #include <wpi/raw_istream.h>
 #include <wpi/raw_ostream.h>
 
@@ -131,7 +129,7 @@ static void StoreDatasets(wpi::StringMap<Storage>* dataset,
  */
 static void PrepareGeneralData(const wpi::json& json,
                                AnalysisManager::Settings& settings,
-                               double factor, wpi::StringRef unit,
+                               double factor, std::string_view unit,
                                wpi::StringMap<Storage>& rawDatasets,
                                wpi::StringMap<Storage>& filteredDatasets,
                                std::array<units::second_t, 4>& startTimes,
@@ -165,14 +163,15 @@ static void PrepareGeneralData(const wpi::json& json,
   // Loads the Raw Data
   sysid::ApplyToData(
       data,
-      [&](wpi::StringRef key) {
-        std::string rawName{"raw-" + key.str()};
-        data[rawName] = std::vector<Data>(data[key]);
+      [&](std::string_view key) {
+        data[fmt::format("raw-{}", key)] = std::vector<Data>(data[key]);
       },
-      [](wpi::StringRef key) { return !key.contains("raw"); });
+      [](std::string_view key) {
+        return key.find("raw") == std::string_view::npos;
+      });
 
   // Convert data to PreparedData structs
-  sysid::ApplyToData(data, [&](wpi::StringRef key) {
+  sysid::ApplyToData(data, [&](std::string_view key) {
     preparedData[key] =
         ConvertToPrepared<4, kTimeCol, kVoltageCol, kPosCol, kVelCol>(
             data[key]);
@@ -255,7 +254,7 @@ static void PrepareAngularDrivetrainData(
   }
 
   // Convert raw data to prepared data
-  sysid::ApplyToData(data, [&](wpi::StringRef key) {
+  sysid::ApplyToData(data, [&](std::string_view key) {
     preparedData[key] =
         ConvertToPrepared<9, kTimeCol, kVoltageCol, kAngleCol, kAngularRateCol>(
             data[key]);
@@ -344,16 +343,17 @@ static void PrepareLinearDrivetrainData(
   // Load Raw Data
   sysid::ApplyToData(
       data,
-      [&](wpi::StringRef key) {
-        std::string rawName{"raw-" + key.str()};
-        data[rawName] = std::vector<Data>(data[key]);
+      [&](std::string_view key) {
+        data[fmt::format("raw-{}", key)] = std::vector<Data>(data[key]);
       },
-      [](wpi::StringRef key) { return !key.contains("raw"); });
+      [](std::string_view key) {
+        return key.find("raw") == std::string_view::npos;
+      });
 
   // Convert data to PreparedData
-  sysid::ApplyToData(data, [&](wpi::StringRef key) {
-    std::string leftName{"left-" + key.str()};
-    std::string rightName{"right-" + key.str()};
+  sysid::ApplyToData(data, [&](std::string_view key) {
+    std::string leftName = fmt::format("left-{}", key);
+    std::string rightName = fmt::format("right-{}", key);
     preparedData[leftName] =
         ConvertToPrepared<9, kTimeCol, kLVoltageCol, kLPosCol, kLVelCol>(
             data[key]);
@@ -423,7 +423,7 @@ static void PrepareLinearDrivetrainData(
       rawFastForward.front().timestamp, rawFastBackward.front().timestamp};
 }
 
-AnalysisManager::AnalysisManager(wpi::StringRef path, Settings& settings,
+AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,
                                  wpi::Logger& logger)
     : m_settings(settings), m_logger(logger) {
   // Read JSON from the specified path.
@@ -431,7 +431,7 @@ AnalysisManager::AnalysisManager(wpi::StringRef path, Settings& settings,
   wpi::raw_fd_istream is{path, ec};
 
   if (ec) {
-    throw std::runtime_error("Unable to read: " + path.str());
+    throw std::runtime_error(fmt::format("Unable to read: {}", path));
   }
 
   is >> m_json;
@@ -501,7 +501,7 @@ AnalysisManager::Gains AnalysisManager::Calculate() {
   return {ffGains, fbGains, m_trackWidth};
 }
 
-void AnalysisManager::OverrideUnits(wpi::StringRef unit,
+void AnalysisManager::OverrideUnits(std::string_view unit,
                                     double unitsPerRotation) {
   m_unit = unit;
   m_factor = unitsPerRotation;

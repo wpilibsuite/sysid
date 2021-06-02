@@ -10,8 +10,6 @@
 
 #include <glass/View.h>
 #include <wpi/Logger.h>
-#include <wpi/SmallString.h>
-#include <wpi/SmallVector.h>
 
 #include "sysid/generation/ConfigManager.h"
 

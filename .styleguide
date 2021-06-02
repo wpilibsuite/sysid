@@ -23,11 +23,13 @@ includeOtherLibs {
   ^GLFW
   ^cscore
   ^Eigen
+  ^fmt/
   ^frc
   ^imgui
   ^implot\.h$
   ^ntcore
   ^portable-file-dialogs
+  ^rev/
   ^units
   ^wpi/
   ^wpigui

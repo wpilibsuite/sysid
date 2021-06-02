@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <wpi/Logger.h>
@@ -58,7 +59,7 @@ class ConfigManager {
    * @param portCount How many ports the robot will be using. If it is a
    * drivetrain project, this is how many ports per drive side.
    */
-  void SaveJSON(wpi::StringRef path, size_t portCount, bool isRomi = false);
+  void SaveJSON(std::string_view path, size_t portCount, bool isRomi = false);
 
  private:
   ConfigSettings& m_config;

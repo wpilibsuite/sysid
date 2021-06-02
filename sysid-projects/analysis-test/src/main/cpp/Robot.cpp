@@ -2,21 +2,15 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-#include <sstream>
+#include <string>
 #include <vector>
 
-#include <frc/RobotController.h>
 #include <frc/SlewRateLimiter.h>
 #include <frc/TimedRobot.h>
 #include <frc/XboxController.h>
-#include <frc/controller/RamseteController.h>
-#include <frc/livewindow/LiveWindow.h>
 #include <frc/simulation/DriverStationSim.h>
 #include <frc/smartdashboard/SmartDashboard.h>
-#include <frc/trajectory/TrajectoryGenerator.h>
-#include <frc2/Timer.h>
 #include <units/voltage.h>
-#include <wpi/StringRef.h>
 
 #include "Arm.h"
 #include "Drivetrain.h"

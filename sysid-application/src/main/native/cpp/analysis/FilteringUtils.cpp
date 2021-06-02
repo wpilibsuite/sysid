@@ -5,12 +5,14 @@
 #include "sysid/analysis/FilteringUtils.h"
 
 #include <numeric>
+#include <stdexcept>
 #include <vector>
 
+#include <fmt/format.h>
 #include <frc/LinearFilter.h>
 #include <frc/MedianFilter.h>
 #include <units/math.h>
-#include <wpi/math>
+#include <wpi/numbers>
 
 using namespace sysid;
 
@@ -37,7 +39,7 @@ static void CheckSize(const std::vector<PreparedData>& data, int window) {
  *             for arm mechanisms.
  */
 static void PrepareMechData(std::vector<PreparedData>* data,
-                            wpi::StringRef unit = "") {
+                            std::string_view unit = "") {
   constexpr size_t kOrder = 6;
   constexpr size_t kWindow = kOrder + 1;
 
@@ -58,9 +60,9 @@ static void PrepareMechData(std::vector<PreparedData>* data,
     if (unit == "Radians") {
       cos = std::cos(pt.position);
     } else if (unit == "Degrees") {
-      cos = std::cos(pt.position * wpi::math::pi / 180.0);
+      cos = std::cos(pt.position * wpi::numbers::pi / 180.0);
     } else if (unit == "Rotations") {
-      cos = std::cos(pt.position * 2 * wpi::math::pi);
+      cos = std::cos(pt.position * 2 * wpi::numbers::pi);
     }
     pt.cos = cos;
   }
@@ -208,14 +210,19 @@ void sysid::FilterAccelData(std::vector<PreparedData>* data) {
 /**
  * Removes a substring from a string reference
  *
- * @param str The wpi::StringRef that needs modification
+ * @param str The std::string_view that needs modification
  * @param removeStr The substring that needs to be removed
  *
  * @return an std::string without the specified substring
  */
-static std::string RemoveStr(wpi::StringRef str, wpi::StringRef removeStr) {
-  auto pair = str.split(removeStr);
-  return pair.first.str() + pair.second.str();
+static std::string RemoveStr(std::string_view str, std::string_view removeStr) {
+  size_t idx = str.find(removeStr);
+  if (idx == std::string_view::npos) {
+    return std::string{str};
+  } else {
+    return fmt::format("{}{}", str.substr(0, idx),
+                       str.substr(idx + removeStr.size()));
+  }
 }
 
 /**
@@ -233,13 +240,14 @@ static units::second_t GetMaxTime(
   std::vector<double> durations;
   sysid::ApplyToData(
       data,
-      [&](wpi::StringRef key) {
+      [&](std::string_view key) {
         durations.push_back(
             (data[key].back().timestamp - data[key].front().timestamp)
                 .to<double>());
       },
-      [](wpi::StringRef key) {
-        return key.contains("fast") && key.contains("raw");
+      [](std::string_view key) {
+        return key.find("fast") != std::string_view::npos &&
+               key.find("raw") != std::string_view::npos;
       });
   return units::second_t{durations[std::distance(
       durations.begin(),
@@ -249,29 +257,33 @@ static units::second_t GetMaxTime(
 void sysid::InitialTrimAndFilter(
     wpi::StringMap<std::vector<PreparedData>>* data,
     AnalysisManager::Settings& settings, units::second_t& minStepTime,
-    units::second_t& maxStepTime, wpi::StringRef unit) {
+    units::second_t& maxStepTime, std::string_view unit) {
   auto& preparedData = *data;
 
   // Trim quasistatic test data to remove all points where voltage is zero or
   // velocity < motion threshold.
   sysid::ApplyToData(
       preparedData,
-      [&](wpi::StringRef key) {
+      [&](std::string_view key) {
         sysid::TrimQuasistaticData(&preparedData[key],
                                    settings.motionThreshold);
       },
-      [](wpi::StringRef key) { return key.contains("slow"); });
+      [](std::string_view key) {
+        return key.find("slow") != std::string_view::npos;
+      });
 
   // Apply Median filter
   sysid::ApplyToData(
       preparedData,
-      [&](wpi::StringRef key) {
+      [&](std::string_view key) {
         sysid::ApplyMedianFilter(&preparedData[key], settings.windowSize);
       },
-      [](wpi::StringRef key) { return !key.contains("raw"); });
+      [](std::string_view key) {
+        return key.find("raw") == std::string_view::npos;
+      });
 
   // Recalculate Accel and Cosine
-  sysid::ApplyToData(preparedData, [&](wpi::StringRef key) {
+  sysid::ApplyToData(preparedData, [&](std::string_view key) {
     PrepareMechData(&preparedData[key], unit);
   });
 
@@ -282,7 +294,7 @@ void sysid::InitialTrimAndFilter(
   // plotting
   sysid::ApplyToData(
       preparedData,
-      [&](wpi::StringRef key) {
+      [&](std::string_view key) {
         // Get the filtered dataset name
         auto filteredKey = RemoveStr(key, "raw-");
 
@@ -298,8 +310,9 @@ void sysid::InitialTrimAndFilter(
                          [&](auto&& pt) { return pt.timestamp == startTime; });
         preparedData[key].erase(preparedData[key].begin(), rawStart);
       },
-      [](wpi::StringRef key) {
-        return key.contains("fast") && key.contains("raw");
+      [](std::string_view key) {
+        return key.find("fast") != std::string_view::npos &&
+               key.find("raw") != std::string_view::npos;
       });
   // Confirm there's still data
   if (std::any_of(preparedData.begin(), preparedData.end(),
@@ -313,7 +326,7 @@ void sysid::AccelAndTimeFilter(wpi::StringMap<std::vector<PreparedData>>* data,
   auto& preparedData = *data;
 
   // Remove points with accel = 0
-  sysid::ApplyToData(preparedData, [&](wpi::StringRef key) {
+  sysid::ApplyToData(preparedData, [&](std::string_view key) {
     FilterAccelData(&preparedData[key]);
   });
 

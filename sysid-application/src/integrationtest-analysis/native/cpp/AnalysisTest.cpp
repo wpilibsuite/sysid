@@ -4,15 +4,13 @@
 
 #include <cstdlib>
 #include <exception>
+#include <string>
 #include <thread>
 
+#include <fmt/core.h>
 #include <ntcore_c.h>
 #include <ntcore_cpp.h>
 #include <wpi/Logger.h>
-#include <wpi/SmallString.h>
-#include <wpi/StringRef.h>
-#include <wpi/Twine.h>
-#include <wpi/raw_ostream.h>
 #include <wpi/timestamp.h>
 
 #include "IntegrationUtils.h"
@@ -54,7 +52,7 @@ class AnalysisTest : public ::testing::Test {
     // Setup logger.
     m_logger.SetLogger([](unsigned int level, const char* file,
                           unsigned int line,
-                          const char* msg) { wpi::outs() << msg << "\n"; });
+                          const char* msg) { fmt::print("{}\n", msg); });
 
     LaunchSim("sysid-projects:analysis-test");
 
@@ -92,54 +90,44 @@ class AnalysisTest : public ::testing::Test {
       const auto& [ff, fb, trackWidth] = analyzer.Calculate();
       const auto& ffGains = std::get<0>(ff);
 
-      wpi::outs() << "Ks: " << ffGains[0] << "\n"
-                  << "Kv: " << ffGains[1] << "\nKa: " << ffGains[2] << "\n";
-      wpi::outs().flush();
+      fmt::print(stderr, "Ks: {}\nKv: {}\nKa: {}\n", ffGains[0], ffGains[1],
+                 ffGains[2]);
       EXPECT_NEAR(Kv, ffGains[1], 0.003);
       EXPECT_NEAR(Ka, ffGains[2], 0.003);
 
       if (m_settings.mechanism == sysid::analysis::kElevator) {
-        wpi::outs() << "KG: " << ffGains[3] << "\n";
-        wpi::outs().flush();
+        fmt::print(stderr, "Kg: {}\n", ffGains[3]);
         EXPECT_NEAR(kG, ffGains[3], 0.003);
       } else if (m_settings.mechanism == sysid::analysis::kArm) {
-        wpi::outs() << "KCos: " << ffGains[3] << "\n";
-        wpi::outs().flush();
+        fmt::print(stderr, "KCos: {}\n", ffGains[3]);
         EXPECT_NEAR(kCos, ffGains[3], 0.04);
       }
 
       if (trackWidth) {
-        wpi::outs() << "Trackwidth: " << *trackWidth << "\n";
-        wpi::outs().flush();
+        fmt::print(stderr, "Trackwidth: {}\n", *trackWidth);
         EXPECT_NEAR(kTrackWidth, *trackWidth, 0.1);
       }
 
       if (HasFailure()) {  // If it failed, write to jsons folder for artifact
                            // upload
-        wpi::SmallString<128> jsonFolderPath;
-        wpi::raw_svector_ostream os(jsonFolderPath);
-        os << EXPAND_STRINGIZE(PROJECT_ROOT_DIR) << SYSID_PATH_SEPARATOR
-           << "jsons/";
+        std::string jsonFolderPath =
+            fmt::format("{}/jsons/", EXPAND_STRINGIZE(PROJECT_ROOT_DIR));
 
-        wpi::SmallString<128> failCommand;
-        wpi::raw_svector_ostream cmdOs(failCommand);
 #ifdef _WIN32
-        cmdOs << "if not exist \"" << jsonFolderPath.c_str() << "\" mkdir \""
-              << jsonFolderPath.c_str() << "\" && copy \"" << path << "\" \""
-              << jsonFolderPath.c_str() << "\"";
+        std::string failCommand = fmt::format(
+            "if not exist \"{}\" mkdir \"{}\" && copy \"{}\" \"{}\"",
+            jsonFolderPath, jsonFolderPath, path, jsonFolderPath);
 #else
-        cmdOs << "mkdir -p " << jsonFolderPath.c_str() << " && cp -v " << path
-              << " " << jsonFolderPath.c_str();
+        std::string failCommand = fmt::format(
+            "mkdir -p {} && cp -v {} {}", jsonFolderPath, path, jsonFolderPath);
 #endif
-        wpi::outs() << "Running: " << failCommand.c_str() << "\n";
+        fmt::print(stderr, "Running: {}\n", failCommand);
         std::system(failCommand.c_str());
       }
     } catch (std::exception& e) {
-      wpi::outs() << "Teardown Failed: " << e.what() << "\n";
+      fmt::print(stderr, "Teardown Failed: {}\n", e.what());
       ADD_FAILURE();
     }
-
-    wpi::outs().flush();
 
 // Delete the JSON.
 #ifdef _WIN32
@@ -166,8 +154,7 @@ class AnalysisTest : public ::testing::Test {
 
     // Enable the robot.
     nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(true));
-    wpi::outs() << "Running: " << test << "\n";
-    wpi::outs().flush();
+    fmt::print(stderr, "Running: {}\n", test);
 
     // Make sure overflow is false
     auto overflow = nt::GetEntryValue(m_overflow);

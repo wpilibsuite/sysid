@@ -7,7 +7,9 @@
 #ifndef RUNNING_SYSID_TESTS
 
 #include <memory>
+#include <string_view>
 
+#include <fmt/format.h>
 #include <glass/Context.h>
 #include <glass/Window.h>
 #include <glass/WindowManager.h>
@@ -15,7 +17,6 @@
 #include <imgui.h>
 #include <wpi/Logger.h>
 #include <wpi/Path.h>
-#include <wpi/StringRef.h>
 #include <wpigui.h>
 
 #include "sysid/view/Analyzer.h"
@@ -40,15 +41,15 @@ wpi::Logger gLogger;
 const char* GetWPILibVersion();
 
 namespace sysid {
-wpi::StringRef GetResource_sysid_16_png();
-wpi::StringRef GetResource_sysid_32_png();
-wpi::StringRef GetResource_sysid_48_png();
-wpi::StringRef GetResource_sysid_64_png();
-wpi::StringRef GetResource_sysid_128_png();
-wpi::StringRef GetResource_sysid_256_png();
-wpi::StringRef GetResource_sysid_512_png();
-wpi::StringRef GetResource_frcUserProgramDrive_out();
-wpi::StringRef GetResource_frcUserProgramMechanism_out();
+std::string_view GetResource_sysid_16_png();
+std::string_view GetResource_sysid_32_png();
+std::string_view GetResource_sysid_48_png();
+std::string_view GetResource_sysid_64_png();
+std::string_view GetResource_sysid_128_png();
+std::string_view GetResource_sysid_256_png();
+std::string_view GetResource_sysid_512_png();
+std::string_view GetResource_frcUserProgramDrive_out();
+std::string_view GetResource_frcUserProgramMechanism_out();
 }  // namespace sysid
 
 #ifdef _WIN32
@@ -85,8 +86,7 @@ int main() {
     }
     const char* filename = wpi::sys::path::filename(file).data();
 
-    gLog.Append(wpi::Twine{lvl} + msg + wpi::Twine{" ("} + filename +
-                wpi::Twine{':'} + wpi::Twine{line} + wpi::Twine{")\n"});
+    gLog.Append(fmt::format("{}{} ({}:{})\n", lvl, msg, filename, line));
   });
 
   // Initialize window manager and add views.

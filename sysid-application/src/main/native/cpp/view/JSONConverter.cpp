@@ -17,7 +17,7 @@ using namespace sysid;
 
 void JSONConverter::DisplayConverter(
     const char* tooltip,
-    std::function<std::string(wpi::StringRef, wpi::Logger&)> converter) {
+    std::function<std::string(std::string_view, wpi::Logger&)> converter) {
   if (ImGui::Button(tooltip)) {
     m_opener = std::make_unique<pfd::open_file>(
         tooltip, "", std::vector<std::string>{"JSON File", SYSID_PFD_JSON_EXT});

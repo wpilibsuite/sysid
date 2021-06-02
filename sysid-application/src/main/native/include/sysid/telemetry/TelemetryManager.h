@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <functional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -16,7 +17,6 @@
 #include <units/time.h>
 #include <wpi/Logger.h>
 #include <wpi/SmallVector.h>
-#include <wpi/StringRef.h>
 #include <wpi/json.h>
 
 #include "sysid/analysis/AnalysisType.h"
@@ -65,7 +65,7 @@ class TelemetryManager {
    *
    * @param name The name of the test.
    */
-  void BeginTest(wpi::StringRef name);
+  void BeginTest(std::string_view name);
 
   /**
    * Ends the currently running test. If there is no test running, this is a
@@ -97,7 +97,7 @@ class TelemetryManager {
    *
    * @return The full file path of the saved JSON.
    */
-  std::string SaveJSON(wpi::StringRef location);
+  std::string SaveJSON(std::string_view location);
 
   /**
    * Returns whether a test is currently running.
@@ -113,7 +113,7 @@ class TelemetryManager {
    *
    * @return Whether the specified test is running or has run.
    */
-  bool HasRunTest(wpi::StringRef name) const {
+  bool HasRunTest(std::string_view name) const {
     return std::find(m_tests.cbegin(), m_tests.cend(), name) != m_tests.end();
   }
 

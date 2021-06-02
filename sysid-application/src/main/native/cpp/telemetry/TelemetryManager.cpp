@@ -7,17 +7,15 @@
 #include <algorithm>
 #include <cctype>
 #include <ctime>
-#include <iomanip>
-#include <iterator>
-#include <sstream>
 #include <stdexcept>
 #include <string>
-#include <system_error>
 #include <utility>
 
+#include <fmt/chrono.h>
 #include <ntcore_cpp.h>
 #include <wpi/Logger.h>
-#include <wpi/math>
+#include <wpi/StringExtras.h>
+#include <wpi/numbers>
 #include <wpi/raw_ostream.h>
 #include <wpi/timestamp.h>
 
@@ -53,15 +51,15 @@ TelemetryManager::~TelemetryManager() {
   nt::DestroyEntryListenerPoller(m_poller);
 }
 
-void TelemetryManager::BeginTest(wpi::StringRef name) {
+void TelemetryManager::BeginTest(std::string_view name) {
   // Create a new test params instance for this test.
-  m_params =
-      TestParameters{name.startswith("fast"), name.endswith("forward"),
-                     m_settings.mechanism == analysis::kDrivetrainAngular,
-                     State::WaitingForEnable};
+  m_params = TestParameters{
+      wpi::starts_with(name, "fast"), wpi::ends_with(name, "forward"),
+      m_settings.mechanism == analysis::kDrivetrainAngular,
+      State::WaitingForEnable};
 
   // Add this test to the list of running tests and set the running flag.
-  m_tests.push_back(name);
+  m_tests.push_back(std::string{name});
   m_isRunningTest = true;
 
   // Set the Voltage Command Entry
@@ -115,30 +113,35 @@ void TelemetryManager::EndTest() {
   // Call the cancellation callbacks.
   for (auto&& func : m_callbacks) {
     if (!m_params.data.empty()) {
-      std::stringstream stream;
-      std::string units = wpi::StringRef(m_settings.units).lower();
+      std::string units;
+      std::transform(m_settings.units.begin(), m_settings.units.end(),
+                     units.begin(), ::tolower);
 
-      if (wpi::StringRef(m_settings.mechanism.name).startswith("Drivetrain")) {
+      std::string msg;
+
+      if (wpi::starts_with(m_settings.mechanism.name, "Drivetrain")) {
         double p = (m_params.data.back()[3] - m_params.data.front()[3]) *
                    m_settings.unitsPerRotation;
         double s = (m_params.data.back()[4] - m_params.data.front()[4]) *
                    m_settings.unitsPerRotation;
         double g = m_params.data.back()[7] - m_params.data.front()[7];
-        stream << "The left and right encoders traveled " << p << " " << units
-               << " and " << s << " " << units
-               << " respectively.\nThe gyro angle delta was "
-               << g * 180.0 / wpi::math::pi << " degrees.";
+
+        msg = fmt::format(
+            "The left and right encoders traveled {} {} and {} {} "
+            "respectively.\nThe gyro angle delta was {} degrees.",
+            p, units, s, units, g * 180.0 / wpi::numbers::pi);
       } else {
         double p = (m_params.data.back()[2] - m_params.data.front()[2]) *
                    m_settings.unitsPerRotation;
-        stream << "The encoder reported traveling " << p << " " << units << ".";
+        msg = fmt::format("The encoder reported traveling {} {}.", p, units);
       }
 
       if (m_params.overflow) {
-        stream << "\nNOTE: the robot stopped recording data early because the "
-                  "entry storage was exceeded.";
+        msg +=
+            "\nNOTE: the robot stopped recording data early because the entry "
+            "storage was exceeded.";
       }
-      func(stream.str());
+      func(msg);
     }
   }
 
@@ -261,24 +264,14 @@ void TelemetryManager::Update() {
   }
 }
 
-std::string TelemetryManager::SaveJSON(wpi::StringRef location) {
+std::string TelemetryManager::SaveJSON(std::string_view location) {
   m_data["test"] = m_settings.mechanism.name;
   m_data["units"] = m_settings.units;
   m_data["unitsPerRotation"] = m_settings.unitsPerRotation;
   m_data["sysid"] = true;
 
-  // Get the current date and time. This will be included in the file name.
-  std::time_t t = std::time(nullptr);
-  std::tm tm = *std::localtime(&t);
-
-  std::stringstream ss;
-  ss << location;
-  ss << SYSID_PATH_SEPARATOR;
-  ss << "sysid_data";
-  ss << std::put_time(&tm, "%Y%m%d-%H%M%S");
-  ss << ".json";
-
-  std::string loc = ss.str();
+  std::string loc = fmt::format("{}/sysid_data{:%Y%m%d-%H%M%S}.json", location,
+                                fmt::localtime(std::time(nullptr)));
 
   std::error_code ec;
   wpi::raw_fd_ostream os{loc, ec};

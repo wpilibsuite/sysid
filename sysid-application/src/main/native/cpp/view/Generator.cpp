@@ -4,16 +4,13 @@
 
 #include "sysid/view/Generator.h"
 
-#include <iostream>
 #include <memory>
 #include <string>
 
+#include <fmt/format.h>
 #include <glass/Context.h>
 #include <imgui.h>
 #include <imgui_stdlib.h>
-#include <wpi/StringRef.h>
-#include <wpi/math>
-#include <wpi/raw_os_ostream.h>
 
 #include "sysid/Util.h"
 #include "sysid/analysis/AnalysisType.h"
@@ -95,11 +92,12 @@ void Generator::GeneratorUI() {
     // Add motor controller selector
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
 
-    std::string name = "Motor Controller ";
+    std::string name;
     if (drive) {
-      name += "Pair ";
+      name = fmt::format("Motor Controller Pair {}", i);
+    } else {
+      name = fmt::format("Motor Controller {}", i);
     }
-    name += std::to_string(i);
 
     if (ImGui::BeginCombo(name.c_str(),
                           m_settings.m_motorControllers[i].c_str())) {
@@ -208,7 +206,7 @@ void Generator::GeneratorUI() {
 
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
 
-    wpi::StringRef gyroType{kGyros[m_gyroIdx]};
+    std::string_view gyroType{kGyros[m_gyroIdx]};
 
     if (gyroType == "Pigeon") {
       ImGui::InputInt("Gyro Parameter", &m_gyroPort, 0, 0);
@@ -289,15 +287,12 @@ void Generator::Display() {
   }
 
   ImGui::Separator();
-  wpi::SmallString<128> path;
-  wpi::raw_svector_ostream os{path};
-  os << "base-projects/";
+  std::string path;
   if (*m_pAnalysisType == "General Mechanism") {
-    os << "GeneralMechanism";
+    path = "base-projects/GeneralMechanism/";
   } else {
-    os << "Drivetrain";
+    path = "base-projects/Drivetrain/";
   }
-  os << "/";
   if (ImGui::Button("Save Config")) {
     if (*m_pAnalysisType == "Romi") {
       m_settings = kRomiConfig;
@@ -306,8 +301,7 @@ void Generator::Display() {
     if (m_hasBrushed) {
       ImGui::OpenPopup("Brushed");
     } else {
-      m_manager->SaveJSON(path.c_str(), m_portsCount,
-                          *m_pAnalysisType == "Romi");
+      m_manager->SaveJSON(path, m_portsCount, *m_pAnalysisType == "Romi");
     }
   }
   if (ImGui::BeginPopupModal(

@@ -4,20 +4,16 @@
 
 #include <cstdlib>
 #include <exception>
-#include <fstream>
-#include <iostream>
-#include <map>
+#include <string>
+#include <string_view>
 #include <thread>
 
+#include <fmt/core.h>
 #include <ntcore_c.h>
 #include <ntcore_cpp.h>
-#include <wpi/FileSystem.h>
 #include <wpi/Logger.h>
-#include <wpi/SmallString.h>
 #include <wpi/SmallVector.h>
 #include <wpi/StringMap.h>
-#include <wpi/StringRef.h>
-#include <wpi/raw_ostream.h>
 #include <wpi/timestamp.h>
 
 #include "IntegrationUtils.h"
@@ -39,25 +35,19 @@ wpi::StringMap<wpi::SmallVector<std::string, 4>> gyroCtorMap = {
     {"AnalogGyro", kAnalogCtors},
     {"Pigeon", kPigeonCtors},
     {"ADXRS450", kADXRS450Ctors},
-    {"NavX", kNavXCtors},
+    // FIXME: Waiting on Linux and macOS builds for navX AHRS
+    // {"NavX", kNavXCtors},
     {"None", kAnalogCtors}};
 
 class GenerationTest : public ::testing::Test {
  public:
-  GenerationTest() : m_manager(m_settings, m_logger) {}
-
-  void SetUp(wpi::StringRef directory) {
+  void SetUp(std::string_view directory) {
     m_nt = nt::GetDefaultInstance();
     m_kill = nt::GetEntry(m_nt, "/SmartDashboard/SysIdKill");
 
-    wpi::SmallString<128> path;
-    wpi::raw_svector_ostream os(path);
-
     // Get the path to write the json
-    os << EXPAND_STRINGIZE(PROJECT_ROOT_DIR) << SYSID_PATH_SEPARATOR
-       << "sysid-projects" << SYSID_PATH_SEPARATOR << "deploy"
-       << SYSID_PATH_SEPARATOR;
-    m_jsonPath = path.c_str();
+    m_jsonPath = fmt::format("{}/sysid-projects/deploy/",
+                             EXPAND_STRINGIZE(PROJECT_ROOT_DIR));
 
     m_directory = directory;
 
@@ -70,15 +60,14 @@ class GenerationTest : public ::testing::Test {
 
     Connect(m_nt, m_kill);
 
-    wpi::outs() << "waiting for .25 seconds after connecting to see if program "
-                   "doesn't crash\n";
-    wpi::outs().flush();
-    // Makes sure the program didn't crash after .25s.
-    std::this_thread::sleep_for(.25s);
+    fmt::print(stderr,
+               "Waiting for 250 ms after connecting to see if program doesn't "
+               "crash\n");
+    // Makes sure the program didn't crash after 250ms
+    std::this_thread::sleep_for(250ms);
     ASSERT_TRUE(nt::IsConnected(m_nt));
 
-    wpi::outs() << "post test sleep (1s)\n";
-    wpi::outs().flush();
+    fmt::print(stderr, "Post test sleep (1s)\n");
 
     std::this_thread::sleep_for(1s);
 
@@ -97,7 +86,7 @@ class GenerationTest : public ::testing::Test {
   std::string m_jsonPath;
 
   sysid::ConfigSettings m_settings;
-  sysid::ConfigManager m_manager;
+  sysid::ConfigManager m_manager{m_settings, m_logger};
 
  private:
   NT_Inst m_nt;
@@ -114,14 +103,13 @@ TEST_F(GenerationTest, GeneralMechanism) {
     m_settings.m_motorControllers =
         wpi::SmallVector<std::string, 3>(size, std::string{motorController});
     for (auto&& encoder : sysid::kEncoders) {
-      if (wpi::StringRef(encoder) != "roboRIO" &&
-          (wpi::StringRef(motorController) == "PWM" ||
-           wpi::StringRef(motorController) == "VictorSPX")) {
+      if (std::string_view{encoder} != "roboRIO" &&
+          (std::string_view{motorController} == "PWM" ||
+           std::string_view{motorController} == "VictorSPX")) {
         continue;
       }
       m_settings.m_encoderType = encoder;
-      wpi::outs() << "Testing: " << motorController << " and " << encoder
-                  << "\n";
+      fmt::print(stderr, "Testing: {} and {}\n", motorController, encoder);
       m_manager.SaveJSON(m_jsonPath, size);
       Run();
       if (HasFatalFailure()) {
@@ -145,13 +133,13 @@ TEST_F(GenerationTest, Drivetrain) {
   // Encoders + Motor controllers already tested, now just need to test the
   // gyros
   for (auto&& gyro : sysid::kGyros) {
-    if (wpi::StringRef(gyro) == "Romi") {
+    if (std::string_view{gyro} == "Romi") {
       continue;
     }
     m_settings.m_gyro = gyro;
     for (auto&& gyroCtor : gyroCtorMap[gyro]) {
       m_settings.m_gyroCtor = gyroCtor;
-      wpi::outs() << "Testing: " << gyro << " using " << gyroCtor << "\n";
+      fmt::print(stderr, "Testing: {} using {}\n", gyro, gyroCtor);
       m_manager.SaveJSON(m_jsonPath, size);
       Run();
       if (HasFatalFailure()) {
@@ -161,8 +149,9 @@ TEST_F(GenerationTest, Drivetrain) {
     }
   }
 
-  m_settings = sysid::kRomiConfig;
-  m_manager.SaveJSON(m_jsonPath, 1, true);
-  wpi::outs() << "Testing: Romi Config\n";
-  Run();
+  // FIXME: Uncomment once Romi vendordep is available
+  // m_settings = sysid::kRomiConfig;
+  // m_manager.SaveJSON(m_jsonPath, 1, true);
+  // fmt::print(stderr, "Testing: Romi Config\n");
+  // Run();
 }

@@ -6,7 +6,6 @@
 
 #include <sstream>
 #include <stdexcept>
-#include <string>
 #include <vector>
 
 #include <imgui.h>
@@ -26,7 +25,7 @@ void sysid::CreateTooltip(const char* text) {
 
 std::vector<std::string> sysid::Split(const std::string& s, char c) {
   std::vector<std::string> result;
-  std::stringstream ss(s);
+  std::stringstream ss{s};
   std::string item;
 
   while (std::getline(ss, item, c)) {
@@ -36,7 +35,7 @@ std::vector<std::string> sysid::Split(const std::string& s, char c) {
   return result;
 }
 
-std::string sysid::GetAbbreviation(const std::string& unit) {
+std::string sysid::GetAbbreviation(std::string_view unit) {
   if (unit == "Meters") {
     return "m";
   } else if (unit == "Feet") {
