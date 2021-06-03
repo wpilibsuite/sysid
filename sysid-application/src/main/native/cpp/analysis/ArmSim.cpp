@@ -36,7 +36,12 @@ void ArmSim::Update(units::volt_t voltage, units::second_t dt) {
                m_d * std::cos(x(0)))(0));
   };
 
-  m_x = frc::RKF45(f, m_x, frc::MakeMatrix<1, 1>(voltage.to<double>()), dt);
+  // Max error is large because an accurate sim isn't as important as the sim
+  // finishing in a timely manner. Otherwise, the timestep can become absurdly
+  // small for ill-conditioned data (e.g., high velocities with sharp spikes in
+  // acceleration).
+  Eigen::Matrix<double, 1, 1> u = frc::MakeMatrix<1, 1>(voltage.to<double>());
+  m_x = frc::RKF45(f, m_x, u, dt, 0.25);
 }
 
 double ArmSim::GetPosition() const {
