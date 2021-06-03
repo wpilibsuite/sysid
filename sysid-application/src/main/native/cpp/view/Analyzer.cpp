@@ -13,7 +13,6 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
-#include <wpi/Format.h>
 #include <wpi/fs.h>
 #include <wpi/json.h>
 #include <wpi/numbers>
@@ -681,13 +680,9 @@ void Analyzer::DisplayFeedforwardGains(bool combined) {
 
     ImGui::SetCursorPosY(endY);
   } else {
-    std::string message;
-    wpi::raw_string_ostream ss{message};
-    ss << wpi::format("%.2f of %.2f", m_stepTestDuration,
-                      m_manager->GetMaxDuration());
-    ss.str();
-    // Pass to rvalue
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);
+    std::string message = fmt::format("{:.2f} of {:.2f}", m_stepTestDuration,
+                                      m_manager->GetMaxDuration());
     ImGui::InputText("Duration (s)", &message, ImGuiInputTextFlags_ReadOnly);
     SetPosition(beginX, beginY, 0, 12);
   }

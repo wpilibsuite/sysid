@@ -20,7 +20,6 @@
 #include <wpi/json.h>
 #include <wpi/numbers>
 #include <wpi/raw_istream.h>
-#include <wpi/raw_ostream.h>
 
 #include "sysid/analysis/AnalysisType.h"
 #include "sysid/analysis/FilteringUtils.h"

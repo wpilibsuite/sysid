@@ -13,7 +13,6 @@
 #include <ntcore_cpp.h>
 #include <units/angle.h>
 #include <wpi/numbers>
-#include <wpi/raw_ostream.h>
 #include <wpigui.h>
 
 #include "sysid/Util.h"
