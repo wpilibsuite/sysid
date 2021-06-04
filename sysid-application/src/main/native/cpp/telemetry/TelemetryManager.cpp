@@ -271,16 +271,8 @@ std::string TelemetryManager::SaveJSON(std::string_view location) {
   std::string loc = fmt::format("{}/sysid_data{:%Y%m%d-%H%M%S}.json", location,
                                 fmt::localtime(std::time(nullptr)));
 
-  std::error_code ec;
-  wpi::raw_fd_ostream os{loc, ec};
-
-  if (ec) {
-    throw std::runtime_error("Cannot write to file: " + loc);
-  }
-
-  os << m_data;
-  os.flush();
-  WPI_INFO(m_logger, "Wrote JSON to: {}", loc);
+  sysid::SaveFile(m_data.dump(2), fs::path{loc});
+  WPI_INFO(m_logger, "Wrote JSON to: " << loc);
 
   return loc;
 }

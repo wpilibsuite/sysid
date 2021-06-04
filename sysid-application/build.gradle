@@ -13,6 +13,7 @@ if (OperatingSystem.current().isWindows())
 
 ext {
   wpilibVersion = "2022.+"
+  libsshVersion = "0.95-1"
 }
 
 // Apply NativeUtils configuration.
@@ -72,10 +73,25 @@ generateTask.dependsOn ":sysid-projects:mechanism:installRioExe"
 // Configure application.
 model {
   components {
+    sysidExecutables(NativeLibrarySpec) {
+      sources.cpp {
+        source {
+          srcDirs "$buildDir/generated/main/cpp"
+          include "**/*.cpp"
+        }
+      }
+      binaries.all {
+        if (it instanceof SharedLibraryBinarySpec)
+          it.buildable = false;
+
+        // Make sure that all resources are generated before we build the final application.
+        it.tasks.withType(CppCompile) { dependsOn generateTask }
+      }
+    }
     sysid(NativeExecutableSpec) {
       sources.cpp {
         source {
-          srcDirs "src/main/native/cpp", "$buildDir/generated/main/cpp"
+          srcDirs "src/main/native/cpp"
           include "**/*.cpp"
         }
         exportedHeaders.srcDirs "src/main/native/include"
@@ -87,10 +103,6 @@ model {
             include "*.rc"
           }
         }
-      }
-      // Make sure that all resources are generated before we build the final application.
-      binaries.all {
-        it.tasks.withType(CppCompile) { dependsOn generateTask }
       }
     }
   }
@@ -147,15 +159,24 @@ model {
   }
   binaries {
     withType(NativeBinarySpec).all {
+      if (it instanceof NativeLibrarySpec)
+        return
+
       nativeUtils.useRequiredLibrary(it, "gui")
+      nativeUtils.useRequiredLibrary(it, "ssh")
+      lib library: "sysidExecutables", linkage: "static"
+
+      it.cppCompiler.define("LIBSSH_STATIC")
       it.cppCompiler.define("PROJECT_ROOT_DIR", "$rootDir")
-      // Add platform-specific renderer dependencies.
+      // Add platform-specific renderer and cryptography dependencies.
       if (it.targetPlatform.operatingSystem.isWindows()) {
         it.linker.args << 'Gdi32.lib' << 'Shell32.lib' << 'd3d11.lib' << 'd3dcompiler.lib'
+        it.linker.args << 'ws2_32.lib' << 'advapi32.lib' << 'crypt32.lib' << 'user32.lib'
       } else if (it.targetPlatform.operatingSystem.isMacOsX()) {
         it.linker.args << '-framework' << 'Metal' << '-framework' << 'MetalKit' <<
             '-framework' << 'Cocoa' << '-framework' << 'IOKit' << '-framework' <<
             'CoreFoundation' << '-framework' << 'CoreVideo' << '-framework' << 'QuartzCore'
+        it.linker.args << '-framework' << 'Kerberos'
       } else {
         it.linker.args << '-lX11'
       }

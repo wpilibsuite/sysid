@@ -14,6 +14,7 @@
 #include <wpi/Logger.h>
 #include <wpi/SmallVector.h>
 #include <wpi/StringMap.h>
+#include <wpi/fs.h>
 #include <wpi/timestamp.h>
 
 #include "IntegrationUtils.h"
@@ -46,9 +47,8 @@ class GenerationTest : public ::testing::Test {
     m_kill = nt::GetEntry(m_nt, "/SmartDashboard/SysIdKill");
 
     // Get the path to write the json
-    m_jsonPath = fmt::format("{}/sysid-projects/deploy/",
-                             EXPAND_STRINGIZE(PROJECT_ROOT_DIR));
-
+    m_jsonPath = fs::path{EXPAND_STRINGIZE(PROJECT_ROOT_DIR)} /
+                 "sysid-projects" / "deploy" / "config.json";
     m_directory = directory;
 
     // Wait between tests
@@ -83,7 +83,7 @@ class GenerationTest : public ::testing::Test {
   }
 
   std::string m_directory;
-  std::string m_jsonPath;
+  fs::path m_jsonPath;
 
   sysid::ConfigSettings m_settings;
   sysid::ConfigManager m_manager{m_settings, m_logger};
@@ -100,7 +100,7 @@ TEST_F(GenerationTest, GeneralMechanism) {
   SetUp("sysid-projects:mechanism");
   constexpr size_t size = 2;
   for (auto&& motorController : sysid::kMotorControllers) {
-    m_settings.m_motorControllers =
+    m_settings.motorControllers =
         wpi::SmallVector<std::string, 3>(size, std::string{motorController});
     for (auto&& encoder : sysid::kEncoders) {
       if (std::string_view{encoder} != "roboRIO" &&
@@ -108,9 +108,12 @@ TEST_F(GenerationTest, GeneralMechanism) {
            std::string_view{motorController} == "VictorSPX")) {
         continue;
       }
-      m_settings.m_encoderType = encoder;
+      m_settings.encoderType = encoder;
       fmt::print(stderr, "Testing: {} and {}\n", motorController, encoder);
-      m_manager.SaveJSON(m_jsonPath, size);
+
+      auto json = m_manager.Generate(size);
+      sysid::SaveFile(json.dump(), m_jsonPath);
+
       Run();
       if (HasFatalFailure()) {
         TearDown();
@@ -125,10 +128,10 @@ TEST_F(GenerationTest, Drivetrain) {
   constexpr size_t size = 2;
 
   // Talons were chosen due to the pigeon having a case where it plugs into one
-  m_settings.m_motorControllers =
+  m_settings.motorControllers =
       wpi::SmallVector<std::string, 3>(size, std::string{"TalonSRX"});
 
-  m_settings.m_encoderType = "Built-In";
+  m_settings.encoderType = "Built-In";
 
   // Encoders + Motor controllers already tested, now just need to test the
   // gyros
@@ -136,11 +139,14 @@ TEST_F(GenerationTest, Drivetrain) {
     if (std::string_view{gyro} == "Romi") {
       continue;
     }
-    m_settings.m_gyro = gyro;
+    m_settings.gyro = gyro;
     for (auto&& gyroCtor : gyroCtorMap[gyro]) {
-      m_settings.m_gyroCtor = gyroCtor;
+      m_settings.gyroCtor = gyroCtor;
       fmt::print(stderr, "Testing: {} using {}\n", gyro, gyroCtor);
-      m_manager.SaveJSON(m_jsonPath, size);
+
+      auto json = m_manager.Generate(size);
+      sysid::SaveFile(json.dump(), m_jsonPath);
+
       Run();
       if (HasFatalFailure()) {
         TearDown();

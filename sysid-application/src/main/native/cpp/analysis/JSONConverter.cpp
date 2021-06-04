@@ -92,10 +92,8 @@ std::string sysid::ConvertJSON(std::string_view path, wpi::Logger& logger) {
   // Write the new file with "_new" appended to it.
   path.remove_suffix(std::string_view{".json"}.size());
   std::string loc = fmt::format("{}_new.json", path);
-  std::error_code ec;
-  wpi::raw_fd_ostream output{loc, ec};
-  output << json;
-  output.flush();
+
+  sysid::SaveFile(json.dump(2), fs::path{loc});
 
   WPI_INFO(logger, "Wrote new JSON to: {}", loc);
   return loc;
