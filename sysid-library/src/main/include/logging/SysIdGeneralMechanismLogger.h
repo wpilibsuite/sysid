@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <units/voltage.h>
+
 #include "logging/SysIdLogger.h"
 
 // TODO Set to proper number after telemetry data refactor
