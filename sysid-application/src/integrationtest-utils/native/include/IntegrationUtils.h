@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <string>
+#include <string_view>
 
 #include <ntcore_c.h>
 #include <ntcore_cpp.h>
@@ -18,7 +18,7 @@
  * @param projectDirectory the relative path of the robot project folder from
  * the root directory.
  */
-void LaunchSim(std::string projectDirectory);
+void LaunchSim(std::string_view projectDirectory);
 
 /**
  * Connects to a Simulation NT Entry and configures the kill variable to not

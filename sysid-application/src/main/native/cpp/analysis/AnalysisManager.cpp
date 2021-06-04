@@ -100,15 +100,16 @@ static void StoreDatasets(wpi::StringMap<Storage>* dataset,
                           const std::vector<PreparedData>& slowBackward,
                           const std::vector<PreparedData>& fastForward,
                           const std::vector<PreparedData>& fastBackward,
-                          std::string prefix = "") {
+                          std::string_view prefix = "") {
+  std::string prefixStr;
   if (prefix != "") {
-    prefix += std::string{" "};
+    prefixStr = fmt::format("{} ", prefix);
   }
 
   auto& outputData = *dataset;
-  outputData[prefix + "Forward"] = Storage{slowForward, fastForward};
-  outputData[prefix + "Backward"] = Storage{slowBackward, slowForward};
-  outputData[prefix + "Combined"] =
+  outputData[prefixStr + "Forward"] = Storage{slowForward, fastForward};
+  outputData[prefixStr + "Backward"] = Storage{slowBackward, slowForward};
+  outputData[prefixStr + "Combined"] =
       Storage{Concatenate(slowForward, {&slowBackward}),
               Concatenate(fastForward, {&fastBackward})};
 }
@@ -351,12 +352,10 @@ static void PrepareLinearDrivetrainData(
 
   // Convert data to PreparedData
   sysid::ApplyToData(data, [&](std::string_view key) {
-    std::string leftName = fmt::format("left-{}", key);
-    std::string rightName = fmt::format("right-{}", key);
-    preparedData[leftName] =
+    preparedData[fmt::format("left-{}", key)] =
         ConvertToPrepared<9, kTimeCol, kLVoltageCol, kLPosCol, kLVelCol>(
             data[key]);
-    preparedData[rightName] =
+    preparedData[fmt::format("right-{}", key)] =
         ConvertToPrepared<9, kTimeCol, kRVoltageCol, kRPosCol, kRVelCol>(
             data[key]);
   });

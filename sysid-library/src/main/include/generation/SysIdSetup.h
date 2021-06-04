@@ -8,7 +8,6 @@
 
 #include <functional>
 #include <memory>
-#include <string>
 #include <string_view>
 #include <vector>
 
@@ -19,13 +18,16 @@
 #include <wpi/raw_istream.h>
 
 wpi::json GetConfigJson();
+
 void AddMotorController(
-    int port, std::string controller, bool inverted,
+    int port, std::string_view controller, bool inverted,
     std::vector<std::unique_ptr<frc::SpeedController>>* controllers);
+
 void SetMotorControllers(
     units::volt_t motorVoltage,
     const std::vector<std::unique_ptr<frc::SpeedController>>& controllers);
-void SetupEncoders(std::string encoderType, bool isEncoding, int period,
+
+void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
                    double cpr, int numSamples, std::string_view controllerName,
                    frc::SpeedController* controller, bool encoderInverted,
                    const std::vector<int>& encoderPorts,
