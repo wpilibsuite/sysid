@@ -53,7 +53,7 @@ wpi::json GetConfigJson() {
 }
 
 void AddMotorController(
-    int port, std::string controller, bool inverted,
+    int port, std::string_view controller, bool inverted,
     std::vector<std::unique_ptr<frc::SpeedController>>* controllers) {
   if (controller == "TalonSRX" || controller == "VictorSPX" ||
       controller == "TalonFX") {
@@ -93,7 +93,7 @@ void AddMotorController(
   }
 }
 
-void SetupEncoders(std::string encoderType, bool isEncoding, int period,
+void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
                    double cpr, int numSamples, std::string_view controllerName,
                    frc::SpeedController* controller, bool encoderInverted,
                    const std::vector<int>& encoderPorts,

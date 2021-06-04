@@ -11,7 +11,7 @@
 
 #include "gtest/gtest.h"
 
-void LaunchSim(std::string projectDirectory) {
+void LaunchSim(std::string_view projectDirectory) {
   // Start the robot program.
   std::string cmd =
       fmt::format("cd {}/ && {} :{}:simulateCpp -Pintegration",
