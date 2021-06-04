@@ -14,6 +14,10 @@
 #include <wpi/FileSystem.h>
 #include <wpi/SmallString.h>
 
+// Based on https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html
+#define EXPAND_STRINGIZE(s) STRINGIZE(s)
+#define STRINGIZE(s) #s
+
 // C++20 shim for std::string_view::starts_with()
 static constexpr bool starts_with(std::string_view obj,
                                   std::string_view x) noexcept {
@@ -27,12 +31,12 @@ wpi::json GetConfigJson() {
   if constexpr (frc::RobotBase::IsSimulation()) {
 #if defined(PROJECT_ROOT_DIR) && defined(INTEGRATION)
     // TODO: Fix problems with this so that we don't need this ifdef
-    os << EXPAND_STRINGIZE(PROJECT_ROOT_DIR) << "/sysid-projects/deploy/"
-       << filename;
+    os << EXPAND_STRINGIZE(PROJECT_ROOT_DIR)
+       << "/sysid-projects/deploy/config.json";
 #endif
   } else {
     frc::filesystem::GetDeployDirectory(path);
-    os << "/" << filename;
+    os << "/config.json";
   }
 
   std::error_code ec;

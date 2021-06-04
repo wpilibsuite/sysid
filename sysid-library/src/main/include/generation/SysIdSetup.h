@@ -18,18 +18,6 @@
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
 
-#ifdef _WIN32
-#define PATH_SEPARATOR "\\"
-#else
-#define PATH_SEPARATOR "/"
-#endif
-
-// Based on https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html
-#define EXPAND_STRINGIZE(s) STRINGIZE(s)
-#define STRINGIZE(s) #s
-
-constexpr const char* filename = "config.json";
-
 wpi::json GetConfigJson();
 void AddMotorController(
     int port, std::string controller, bool inverted,
