@@ -104,6 +104,9 @@ model {
           }
         }
       }
+      binaries.all {
+        lib library: "sysidExecutables", linkage: "static"
+      }
     }
   }
   testSuites {
@@ -119,6 +122,7 @@ model {
           it.buildable = false
         }
         nativeUtils.useRequiredLibrary(it, "googletest_static")
+        lib library: "sysidExecutables", linkage: "static"
         it.cppCompiler.define("RUNNING_SYSID_TESTS")
       }
     }
@@ -133,6 +137,7 @@ model {
       }
       binaries.all {
         nativeUtils.useRequiredLibrary(it, "googletest_static");
+        lib library: "sysidExecutables", linkage: "static"
         it.cppCompiler.define("RUNNING_SYSID_TESTS")
         if (!project.hasProperty("withIntegration")) {
           it.buildable = false
@@ -150,6 +155,7 @@ model {
       }
       binaries.all {
         nativeUtils.useRequiredLibrary(it, "googletest_static")
+        lib library: "sysidExecutables", linkage: "static"
         it.cppCompiler.define("RUNNING_SYSID_TESTS")
         if (!project.hasProperty("withIntegration")) {
           it.buildable = false
@@ -164,7 +170,6 @@ model {
 
       nativeUtils.useRequiredLibrary(it, "gui")
       nativeUtils.useRequiredLibrary(it, "ssh")
-      lib library: "sysidExecutables", linkage: "static"
 
       it.cppCompiler.define("LIBSSH_STATIC")
       it.cppCompiler.define("PROJECT_ROOT_DIR", "$rootDir")
