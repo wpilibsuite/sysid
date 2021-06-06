@@ -19,9 +19,7 @@ namespace sysid {
 static constexpr unsigned int kLogSuccess = 31;
 
 /**
- * Represents a single deploy session. The instantiation of this class is
- * controlled such that only one instance can exist at a time (to prevent
- * parallel deploys). Use Acquire() to get an instance.
+ * Represents a single deploy session.
  *
  * An instance of this class must be kept alive in memory until GetStatus()
  * returns kDiscoveryFailure or kDone. Otherwise, the deploy will fail!
