@@ -70,5 +70,4 @@ void sysid::SaveFile(std::string_view contents, const fs::path& path) {
 
   // Write contents.
   ostream << contents;
-  ostream.flush();
 }
