@@ -70,28 +70,17 @@ def generateTask = createGenerateResourcesTask('main', 'SYSID', 'sysid', project
 generateTask.dependsOn ":sysid-projects:drive:installRioExe"
 generateTask.dependsOn ":sysid-projects:mechanism:installRioExe"
 
+tasks.withType(CppCompile) {
+  dependsOn generateTask
+}
+
 // Configure application.
 model {
   components {
-    sysidExecutables(NativeLibrarySpec) {
-      sources.cpp {
-        source {
-          srcDirs "$buildDir/generated/main/cpp"
-          include "**/*.cpp"
-        }
-      }
-      binaries.all {
-        if (it instanceof SharedLibraryBinarySpec)
-          it.buildable = false;
-
-        // Make sure that all resources are generated before we build the final application.
-        it.tasks.withType(CppCompile) { dependsOn generateTask }
-      }
-    }
     sysid(NativeExecutableSpec) {
       sources.cpp {
         source {
-          srcDirs "src/main/native/cpp"
+          srcDirs "src/main/native/cpp", "$buildDir/generated/main/cpp"
           include "**/*.cpp"
         }
         exportedHeaders.srcDirs "src/main/native/include"
@@ -103,9 +92,6 @@ model {
             include "*.rc"
           }
         }
-      }
-      binaries.all {
-        lib library: "sysidExecutables", linkage: "static"
       }
     }
   }
@@ -122,7 +108,6 @@ model {
           it.buildable = false
         }
         nativeUtils.useRequiredLibrary(it, "googletest_static")
-        lib library: "sysidExecutables", linkage: "static"
         it.cppCompiler.define("RUNNING_SYSID_TESTS")
       }
     }
@@ -137,7 +122,6 @@ model {
       }
       binaries.all {
         nativeUtils.useRequiredLibrary(it, "googletest_static");
-        lib library: "sysidExecutables", linkage: "static"
         it.cppCompiler.define("RUNNING_SYSID_TESTS")
         if (!project.hasProperty("withIntegration")) {
           it.buildable = false
@@ -155,7 +139,6 @@ model {
       }
       binaries.all {
         nativeUtils.useRequiredLibrary(it, "googletest_static")
-        lib library: "sysidExecutables", linkage: "static"
         it.cppCompiler.define("RUNNING_SYSID_TESTS")
         if (!project.hasProperty("withIntegration")) {
           it.buildable = false
@@ -165,9 +148,6 @@ model {
   }
   binaries {
     withType(NativeBinarySpec).all {
-      if (it instanceof NativeLibrarySpec)
-        return
-
       nativeUtils.useRequiredLibrary(it, "gui")
       nativeUtils.useRequiredLibrary(it, "ssh")
 
