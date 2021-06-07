@@ -98,7 +98,7 @@ void Analyzer::Display() {
         // explicitly select their file.
         ResetManagerState();
         WPI_ERROR(
-            m_logger,
+            m_logger, "{}",
             "An error occurred when attempting to load the previous JSON.");
       }
     } else {
