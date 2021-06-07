@@ -43,6 +43,15 @@ nativeUtils {
       version = wpilibVersion
       staticPlatforms.addAll(nativeUtils.wpi.platforms.desktopPlatforms)
     }
+    libssh {
+      groupId = "edu.wpi.first.thirdparty.frc2022"
+      artifactId = "libssh"
+      headerClassifier = "headers"
+      sourceClassifier = "sources"
+      ext = "zip"
+      version = libsshVersion
+      staticPlatforms.addAll(nativeUtils.wpi.platforms.desktopPlatforms)
+    }
   }
   combinedDependencyConfigs {
     gui {
@@ -51,6 +60,11 @@ nativeUtils {
       dependencies <<
           "wpimath_static" << "ntcore_static" << "wpiutil_static" <<
           "libglassnt_static" << "libglass_static" << "wpigui_static" << "imgui_static"
+    }
+    ssh {
+      libraryName = "ssh"
+      targetPlatforms.addAll(nativeUtils.wpi.platforms.desktopPlatforms)
+      dependencies << "libssh_static"
     }
   }
 }

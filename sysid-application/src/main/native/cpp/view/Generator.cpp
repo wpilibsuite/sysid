@@ -5,12 +5,14 @@
 #include "sysid/view/Generator.h"
 
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include <fmt/format.h>
 #include <glass/Context.h>
 #include <imgui.h>
 #include <imgui_stdlib.h>
+#include <wpi/Logger.h>
 
 #include "sysid/Util.h"
 #include "sysid/analysis/AnalysisType.h"
@@ -18,112 +20,157 @@
 
 using namespace sysid;
 
-Generator::Generator(wpi::Logger& logger) : m_logger(logger) {
+Generator::Generator(wpi::Logger& logger) : m_logger{logger} {
+  // Create configuration manager to generate JSONs.
   m_manager = std::make_unique<ConfigManager>(m_settings, m_logger);
+
   // Initialize persistent storage and assign pointers.
   auto& storage = glass::GetStorage();
   m_pUnitsPerRotation = storage.GetDoubleRef("Units Per Rotation", 1.0);
   m_pAnalysisType = storage.GetStringRef("Analysis Type", "Simple");
+
+  // Initialize the deploy logger. First set the min log level so that debug
+  // messages are not swallowed.
+  m_deployLogger.set_min_level(wpi::WPI_LOG_DEBUG);
+
+  // Set the on-log action.
+  m_deployLogger.SetLogger([this](unsigned int level, const char* file,
+                                  unsigned int line, const char* msg) {
+    // Append the message and level to the log.
+    std::scoped_lock lock{m_deployMutex};
+    m_deployLog.push_back({msg, level});
+  });
+
+  // Initialize team number / IP field.
+  m_pTeam =
+      glass::GetStorage("NetworkTables Settings").GetStringRef("serverTeam");
 }
 
-void Generator::GeneratorUI() {
+void Generator::Display() {
+  // Add team / IP selection.
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
+  ImGui::InputText("Team/IP", m_pTeam);
+
+  // Add deploy button.
+  // FIXME: Open Romi project in simulation once desktop programs are supported.
+  ImGui::SameLine();
+  if (ImGui::Button("Deploy")) {
+    // Create the deploy session,
+    m_deploySession = std::make_unique<DeploySession>(
+        *m_pTeam, m_analysisIdx == 1, m_manager->Generate(m_occupied),
+        m_deployLogger);
+
+    // Execute the deploy.
+    m_deployRunner.ExecSync(
+        [this](wpi::uv::Loop& lp) { m_deploySession->Execute(lp); });
+
+    // Open the deploy popup.
+    ImGui::OpenPopup("Deploy Status");
+  }
+
+  // Add analysis type selection.
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
+  ImGui::Combo("Analysis Type", &m_analysisIdx, kAnalysisTypes,
+               IM_ARRAYSIZE(kAnalysisTypes));
+  *m_pAnalysisType = kAnalysisTypes[m_analysisIdx];
+
+  // If we are a Romi project, we can end here because there is no generation to
+  // be done.
+  if (*m_pAnalysisType == "Romi") {
+    return;
+  }
+
   // Add section for motor and motor controller selection.
   ImGui::Separator();
   ImGui::Spacing();
   ImGui::Text("Motor / Motor Controller Selection");
 
-  // +
+  // Add buttons to add and/or remove motor ports.
   ImGui::SameLine();
-
-  if (ImGui::Button("(+)")) {
-    ++m_portsCount;
+  if (ImGui::Button("+")) {
+    m_occupied++;
   }
-
-  // -
-  if (m_portsCount > 1) {
+  if (m_occupied > 1) {
     ImGui::SameLine();
-    if (ImGui::Button("(-)")) {
-      --m_portsCount;
+    if (ImGui::Button("-")) {
+      m_occupied--;
     }
   }
-
-  ImGui::Spacing();
 
   // Add motor port selection.
   bool drive = *m_pAnalysisType == "Drivetrain";
-  m_hasBrushed = false;
-  for (size_t i = 0; i < m_portsCount; ++i) {
+
+  // Iterate through the number of ports we have available (from m_occupied) and
+  // add UI elements.
+  for (size_t i = 0; i < m_occupied; ++i) {
+    // Create aliases so it's easier to work on vectors.
+    auto& pm = m_settings.primaryMotorPorts;
+    auto& sm = m_settings.secondaryMotorPorts;
+    auto& mc = m_settings.motorControllers;
+    auto& pi = m_settings.primaryMotorsInverted;
+    auto& si = m_settings.secondaryMotorsInverted;
+
     // Ensure that our vector contains i+1 elements.
+    if (pm.size() == i) {
+      pm.emplace_back((drive ? 2 : 1) * i);
+      sm.emplace_back(pm.size() + i);
+      mc.emplace_back(kMotorControllers[0]);
+      pi.emplace_back(false);
+      si.emplace_back(false);
+    }
+
+    // Make sure elements have unique IDs.
     ImGui::Spacing();
     ImGui::PushID(i);
-    if (m_settings.m_primaryMotorPorts.size() == i) {
-      m_settings.m_primaryMotorPorts.emplace_back((drive ? 2 : 1) * i);
-      m_settings.m_secondaryMotorPorts.emplace_back(
-          m_settings.m_primaryMotorPorts.size() + i);
-      m_settings.m_motorControllers.emplace_back(kMotorControllers[0]);
-
-      m_settings.m_primaryMotorsInverted.emplace_back(false);
-      m_settings.m_secondaryMotorsInverted.emplace_back(false);
-    }
 
     // Add primary (left for drivetrain) motor ports.
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-    std::string port_name =
-        (drive ? "L Motor Port " : "Motor Port ") + std::to_string(i);
-    ImGui::InputInt(port_name.c_str(), &m_settings.m_primaryMotorPorts[i], 0,
-                    0);
-    ImGui::SameLine();
-    ImGui::Checkbox(drive ? "L inverted" : "Inverted",
-                    &m_settings.m_primaryMotorsInverted[i]);
+    auto primaryName =
+        fmt::format(drive ? "L Motor Port {}" : "Motor Port {}", i);
+    ImGui::InputInt(primaryName.c_str(), &pm[i], 0, 0);
 
-    // Add secondary (right) motor ports.
+    // Add inverted setting.
+    ImGui::SameLine();
+    ImGui::Checkbox(drive ? "L Inverted" : "Inverted", &pi[i]);
+
+    // Add right side drivetrain ports (if the analysis type is drivetrain).
     if (drive) {
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-      std::string right_port_name = "R Motor Port " + std::to_string(i);
-      ImGui::InputInt(right_port_name.c_str(),
-                      &m_settings.m_secondaryMotorPorts[i], 0, 0);
+      auto secondaryName = fmt::format("R Motor Port {}", i);
+      ImGui::InputInt(secondaryName.c_str(), &sm[i], 0, 0);
 
+      // Add inverted setting.
       ImGui::SameLine();
-      ImGui::Checkbox("R Inverted", &m_settings.m_secondaryMotorsInverted[i]);
+      ImGui::Checkbox("R Inverted", &si[i]);
     }
 
-    // Add buttons to add and remove ports.
-
-    // Add motor controller selector
+    // Add motor controller selector.
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
+    auto motorControllerName = fmt::format(
+        drive ? "Motor Controller Pair {}" : "Motor Controller {}", i);
 
-    std::string name;
-    if (drive) {
-      name = fmt::format("Motor Controller Pair {}", i);
-    } else {
-      name = fmt::format("Motor Controller {}", i);
-    }
-
-    if (ImGui::BeginCombo(name.c_str(),
-                          m_settings.m_motorControllers[i].c_str())) {
-      for (int n = 0; n < IM_ARRAYSIZE(kMotorControllers); n++) {
-        bool is_selected =
-            (m_settings.m_motorControllers[i] == kMotorControllers[n]);
-        if (ImGui::Selectable(kMotorControllers[n], is_selected)) {
-          m_settings.m_motorControllers[i] = kMotorControllers[n];
+    if (ImGui::BeginCombo(motorControllerName.c_str(), mc[i].c_str())) {
+      for (size_t n = 0; n < IM_ARRAYSIZE(kMotorControllers); ++n) {
+        bool selected = mc[i] == kMotorControllers[n];
+        if (ImGui::Selectable(kMotorControllers[n], selected)) {
+          mc[i] = kMotorControllers[n];
         }
-        if (is_selected) {
+        if (selected) {
           ImGui::SetItemDefaultFocus();
         }
       }
       ImGui::EndCombo();
     }
     ImGui::PopID();
-    if (m_settings.m_motorControllers[i] == "SPARK MAX (Brushed)") {
-      m_hasBrushed = true;
-    }
+
+    // If we selected Spark Max with Brushed mode, set our flag to true.
+    m_isSparkMaxBrushed = mc[i] == "SPARK MAX (Brushed)";
   }
 
   // Add section for encoders.
   ImGui::Separator();
   ImGui::Spacing();
   ImGui::Text("Encoder Selection");
-  ImGui::Spacing();
 
   // Add encoder selection.
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
@@ -132,26 +179,30 @@ void Generator::GeneratorUI() {
   // Add encoder port selection if roboRIO is selected.
   if (m_encoderIdx > 1) {
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-    ImGui::InputInt("A##1", &m_settings.m_primaryEncoderPorts[0], 0, 0);
+    ImGui::InputInt("A##1", &m_settings.primaryEncoderPorts[0], 0, 0);
     ImGui::SameLine(ImGui::GetFontSize() * 4);
+
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-    ImGui::InputInt("B##1", &m_settings.m_primaryEncoderPorts[1], 0, 0);
+    ImGui::InputInt("B##1", &m_settings.primaryEncoderPorts[1], 0, 0);
     ImGui::SameLine();
-    ImGui::Checkbox(drive ? "Left Encoder inverted" : "Encoder Inverted",
-                    &m_settings.m_primaryEncoderInverted);
+
+    ImGui::Checkbox(drive ? "Left Encoder Inverted" : "Encoder Inverted",
+                    &m_settings.primaryEncoderInverted);
 
     // Add another row if we are running drive tests.
     if (drive) {
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-      ImGui::InputInt("A##2", &m_settings.m_secondaryEncoderPorts[0], 0, 0);
+      ImGui::InputInt("A##2", &m_settings.secondaryEncoderPorts[0], 0, 0);
       ImGui::SameLine(ImGui::GetFontSize() * 4);
+
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-      ImGui::InputInt("B##2", &m_settings.m_secondaryEncoderPorts[1], 0, 0);
+      ImGui::InputInt("B##2", &m_settings.secondaryEncoderPorts[1], 0, 0);
       ImGui::SameLine();
-      ImGui::Checkbox("Right Encoder inverted",
-                      &m_settings.m_secondaryEncoderInverted);
+
+      ImGui::Checkbox("Right Encoder Inverted",
+                      &m_settings.secondaryEncoderInverted);
     }
-    ImGui::Checkbox("Reduce Encoding", &m_settings.m_encoding);
+    ImGui::Checkbox("Reduce Encoding", &m_settings.encoding);
     CreateTooltip(
         "This helps reduce encoder noise for high CPR encoders such as the "
         "CTRE Magnetic Encoder and REV Throughbore Encoder");
@@ -161,46 +212,47 @@ void Generator::GeneratorUI() {
   if (m_encoderIdx == 1) {
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
     ImGui::InputInt(drive ? "L CANCoder Port" : "CANCoder Port",
-                    &m_settings.m_primaryEncoderPorts[0], 0, 0);
-    ImGui::Checkbox(drive ? "Left Encoder inverted" : "Encoder Inverted",
-                    &m_settings.m_primaryEncoderInverted);
+                    &m_settings.primaryEncoderPorts[0], 0, 0);
+    ImGui::Checkbox(drive ? "Left Encoder Inverted" : "Encoder Inverted",
+                    &m_settings.primaryEncoderInverted);
     if (drive) {
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-      ImGui::InputInt("R CANCoder Port", &m_settings.m_secondaryEncoderPorts[1],
+      ImGui::InputInt("R CANCoder Port", &m_settings.secondaryEncoderPorts[1],
                       0, 0);
-      ImGui::Checkbox("Right Encoder inverted",
-                      &m_settings.m_secondaryEncoderInverted);
+      ImGui::Checkbox("Right Encoder Inverted",
+                      &m_settings.secondaryEncoderInverted);
     }
   }
 
-  // Venom built-in encoders can't change sampling or measurement period
-  if (!(m_settings.m_motorControllers[0] == "Venom" && m_encoderIdx == 0)) {
+  // Venom built-in encoders can't change sampling or measurement period.
+  if (!(m_settings.motorControllers[0] == "Venom" && m_encoderIdx == 0)) {
     // Samples Per Average Setting
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-    ImGui::InputInt("Samples Per Average", &m_settings.m_numSamples, 0, 0);
+    ImGui::InputInt("Samples Per Average", &m_settings.numSamples, 0, 0);
     CreateTooltip(
         "This helps reduce encoder noise by averaging collected samples "
         "together. A value from 5-10 is reccomended for encoders with high "
         "CPRs.");
 
-    m_settings.m_encoderType = std::string{kEncoders[m_encoderIdx]};
+    m_settings.encoderType = std::string{kEncoders[m_encoderIdx]};
 
     // Add Velocity Measurement Period
     if (m_encoderIdx <= 1) {
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
       ImGui::Combo("Time Measurement Window", &m_periodIdx, kCTREPeriods,
                    IM_ARRAYSIZE(kCTREPeriods));
-      m_settings.m_period = std::stoi(std::string{kCTREPeriods[m_periodIdx]});
+      m_settings.period = std::stoi(std::string{kCTREPeriods[m_periodIdx]});
     }
   }
 
   // Add gyro selection if selected is drivetrain.
   if (drive) {
+    // Create section for gyros.
     ImGui::Separator();
     ImGui::Spacing();
     ImGui::Text("Gyro");
-    ImGui::Spacing();
 
+    // Add gyro combo box.
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
     ImGui::Combo("Gyro", &m_gyroIdx, kGyros, IM_ARRAYSIZE(kGyros));
 
@@ -208,6 +260,7 @@ void Generator::GeneratorUI() {
 
     std::string_view gyroType{kGyros[m_gyroIdx]};
 
+    // Handle each gyro and its special cases.
     if (gyroType == "Pigeon") {
       ImGui::InputInt("Gyro Parameter", &m_gyroPort, 0, 0);
       ImGui::SameLine();
@@ -215,47 +268,45 @@ void Generator::GeneratorUI() {
       CreateTooltip(
           "Check this checkbox if the Pigeon is hooked up to a TalonSRX");
 
-      m_settings.m_gyroCtor = std::to_string(m_gyroPort);
+      m_settings.gyroCtor = std::to_string(m_gyroPort);
 
       // Indicate Gyro is connected to TalonSRX
       if (m_isTalon) {
-        m_settings.m_gyroCtor = "WPI_TalonSRX-" + m_settings.m_gyroCtor;
+        m_settings.gyroCtor = "WPI_TalonSRX-" + m_settings.gyroCtor;
       }
     } else if (gyroType == "ADXRS450") {
       ImGui::Combo("Gyro Parameter", &m_gyroParam, kADXRS450Ctors,
                    IM_ARRAYSIZE(kADXRS450Ctors));
-      m_settings.m_gyroCtor = std::string(kADXRS450Ctors[m_gyroParam]);
+      m_settings.gyroCtor = std::string(kADXRS450Ctors[m_gyroParam]);
     } else if (gyroType == "NavX") {
       ImGui::Combo("Gyro Parameter", &m_gyroParam, kNavXCtors,
                    IM_ARRAYSIZE(kNavXCtors));
-      m_settings.m_gyroCtor = std::string(kNavXCtors[m_gyroParam]);
+      m_settings.gyroCtor = std::string(kNavXCtors[m_gyroParam]);
     } else {
       ImGui::InputInt("Gyro Parameter", &m_gyroPort, 0, 0);
 
-      // Analog Gyro Port cannot be greater than 1
+      // AnalogGyro port cannot be greater than 1.
       if (m_gyroPort > 1) {
         m_gyroPort = 1;
       }
-      m_settings.m_gyroCtor = std::to_string(m_gyroPort);
+      m_settings.gyroCtor = std::to_string(m_gyroPort);
     }
 
-    // Avoid Accessing Bad Gyro Ctor indexes
-    if (gyroType != m_settings.m_gyro) {
+    // Avoid accessing bad gyro ctor indices.
+    if (gyroType != m_settings.gyro) {
       m_gyroParam = 0;
     }
-
-    m_settings.m_gyro = gyroType;
+    m_settings.gyro = gyroType;
   }
 
   // Add section for other parameters.
   ImGui::Separator();
   ImGui::Spacing();
   ImGui::Text("Encoder Parameters");
-  ImGui::Spacing();
 
   // Add encoder resolution.
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
-  ImGui::InputDouble("Counts Per Revolution", &m_settings.m_cpr, 0.0, 0.0,
+  ImGui::InputDouble("Counts Per Revolution", &m_settings.cpr, 0.0, 0.0,
                      "%.2f");
   sysid::CreateTooltip(
       "This is the number of encoder counts per revolution for your encoder.\n"
@@ -265,7 +316,7 @@ void Generator::GeneratorUI() {
       "Encoders (REV already handles this value): 1");
 
   // Add gearing
-  ImGui::InputDouble("Gearing", &m_settings.m_gearing, 0.0, 0.0, "%.2f");
+  ImGui::InputDouble("Gearing", &m_settings.gearing, 0.0, 0.0, "%.2f");
   sysid::CreateTooltip(
       "This is the gearing between the encoder and the output shaft. For "
       "example, if the encoder is mounted to the magnetic shaft on the kit "
@@ -273,51 +324,72 @@ void Generator::GeneratorUI() {
       "shaft hence the gearing is 1. However, if the encoder was an integrated "
       "encoder on the motor in the kit chassis gearbox, the gearing would be "
       "10.71.");
-}
 
-void Generator::Display() {
-  // Add analysis type input.
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
-  ImGui::Combo("Analysis Type", &m_analysisIdx, kAnalysisTypes,
-               IM_ARRAYSIZE(kAnalysisTypes));
-  *m_pAnalysisType = kAnalysisTypes[m_analysisIdx];
+  // Define the deploy popup (and set default size).
+  auto size = ImGui::GetIO().DisplaySize;
+  ImGui::SetNextWindowSize(ImVec2(size.x / 2, size.y * 0.8));
 
-  if (*m_pAnalysisType != "Romi") {
-    GeneratorUI();
-  }
+  if (ImGui::BeginPopupModal("Deploy Status")) {
+    static ImVec4 kColorWarning{1.0f, 0.7f, 0.0f, 1.0f};
+    static ImVec4 kColorError{1.0f, 0.4f, 0.4f, 1.0f};
+    static ImVec4 kColorSuccess{0.2f, 1.0f, 0.2f, 1.0f};
+    static ImVec4 kColorDebug{0.5f, 0.5f, 0.5f, 1.0f};
 
-  ImGui::Separator();
-  std::string path;
-  if (*m_pAnalysisType == "General Mechanism") {
-    path = "base-projects/GeneralMechanism/";
-  } else {
-    path = "base-projects/Drivetrain/";
-  }
-  if (ImGui::Button("Save Config")) {
-    if (*m_pAnalysisType == "Romi") {
-      m_settings = kRomiConfig;
+    // We are accessing a shared resource (deploy log), so lock mutex.
+    std::scoped_lock lock{m_deployMutex};
+
+    // Check whether the user is using SPARK MAX in Brushed mode. Display a
+    // warning message if so.
+    if (m_isSparkMaxBrushed) {
+      ImGui::TextColored(
+          kColorWarning,
+          "You have selected SPARK MAX (Brushed)!\nMake sure that you "
+          "are controlling a BRUSHED motor (not NEO / NEO 550)!");
     }
 
-    if (m_hasBrushed) {
-      ImGui::OpenPopup("Brushed");
-    } else {
-      m_manager->SaveJSON(path, m_portsCount, *m_pAnalysisType == "Romi");
+    // Get the deploy status.
+    auto status = m_deploySession->GetStatus();
+
+    // If there are no messages in the log and we are in progress, then we are
+    // still discovering the roboRIO.
+    if (status == DeploySession::Status::kInProgress && m_deployLog.empty()) {
+      ImGui::Text("Discovering roboRIO %c",
+                  "|/-\\"[static_cast<int>(ImGui::GetTime() / 0.05f) & 3]);
     }
-  }
-  if (ImGui::BeginPopupModal(
-          "Brushed", nullptr,
-          ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse)) {
-    ImGui::Text(
-        "Make sure you are using the SparkMax to control a BRUSHED Motor "
-        "(a.k.a NOT a NEO or NEO 550).\nIncorrectly setting a brushless motor "
-        "to brushed can cause it to permanatly break!\n");
-    if (ImGui::Button("Yes")) {
-      ImGui::CloseCurrentPopup();
-      m_manager->SaveJSON(path.c_str(), m_portsCount);
+
+    // Show log messages from the event loop runner.
+    for (auto&& message : m_deployLog) {
+      ImVec4 color{1.0f, 1.0f, 1.0f, 1.0f};
+      switch (message.level) {
+        case kLogSuccess:
+          color = kColorSuccess;
+          break;
+        case wpi::WPI_LOG_ERROR:
+          color = kColorError;
+          break;
+        case wpi::WPI_LOG_DEBUG:
+          color = kColorDebug;
+          break;
+      }
+      ImGui::TextColored(color, "%s", message.message.c_str());
     }
-    ImGui::SameLine();
-    if (ImGui::Button("Cancel")) {
-      ImGui::CloseCurrentPopup();
+
+    // Show error if we had a discovery failure.
+    if (status == DeploySession::Status::kDiscoveryFailure) {
+      ImGui::TextColored(kColorError,
+                         "Could not discover roboRIO.\nAre you connected to "
+                         "the robot and is it on?");
+    }
+
+    // Check if we are done with the deploy. If we are, then we can show the
+    // close button.
+    if (status == DeploySession::Status::kDiscoveryFailure ||
+        status == DeploySession::Status::kDone) {
+      if (ImGui::Button("Close")) {
+        m_deploySession.reset();
+        m_deployLog.clear();
+        ImGui::CloseCurrentPopup();
+      }
     }
     ImGui::EndPopup();
   }

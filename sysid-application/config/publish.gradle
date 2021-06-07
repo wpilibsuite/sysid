@@ -35,6 +35,7 @@ model {
           classifier = nativeUtils.getPublishClassifier(binary)
 
           from("LICENSE.md") { into '/' }
+          from("ThirdPartyNotices.txt") { into '/' }
           from(exe)
           into(nativeUtils.getPlatformPath(binary))
         }

@@ -27,10 +27,12 @@ includeOtherLibs {
   ^frc
   ^imgui
   ^implot\.h$
+  ^libssh
   ^ntcore
   ^portable-file-dialogs
   ^rev/
   ^units
+  ^uv
   ^wpi/
   ^wpigui
   ^wpimath/

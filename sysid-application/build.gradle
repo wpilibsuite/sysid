@@ -13,6 +13,7 @@ if (OperatingSystem.current().isWindows())
 
 ext {
   wpilibVersion = "2022.+"
+  libsshVersion = "0.95-1"
 }
 
 // Apply NativeUtils configuration.
@@ -69,6 +70,10 @@ def generateTask = createGenerateResourcesTask('main', 'SYSID', 'sysid', project
 generateTask.dependsOn ":sysid-projects:drive:installRioExe"
 generateTask.dependsOn ":sysid-projects:mechanism:installRioExe"
 
+tasks.withType(CppCompile) {
+  dependsOn generateTask
+}
+
 // Configure application.
 model {
   components {
@@ -87,10 +92,6 @@ model {
             include "*.rc"
           }
         }
-      }
-      // Make sure that all resources are generated before we build the final application.
-      binaries.all {
-        it.tasks.withType(CppCompile) { dependsOn generateTask }
       }
     }
   }
@@ -148,14 +149,19 @@ model {
   binaries {
     withType(NativeBinarySpec).all {
       nativeUtils.useRequiredLibrary(it, "gui")
+      nativeUtils.useRequiredLibrary(it, "ssh")
+
+      it.cppCompiler.define("LIBSSH_STATIC")
       it.cppCompiler.define("PROJECT_ROOT_DIR", "$rootDir")
-      // Add platform-specific renderer dependencies.
+      // Add platform-specific renderer and cryptography dependencies.
       if (it.targetPlatform.operatingSystem.isWindows()) {
         it.linker.args << 'Gdi32.lib' << 'Shell32.lib' << 'd3d11.lib' << 'd3dcompiler.lib'
+        it.linker.args << 'ws2_32.lib' << 'advapi32.lib' << 'crypt32.lib' << 'user32.lib'
       } else if (it.targetPlatform.operatingSystem.isMacOsX()) {
         it.linker.args << '-framework' << 'Metal' << '-framework' << 'MetalKit' <<
             '-framework' << 'Cocoa' << '-framework' << 'IOKit' << '-framework' <<
             'CoreFoundation' << '-framework' << 'CoreVideo' << '-framework' << 'QuartzCore'
+        it.linker.args << '-framework' << 'Kerberos'
       } else {
         it.linker.args << '-lX11'
       }

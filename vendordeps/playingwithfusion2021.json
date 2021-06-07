@@ -54,7 +54,7 @@
           "artifactId": "PlayingWithFusion-driver",
           "version": "2021.03.22",
           "headerClassifier": "headers",
-          "sharedLibrary": true,
+          "sharedLibrary": false,
           "libName": "PlayingWithFusionDriver",
           "skipInvalidPlatforms": true,
           "binaryPlatforms": [
