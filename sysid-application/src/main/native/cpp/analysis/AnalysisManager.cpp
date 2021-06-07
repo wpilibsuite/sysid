@@ -434,7 +434,7 @@ AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,
   }
 
   is >> m_json;
-  WPI_INFO(m_logger, "Read " << path);
+  WPI_INFO(m_logger, "Read {}", path);
 
   // Check that we have a sysid json.
   if (m_json.find("sysid") == m_json.end()) {

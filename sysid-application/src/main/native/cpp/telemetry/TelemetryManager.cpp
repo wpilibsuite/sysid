@@ -97,7 +97,7 @@ void TelemetryManager::BeginTest(std::string_view name) {
         "ensure it does not hit anything!");
   }
 
-  WPI_DEBUG(m_logger, "Started " << m_tests.back() << "test");
+  WPI_DEBUG(m_logger, "Started {} test.", m_tests.back());
 }
 
 void TelemetryManager::EndTest() {
@@ -166,7 +166,7 @@ void TelemetryManager::Update() {
     }
     // Get the string in the data field.
     if (event.entry == m_telemetry && event.value && event.value->IsString()) {
-      std::string value = event.value->GetString();
+      std::string value{event.value->GetString()};
       if (!value.empty()) {
         m_params.raw = std::move(value);
         nt::SetEntryValue(m_telemetry, nt::Value::MakeString(""));
@@ -193,14 +193,14 @@ void TelemetryManager::Update() {
     if (m_params.enabled) {
       m_params.enableStart = wpi::Now() * 1E-6;
       m_params.state = State::RunningTest;
-      WPI_DEBUG(m_logger, "Transitioned to running test state.");
+      WPI_DEBUG(m_logger, "{}", "Transitioned to running test state.");
     }
   }
 
   if (m_params.state == State::RunningTest) {
     // If for some reason we've disconnected, end the test.
     if (!nt::IsConnected(m_inst)) {
-      WPI_WARNING(m_logger,
+      WPI_WARNING(m_logger, "{}",
                   "NT connection was dropped when executing the test. The test "
                   "has been canceled.");
       EndTest();
@@ -246,17 +246,15 @@ void TelemetryManager::Update() {
       }
 
       WPI_INFO(m_logger,
-               "Received data with size: "
-                   << m_params.data.size() << " for the " << m_tests.back()
-                   << " test in "
-                   << m_params.data.back()[0] - m_params.data.front()[0]
-                   << " seconds.");
+               "Received data with size: {} for the {} test in {} seconds.",
+               m_params.data.size(), m_tests.back(),
+               m_params.data.back()[0] - m_params.data.front()[0]);
       EndTest();
     }
 
     // If we timed out, end the test and let the user know.
     if (now - m_params.disableStart > 5) {
-      WPI_WARNING(m_logger,
+      WPI_WARNING(m_logger, "{}",
                   "TelemetryManager did not receieve data 5 seconds after "
                   "completing the test...");
       EndTest();
@@ -282,7 +280,7 @@ std::string TelemetryManager::SaveJSON(std::string_view location) {
 
   os << m_data;
   os.flush();
-  WPI_INFO(m_logger, "Wrote JSON to: " << loc);
+  WPI_INFO(m_logger, "Wrote JSON to: {}", loc);
 
   return loc;
 }

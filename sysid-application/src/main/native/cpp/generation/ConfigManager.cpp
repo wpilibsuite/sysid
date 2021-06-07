@@ -68,7 +68,7 @@ void ConfigManager::SaveJSON(std::string_view path, size_t portCount,
   std::error_code ec;
   wpi::raw_fd_ostream os{jsonDirectory, ec};
 
-  WPI_INFO(m_logger, "Writing JSON to: " << jsonDirectory);
+  WPI_INFO(m_logger, "Writing JSON to: {}", jsonDirectory);
 
   if (ec) {
     throw std::runtime_error("Cannot write to file");

@@ -7,8 +7,10 @@
 #include <stdexcept>
 #include <string>
 
+#include <fmt/core.h>
 #include <fmt/format.h>
 #include <wpi/Logger.h>
+#include <wpi/fmt/raw_ostream.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
 #include <wpi/raw_ostream.h>
@@ -40,7 +42,7 @@ static wpi::json GetJSON(std::string_view path, wpi::Logger& logger) {
 
   wpi::json json;
   input >> json;
-  WPI_INFO(logger, "Read frc-characterization JSON from " << path);
+  WPI_INFO(logger, "Read frc-characterization JSON from {}", path);
   return json;
 }
 
@@ -95,7 +97,7 @@ std::string sysid::ConvertJSON(std::string_view path, wpi::Logger& logger) {
   output << json;
   output.flush();
 
-  WPI_INFO(logger, "Wrote new JSON to: " << loc);
+  WPI_INFO(logger, "Wrote new JSON to: {}", loc);
   return loc;
 }
 
@@ -117,18 +119,17 @@ std::string sysid::ToCSV(std::string_view path, wpi::Logger& logger) {
     throw std::runtime_error("Unable to write to: " + loc);
   }
 
-  outputFile << "Timestamp (s),Test,";
+  fmt::print(outputFile, "Timestamp (s),Test,");
   if (type == analysis::kDrivetrain || type == analysis::kDrivetrainAngular) {
-    outputFile << "Left Volts (V),Right Volts (V),"
-               << "Left Position (" << abbreviation << "),"
-               << "Right Position(" << abbreviation << "),"
-               << "Left Velocity (" << unit << "/s),"
-               << "Right Velocity (" << unit << "/s),"
-               << "Gyro Position (deg),Gyro Rate (deg/s)";
-
+    fmt::print(
+        outputFile,
+        "Left Volts (V),Right Volts (V),Left Position ({0}),Right "
+        "Position ({0}),Left Velocity ({0}/s),Right Velocity ({0}/s),Gyro "
+        "Position (deg),Gyro Rate (deg/s)\n",
+        abbreviation);
   } else {
-    outputFile << "Volts (V),Position (" << abbreviation << "),Velocity ("
-               << abbreviation << "/s)";
+    fmt::print(outputFile, "Volts (V),Position({0}),Velocity ({0}/s)\n",
+               abbreviation);
   }
   outputFile << "\n";
 
@@ -137,28 +138,30 @@ std::string sysid::ToCSV(std::string_view path, wpi::Logger& logger) {
       auto tempData =
           json.at(key).get<std::vector<std::array<double, kDrivetrainSize>>>();
       for (auto&& pt : tempData) {
-        outputFile << pt[0] << "," << key << ","    // Timestamp, Test
-                   << pt[1] << "," << pt[2] << ","  // Left and Right Voltages
-                   << pt[3] * factor << "," << pt[4] * factor
-                   << ","  // Left and Right Positions
-                   << pt[5] * factor << "," << pt[6] * factor
-                   << ","                    // Left and Right Velocities
-                   << pt[7] << "," << pt[8]  // Gyro Position and Velocity
-                   << "\n";
+        fmt::print(outputFile, "{},{},{},{},{},{},{},{},{},{}\n",
+                   pt[0],                           // Timestamp
+                   key,                             // Test
+                   pt[1], pt[2],                    // Left and Right Voltages
+                   pt[3] * factor, pt[4] * factor,  // Left and Right Positions
+                   pt[5] * factor, pt[6] * factor,  // Left and Right Velocity
+                   pt[7], pt[8]  // Gyro Position and Velocity
+        );
       }
     } else {
       auto tempData =
           json.at(key).get<std::vector<std::array<double, kGeneralSize>>>();
       for (auto&& pt : tempData) {
-        outputFile << pt[0] << "," << key << ","  // Timestamp, Test
-                   << pt[1] << ","                // Voltage
-                   << pt[2] * factor << ","       // Position
-                   << pt[3] * factor              // Velocity
-                   << "\n";
+        fmt::print(outputFile, "{},{},{},{},{}\n",
+                   pt[0],           // Timestamp,
+                   key,             // Test
+                   pt[1],           // Voltage
+                   pt[2] * factor,  // Position
+                   pt[3] * factor   // Velocity
+        );
       }
     }
   }
   outputFile.flush();
-  WPI_INFO(logger, "Wrote CSV to: " << loc);
+  WPI_INFO(logger, "Wrote CSV to: {}", loc);
   return loc;
 }
