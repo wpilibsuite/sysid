@@ -9,6 +9,7 @@
 #include <string_view>
 
 #include <fmt/core.h>
+#include <wpi/SmallString.h>
 #include <wpi/StringExtras.h>
 #include <wpi/uv/Error.h>
 #include <wpi/uv/GetAddrInfo.h>
@@ -20,10 +21,10 @@
 using namespace sysid;
 
 // Macros to make logging easier.
-#define INFO(x) WPI_INFO(m_logger, x)
-#define DEBUG(x) WPI_DEBUG(m_logger, x)
-#define ERROR(x) WPI_ERROR(m_logger, x)
-#define SUCCESS(x) WPI_LOG(m_logger, kLogSuccess, x)
+#define INFO(fmt, ...) WPI_INFO(m_logger, fmt, __VA_ARGS__)
+#define DEBUG(fmt, ...) WPI_DEBUG(m_logger, fmt, __VA_ARGS__)
+#define ERROR(fmt, ...) WPI_DEBUG(m_logger, fmt, __VA_ARGS__)
+#define SUCCESS(fmt, ...) WPI_LOG(m_logger, kLogSuccess, fmt, __VA_ARGS__)
 
 // roboRIO SSH constants.
 static constexpr int kPort = 22;
@@ -60,7 +61,7 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
   // addresses. For every successful resolution, we will attempt a connection.
   // The first address to connect wins and the deploy will execute.
   for (auto&& host : m_addresses) {
-    DEBUG(fmt::format("Attempting to resolve {} hostname.", host));
+    DEBUG("Attempting to resolve {} hostname.", host);
 
     // Create a request object for the call.
     auto req = std::make_shared<wpi::uv::GetAddrInfoReq>();
@@ -69,7 +70,7 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
     req->error = [this, &host, &lp](wpi::uv::Error e) {
       m_visited.fetch_add(1);
       lp.error(e);
-      DEBUG(fmt::format("Could not resolve {}: {}.", host, e.str()));
+      DEBUG("Could not resolve {}: {}.", host, e.str());
     };
 
     // Set the address-resolved handler for the request.
@@ -78,7 +79,7 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
       wpi::SmallString<16> ip;
       wpi::uv::AddrToName(reinterpret_cast<sockaddr_in*>(i.ai_addr)->sin_addr,
                           &ip);
-      DEBUG(fmt::format("Resolved {} to {}.", host, ip.str()));
+      DEBUG("Resolved {} to {}.", host, ip);
 
       // Attempt an SSH connection in a separate worker thread. If the
       // connection is successful, continue the deploy from there.
@@ -92,7 +93,7 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
       // We capture ip by value because the ref might be gone when the
       // callback is invoked.
       wreq->work.connect([this, &host, ip] {
-        DEBUG(fmt::format("Trying to establish SSH connection to {}.", host));
+        DEBUG("Trying to establish SSH connection to {}.", host);
         try {
           // Check if a connection has already been established. If it
           // has, then we don't want to waste time and resources trying
@@ -104,7 +105,7 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
           // Try to start a connection.
           SshSession session{ip.str(), kPort, kUsername, kPassword, m_logger};
           session.Open();
-          DEBUG(fmt::format("SSH connection to {} was successful.", host));
+          DEBUG("SSH connection to {} was successful.", host);
 
           // If we were successful, continue with the deploy (after
           // making sure that no other thread also reached this location
@@ -113,7 +114,7 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
             return;
           }
 
-          SUCCESS("roboRIO Connected!");
+          SUCCESS("{}", "roboRIO Connected!");
 
           try {
             // As far as I can tell, the order of this doesn't matter.
@@ -162,12 +163,12 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
                 ". /etc/profile.d/natinst-path.sh; "
                 "/usr/local/frc/bin/frcKillRobot.sh -t -r 2> /dev/null");
 
-            SUCCESS("Deploy Complete!");
+            SUCCESS("{}", "Deploy Complete!");
           } catch (const SshSession::SshException& e) {
-            ERROR(fmt::format("An exception occurred: {}", e.what()));
+            ERROR("An exception occurred: {}", e.what());
           }
         } catch (const SshSession::SshException& e) {
-          DEBUG(fmt::format("SSH connection to {} failed.", host));
+          DEBUG("SSH connection to {} failed.", host);
         }
       });
 

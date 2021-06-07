@@ -19,7 +19,7 @@
 
 using namespace sysid;
 
-#define INFO(x) WPI_INFO(m_logger, x)
+#define INFO(fmt, ...) WPI_INFO(m_logger, fmt, __VA_ARGS__)
 
 SshSession::SshSession(std::string_view host, int port, std::string_view user,
                        std::string_view pass, wpi::Logger& logger)
@@ -87,13 +87,13 @@ void SshSession::Execute(std::string_view cmd) {
     ssh_channel_free(channel);
     throw SshException(ssh_get_error(m_session));
   }
-  INFO(cmd);
+  INFO("{}", cmd);
 
   // Log output.
   char buf[512];
   int read = ssh_channel_read(channel, buf, sizeof(buf), 0);
   if (read != 0) {
-    INFO(cmd);
+    INFO("{}", cmd);
   }
 
   // Close and free channel.
@@ -135,7 +135,7 @@ void SshSession::Put(std::string_view path, std::string_view contents) {
     }
   }
 
-  INFO(fmt::format("[SFTP] Deployed {}!", path));
+  INFO("[SFTP] Deployed {}!", path);
 
   // Close file, free memory.
   sftp_close(file);

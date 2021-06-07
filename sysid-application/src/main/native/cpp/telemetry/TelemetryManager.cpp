@@ -272,7 +272,7 @@ std::string TelemetryManager::SaveJSON(std::string_view location) {
                                 fmt::localtime(std::time(nullptr)));
 
   sysid::SaveFile(m_data.dump(2), fs::path{loc});
-  WPI_INFO(m_logger, "Wrote JSON to: " << loc);
+  WPI_INFO(m_logger, "Wrote JSON to: {}", loc);
 
   return loc;
 }
