@@ -2,6 +2,8 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
+#include <cstdio>
+
 #ifndef RUNNING_SYSID_TESTS
 
 #include <memory>
@@ -76,11 +78,17 @@ void Application() {
       lvl = "WARNING: ";
     } else if (level >= wpi::WPI_LOG_INFO) {
       lvl = "INFO: ";
+    } else if (level >= wpi::WPI_LOG_DEBUG) {
+      lvl = "DEBUG: ";
     }
     std::string filename = fs::path{file}.filename().string();
     gLog.Append(fmt::format("{}{} ({}:{})\n", lvl, msg, filename, line));
+#ifndef NDEBUG
+    fmt::print(stderr, "{}{} ({}:{})\n", lvl, msg, filename, line);
+#endif
   });
 
+  gLogger.set_min_level(wpi::WPI_LOG_DEBUG);
   // Set the number of workers for the libuv threadpool.
   uv_os_setenv("UV_THREADPOOL_SIZE", "6");
 
