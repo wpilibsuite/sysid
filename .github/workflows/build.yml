@@ -54,7 +54,7 @@ jobs:
   build-docker:
     name: "Build - Linux x86-64"
     runs-on: ubuntu-latest
-    container: wpilib/ubuntu-base:18.04
+    container: wpilib/ubuntu-base:20.04
     steps:
       - uses: actions/checkout@v2
         with:
