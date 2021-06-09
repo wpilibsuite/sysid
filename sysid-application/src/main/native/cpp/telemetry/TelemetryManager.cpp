@@ -112,12 +112,11 @@ void TelemetryManager::EndTest() {
 
   // Call the cancellation callbacks.
   for (auto&& func : m_callbacks) {
+    std::string msg;
     if (!m_params.data.empty()) {
       std::string units;
       std::transform(m_settings.units.begin(), m_settings.units.end(),
                      units.begin(), ::tolower);
-
-      std::string msg;
 
       if (wpi::starts_with(m_settings.mechanism.name, "Drivetrain")) {
         double p = (m_params.data.back()[3] - m_params.data.front()[3]) *
@@ -141,8 +140,16 @@ void TelemetryManager::EndTest() {
             "\nNOTE: the robot stopped recording data early because the entry "
             "storage was exceeded.";
       }
-      func(msg);
+
+    } else {
+      msg = "No data was detected.";
     }
+    func(msg);
+  }
+
+  // Remove previously run test from list of tests if no data was detected.
+  if (m_params.data.empty()) {
+    m_tests.pop_back();
   }
 
   // Send a zero command over NT.
