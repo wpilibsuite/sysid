@@ -9,6 +9,7 @@
 
 #include "gtest/gtest.h"
 #include "sysid/analysis/AnalysisManager.h"
+#include "sysid/analysis/AngularDriveSim.h"
 #include "sysid/analysis/ArmSim.h"
 #include "sysid/analysis/ElevatorSim.h"
 #include "sysid/analysis/FeedforwardAnalysis.h"
@@ -141,6 +142,38 @@ TEST(FeedforwardAnalysis, Drivetrain2) {
   constexpr double Ka = 0.1170;
 
   sysid::SimpleMotorSim model{Ks, Kv, Ka};
+  auto ff = sysid::CalculateFeedforwardGains(CollectData(model),
+                                             sysid::analysis::kDrivetrain);
+  auto& gains = std::get<0>(ff);
+
+  EXPECT_NEAR(gains[0], Ks, 0.003);
+  EXPECT_NEAR(gains[1], Kv, 0.003);
+  EXPECT_NEAR(gains[2], Ka, 0.003);
+}
+
+TEST(FeedforwardAnalysis, AngularDrivetrain1) {
+  constexpr double Ks = 1.01;
+  constexpr double Kv = 3.060;
+  constexpr double Ka = 0.327;
+  constexpr double KtrackWidth = 0.762;
+
+  sysid::AngularDriveSim model{Ks, Kv, Ka, KtrackWidth};
+  auto ff = sysid::CalculateFeedforwardGains(CollectData(model),
+                                             sysid::analysis::kDrivetrain);
+  auto& gains = std::get<0>(ff);
+
+  EXPECT_NEAR(gains[0], Ks, 0.003);
+  EXPECT_NEAR(gains[1], Kv, 0.003);
+  EXPECT_NEAR(gains[2], Ka, 0.003);
+}
+
+TEST(FeedforwardAnalysis, AngularDrivetrain2) {
+  constexpr double Ks = 0.547;
+  constexpr double Kv = 0.0693;
+  constexpr double Ka = 0.1170;
+  constexpr double KtrackWidth = 0.643;
+
+  sysid::AngularDriveSim model{Ks, Kv, Ka, KtrackWidth};
   auto ff = sysid::CalculateFeedforwardGains(CollectData(model),
                                              sysid::analysis::kDrivetrain);
   auto& gains = std::get<0>(ff);

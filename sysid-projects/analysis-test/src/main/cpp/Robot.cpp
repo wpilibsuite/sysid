@@ -11,6 +11,8 @@
 #include <frc/simulation/DriverStationSim.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <units/voltage.h>
+#include <wpi/StringRef.h>
+#include <wpi/raw_ostream.h>
 
 #include "Arm.h"
 #include "Drivetrain.h"
@@ -38,7 +40,7 @@ class Robot : public frc::TimedRobot {
     m_driveMechanism->SetRMotor(0_V);
 
     m_arm.ResetReadings();
-    if (m_test == "Drivetrain") {
+    if (m_test == "Drivetrain" || m_test == "Drivetrain (Angular)") {
       m_driveLogger.SendData();
     } else {
       m_generalLogger.SendData();
@@ -55,7 +57,7 @@ class Robot : public frc::TimedRobot {
 
   void AutonomousInit() override {
     m_test = frc::SmartDashboard::GetString("SysIdTest", "Simple");
-    if (m_test == "Drivetrain") {
+    if (m_test == "Drivetrain" || m_test == "Drivetrain (Angular)") {
       m_driveLogger.InitLogging();
     } else {
       m_generalLogger.InitLogging();
