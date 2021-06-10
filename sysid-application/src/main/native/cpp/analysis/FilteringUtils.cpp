@@ -9,8 +9,8 @@
 #include <vector>
 
 #include <fmt/format.h>
-#include <frc/LinearFilter.h>
-#include <frc/MedianFilter.h>
+#include <frc/filter/LinearFilter.h>
+#include <frc/filter/MedianFilter.h>
 #include <units/math.h>
 #include <wpi/numbers>
 
