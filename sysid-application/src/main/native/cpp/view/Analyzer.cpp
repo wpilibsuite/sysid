@@ -78,6 +78,7 @@ void Analyzer::Display() {
   // it.
   if (first) {
     if (!m_location->empty() && fs::exists(*m_location)) {
+      WPI_DEBUG(m_logger, "Previous file location exists: {}", *m_location);
       try {
         m_manager = std::make_unique<AnalysisManager>(*m_location, m_settings,
                                                       m_logger);
@@ -494,9 +495,11 @@ void Analyzer::SelectFile() {
   // If the selector exists and is ready with a result, we can store it.
   if (m_selector && m_selector->ready() && !m_selector->result().empty()) {
     // Store the location of the file and reset the selector.
+    WPI_DEBUG(m_logger, "Opening File: {}", m_selector->result()[0]);
     *m_location = m_selector->result()[0];
     m_selector.reset();
     m_enabled = true;
+    WPI_DEBUG(m_logger, "{}", "Opened File");
 
     // Create the analysis manager.
     try {
@@ -516,8 +519,9 @@ void Analyzer::SelectFile() {
 }
 
 void Analyzer::PrepareData() {
+  WPI_DEBUG(m_logger, "{}", "Preparing Data.");
   if (!m_enabled) {
-    fmt::print(stderr, "Returning early prepdata\n");
+    WPI_DEBUG(m_logger, "{}", "Returning early for data preparation.");
     return;
   }
   try {
@@ -536,8 +540,9 @@ void Analyzer::PrepareData() {
 }
 
 void Analyzer::Calculate() {
+  WPI_DEBUG(m_logger, "{}", "Calculating Gains.");
   if (!m_enabled) {
-    fmt::print(stderr, "Returning early calculate\n");
+    WPI_DEBUG(m_logger, "{}", "Returning early for gain calculation.");
     return;
   }
   try {
@@ -565,8 +570,9 @@ void Analyzer::AbortDataPrep() {
 }
 
 void Analyzer::PrepareGraphs() {
+  WPI_DEBUG(m_logger, "{}", "Graphing Data.");
   if (!m_enabled) {
-    fmt::print(stderr, "Returning early graphs\n");
+    WPI_DEBUG(m_logger, "{}", "Returning early for graphing.");
     return;
   }
   try {
