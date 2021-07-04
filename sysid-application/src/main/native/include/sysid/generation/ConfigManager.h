@@ -53,6 +53,9 @@ struct ConfigSettings {
   bool encoding = false;
   int numSamples = 1;
   int period = 5;
+
+  // Is Drivetrain Boolean
+  bool isDrive = false;
 };
 
 // Pre-built configuration for the Romi -- all Romis have the same setup.
@@ -87,6 +90,10 @@ class ConfigManager {
    * @return The generated JSON.
    */
   wpi::json Generate(size_t occupied);
+
+  void ReadJSON(std::string_view path);
+
+  void SaveJSON(std::string_view path, size_t occupied);
 
  private:
   // Configuration settings for this instance.

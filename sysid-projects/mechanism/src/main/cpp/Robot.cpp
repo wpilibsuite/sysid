@@ -33,7 +33,8 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
     std::string encoderType = m_json.at("encoder type").get<std::string>();
     bool encoderInverted = m_json.at("primary encoder inverted").get<bool>();
 
-    double cpr = m_json.at("counts per shaft revolution").get<double>();
+    double cpr = m_json.at("counts per rotation").get<double>();
+    double gearing = m_json.at("gearing").get<double>();
 
     bool isEncoding = m_json.at("encoding").get<bool>();
 
@@ -50,7 +51,7 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 
     wpi::outs() << "Initializing encoder\n";
     wpi::outs().flush();
-    SetupEncoders(encoderType, isEncoding, period, cpr, numSamples,
+    SetupEncoders(encoderType, isEncoding, period, cpr * gearing, numSamples,
                   controllerNames[0], m_controllers.front().get(),
                   encoderInverted, encoderPorts, m_cancoder, m_encoder,
                   m_position, m_rate);

@@ -10,6 +10,7 @@
 #include <vector>
 
 #include <glass/View.h>
+#include <portable-file-dialogs.h>
 #include <wpi/EventLoopRunner.h>
 #include <wpi/Logger.h>
 #include <wpi/mutex.h>
@@ -57,6 +58,7 @@ class Generator : public glass::View {
  private:
   void GeneratorUI();
   void SelectCTREVelocityPeriod();
+  void UpdateFromConfig();
 
   // Configuration manager along with its settings -- used to generate the JSON
   // configuration.
@@ -85,6 +87,9 @@ class Generator : public glass::View {
   // Whether the user is running Spark MAX in Brushed Mode.
   bool m_isSparkMaxBrushed = false;
 
+  // Selectors for files
+  std::unique_ptr<pfd::save_file> m_saveConfigSelector;
+  std::unique_ptr<pfd::open_file> m_loadConfigSelector;
   // Logger
   wpi::Logger& m_logger;
 
