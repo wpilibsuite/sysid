@@ -47,7 +47,8 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
         m_json.at("primary encoder inverted").get<bool>();
     bool rightEncoderInverted =
         m_json.at("secondary encoder inverted").get<bool>();
-    double cpr = m_json.at("counts per shaft revolution").get<double>();
+    double cpr = m_json.at("counts per rotation").get<double>();
+    double gearing = m_json.at("gearing").get<double>();
 
     std::string gyroType = m_json.at("gyro").get<std::string>();
     std::string gyroCtor = m_json.at("gyro ctor").get<std::string>();
@@ -69,11 +70,11 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 
     wpi::outs() << "Setup encoders\n";
     wpi::outs().flush();
-    SetupEncoders(encoderType, isEncoding, period, cpr, numSamples,
+    SetupEncoders(encoderType, isEncoding, period, cpr * gearing, numSamples,
                   controllerNames[0], m_leftControllers.at(0).get(),
                   leftEncoderInverted, leftEncoderPorts, m_leftCancoder,
                   m_leftEncoder, m_leftPosition, m_leftRate);
-    SetupEncoders(encoderType, isEncoding, period, cpr, numSamples,
+    SetupEncoders(encoderType, isEncoding, period, cpr * gearing, numSamples,
                   controllerNames[0], m_rightControllers.at(0).get(),
                   rightEncoderInverted, rightEncoderPorts, m_rightCancoder,
                   m_rightEncoder, m_rightPosition, m_rightRate);

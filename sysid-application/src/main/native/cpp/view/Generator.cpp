@@ -6,7 +6,9 @@
 
 #include <memory>
 #include <mutex>
+#include <stdexcept>
 #include <string>
+#include <string_view>
 
 #include <fmt/format.h>
 #include <glass/Context.h>
@@ -46,10 +48,60 @@ Generator::Generator(wpi::Logger& logger) : m_logger{logger} {
       glass::GetStorage("NetworkTables Settings").GetStringRef("serverTeam");
 }
 
+template <size_t X>
+static int GetNewIdx(const char* const (&arr)[X], std::string_view value) {
+  auto it = std::find(std::cbegin(arr), std::cend(arr), value);
+  if (it == std::cend(arr)) {
+    throw std::runtime_error(fmt::format("{} not found", value));
+  } else {
+    return std::distance(std::cbegin(arr), it);
+  }
+}
+
+void Generator::UpdateFromConfig() {
+  // Get Occupied Ports
+  m_occupied = m_settings.motorControllers.size();
+
+  // Idxs
+  m_encoderIdx = GetNewIdx(kEncoders, m_settings.encoderType);
+  m_gyroIdx = GetNewIdx(kGyros, m_settings.gyro);
+  m_periodIdx = GetNewIdx(kCTREPeriods, std::to_string(m_settings.period));
+
+  // Read in Gyro Constructors
+  if (m_settings.gyro == "Pigeon") {
+    auto pos = m_settings.gyroCtor.find("WPI_TalonSRX");
+    if (pos != std::string_view::npos) {
+      m_gyroPort = std::stoi(m_settings.gyroCtor.substr(pos + 13));
+      m_isTalon = true;
+    } else {
+      m_gyroPort = std::stoi(m_settings.gyroCtor);
+      m_isTalon = false;
+    }
+  } else if (m_settings.gyro == "ADXRS450") {
+    m_gyroParam = GetNewIdx(sysid::kADXRS450Ctors, m_settings.gyroCtor);
+  } else if (m_settings.gyro == "NavX") {
+    m_gyroParam = GetNewIdx(sysid::kNavXCtors, m_settings.gyroCtor);
+  } else {
+    m_gyroPort = std::stoi(m_settings.gyroCtor);
+  }
+
+  // Set Analysis Type
+  m_analysisIdx = m_settings.isDrive ? 1 : 0;
+}
+
 void Generator::Display() {
   // Add team / IP selection.
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
   ImGui::InputText("Team/IP", m_pTeam);
+
+  // Add Config Reading Button
+  if (ImGui::Button("Load Config")) {
+    m_loadConfigSelector = std::make_unique<pfd::open_file>(
+        "Open Config", "",
+        std::vector<std::string>{"JSON File", SYSID_PFD_JSON_EXT});
+  }
+
+  m_settings.isDrive = m_analysisIdx > 0;
 
   // Add deploy button.
   // FIXME: Open Romi project in simulation once desktop programs are supported.
@@ -67,7 +119,6 @@ void Generator::Display() {
     // Open the deploy popup.
     ImGui::OpenPopup("Deploy Status");
   }
-
   // Add analysis type selection.
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
   ImGui::Combo("Analysis Type", &m_analysisIdx, kAnalysisTypes,
@@ -143,7 +194,6 @@ void Generator::Display() {
       ImGui::SameLine();
       ImGui::Checkbox("R Inverted", &si[i]);
     }
-
     // Add motor controller selector.
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
     auto motorControllerName = fmt::format(
@@ -324,6 +374,29 @@ void Generator::Display() {
       "shaft hence the gearing is 1. However, if the encoder was an integrated "
       "encoder on the motor in the kit chassis gearbox, the gearing would be "
       "10.71.");
+  // Have a save button at the bottom
+  if (ImGui::Button("Save")) {
+    // Open a file popup
+    m_saveConfigSelector = std::make_unique<pfd::save_file>(
+        "Save Config", "config.json",
+        std::vector<std::string>{"JSON File", SYSID_PFD_JSON_EXT},
+        pfd::opt::force_path);
+  }
+
+  if (m_saveConfigSelector && m_saveConfigSelector->ready() &&
+      !m_saveConfigSelector->result().empty()) {
+    auto path = m_saveConfigSelector->result();
+    m_manager->SaveJSON(path, m_occupied);
+    m_saveConfigSelector.reset();
+  }
+
+  if (m_loadConfigSelector && m_loadConfigSelector->ready() &&
+      !m_loadConfigSelector->result().empty()) {
+    auto path = m_loadConfigSelector->result()[0];
+    m_manager->ReadJSON(path);
+    UpdateFromConfig();
+    m_loadConfigSelector.reset();
+  }
 
   // Define the deploy popup (and set default size).
   auto size = ImGui::GetIO().DisplaySize;
