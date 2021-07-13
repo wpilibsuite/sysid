@@ -7,6 +7,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <string_view>
 
 #include <fmt/format.h>
 #include <glass/Context.h>
@@ -176,52 +177,64 @@ void Generator::Display() {
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
   ImGui::Combo("Encoder", &m_encoderIdx, kEncoders, IM_ARRAYSIZE(kEncoders));
 
-  // Add encoder port selection if roboRIO is selected.
-  if (m_encoderIdx > 1) {
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-    ImGui::InputInt("A##1", &m_settings.primaryEncoderPorts[0], 0, 0);
-    ImGui::SameLine(ImGui::GetFontSize() * 4);
+  // Configure Encoder Port inputs
+  switch (m_encoderIdx) {
+    case 0:  // Builtin
 
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-    ImGui::InputInt("B##1", &m_settings.primaryEncoderPorts[1], 0, 0);
-    ImGui::SameLine();
-
-    ImGui::Checkbox(drive ? "Left Encoder Inverted" : "Encoder Inverted",
-                    &m_settings.primaryEncoderInverted);
-
-    // Add another row if we are running drive tests.
-    if (drive) {
+      if (m_settings.motorControllers[0] != "SPARK MAX (Brushless)") {
+        ImGui::Checkbox(drive ? "Left Encoder Inverted" : "Encoder Inverted",
+                        &m_settings.primaryEncoderInverted);
+        if (drive) {
+          ImGui::SameLine();
+          ImGui::Checkbox("Right Encoder Inverted",
+                          &m_settings.secondaryEncoderInverted);
+        }
+      }
+      break;
+    case 1:  // CANCoder / Alternate
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-      ImGui::InputInt("A##2", &m_settings.secondaryEncoderPorts[0], 0, 0);
+      ImGui::InputInt(drive ? "L CANCoder Port" : "CANCoder Port",
+                      &m_settings.primaryEncoderPorts[0], 0, 0);
+      ImGui::SameLine();
+      ImGui::Checkbox(drive ? "Left Encoder Inverted" : "Encoder Inverted",
+                      &m_settings.primaryEncoderInverted);
+      if (drive) {
+        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
+        ImGui::InputInt("R CANCoder Port", &m_settings.secondaryEncoderPorts[1],
+                        0, 0);
+        ImGui::SameLine();
+        ImGui::Checkbox("Right Encoder Inverted",
+                        &m_settings.secondaryEncoderInverted);
+      }
+      break;
+    case 2:  // roboRIO
+      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
+      ImGui::InputInt("A##1", &m_settings.primaryEncoderPorts[0], 0, 0);
       ImGui::SameLine(ImGui::GetFontSize() * 4);
 
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-      ImGui::InputInt("B##2", &m_settings.secondaryEncoderPorts[1], 0, 0);
+      ImGui::InputInt("B##1", &m_settings.primaryEncoderPorts[1], 0, 0);
       ImGui::SameLine();
+      ImGui::Checkbox(drive ? "Left Encoder Inverted" : "Encoder Inverted",
+                      &m_settings.primaryEncoderInverted);
 
-      ImGui::Checkbox("Right Encoder Inverted",
-                      &m_settings.secondaryEncoderInverted);
-    }
-    ImGui::Checkbox("Reduce Encoding", &m_settings.encoding);
-    CreateTooltip(
-        "This helps reduce encoder noise for high CPR encoders such as the "
-        "CTRE Magnetic Encoder and REV Throughbore Encoder");
-  }
+      if (drive) {
+        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
+        ImGui::InputInt("A##2", &m_settings.secondaryEncoderPorts[0], 0, 0);
+        ImGui::SameLine(ImGui::GetFontSize() * 4);
 
-  // Add CANCoder port selection.
-  if (m_encoderIdx == 1) {
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-    ImGui::InputInt(drive ? "L CANCoder Port" : "CANCoder Port",
-                    &m_settings.primaryEncoderPorts[0], 0, 0);
-    ImGui::Checkbox(drive ? "Left Encoder Inverted" : "Encoder Inverted",
-                    &m_settings.primaryEncoderInverted);
-    if (drive) {
-      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-      ImGui::InputInt("R CANCoder Port", &m_settings.secondaryEncoderPorts[1],
-                      0, 0);
-      ImGui::Checkbox("Right Encoder Inverted",
-                      &m_settings.secondaryEncoderInverted);
-    }
+        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
+        ImGui::InputInt("B##2", &m_settings.secondaryEncoderPorts[1], 0, 0);
+
+        ImGui::SameLine();
+        ImGui::Checkbox("Right Encoder Inverted",
+                        &m_settings.secondaryEncoderInverted);
+      }
+
+      ImGui::Checkbox("Reduce Encoding", &m_settings.encoding);
+      CreateTooltip(
+          "This helps reduce encoder noise for high CPR encoders such as the "
+          "CTRE Magnetic Encoder and REV Throughbore Encoder");
   }
 
   // Venom built-in encoders can't change sampling or measurement period.
