@@ -14,13 +14,13 @@ class SysIdDrivetrainLogger : public SysIdLogger {
   /**
    * The users should their left motors to what this returns AFTER calling log.
    */
-  units::volt_t GetLeftMotorVoltage();
+  units::volt_t GetLeftMotorVoltage() const;
 
   /**
    * The users should set their right motors to what this returns AFTER calling
    * log.
    */
-  units::volt_t GetRightMotorVoltage();
+  units::volt_t GetRightMotorVoltage() const;
 
   /**
    * Logs data for a drivetrain mechanism.
@@ -38,4 +38,10 @@ class SysIdDrivetrainLogger : public SysIdLogger {
    */
   void Log(double leftPosition, double rightPosition, double leftVelocity,
            double rightVelocity, double measuredAngle, double angularRate);
+
+  void Reset() override;
+
+ private:
+  units::volt_t m_primaryMotorVoltage = 0_V;
+  units::volt_t m_secondaryMotorVoltage = 0_V;
 };

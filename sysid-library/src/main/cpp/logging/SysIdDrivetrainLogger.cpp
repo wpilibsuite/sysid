@@ -5,13 +5,12 @@
 #include "logging/SysIdDrivetrainLogger.h"
 
 #include <frc/smartdashboard/SmartDashboard.h>
-#include <units/voltage.h>
 
-units::volt_t SysIdDrivetrainLogger::GetLeftMotorVoltage() {
+units::volt_t SysIdDrivetrainLogger::GetLeftMotorVoltage() const {
   return m_primaryMotorVoltage;
 }
 
-units::volt_t SysIdDrivetrainLogger::GetRightMotorVoltage() {
+units::volt_t SysIdDrivetrainLogger::GetRightMotorVoltage() const {
   return m_secondaryMotorVoltage;
 }
 
@@ -34,4 +33,10 @@ void SysIdDrivetrainLogger::Log(double leftPosition, double rightPosition,
 
   m_primaryMotorVoltage = units::volt_t{(m_rotate ? -1 : 1) * m_motorVoltage};
   m_secondaryMotorVoltage = units::volt_t{m_motorVoltage};
+}
+
+void SysIdDrivetrainLogger::Reset() {
+  SysIdLogger::Reset();
+  m_primaryMotorVoltage = 0_V;
+  m_secondaryMotorVoltage = 0_V;
 }
