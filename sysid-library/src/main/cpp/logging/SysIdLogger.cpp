@@ -15,15 +15,6 @@
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc2/Timer.h>
 
-SysIdLogger::SysIdLogger() {
-  m_data.reserve(kDataVectorSize);
-  frc::LiveWindow::GetInstance()->DisableAllTelemetry();
-  frc::SmartDashboard::PutNumber("SysIdVoltageCommand", 0.0);
-  frc::SmartDashboard::PutString("SysIdTestType", "");
-  frc::SmartDashboard::PutBoolean("SysIdRotate", false);
-  frc::SmartDashboard::PutBoolean("SysIdOverflow", false);
-}
-
 void SysIdLogger::InitLogging() {
   m_rotate = frc::SmartDashboard::GetBoolean("SysIdRotate", false);
   m_voltageCommand = frc::SmartDashboard::GetNumber("SysIdVoltageCommand", 0.0);
@@ -49,13 +40,7 @@ void SysIdLogger::SendData() {
 
   frc::SmartDashboard::PutString("SysIdTelemetry", ss.str());
 
-  // Clear everything after test
-  m_data.clear();
-  m_motorVoltage = 0.0;
-  m_timestamp = 0.0;
-  m_startTime = 0.0;
-  m_primaryMotorVoltage = 0_V;
-  m_secondaryMotorVoltage = 0_V;
+  Reset();
 }
 
 void SysIdLogger::UpdateThreadPriority() {
@@ -67,6 +52,15 @@ void SysIdLogger::UpdateThreadPriority() {
   }
 }
 
+SysIdLogger::SysIdLogger() {
+  m_data.reserve(kDataVectorSize);
+  frc::LiveWindow::GetInstance()->DisableAllTelemetry();
+  frc::SmartDashboard::PutNumber("SysIdVoltageCommand", 0.0);
+  frc::SmartDashboard::PutString("SysIdTestType", "");
+  frc::SmartDashboard::PutBoolean("SysIdRotate", false);
+  frc::SmartDashboard::PutBoolean("SysIdOverflow", false);
+}
+
 void SysIdLogger::UpdateData() {
   m_timestamp = frc2::Timer::GetFPGATimestamp().to<double>();
   if (m_testType == "Quasistatic") {
@@ -76,4 +70,11 @@ void SysIdLogger::UpdateData() {
   } else {
     m_motorVoltage = 0.0;
   }
+}
+
+void SysIdLogger::Reset() {
+  m_motorVoltage = 0.0;
+  m_timestamp = 0.0;
+  m_startTime = 0.0;
+  m_data.clear();
 }

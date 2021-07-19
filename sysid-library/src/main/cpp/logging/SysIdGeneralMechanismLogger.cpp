@@ -5,9 +5,8 @@
 #include "logging/SysIdGeneralMechanismLogger.h"
 
 #include <frc/smartdashboard/SmartDashboard.h>
-#include <units/voltage.h>
 
-units::volt_t SysIdGeneralMechanismLogger::GetMotorVoltage() {
+units::volt_t SysIdGeneralMechanismLogger::GetMotorVoltage() const {
   return m_primaryMotorVoltage;
 }
 
@@ -22,4 +21,9 @@ void SysIdGeneralMechanismLogger::Log(double measuredPosition,
   }
 
   m_primaryMotorVoltage = units::volt_t{m_motorVoltage};
+}
+
+void SysIdGeneralMechanismLogger::Reset() {
+  SysIdLogger::Reset();
+  m_primaryMotorVoltage = 0_V;
 }

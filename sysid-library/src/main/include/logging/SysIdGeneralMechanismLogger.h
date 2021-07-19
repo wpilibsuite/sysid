@@ -14,7 +14,7 @@ class SysIdGeneralMechanismLogger : public SysIdLogger {
   /**
    * The users should set their motors to what this returns AFTER calling log.
    */
-  units::volt_t GetMotorVoltage();
+  units::volt_t GetMotorVoltage() const;
 
   /**
    * Logs data for a single-sided mechanism (Elevator, Simple, Arm).
@@ -25,4 +25,9 @@ class SysIdGeneralMechanismLogger : public SysIdLogger {
    * @param measureVelocity the recorded rotations per second of the shaft
    */
   void Log(double measuredPosition, double measuredVelocity);
+
+  void Reset() override;
+
+ private:
+  units::volt_t m_primaryMotorVoltage = 0_V;
 };
