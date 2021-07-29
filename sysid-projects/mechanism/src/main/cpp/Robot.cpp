@@ -8,20 +8,18 @@
 #include <exception>
 #include <string>
 
+#include <fmt/format.h>
 #include <frc/simulation/DriverStationSim.h>
 #include <frc/smartdashboard/SmartDashboard.h>
-#include <rev/CANEncoder.h>
+// #include <rev/CANEncoder.h>
 #include <units/voltage.h>
-#include <wpi/raw_ostream.h>
 
 #include "generation/SysIdSetup.h"
 
 Robot::Robot() : frc::TimedRobot(5_ms) {
-  m_json = GetConfigJson();
-
   try {
-    wpi::outs() << "reading json \n";
-    wpi::outs().flush();
+    m_json = GetConfigJson();
+    fmt::print("Reading JSON\n");
     std::vector<int> ports =
         m_json.at("primary motor ports").get<std::vector<int>>();
     std::vector<std::string> controllerNames =
@@ -43,22 +41,19 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 
     int period = m_json.at("velocity measurement period").get<int>();
 
-    wpi::outs() << "Initializing motors \n";
-    wpi::outs().flush();
+    fmt::print("Initializing Motors\n");
     for (size_t i = 0; i < ports.size(); i++) {
       AddMotorController(ports[i], controllerNames[i], motorsInverted[i],
                          &m_controllers);
     }
 
-    wpi::outs() << "Initializing encoder\n";
-    wpi::outs().flush();
+    fmt::print("Initializing encoder\n");
     SetupEncoders(encoderType, isEncoding, period, cpr * gearing, numSamples,
                   controllerNames[0], m_controllers.front().get(),
                   encoderInverted, encoderPorts, m_cancoder, m_encoder,
                   m_position, m_rate);
   } catch (std::exception& e) {
-    wpi::outs() << "Project failed: " << e.what() << "\n";
-    wpi::outs().flush();
+    fmt::print("Project failed: {}\n", e.what());
     std::exit(-1);
   }
 #ifdef INTEGRATION
@@ -83,8 +78,7 @@ void Robot::RobotPeriodic() {
     frc::SmartDashboard::PutNumber("Position", m_position());
     frc::SmartDashboard::PutNumber("Rate", m_rate());
   } catch (std::exception& e) {
-    wpi::outs() << "Project failed: " << e.what() << "\n";
-    wpi::outs().flush();
+    fmt::print("Project failed: {}\n", e.what());
     std::exit(-1);
   }
   // TODO Put actual readings once supported
@@ -119,7 +113,7 @@ void Robot::TeleopPeriodic() {}
 
 void Robot::DisabledInit() {
   SetMotorControllers(0_V, m_controllers);
-  wpi::outs() << "Robot disabled\n";
+  fmt::print("Robot Disabled\n");
   m_logger.SendData();
 }
 

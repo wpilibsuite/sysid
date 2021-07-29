@@ -6,13 +6,13 @@
 
 #include <stdexcept>
 
-#include <CANVenom.h>
+// #include <CANVenom.h>
 #include <frc/Filesystem.h>
-#include <frc/Spark.h>
 #include <frc/TimedRobot.h>
-#include <rev/CANSparkMax.h>
-#include <wpi/FileSystem.h>
+#include <frc/motorcontrol/Spark.h>
+// #include <rev/CANSparkMax.h>
 #include <wpi/SmallString.h>
+#include <wpi/fs.h>
 
 // Based on https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html
 #define EXPAND_STRINGIZE(s) STRINGIZE(s)
@@ -25,25 +25,22 @@ static constexpr bool starts_with(std::string_view obj,
 }
 
 wpi::json GetConfigJson() {
-  wpi::SmallString<128> path;
-  wpi::raw_svector_ostream os{path};
+  std::string path;
 
   if constexpr (frc::RobotBase::IsSimulation()) {
 #if defined(PROJECT_ROOT_DIR) && defined(INTEGRATION)
     // TODO: Fix problems with this so that we don't need this ifdef
-    os << EXPAND_STRINGIZE(PROJECT_ROOT_DIR)
-       << "/sysid-projects/deploy/config.json";
+    path = fmt::format("{}/sysid-projects/deploy/config.json",
+                       EXPAND_STRINGIZE(PROJECT_ROOT_DIR));
 #endif
   } else {
-    frc::filesystem::GetDeployDirectory(path);
-    os << "/config.json";
+    path = fmt::format("{}/config.json", frc::filesystem::GetDeployDirectory());
   }
 
   std::error_code ec;
-  wpi::raw_fd_istream is{path.c_str(), ec};
+  wpi::raw_fd_istream is{path, ec};
   if (ec) {
-    wpi::outs() << "File error: " << path.c_str() << "\n";
-    wpi::outs().flush();
+    fmt::print("File error: {}\n", path);
     throw std::runtime_error("Unable to read file");
   }
 
@@ -54,7 +51,7 @@ wpi::json GetConfigJson() {
 
 void AddMotorController(
     int port, std::string_view controller, bool inverted,
-    std::vector<std::unique_ptr<frc::SpeedController>>* controllers) {
+    std::vector<std::unique_ptr<frc::MotorController>>* controllers) {
   if (controller == "TalonSRX" || controller == "VictorSPX" ||
       controller == "TalonFX") {
     if (controller == "TalonSRX") {
@@ -73,52 +70,33 @@ void AddMotorController(
   } else if (controller == "SPARK MAX (Brushless)" ||
              controller == "SPARK MAX (Brushed)") {
     if (controller == "SPARK MAX (Brushless)") {
-      controllers->emplace_back(std::make_unique<rev::CANSparkMax>(
-          port, rev::CANSparkMax::MotorType::kBrushless));
+      //     controllers->emplace_back(std::make_unique<rev::CANSparkMax>(
+      //         port, rev::CANSparkMax::MotorType::kBrushless));
     } else {
-      controllers->emplace_back(std::make_unique<rev::CANSparkMax>(
-          port, rev::CANSparkMax::MotorType::kBrushed));
+      //     controllers->emplace_back(std::make_unique<rev::CANSparkMax>(
+      //         port, rev::CANSparkMax::MotorType::kBrushed));
     }
 
-    auto* sparkMax = static_cast<rev::CANSparkMax*>(controllers->back().get());
-    sparkMax->RestoreFactoryDefaults();
-    sparkMax->SetInverted(inverted);
-    sparkMax->SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
+    //   auto* sparkMax =
+    //   static_cast<rev::CANSparkMax*>(controllers->back().get());
+    //   sparkMax->RestoreFactoryDefaults();
+    //   sparkMax->SetInverted(inverted);
+    //   sparkMax->SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
   } else if (controller == "Venom") {
-    controllers->emplace_back(std::make_unique<frc::CANVenom>(port));
+    //   controllers->emplace_back(std::make_unique<frc::CANVenom>(port));
 
-    auto* venom = static_cast<frc::CANVenom*>(controllers->back().get());
+    //   auto* venom = static_cast<frc::CANVenom*>(controllers->back().get());
 
-    venom->SetInverted(inverted);
-    venom->SetBrakeCoastMode(frc::CANVenom::BrakeCoastMode::kBrake);
+    //   venom->SetInverted(inverted);
+    //   venom->SetBrakeCoastMode(frc::CANVenom::BrakeCoastMode::kBrake);
   } else {
     controllers->emplace_back(std::make_unique<frc::Spark>(port));
-
     auto* spark = static_cast<frc::Spark*>(controllers->back().get());
     spark->SetInverted(inverted);
   }
 }
 
-static motorcontrol::VelocityMeasPeriod getCTREVelocityPeriod(int period) {
-  switch (period) {
-    case 1:
-      return motorcontrol::VelocityMeasPeriod::Period_1Ms;
-    case 2:
-      return motorcontrol::VelocityMeasPeriod::Period_2Ms;
-    case 5:
-      return motorcontrol::VelocityMeasPeriod::Period_5Ms;
-    case 10:
-      return motorcontrol::VelocityMeasPeriod::Period_10Ms;
-    case 25:
-      return motorcontrol::VelocityMeasPeriod::Period_25Ms;
-    case 50:
-      return motorcontrol::VelocityMeasPeriod::Period_50Ms;
-    default:
-      return motorcontrol::VelocityMeasPeriod::Period_100Ms;
-  }
-}
-
-static sensors::SensorVelocityMeasPeriod getCANCoderVelocityPeriod(int period) {
+static sensors::SensorVelocityMeasPeriod getCTREVelocityPeriod(int period) {
   switch (period) {
     case 1:
       return sensors::SensorVelocityMeasPeriod::Period_1Ms;
@@ -137,7 +115,7 @@ static sensors::SensorVelocityMeasPeriod getCANCoderVelocityPeriod(int period) {
   }
 }
 
-static void SetupCTREEncoder(frc::SpeedController* controller,
+static void SetupCTREEncoder(frc::MotorController* controller,
                              FeedbackDevice feedbackDevice, int period,
                              double cpr, int numSamples, bool encoderInverted,
                              std::function<double()>& position,
@@ -148,7 +126,7 @@ static void SetupCTREEncoder(frc::SpeedController* controller,
   talonController->ConfigVelocityMeasurementWindow(numSamples);
 
   // Determine velocity measurement period
-  motorcontrol::VelocityMeasPeriod talonPeriod = getCTREVelocityPeriod(period);
+  auto talonPeriod = getCTREVelocityPeriod(period);
 
   talonController->ConfigVelocityMeasurementPeriod(talonPeriod);
   position = [=] { return talonController->GetSelectedSensorPosition() / cpr; };
@@ -160,7 +138,7 @@ static void SetupCTREEncoder(frc::SpeedController* controller,
 
 void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
                    double cpr, int numSamples, std::string_view controllerName,
-                   frc::SpeedController* controller, bool encoderInverted,
+                   frc::MotorController* controller, bool encoderInverted,
                    const std::vector<int>& encoderPorts,
                    std::unique_ptr<CANCoder>& cancoder,
                    std::unique_ptr<frc::Encoder>& encoder,
@@ -177,53 +155,54 @@ void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
       SetupCTREEncoder(controller, feedbackDevice, period, cpr, numSamples,
                        encoderInverted, position, rate);
     } else {  // Venom
-      auto* venom = static_cast<frc::CANVenom*>(controller);
-      position = [=] { return venom->GetPosition(); };
-      rate = [=] {
-        return venom->GetSpeed() /
-               60;  // Conversion from RPM to rotations per second
-      };
+      //   auto* venom = static_cast<frc::CANVenom*>(controller);
+      //   position = [=] { return venom->GetPosition(); };
+      //   rate = [=] {
+      //     return venom->GetSpeed() /
+      //            60;  // Conversion from RPM to rotations per second
+      //   };
     }
   } else if (encoderType == "Encoder Port") {
-    auto* sparkMax = static_cast<rev::CANSparkMax*>(controller);
+    //   auto* sparkMax = static_cast<rev::CANSparkMax*>(controller);
     if (controllerName != "SPARK MAX (Brushless)") {
-      sparkMax->GetEncoder(rev::CANEncoder::EncoderType::kQuadrature, cpr);
-      sparkMax->GetEncoder().SetInverted(encoderInverted);
+      //     sparkMax->GetEncoder(rev::CANEncoder::EncoderType::kQuadrature,
+      //     cpr); sparkMax->GetEncoder().SetInverted(encoderInverted);
     }
 
-    sparkMax->GetEncoder().SetMeasurementPeriod(period);
-    sparkMax->GetEncoder().SetAverageDepth(numSamples);
+    //   sparkMax->GetEncoder().SetMeasurementPeriod(period);
+    //   sparkMax->GetEncoder().SetAverageDepth(numSamples);
 
-    position = [=] { return sparkMax->GetEncoder().GetPosition(); };
-    rate = [=] { return sparkMax->GetEncoder().GetVelocity() / 60; };
+    //   position = [=] { return sparkMax->GetEncoder().GetPosition(); };
+    //   rate = [=] { return sparkMax->GetEncoder().GetVelocity() / 60; };
   } else if (encoderType == "Data Port") {
-    auto* sparkMax = static_cast<rev::CANSparkMax*>(controller);
+    //   auto* sparkMax = static_cast<rev::CANSparkMax*>(controller);
 
-    sparkMax
-        ->GetAlternateEncoder(
-            rev::CANEncoder::AlternateEncoderType::kQuadrature, cpr)
-        .SetInverted(encoderInverted);
-    sparkMax
-        ->GetAlternateEncoder(
-            rev::CANEncoder::AlternateEncoderType::kQuadrature, cpr)
-        .SetMeasurementPeriod(period);
-    sparkMax
-        ->GetAlternateEncoder(
-            rev::CANEncoder::AlternateEncoderType::kQuadrature, cpr)
-        .SetAverageDepth(numSamples);
-    position = [=] {
-      return sparkMax
-          ->GetAlternateEncoder(
-              rev::CANEncoder::AlternateEncoderType::kQuadrature, cpr)
-          .GetPosition();
-    };
-    rate = [=] {
-      return sparkMax
-                 ->GetAlternateEncoder(
-                     rev::CANEncoder::AlternateEncoderType::kQuadrature, cpr)
-                 .GetVelocity() /
-             60;
-    };
+    //   sparkMax
+    //       ->GetAlternateEncoder(
+    //           rev::CANEncoder::AlternateEncoderType::kQuadrature, cpr)
+    //       .SetInverted(encoderInverted);
+    //   sparkMax
+    //       ->GetAlternateEncoder(
+    //           rev::CANEncoder::AlternateEncoderType::kQuadrature, cpr)
+    //       .SetMeasurementPeriod(period);
+    //   sparkMax
+    //       ->GetAlternateEncoder(
+    //           rev::CANEncoder::AlternateEncoderType::kQuadrature, cpr)
+    //       .SetAverageDepth(numSamples);
+    //   position = [=] {
+    //     return sparkMax
+    //         ->GetAlternateEncoder(
+    //             rev::CANEncoder::AlternateEncoderType::kQuadrature, cpr)
+    //         .GetPosition();
+    //   };
+    //   rate = [=] {
+    //     return sparkMax
+    //                ->GetAlternateEncoder(
+    //                    rev::CANEncoder::AlternateEncoderType::kQuadrature,
+    //                    cpr)
+    //                .GetVelocity() /
+    //            60;
+    //   };
   } else if (encoderType == "Tachometer") {
     SetupCTREEncoder(controller, FeedbackDevice::Tachometer, period, cpr,
                      numSamples, encoderInverted, position, rate);
@@ -232,7 +211,7 @@ void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
     cancoder->ConfigSensorDirection(encoderInverted);
 
     sensors::SensorVelocityMeasPeriod cancoderPeriod =
-        getCANCoderVelocityPeriod(period);
+        getCTREVelocityPeriod(period);
 
     cancoder->ConfigVelocityMeasurementPeriod(cancoderPeriod);
     cancoder->ConfigVelocityMeasurementWindow(numSamples);
@@ -258,7 +237,7 @@ void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
 }
 void SetMotorControllers(
     units::volt_t motorVoltage,
-    const std::vector<std::unique_ptr<frc::SpeedController>>& controllers) {
+    const std::vector<std::unique_ptr<frc::MotorController>>& controllers) {
   for (auto&& controller : controllers) {
     controller->SetVoltage(motorVoltage);
   }

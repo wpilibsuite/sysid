@@ -6,14 +6,14 @@
 
 #include <frc/AnalogGyro.h>
 #include <frc/Encoder.h>
-#include <frc/PWMVictorSPX.h>
 #include <frc/RobotController.h>
-#include <frc/SpeedControllerGroup.h>
+#include <frc/motorcontrol/MotorControllerGroup.h>
+#include <frc/motorcontrol/PWMVictorSPX.h>
 #include <frc/simulation/ElevatorSim.h>
 #include <frc/simulation/EncoderSim.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc/system/plant/LinearSystemId.h>
-#include <wpi/math>
+#include <wpi/numbers>
 
 #include "Constants.h"
 #include "interface/SysIdGeneralMechanism.h"
@@ -27,7 +27,7 @@ class Elevator : public SysIdGeneralMechanism {
     // Set the distance per pulse for the flywheel encoders. We can simply use
     // the 1 divided by the resolution as that denotes one rotation of the
     // flywheel.
-    m_encoder.SetDistancePerPulse(2 * wpi::math::pi / kEncoderResolution);
+    m_encoder.SetDistancePerPulse(2 * wpi::numbers::pi / kEncoderResolution);
 
     m_encoder.Reset();
   }
@@ -62,7 +62,7 @@ class Elevator : public SysIdGeneralMechanism {
   frc::PWMVictorSPX m_leader{Constants::Elevator::kLeaderPort};
   frc::PWMVictorSPX m_follower{Constants::Elevator::kFollowerPort};
 
-  frc::SpeedControllerGroup m_group{m_leader, m_follower};
+  frc::MotorControllerGroup m_group{m_leader, m_follower};
 
   frc::Encoder m_encoder{Constants::Elevator::kEncoderPorts[0],
                          Constants::Elevator::kEncoderPorts[1]};

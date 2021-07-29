@@ -12,8 +12,8 @@
 #include <vector>
 
 #include <frc/Encoder.h>
-#include <frc/SpeedController.h>
 #include <frc/TimedRobot.h>
+#include <frc/motorcontrol/MotorController.h>
 #include <frc/smartdashboard/SendableChooser.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
@@ -36,7 +36,7 @@ class Robot : public frc::TimedRobot {
   void TestPeriodic() override;
 
  private:
-  std::vector<std::unique_ptr<frc::SpeedController>> m_controllers;
+  std::vector<std::unique_ptr<frc::MotorController>> m_controllers;
   std::function<double()> m_position;
   std::function<double()> m_rate;
   wpi::json m_json;

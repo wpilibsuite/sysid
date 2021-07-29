@@ -5,14 +5,12 @@
 #include <string>
 #include <vector>
 
-#include <frc/SlewRateLimiter.h>
 #include <frc/TimedRobot.h>
 #include <frc/XboxController.h>
+#include <frc/filter/SlewRateLimiter.h>
 #include <frc/simulation/DriverStationSim.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <units/voltage.h>
-#include <wpi/StringRef.h>
-#include <wpi/raw_ostream.h>
 
 #include "Arm.h"
 #include "Drivetrain.h"

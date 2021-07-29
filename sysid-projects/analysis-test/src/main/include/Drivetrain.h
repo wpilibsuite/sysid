@@ -4,14 +4,15 @@
 
 #pragma once
 
+#include <fmt/format.h>
 #include <frc/AnalogGyro.h>
 #include <frc/Encoder.h>
-#include <frc/PWMVictorSPX.h>
-#include <frc/SpeedControllerGroup.h>
 #include <frc/controller/PIDController.h>
 #include <frc/controller/SimpleMotorFeedforward.h>
 #include <frc/kinematics/DifferentialDriveKinematics.h>
 #include <frc/kinematics/DifferentialDriveOdometry.h>
+#include <frc/motorcontrol/MotorControllerGroup.h>
+#include <frc/motorcontrol/PWMVictorSPX.h>
 #include <frc/simulation/AnalogGyroSim.h>
 #include <frc/simulation/DifferentialDrivetrainSim.h>
 #include <frc/simulation/EncoderSim.h>
@@ -22,7 +23,7 @@
 #include <units/angular_velocity.h>
 #include <units/length.h>
 #include <units/velocity.h>
-#include <wpi/math>
+#include <wpi/numbers>
 
 #include "Constants.h"
 #include "interface/SysIdDrivetrain.h"
@@ -38,10 +39,10 @@ class Drivetrain : public SysIdDrivetrain {
     // distance traveled for one rotation of the wheel divided by the encoder
     // resolution.
     m_leftEncoder.SetDistancePerPulse(
-        2 * wpi::math::pi * Constants::Drivetrain::kWheelRadius /
+        2 * wpi::numbers::pi * Constants::Drivetrain::kWheelRadius /
         Constants::Drivetrain::kEncoderResolution);
     m_rightEncoder.SetDistancePerPulse(
-        2 * wpi::math::pi * Constants::Drivetrain::kWheelRadius /
+        2 * wpi::numbers::pi * Constants::Drivetrain::kWheelRadius /
         Constants::Drivetrain::kEncoderResolution);
 
     m_leftEncoder.Reset();
@@ -53,7 +54,7 @@ class Drivetrain : public SysIdDrivetrain {
   static constexpr units::meters_per_second_t kMaxSpeed =
       3.0_mps;  // 3 meters per second
   static constexpr units::radians_per_second_t kMaxAngularSpeed{
-      wpi::math::pi};  // 1/2 rotation per second
+      wpi::numbers::pi};  // 1/2 rotation per second
 
   void SetSpeeds(const frc::DifferentialDriveWheelSpeeds& speeds);
   void Drive(units::meters_per_second_t xSpeed,
@@ -92,13 +93,13 @@ class Drivetrain : public SysIdDrivetrain {
   frc::PWMVictorSPX m_rightLeader{Constants::Drivetrain::kRightLeaderPort};
   frc::PWMVictorSPX m_rightFollower{Constants::Drivetrain::kRightFollowerPort};
 
-  frc::SpeedControllerGroup m_leftGroup{m_leftLeader, m_leftFollower};
-  frc::SpeedControllerGroup m_rightGroup{m_rightLeader, m_rightFollower};
+  frc::MotorControllerGroup m_leftGroup{m_leftLeader, m_leftFollower};
+  frc::MotorControllerGroup m_rightGroup{m_rightLeader, m_rightFollower};
 
   frc::Encoder m_leftEncoder{Constants::Drivetrain::kLeftEncoderPorts[0],
                              Constants::Drivetrain::kLeftEncoderPorts[1]};
   frc::Encoder m_rightEncoder{Constants::Drivetrain::kRightEncoderPorts[0],
-                              Constants::Drivetrain::kRightEncoderPorts[0]};
+                              Constants::Drivetrain::kRightEncoderPorts[1]};
 
   frc2::PIDController m_leftPIDController{8.5, 0.0, 0.0};
   frc2::PIDController m_rightPIDController{8.5, 0.0, 0.0};
@@ -125,6 +126,4 @@ class Drivetrain : public SysIdDrivetrain {
   frc::sim::DifferentialDrivetrainSim m_drivetrainSimulator{
       m_drivetrainSystem, Constants::Drivetrain::kTrackWidth,
       frc::DCMotor::CIM(2), 8, 2_in};
-
-  frc::Rotation2d m_prevAngle = 0_rad;
 };

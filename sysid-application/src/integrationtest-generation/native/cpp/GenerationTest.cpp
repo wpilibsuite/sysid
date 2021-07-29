@@ -35,13 +35,15 @@ const wpi::SmallVector<std::string_view, 2> kGeneralEncs{"CANCoder",
                                                          "roboRIO quadrature"};
 
 wpi::StringMap<wpi::SmallVector<std::string_view, 2>>
-    motorControllerEncoderMap = {{"PWM", kGeneralEncs},
-                                 {"VictorSPX", kGeneralEncs},
-                                 {"TalonSRX", kTalonEncs},
-                                 {"TalonFX", kBuiltInEncs},
-                                 {"SPARK MAX (Brushless)", kSMaxEncs},
-                                 {"SPARK MAX (Brushed)", kSMaxEncs},
-                                 {"Venom", kBuiltInEncs}};
+    motorControllerEncoderMap = {
+        {"PWM", kGeneralEncs},
+        {"VictorSPX", kGeneralEncs},
+        {"TalonSRX", kTalonEncs},
+        {"TalonFX", kBuiltInEncs},
+        // {"SPARK MAX (Brushless)", kSMaxEncs},
+        // {"SPARK MAX (Brushed)", kSMaxEncs},
+        // {"Venom", kBuiltInEncs}
+};
 
 const wpi::SmallVector<std::string_view, 4> kPigeonCtors{"0", "WPI_TalonSRX-1"};
 const wpi::SmallVector<std::string_view, 4> kAnalogCtors{"0"};
@@ -205,7 +207,6 @@ TEST_F(GenerationTest, Drivetrain) {
     }
   }
 
-  // FIXME: Uncomment once Romi vendordep is available
   // m_settings = sysid::kRomiConfig;
   // m_manager.SaveJSON(m_jsonPath, 1, true);
   // fmt::print(stderr, "Testing: Romi Config\n");

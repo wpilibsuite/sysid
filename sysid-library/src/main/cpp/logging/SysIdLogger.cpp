@@ -11,9 +11,9 @@
 #include <frc/Notifier.h>
 #include <frc/RobotBase.h>
 #include <frc/Threads.h>
+#include <frc/Timer.h>
 #include <frc/livewindow/LiveWindow.h>
 #include <frc/smartdashboard/SmartDashboard.h>
-#include <frc2/Timer.h>
 
 void SysIdLogger::InitLogging() {
   m_mechanism = frc::SmartDashboard::GetString("SysIdTest", "");
@@ -25,13 +25,12 @@ void SysIdLogger::InitLogging() {
   m_testType = frc::SmartDashboard::GetString("SysIdTestType", "");
   m_rotate = frc::SmartDashboard::GetBoolean("SysIdRotate", false);
   m_voltageCommand = frc::SmartDashboard::GetNumber("SysIdVoltageCommand", 0.0);
-  m_startTime = frc2::Timer::GetFPGATimestamp().to<double>();
+  m_startTime = frc::Timer::GetFPGATimestamp().to<double>();
   m_data.clear();
 }
 
 void SysIdLogger::SendData() {
-  wpi::outs() << "Collected: " << m_data.size() << " Data points.\n";
-  wpi::outs().flush();
+  fmt::print("Collected: {} data points.\n", m_data.size());
 
   frc::SmartDashboard::PutBoolean("SysIdOverflow",
                                   m_data.size() >= kDataVectorSize);
@@ -59,8 +58,9 @@ void SysIdLogger::UpdateThreadPriority() {
 }
 
 SysIdLogger::SysIdLogger() {
+  fmt::print("Initializing logger\n");
   m_data.reserve(kDataVectorSize);
-  frc::LiveWindow::GetInstance()->DisableAllTelemetry();
+  frc::LiveWindow::DisableAllTelemetry();
   frc::SmartDashboard::PutNumber("SysIdVoltageCommand", 0.0);
   frc::SmartDashboard::PutString("SysIdTestType", "");
   frc::SmartDashboard::PutString("SysIdTest", "");
@@ -70,7 +70,7 @@ SysIdLogger::SysIdLogger() {
 }
 
 void SysIdLogger::UpdateData() {
-  m_timestamp = frc2::Timer::GetFPGATimestamp().to<double>();
+  m_timestamp = frc::Timer::GetFPGATimestamp().to<double>();
 
   // Don't let robot move if it's characterizing the wrong mechanism
   if (!IsWrongMechanism()) {

@@ -12,7 +12,7 @@
 #include <vector>
 
 #include <frc/Encoder.h>
-#include <frc/SpeedController.h>
+#include <frc/motorcontrol/MotorController.h>
 #include <units/voltage.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
@@ -34,7 +34,7 @@ wpi::json GetConfigJson();
  */
 void AddMotorController(
     int port, std::string_view controller, bool inverted,
-    std::vector<std::unique_ptr<frc::SpeedController>>* controllers);
+    std::vector<std::unique_ptr<frc::MotorController>>* controllers);
 
 /**
  * Sets all the motor controllers stored to a certain voltage
@@ -44,7 +44,7 @@ void AddMotorController(
  */
 void SetMotorControllers(
     units::volt_t motorVoltage,
-    const std::vector<std::unique_ptr<frc::SpeedController>>& controllers);
+    const std::vector<std::unique_ptr<frc::MotorController>>& controllers);
 
 /**
  * Sets up an encoder for data collection by settings a position and rate
@@ -77,7 +77,7 @@ void SetMotorControllers(
  */
 void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
                    double cpr, int numSamples, std::string_view controllerName,
-                   frc::SpeedController* controller, bool encoderInverted,
+                   frc::MotorController* controller, bool encoderInverted,
                    const std::vector<int>& encoderPorts,
                    std::unique_ptr<CANCoder>& cancoder,
                    std::unique_ptr<frc::Encoder>& encoder,
