@@ -351,14 +351,10 @@ void Analyzer::Display() {
 
       // Show position/velocity measurement delay.
       ImGui::SetCursorPosY(beginY);
-      ShowPresetValue("Position Measurement Delay (s)",
-                      reinterpret_cast<double*>(
-                          &m_settings.preset.positionMeasurementDelay),
-                      ImGui::GetFontSize() * 23);
-      ShowPresetValue("Velocity Measurement Delay (s)",
-                      reinterpret_cast<double*>(
-                          &m_settings.preset.velocityMeasurementDelay),
-                      ImGui::GetFontSize() * 23);
+      ShowPresetValue(
+          "Measurement Delay (s)",
+          reinterpret_cast<double*>(&m_settings.preset.measurementDelay),
+          ImGui::GetFontSize() * 23);
 
       ImGui::SetCursorPosY(endY);
 
