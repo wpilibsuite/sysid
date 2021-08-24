@@ -43,7 +43,7 @@ wpi::mutex s_mutex;
 
 DeploySession::DeploySession(std::string_view team, bool drive,
                              wpi::json config, wpi::Logger& logger)
-    : m_drive{drive}, m_config{std::move(config)}, m_logger{logger} {
+    : m_drive{drive}, m_config(std::move(config)), m_logger{logger} {
   // Check whether we have an IP/hostname or team number.
   auto maybeTeam = wpi::parse_integer<int>(team, 10);
 
