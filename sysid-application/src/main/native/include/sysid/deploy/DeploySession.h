@@ -64,6 +64,11 @@ class DeploySession {
    */
   static std::vector<std::string> GetAddressesToTry(int team);
 
+  /**
+   * Returns the stored JSON object
+   */
+  const wpi::json& GetJSON() const { return m_config; }
+
  private:
   // General deploy parameters from the constructor.
   bool m_drive;
