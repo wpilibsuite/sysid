@@ -91,15 +91,18 @@ units::second_t sysid::TrimStepVoltageData(std::vector<PreparedData>* data,
         GetAccelNoiseFloor(*data, settings->windowSize);
     // Find latest element with nonzero acceleration
     auto endIt = std::find_if(
-        std::reverse_iterator{data->end()},
-        std::reverse_iterator{data->begin()}, [&](const PreparedData& entry) {
+        data->rbegin(), data->rend(), [&](const PreparedData& entry) {
           return std::abs(entry.acceleration) > accelNoiseFloor;
         });
 
-    // Calculate default duration
-    settings->stepTestDuration =
-        std::min(endIt->timestamp - data->front().timestamp + minStepTime + 1_s,
-                 maxStepTime);
+    if (endIt != data->rend()) {
+      // Calculate default duration
+      settings->stepTestDuration = std::min(
+          endIt->timestamp - data->front().timestamp + minStepTime + 1_s,
+          maxStepTime);
+    } else {
+      settings->stepTestDuration = maxStepTime;
+    }
   }
 
   // Find first entry greater than the step test duration
