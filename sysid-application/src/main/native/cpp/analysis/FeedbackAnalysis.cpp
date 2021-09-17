@@ -42,8 +42,8 @@ FeedbackGains sysid::CalculatePositionFeedbackGains(
 
   // This is our special model to avoid instabilities in the LQR.
   auto system = frc::LinearSystem<1, 1, 1>(
-      frc::MakeMatrix<1, 1>(0.0), frc::MakeMatrix<1, 1>(1.0),
-      frc::MakeMatrix<1, 1>(1.0), frc::MakeMatrix<1, 1>(0.0));
+      Eigen::Matrix<double, 1, 1>{0.0}, Eigen::Matrix<double, 1, 1>{1.0},
+      Eigen::Matrix<double, 1, 1>{1.0}, Eigen::Matrix<double, 1, 1>{0.0});
   // Create an LQR with one state -- position.
   frc::LinearQuadraticRegulator<1, 1> controller{
       system, {params.qp}, {params.r}, preset.period};

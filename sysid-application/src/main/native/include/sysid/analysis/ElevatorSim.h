@@ -55,9 +55,9 @@ class ElevatorSim {
  private:
   Eigen::Matrix<double, 2, 2> m_A;
   Eigen::Matrix<double, 2, 1> m_B;
-  Eigen::Matrix<double, 2, 1> m_c;
-  Eigen::Matrix<double, 2, 1> m_d;
-  Eigen::Matrix<double, 2, 1> m_x;
+  Eigen::Vector<double, 2> m_c;
+  Eigen::Vector<double, 2> m_d;
+  Eigen::Vector<double, 2> m_x;
 };
 
 }  // namespace sysid

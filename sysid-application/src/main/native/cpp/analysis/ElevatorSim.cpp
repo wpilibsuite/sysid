@@ -11,17 +11,17 @@
 using namespace sysid;
 
 ElevatorSim::ElevatorSim(double Ks, double Kv, double Ka, double Kg,
-                         double initialPosition, double initialVelocity) {
-  // dx/dt = Ax + Bu + c sgn(x) + d
+                         double initialPosition, double initialVelocity)
+    // dx/dt = Ax + Bu + c sgn(x) + d
+    : m_A{{0.0, 1.0}, {0.0, -Kv / Ka}},
+      m_B{0.0, 1.0 / Ka},
+      m_c{0.0, -Ks / Ka},
+      m_d{0.0, -Kg / Ka} {
   Reset(initialPosition, initialVelocity);
-  m_A << 0.0, 1.0, 0.0, -Kv / Ka;
-  m_B << 0.0, 1.0 / Ka;
-  m_c << 0.0, -Ks / Ka;
-  m_d << 0.0, -Kg / Ka;
 }
 
 void ElevatorSim::Update(units::volt_t voltage, units::second_t dt) {
-  auto u = frc::MakeMatrix<1, 1>(voltage.to<double>());
+  Eigen::Vector<double, 1> u{voltage.to<double>()};
 
   // Given dx/dt = Ax + Bu + c sgn(x) + d,
   // x_k+1 = e^(AT) x_k + A^-1 (e^(AT) - 1) (Bu + c sgn(x) + d)
@@ -41,10 +41,10 @@ double ElevatorSim::GetVelocity() const {
 }
 
 double ElevatorSim::GetAcceleration(units::volt_t voltage) const {
-  auto u = frc::MakeMatrix<1, 1>(voltage.to<double>());
+  Eigen::Vector<double, 1> u{voltage.to<double>()};
   return (m_A * m_x + m_B * u + m_c * wpi::sgn(GetVelocity()) + m_d)(1);
 }
 
 void ElevatorSim::Reset(double position, double velocity) {
-  m_x << position, velocity;
+  m_x = Eigen::Vector<double, 2>{position, velocity};
 }

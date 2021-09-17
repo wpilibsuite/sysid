@@ -13,34 +13,30 @@
 using namespace sysid;
 
 ArmSim::ArmSim(double Ks, double Kv, double Ka, double Kcos,
-               double initialPosition, double initialVelocity) {
-  // u = Ks sgn(x) + Kv x + Ka a + Kcos cos(theta)
-  // Ka a = u - Ks sgn(x) - Kv x - Kcos cos(theta)
-  // a = 1/Ka u - Ks/Ka sgn(x) - Kv/Ka x - Kcos/Ka cos(theta)
-  // a = -Kv/Ka x + 1/Ka u - Ks/Ka sgn(x) - Kcos/Ka cos(theta)
-  // a = Ax + Bu + c sgn(x) + d cos(theta)
+               double initialPosition, double initialVelocity)
+    // u = Ks sgn(x) + Kv x + Ka a + Kcos cos(theta)
+    // Ka a = u - Ks sgn(x) - Kv x - Kcos cos(theta)
+    // a = 1/Ka u - Ks/Ka sgn(x) - Kv/Ka x - Kcos/Ka cos(theta)
+    // a = -Kv/Ka x + 1/Ka u - Ks/Ka sgn(x) - Kcos/Ka cos(theta)
+    // a = Ax + Bu + c sgn(x) + d cos(theta)
+    : m_A{-Kv / Ka}, m_B{1.0 / Ka}, m_c{-Ks / Ka}, m_d{-Kcos / Ka} {
   Reset(initialPosition, initialVelocity);
-  m_A << -Kv / Ka;
-  m_B << 1.0 / Ka;
-  m_c << -Ks / Ka;
-  m_d << -Kcos / Ka;
 }
 
 void ArmSim::Update(units::volt_t voltage, units::second_t dt) {
   // Returns arm acceleration under gravity
-  auto f =
-      [=](const Eigen::Matrix<double, 2, 1>& x,
-          const Eigen::Matrix<double, 1, 1>& u) -> Eigen::Matrix<double, 2, 1> {
-    return frc::MakeMatrix<2, 1>(
+  auto f = [=](const Eigen::Vector<double, 2>& x,
+               const Eigen::Vector<double, 1>& u) -> Eigen::Vector<double, 2> {
+    return Eigen::Vector<double, 2>{
         x(1), (m_A * x.block<1, 1>(1, 0) + m_B * u + m_c * wpi::sgn(x(1)) +
-               m_d * std::cos(x(0)))(0));
+               m_d * std::cos(x(0)))(0)};
   };
 
   // Max error is large because an accurate sim isn't as important as the sim
   // finishing in a timely manner. Otherwise, the timestep can become absurdly
   // small for ill-conditioned data (e.g., high velocities with sharp spikes in
   // acceleration).
-  Eigen::Matrix<double, 1, 1> u = frc::MakeMatrix<1, 1>(voltage.to<double>());
+  Eigen::Vector<double, 1> u{voltage.to<double>()};
   m_x = frc::RKF45(f, m_x, u, dt, 0.25);
 }
 
@@ -53,11 +49,11 @@ double ArmSim::GetVelocity() const {
 }
 
 double ArmSim::GetAcceleration(units::volt_t voltage) const {
-  auto u = frc::MakeMatrix<1, 1>(voltage.to<double>());
+  Eigen::Vector<double, 1> u{voltage.to<double>()};
   return (m_A * m_x.block<1, 1>(1, 0) + m_B * u +
           m_c * wpi::sgn(GetVelocity()) + m_d * std::cos(m_x(0)))(0);
 }
 
 void ArmSim::Reset(double position, double velocity) {
-  m_x << position, velocity;
+  m_x = Eigen::Vector<double, 2>{position, velocity};
 }
