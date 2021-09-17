@@ -80,58 +80,9 @@ jobs:
           name: Linux x86-64
           path: build/allOutputs
 
-  format:
-    name: "Format"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Fetch all history and metadata
-        run: |
-          git fetch --prune --unshallow
-          git checkout -b pr
-          git branch -f main origin/main
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-      - name: Install clang-format
-        run: sudo apt-get update -q && sudo apt-get install -y clang-format-10
-      - name: Install wpiformat
-        run: pip3 install wpiformat
-      - name: Run
-        run: wpiformat -clang 10
-      - name: Check Output
-        run: git --no-pager diff --exit-code HEAD
-
-  lint:
-    name: "Lint"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Fetch all history and metadata
-        run: |
-          git fetch --prune --unshallow
-          git checkout -b pr
-          git branch -f main origin/main
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-      - name: Install clang-format and clang-tidy
-        run: sudo apt-get update -q && sudo apt-get install -y clang-format-10 clang-tidy-10
-      - name: Install wpiformat
-        run: pip3 install wpiformat
-      - uses: actions/setup-java@v1
-        with:
-          java-version: 11
-      - name: Create compile_commands.json
-        run: ./gradlew generateCompileCommands -Ptoolchain-optional-roboRio -PwithIntegration -PskipDesktopRobots
-      - name: Run clang-tidy
-        run: wpiformat -clang 10 -no-format -tidy-changed -compile-commands=build/compile_commands/linuxx86-64 -vv
-
   # combine:
   #   runs-on: ubuntu-latest
-  #   needs: [build, wpiformat]
+  #   needs: build
   #   name: "Combine"
   #   steps:
   #     - uses: actions/checkout@v2
