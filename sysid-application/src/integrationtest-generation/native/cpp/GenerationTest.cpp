@@ -45,6 +45,9 @@ class GenerationTest : public ::testing::Test {
   void SetUp(std::string_view directory) {
     m_nt = nt::GetDefaultInstance();
     m_kill = nt::GetEntry(m_nt, "/SmartDashboard/SysIdKill");
+    m_mechanism = nt::GetEntry(m_nt, "/SmartDashboard/SysIdTest");
+    m_mechError = nt::GetEntry(m_nt, "/SmartDashboard/SysIdWrongMech");
+    m_enable = nt::GetEntry(m_nt, "/SmartDashboard/SysIdRun");
 
     // Get the path to write the json
     m_jsonPath = fs::path{EXPAND_STRINGIZE(PROJECT_ROOT_DIR)} /
@@ -74,9 +77,41 @@ class GenerationTest : public ::testing::Test {
     KillNT(m_nt, m_kill);
   }
 
+  void LaunchAndConnect() {
+    LaunchSim(m_directory);
+    Connect(m_nt, m_kill);
+  }
+
+  void SetMechanism(std::string_view mechanismName) {
+    nt::SetEntryValue(m_mechanism, nt::Value::MakeString(mechanismName));
+    nt::Flush(m_nt);
+
+    // Wait some time for NT to update
+    std::this_thread::sleep_for(250ms);
+  }
+
+  void VerifyMechStatus(bool shouldFail) {
+    // Enable robot to trigger autonomous init.
+    nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(true));
+    nt::Flush(m_nt);
+
+    // Wait some time for NT to update and then disable
+    std::this_thread::sleep_for(250ms);
+    nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(false));
+
+    // Test to see if the error flag is proper
+    auto mechError = nt::GetEntryValue(m_mechError);
+    ASSERT_TRUE(mechError->IsBoolean() &&
+                mechError->GetBoolean() == shouldFail);
+  }
+
+  void EndSimulation() { KillNT(m_nt, m_kill); }
+
   void TearDown() override {
-    // Set kill entry to false for future tests
+    // Set kill, enable, and wrong mechanism entry to false for future tests
     nt::SetEntryValue(m_kill, nt::Value::MakeBoolean(false));
+    nt::SetEntryValue(m_mechError, nt::Value::MakeBoolean(false));
+    nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(false));
 
     // Make sure client is gone
     nt::StopClient(m_nt);
@@ -92,6 +127,9 @@ class GenerationTest : public ::testing::Test {
   NT_Inst m_nt;
 
   NT_Entry m_kill;
+  NT_Entry m_mechanism;
+  NT_Entry m_mechError;
+  NT_Entry m_enable;
   static wpi::Logger m_logger;
 };
 wpi::Logger GenerationTest::m_logger;
@@ -160,4 +198,44 @@ TEST_F(GenerationTest, Drivetrain) {
   // m_manager.SaveJSON(m_jsonPath, 1, true);
   // fmt::print(stderr, "Testing: Romi Config\n");
   // Run();
+}
+
+TEST_F(GenerationTest, WrongMechDrivetrain) {
+  SetUp("sysid-projects:drive");
+  // Save default config to path
+  m_settings = sysid::ConfigSettings();
+  auto json = m_manager.Generate(2);
+  sysid::SaveFile(json.dump(), m_jsonPath);
+
+  LaunchAndConnect();
+
+  // Makes sure Drivetrain works
+  SetMechanism("Drivetrain");
+  VerifyMechStatus(false);
+
+  // Makes sure Arm fails
+  SetMechanism("Arm");
+  VerifyMechStatus(true);
+
+  EndSimulation();
+}
+
+TEST_F(GenerationTest, WrongMechGeneralMechanism) {
+  SetUp("sysid-projects:mechanism");
+  // Save default config to path
+  m_settings = sysid::ConfigSettings();
+  auto json = m_manager.Generate(1);
+  sysid::SaveFile(json.dump(), m_jsonPath);
+
+  LaunchAndConnect();
+
+  // Makes sure Arm works
+  SetMechanism("Arm");
+  VerifyMechStatus(false);
+
+  // Makes sure Drivetrain fails
+  SetMechanism("Drivetrain");
+  VerifyMechStatus(true);
+
+  EndSimulation();
 }

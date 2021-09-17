@@ -28,6 +28,8 @@ class SysIdGeneralMechanismLogger : public SysIdLogger {
 
   void Reset() override;
 
+  bool IsWrongMechanism() const override;
+
  private:
   units::volt_t m_primaryMotorVoltage = 0_V;
 };

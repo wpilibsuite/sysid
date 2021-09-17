@@ -37,6 +37,7 @@ class SysIdLogger {
   double m_startTime = 0.0;
   bool m_rotate = false;
   std::string m_testType;
+  std::string m_mechanism;
   std::vector<double> m_data;
 
   /**
@@ -54,6 +55,11 @@ class SysIdLogger {
    * Reset data before next test.
    */
   virtual void Reset();
+
+  /**
+   * Returns true if the logger is characterizing an unsupported mechanism type.
+   */
+  virtual bool IsWrongMechanism() const = 0;
 
  private:
   static constexpr int kThreadPriority = 15;

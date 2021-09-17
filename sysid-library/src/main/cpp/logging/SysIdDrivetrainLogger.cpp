@@ -40,3 +40,7 @@ void SysIdDrivetrainLogger::Reset() {
   m_primaryMotorVoltage = 0_V;
   m_secondaryMotorVoltage = 0_V;
 }
+
+bool SysIdDrivetrainLogger::IsWrongMechanism() const {
+  return m_mechanism != "Drivetrain" && m_mechanism != "Drivetrain (Angular)";
+}
