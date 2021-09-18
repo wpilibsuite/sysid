@@ -145,6 +145,7 @@ class TelemetryManager {
     std::string raw;
     std::vector<std::vector<double>> data{};
     bool overflow = false;
+    bool mechError = false;
 
     TestParameters() = default;
     TestParameters(bool fast, bool forward, bool rotate, State state)
@@ -180,6 +181,7 @@ class TelemetryManager {
   NT_Entry m_overflow;
   NT_Entry m_telemetryOld;
   NT_Entry m_mechanism;
+  NT_Entry m_mechError;
   NT_Entry m_fieldInfo;
 };
 }  // namespace sysid

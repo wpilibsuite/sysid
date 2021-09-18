@@ -41,6 +41,8 @@ class SysIdDrivetrainLogger : public SysIdLogger {
 
   void Reset() override;
 
+  bool IsWrongMechanism() const override;
+
  private:
   units::volt_t m_primaryMotorVoltage = 0_V;
   units::volt_t m_secondaryMotorVoltage = 0_V;

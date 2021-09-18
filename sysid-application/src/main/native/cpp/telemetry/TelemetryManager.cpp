@@ -38,10 +38,12 @@ TelemetryManager::TelemetryManager(const Settings& settings,
       m_overflow(nt::GetEntry(m_inst, "/SmartDashboard/SysIdOverflow")),
       m_telemetryOld(nt::GetEntry(m_inst, "/robot/telemetry")),
       m_mechanism(nt::GetEntry(m_inst, "/SmartDashboard/SysIdTest")),
+      m_mechError(nt::GetEntry(m_inst, "/SmartDashboard/SysIdWrongMech")),
       m_fieldInfo(nt::GetEntry(m_inst, "/FMSInfo/FMSControlData")) {
   // Add listeners for our readable entries.
   nt::AddPolledEntryListener(m_poller, m_telemetry, kNTFlags);
   nt::AddPolledEntryListener(m_poller, m_overflow, kNTFlags);
+  nt::AddPolledEntryListener(m_poller, m_mechError, kNTFlags);
   nt::AddPolledEntryListener(m_poller, m_fieldInfo, kNTFlags);
   nt::AddPolledEntryListener(m_poller, m_telemetryOld,
                              NT_NOTIFY_NEW | NT_NOTIFY_UPDATE);
@@ -83,6 +85,8 @@ void TelemetryManager::BeginTest(std::string_view name) {
   nt::SetEntryValue(m_telemetry, nt::Value::MakeString(""));
   // Set Overflow to False
   nt::SetEntryValue(m_overflow, nt::Value::MakeBoolean(false));
+  // Set Mechanism Error to False
+  nt::SetEntryValue(m_mechError, nt::Value::MakeBoolean(false));
   nt::Flush(m_inst);
 
   // Display the warning message.
@@ -113,7 +117,15 @@ void TelemetryManager::EndTest() {
   // Call the cancellation callbacks.
   for (auto&& func : m_callbacks) {
     std::string msg;
-    if (!m_params.data.empty()) {
+    if (m_params.mechError) {
+      msg +=
+          "\nERROR: The robot indicated that you are using the wrong project "
+          "for characterizing your mechanism. \nThis most likely means you "
+          "are trying to characterize a mechanism like a Drivetrain with a "
+          "deployed config for a General Mechanism (e.g. Arm, Flywheel, and "
+          "Elevator) or vice versa. Please double check your settings and "
+          "try again.";
+    } else if (!m_params.data.empty()) {
       std::string units;
       std::transform(m_settings.units.begin(), m_settings.units.end(),
                      units.begin(), ::tolower);
@@ -140,7 +152,6 @@ void TelemetryManager::EndTest() {
             "\nNOTE: the robot stopped recording data early because the entry "
             "storage was exceeded.";
       }
-
     } else {
       msg = "No data was detected.";
     }
@@ -183,6 +194,11 @@ void TelemetryManager::Update() {
     if (event.entry == m_overflow && event.value && event.value->IsBoolean()) {
       m_params.overflow = event.value->GetBoolean();
     }
+    // Get the mechanism error flag
+    if (event.entry == m_mechError && event.value && event.value->IsBoolean()) {
+      m_params.mechError = event.value->GetBoolean();
+    }
+
     // Check if we got frc-characterization data.
     if (event.entry == m_telemetryOld) {
       for (auto&& func : m_callbacks) {

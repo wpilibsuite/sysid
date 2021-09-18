@@ -27,3 +27,8 @@ void SysIdGeneralMechanismLogger::Reset() {
   SysIdLogger::Reset();
   m_primaryMotorVoltage = 0_V;
 }
+
+bool SysIdGeneralMechanismLogger::IsWrongMechanism() const {
+  return m_mechanism != "Arm" && m_mechanism != "Elevator" &&
+         m_mechanism != "Simple";
+}

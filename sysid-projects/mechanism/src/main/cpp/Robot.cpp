@@ -8,6 +8,7 @@
 #include <exception>
 #include <string>
 
+#include <frc/simulation/DriverStationSim.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <rev/CANEncoder.h>
 #include <units/voltage.h>
@@ -61,6 +62,7 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
     std::exit(-1);
   }
 #ifdef INTEGRATION
+  frc::SmartDashboard::PutBoolean("SysIdRun", false);
   // TODO use std::exit or EndCompetition once CTRE bug is fixed
   std::set_terminate([]() { std::_Exit(0); });
 #endif
@@ -123,6 +125,12 @@ void Robot::DisabledInit() {
 
 void Robot::SimulationPeriodic() {
 #ifdef INTEGRATION
+
+  bool enable = frc::SmartDashboard::GetBoolean("SysIdRun", false);
+  frc::sim::DriverStationSim::SetAutonomous(enable);
+  frc::sim::DriverStationSim::SetEnabled(enable);
+  frc::sim::DriverStationSim::NotifyNewData();
+
   if (frc::SmartDashboard::GetBoolean("SysIdKill", false)) {
     // TODO use std::exit or EndCompetition once CTRE bug is fixed
     std::terminate();
