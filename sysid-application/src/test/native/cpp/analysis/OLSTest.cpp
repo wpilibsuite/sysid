@@ -7,7 +7,7 @@
 #include "gtest/gtest.h"
 #include "sysid/analysis/OLS.h"
 
-TEST(OLS, TwoVariablesTwoPoints) {
+TEST(OLSTest, TwoVariablesTwoPoints) {
   // (1, 3) and (2, 5). Should produce y = 2x + 1.
   std::vector<double> data{3.0, 1.0, 1.0, 5.0, 1.0, 2.0};
 
@@ -19,7 +19,7 @@ TEST(OLS, TwoVariablesTwoPoints) {
   EXPECT_NEAR(cod, 1.0, 1E-4);
 }
 
-TEST(OLS, TwoVariablesFivePoints) {
+TEST(OLSTest, TwoVariablesFivePoints) {
   // (2, 4), (3, 5), (5, 7), (7, 10), (9, 15)
   // Should produce 1.518x + 0.305.
   std::vector<double> data{4, 1, 2, 5, 1, 3, 7, 1, 5, 10, 1, 7, 15, 1, 9};
@@ -33,7 +33,7 @@ TEST(OLS, TwoVariablesFivePoints) {
 }
 
 #ifndef NDEBUG
-TEST(OLS, MalformedData) {
+TEST(OLSTest, MalformedData) {
   std::vector<double> data{4, 1, 2, 5, 1};
   EXPECT_DEATH(sysid::OLS(data, 2), "");
 }

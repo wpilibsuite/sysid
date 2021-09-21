@@ -5,7 +5,7 @@
 #include "gtest/gtest.h"
 #include "sysid/analysis/AnalysisType.h"
 
-TEST(AnalysisType, FromName) {
+TEST(AnalysisTypeTest, FromName) {
   EXPECT_EQ(sysid::analysis::kDrivetrain,
             sysid::analysis::FromName("Drivetrain"));
   EXPECT_EQ(sysid::analysis::kDrivetrainAngular,
