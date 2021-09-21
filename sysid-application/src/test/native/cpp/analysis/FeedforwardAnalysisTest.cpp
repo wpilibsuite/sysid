@@ -87,7 +87,7 @@ sysid::Storage CollectData(Model& model) {
   return storage;
 }
 
-TEST(FeedforwardAnalysis, Arm1) {
+TEST(FeedforwardAnalysisTest, Arm1) {
   constexpr double Ks = 1.01;
   constexpr double Kv = 3.060;
   constexpr double Ka = 0.327;
@@ -104,7 +104,7 @@ TEST(FeedforwardAnalysis, Arm1) {
   EXPECT_NEAR(gains[3], Kcos, 0.003);
 }
 
-TEST(FeedforwardAnalysis, Arm2) {
+TEST(FeedforwardAnalysisTest, Arm2) {
   constexpr double Ks = 0.547;
   constexpr double Kv = 0.0693;
   constexpr double Ka = 0.1170;
@@ -121,7 +121,7 @@ TEST(FeedforwardAnalysis, Arm2) {
   EXPECT_NEAR(gains[3], Kcos, 0.003);
 }
 
-TEST(FeedforwardAnalysis, Drivetrain1) {
+TEST(FeedforwardAnalysisTest, Drivetrain1) {
   constexpr double Ks = 1.01;
   constexpr double Kv = 3.060;
   constexpr double Ka = 0.327;
@@ -136,7 +136,7 @@ TEST(FeedforwardAnalysis, Drivetrain1) {
   EXPECT_NEAR(gains[2], Ka, 0.003);
 }
 
-TEST(FeedforwardAnalysis, Drivetrain2) {
+TEST(FeedforwardAnalysisTest, Drivetrain2) {
   constexpr double Ks = 0.547;
   constexpr double Kv = 0.0693;
   constexpr double Ka = 0.1170;
@@ -151,7 +151,7 @@ TEST(FeedforwardAnalysis, Drivetrain2) {
   EXPECT_NEAR(gains[2], Ka, 0.003);
 }
 
-TEST(FeedforwardAnalysis, AngularDrivetrain1) {
+TEST(FeedforwardAnalysisTest, AngularDrivetrain1) {
   constexpr double Ks = 1.01;
   constexpr double Kv = 3.060;
   constexpr double Ka = 0.327;
@@ -167,7 +167,7 @@ TEST(FeedforwardAnalysis, AngularDrivetrain1) {
   EXPECT_NEAR(gains[2], Ka, 0.003);
 }
 
-TEST(FeedforwardAnalysis, AngularDrivetrain2) {
+TEST(FeedforwardAnalysisTest, AngularDrivetrain2) {
   constexpr double Ks = 0.547;
   constexpr double Kv = 0.0693;
   constexpr double Ka = 0.1170;
@@ -183,7 +183,7 @@ TEST(FeedforwardAnalysis, AngularDrivetrain2) {
   EXPECT_NEAR(gains[2], Ka, 0.003);
 }
 
-TEST(FeedforwardAnalysis, Elevator1) {
+TEST(FeedforwardAnalysisTest, Elevator1) {
   constexpr double Ks = 1.01;
   constexpr double Kv = 3.060;
   constexpr double Ka = 0.327;
@@ -200,7 +200,7 @@ TEST(FeedforwardAnalysis, Elevator1) {
   EXPECT_NEAR(gains[3], Kg, 0.003);
 }
 
-TEST(FeedforwardAnalysis, Elevator2) {
+TEST(FeedforwardAnalysisTest, Elevator2) {
   constexpr double Ks = 0.547;
   constexpr double Kv = 0.0693;
   constexpr double Ka = 0.1170;
@@ -217,7 +217,7 @@ TEST(FeedforwardAnalysis, Elevator2) {
   EXPECT_NEAR(gains[3], Kg, 0.003);
 }
 
-TEST(FeedforwardAnalysis, Simple1) {
+TEST(FeedforwardAnalysisTest, Simple1) {
   constexpr double Ks = 1.01;
   constexpr double Kv = 3.060;
   constexpr double Ka = 0.327;
@@ -232,7 +232,7 @@ TEST(FeedforwardAnalysis, Simple1) {
   EXPECT_NEAR(gains[2], Ka, 0.003);
 }
 
-TEST(FeedforwardAnalysis, Simple2) {
+TEST(FeedforwardAnalysisTest, Simple2) {
   constexpr double Ks = 0.547;
   constexpr double Kv = 0.0693;
   constexpr double Ka = 0.1170;

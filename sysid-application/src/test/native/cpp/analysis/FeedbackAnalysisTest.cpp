@@ -6,7 +6,7 @@
 #include "sysid/analysis/FeedbackAnalysis.h"
 #include "sysid/analysis/FeedbackControllerPreset.h"
 
-TEST(FeedbackAnalysis, Velocity1) {
+TEST(FeedbackAnalysisTest, Velocity1) {
   auto Kv = 3.060;
   auto Ka = 0.327;
 
@@ -19,7 +19,7 @@ TEST(FeedbackAnalysis, Velocity1) {
   EXPECT_NEAR(Kd, 0.00, 0.05);
 }
 
-TEST(FeedbackAnalysis, Velocity2) {
+TEST(FeedbackAnalysisTest, Velocity2) {
   auto Kv = 0.0693;
   auto Ka = 0.1170;
 
@@ -32,7 +32,7 @@ TEST(FeedbackAnalysis, Velocity2) {
   EXPECT_NEAR(Kd, 0.00, 0.05);
 }
 
-TEST(FeedbackAnalysis, VelocityConversion) {
+TEST(FeedbackAnalysisTest, VelocityConversion) {
   auto Kv = 0.0693;
   auto Ka = 0.1170;
 
@@ -47,7 +47,7 @@ TEST(FeedbackAnalysis, VelocityConversion) {
   EXPECT_NEAR(Kd, 0.00, 0.05);
 }
 
-TEST(FeedbackAnalysis, VelocityCTRE) {
+TEST(FeedbackAnalysisTest, VelocityCTRE) {
   auto Kv = 1.97;
   auto Ka = 0.179;
 
@@ -60,7 +60,7 @@ TEST(FeedbackAnalysis, VelocityCTRE) {
   EXPECT_NEAR(Kd, 0.00, 0.05);
 }
 
-TEST(FeedbackAnalysis, VelocityCTREConversion) {
+TEST(FeedbackAnalysisTest, VelocityCTREConversion) {
   auto Kv = 1.97;
   auto Ka = 0.179;
 
@@ -75,7 +75,7 @@ TEST(FeedbackAnalysis, VelocityCTREConversion) {
   EXPECT_NEAR(Kd, 0.00, 0.05);
 }
 
-TEST(FeedbackAnalysis, VelocityREV) {
+TEST(FeedbackAnalysisTest, VelocityREV) {
   auto Kv = 1.97;
   auto Ka = 0.179;
 
@@ -88,7 +88,7 @@ TEST(FeedbackAnalysis, VelocityREV) {
   EXPECT_NEAR(Kd, 0.00, 0.05);
 }
 
-TEST(FeedbackAnalysis, VelocityREVConversion) {
+TEST(FeedbackAnalysisTest, VelocityREVConversion) {
   auto Kv = 1.97;
   auto Ka = 0.179;
 

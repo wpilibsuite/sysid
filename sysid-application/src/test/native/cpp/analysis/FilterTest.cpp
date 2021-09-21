@@ -41,7 +41,7 @@ TEST(FilterTest, QuasistaticTrim) {
   EXPECT_EQ(expectedData, testData);
 }
 
-TEST(FilterTests, AccelNoiseFloor) {
+TEST(FilterTest, AccelNoiseFloor) {
   std::vector<sysid::PreparedData> testData = {
       {0_s, 1, 2, 3, 3, 5_ms, 0, 0},    {1_s, 1, 2, 3, 3, 5_ms, 1, 0},
       {2_s, 1, 2, 3, 3, 5_ms, 2, 0},    {3_s, 1, 2, 3, 3, 5_ms, 5, 0},
