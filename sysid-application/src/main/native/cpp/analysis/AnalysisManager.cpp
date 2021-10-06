@@ -90,14 +90,14 @@ static void CopyRawData(
   using Data = std::array<double, S>;
   auto& data = *dataset;
   // Loads the Raw Data
-  sysid::ApplyToData(
-      data,
-      [&](std::string_view key) {
-        data[fmt::format("raw-{}", key)] = std::vector<Data>(data[key]);
-      },
-      [](std::string_view key) {
-        return key.find("raw") == std::string_view::npos;
-      });
+  for (auto& it : data) {
+    auto key = it.first();
+    auto& dataset = it.getValue();
+
+    if (key.find("raw") == std::string_view::npos) {
+      data[fmt::format("raw-{}", key)] = dataset;
+    }
+  }
 }
 
 /**
@@ -182,25 +182,19 @@ static void PrepareGeneralData(
 
   WPI_DEBUG(logger, "{}", "Converting raw data to PreparedData struct.");
   // Convert data to PreparedData structs
-  sysid::ApplyToData(data, [&](std::string_view key) {
+  for (auto& it : data) {
+    auto key = it.first();
     preparedData[key] =
         ConvertToPrepared<4, kTimeCol, kVoltageCol, kPosCol, kVelCol>(
             data[key]);
-  });
+  }
 
   WPI_DEBUG(logger, "{}", "Initial trimming and filtering.");
   sysid::InitialTrimAndFilter(&preparedData, settings, minStepTime, maxStepTime,
                               unit);
-  // Compute mean dt
-  auto& slowForward = preparedData["slow-forward"];
-  auto& slowBackward = preparedData["slow-backward"];
-  auto& fastForward = preparedData["fast-forward"];
-  auto& fastBackward = preparedData["fast-backward"];
-  Storage tempCombined{Concatenate(slowForward, {&slowBackward}),
-                       Concatenate(fastForward, {&fastBackward})};
 
-  WPI_DEBUG(logger, "{}", "Acceleration and time filtering.");
-  sysid::AccelAndTimeFilter(&preparedData, tempCombined);
+  WPI_DEBUG(logger, "{}", "Acceleration filtering.");
+  sysid::AccelFilter(&preparedData);
 
   WPI_DEBUG(logger, "{}", "Storing datasets.");
   // Store the raw datasets
@@ -210,8 +204,9 @@ static void PrepareGeneralData(
                 preparedData["raw-fast-backward"]);
 
   // Store the filtered datasets
-  StoreDatasets(&filteredDatasets, slowForward, slowBackward, fastForward,
-                fastBackward);
+  StoreDatasets(&filteredDatasets, preparedData["slow-forward"],
+                preparedData["slow-backward"], preparedData["fast-forward"],
+                preparedData["fast-backward"]);
 
   startTimes = {preparedData["raw-slow-forward"][0].timestamp,
                 preparedData["raw-slow-backward"][0].timestamp,
@@ -280,25 +275,18 @@ static void PrepareAngularDrivetrainData(
 
   WPI_DEBUG(logger, "{}", "Converting to PreparedData struct.");
   // Convert raw data to prepared data
-  sysid::ApplyToData(data, [&](std::string_view key) {
+  for (const auto& it : data) {
+    auto key = it.first();
     preparedData[key] = ConvertToPrepared<9, kTimeCol, kLVoltageCol, kAngleCol,
                                           kAngularRateCol>(data[key]);
-  });
+  }
 
   WPI_DEBUG(logger, "{}", "Applying trimming and filtering.");
   sysid::InitialTrimAndFilter(&preparedData, settings, minStepTime,
                               maxStepTime);
 
-  // Compute mean dt
-  auto& slowForward = preparedData["slow-forward"];
-  auto& slowBackward = preparedData["slow-backward"];
-  auto& fastForward = preparedData["fast-forward"];
-  auto& fastBackward = preparedData["fast-backward"];
-  Storage tempCombined{Concatenate(slowForward, {&slowBackward}),
-                       Concatenate(fastForward, {&fastBackward})};
-
-  WPI_DEBUG(logger, "{}", "Acceleration and time filtering.");
-  sysid::AccelAndTimeFilter(&preparedData, tempCombined);
+  WPI_DEBUG(logger, "{}", "Acceleration filtering.");
+  sysid::AccelFilter(&preparedData);
 
   WPI_DEBUG(logger, "{}", "Calculating trackwidth");
   // Calculate track width from the slow-forward raw data.
@@ -317,13 +305,15 @@ static void PrepareAngularDrivetrainData(
   double translationalFactor = trackWidth.value() / 2.0;
 
   // Scale Angular Rate Data
-  sysid::ApplyToData(preparedData, [&](std::string_view key) {
-    for (auto& pt : preparedData[key]) {
+  for (auto& it : preparedData) {
+    auto& dataset = it.getValue();
+
+    for (auto& pt : dataset) {
       pt.velocity *= translationalFactor;
       pt.nextVelocity *= translationalFactor;
       pt.acceleration *= translationalFactor;
     }
-  });
+  }
 
   WPI_DEBUG(logger, "{}", "Storing datasets.");
   // Create the distinct datasets and store them in our StringMap.
@@ -331,11 +321,14 @@ static void PrepareAngularDrivetrainData(
                 preparedData["raw-slow-backward"],
                 preparedData["raw-fast-forward"],
                 preparedData["raw-fast-backward"]);
-  StoreDatasets(&filteredDatasets, slowForward, slowBackward, fastForward,
-                fastBackward);
+  StoreDatasets(&filteredDatasets, preparedData["slow-forward"],
+                preparedData["slow-backward"], preparedData["fast-forward"],
+                preparedData["fast-backward"]);
 
-  startTimes = {slowForward[0].timestamp, slowBackward[0].timestamp,
-                fastForward[0].timestamp, fastBackward[0].timestamp};
+  startTimes = {preparedData["slow-forward"][0].timestamp,
+                preparedData["slow-backward"][0].timestamp,
+                preparedData["fast-forward"][0].timestamp,
+                preparedData["fast-backward"][0].timestamp};
 }
 
 /**
@@ -395,14 +388,16 @@ static void PrepareLinearDrivetrainData(
 
   // Convert data to PreparedData
   WPI_DEBUG(logger, "{}", "Converting to PreparedData struct.");
-  sysid::ApplyToData(data, [&](std::string_view key) {
+  for (auto& it : data) {
+    auto key = it.first();
+
     preparedData[fmt::format("left-{}", key)] =
         ConvertToPrepared<9, kTimeCol, kLVoltageCol, kLPosCol, kLVelCol>(
             data[key]);
     preparedData[fmt::format("right-{}", key)] =
         ConvertToPrepared<9, kTimeCol, kRVoltageCol, kRPosCol, kRVelCol>(
             data[key]);
-  });
+  }
 
   WPI_DEBUG(logger, "{}", "Applying trimming and filtering.");
   sysid::InitialTrimAndFilter(&preparedData, settings, minStepTime,
@@ -422,12 +417,8 @@ static void PrepareLinearDrivetrainData(
   auto fastForward = Concatenate(fastForwardLeft, {&fastForwardRight});
   auto fastBackward = Concatenate(fastBackwardLeft, {&fastBackwardRight});
 
-  // Compute mean dt
-  Storage tempCombined{Concatenate(slowForward, {&slowBackward}),
-                       Concatenate(fastForward, {&fastBackward})};
-
-  WPI_DEBUG(logger, "{}", "Acceleration and time filtering.");
-  sysid::AccelAndTimeFilter(&preparedData, tempCombined);
+  WPI_DEBUG(logger, "{}", "Acceleration filtering.");
+  sysid::AccelFilter(&preparedData);
 
   WPI_DEBUG(logger, "{}", "Storing datasets.");
   // Store raw data as variables

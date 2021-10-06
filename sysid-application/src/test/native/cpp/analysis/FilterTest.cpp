@@ -30,17 +30,6 @@ TEST(FilterTest, MedianFilter) {
   EXPECT_EQ(expectedData, testData);
 }
 
-TEST(FilterTest, QuasistaticTrim) {
-  std::vector<sysid::PreparedData> testData{
-      {sysid::PreparedData{0_s, 0, 0, 1}, sysid::PreparedData{0_s, .5, 0, 2},
-       sysid::PreparedData{0_s, 2, 0, 0.1}, sysid::PreparedData{0_s, 4, 0, 4},
-       sysid::PreparedData{0_s, 0, 0, 5}}};
-  std::vector<sysid::PreparedData> expectedData{
-      sysid::PreparedData{0_s, .5, 0, 2}, sysid::PreparedData{0_s, 4, 0, 4}};
-  sysid::TrimQuasistaticData(&testData, 0.2);
-  EXPECT_EQ(expectedData, testData);
-}
-
 TEST(FilterTest, AccelNoiseFloor) {
   std::vector<sysid::PreparedData> testData = {
       {0_s, 1, 2, 3, 3, 5_ms, 0, 0},    {1_s, 1, 2, 3, 3, 5_ms, 1, 0},

@@ -83,8 +83,8 @@ units::second_t sysid::TrimStepVoltageData(std::vector<PreparedData>* data,
 
   minStepTime = std::min(data->at(0).timestamp - firstTimestamp, minStepTime);
 
-  // If step duration hasn't been set yet, set calculate a default (find the
-  // entry before the acceleration first hits zero)
+  // If step duration hasn't been set yet, calculate a default (find the entry
+  // before the acceleration first hits zero)
   if (settings->stepTestDuration <= minStepTime) {
     // Get noise floor
     const double accelNoiseFloor =
@@ -123,8 +123,7 @@ double sysid::GetAccelNoiseFloor(const std::vector<PreparedData>& data,
                                  int window) {
   double sum = 0.0;
   size_t step = window / 2;
-  frc::LinearFilter<double> averageFilter =
-      frc::LinearFilter<double>::MovingAverage(window);
+  auto averageFilter = frc::LinearFilter<double>::MovingAverage(window);
   for (size_t i = 0; i < data.size(); i++) {
     double mean = averageFilter.Calculate(data[i].acceleration);
     if (i >= step) {
@@ -164,16 +163,6 @@ units::second_t sysid::GetMeanTimeDelta(const Storage& data) {
   return std::accumulate(dts.begin(), dts.end(), 0_s) / dts.size();
 }
 
-void sysid::TrimQuasistaticData(std::vector<PreparedData>* data,
-                                double motionThreshold) {
-  data->erase(std::remove_if(data->begin(), data->end(),
-                             [motionThreshold](const auto& pt) {
-                               return std::abs(pt.voltage) <= 0 ||
-                                      std::abs(pt.velocity) < motionThreshold;
-                             }),
-              data->end());
-}
-
 void sysid::ApplyMedianFilter(std::vector<PreparedData>* data, int window) {
   CheckSize(*data, window);
 
@@ -201,15 +190,6 @@ void sysid::ApplyMedianFilter(std::vector<PreparedData>* data, int window) {
   }
 }
 
-void sysid::FilterAccelData(std::vector<PreparedData>* data) {
-  for (int i = 0; i < data->size(); i++) {
-    if (data->at(i).acceleration == 0.0) {
-      data->erase(data->begin() + i);
-      i--;
-    }
-  }
-}
-
 /**
  * Removes a substring from a string reference
  *
@@ -231,8 +211,6 @@ static std::string RemoveStr(std::string_view str, std::string_view removeStr) {
 /**
  * Figures out the max duration of the Dynamic tests
  *
- * @tparam S The size of the arrays in the raw data vector
- *
  * @param data The raw data String Map
  * @param timeCol The index of the time column
  *
@@ -240,21 +218,19 @@ static std::string RemoveStr(std::string_view str, std::string_view removeStr) {
  */
 static units::second_t GetMaxTime(
     wpi::StringMap<std::vector<PreparedData>>& data) {
-  std::vector<double> durations;
-  sysid::ApplyToData(
-      data,
-      [&](std::string_view key) {
-        durations.push_back(
-            (data[key].back().timestamp - data[key].front().timestamp)
-                .to<double>());
-      },
-      [](std::string_view key) {
-        return key.find("fast") != std::string_view::npos &&
-               key.find("raw") != std::string_view::npos;
-      });
-  return units::second_t{durations[std::distance(
-      durations.begin(),
-      std::max_element(durations.begin(), durations.end()))]};
+  auto maxDuration = 0_s;
+  for (auto& it : data) {
+    auto key = it.first();
+    auto& dataset = it.getValue();
+
+    if (key.find("raw-fast") != std::string_view::npos) {
+      auto duration = dataset.back().timestamp - dataset.front().timestamp;
+      if (duration > maxDuration) {
+        maxDuration = duration;
+      }
+    }
+  }
+  return maxDuration;
 }
 
 void sysid::InitialTrimAndFilter(
@@ -263,79 +239,82 @@ void sysid::InitialTrimAndFilter(
     units::second_t& maxStepTime, std::string_view unit) {
   auto& preparedData = *data;
 
-  // Trim quasistatic test data to remove all points where voltage is zero or
-  // velocity < motion threshold.
-  sysid::ApplyToData(
-      preparedData,
-      [&](std::string_view key) {
-        sysid::TrimQuasistaticData(&preparedData[key],
-                                   settings.motionThreshold);
-      },
-      [](std::string_view key) {
-        return key.find("slow") != std::string_view::npos;
-      });
-
-  // Apply Median filter
-  sysid::ApplyToData(
-      preparedData,
-      [&](std::string_view key) {
-        sysid::ApplyMedianFilter(&preparedData[key], settings.windowSize);
-      },
-      [](std::string_view key) {
-        return key.find("raw") == std::string_view::npos;
-      });
-
-  // Recalculate Accel and Cosine
-  sysid::ApplyToData(preparedData, [&](std::string_view key) {
-    PrepareMechData(&preparedData[key], unit);
-  });
-
-  // Find the maximum Step Test Duration
+  // Find the maximum Step Test Duration of the dynamic tests
   maxStepTime = GetMaxTime(preparedData);
 
-  // Trims filtered Dynamic Test Data and lines up the Raw Data to facilitate
-  // plotting
-  sysid::ApplyToData(
-      preparedData,
-      [&](std::string_view key) {
-        // Get the filtered dataset name
-        auto filteredKey = RemoveStr(key, "raw-");
+  for (auto& it : preparedData) {
+    auto key = it.first();
+    auto& dataset = it.getValue();
 
-        // Trim Filtered Data
-        auto tempMinStepTime = sysid::TrimStepVoltageData(
-            &preparedData[filteredKey], &settings, minStepTime, maxStepTime);
-        minStepTime = tempMinStepTime;
+    // Trim quasistatic test data to remove all points where voltage is zero or
+    // velocity < motion threshold.
+    if (key.find("slow") != std::string_view::npos) {
+      dataset.erase(std::remove_if(dataset.begin(), dataset.end(),
+                                   [&](const auto& pt) {
+                                     return std::abs(pt.voltage) <= 0 ||
+                                            std::abs(pt.velocity) <
+                                                settings.motionThreshold;
+                                   }),
+                    dataset.end());
 
-        // Set the Raw Data to start at the same time as the Filtered Data
-        auto startTime = preparedData[filteredKey].front().timestamp;
-        auto rawStart =
-            std::find_if(preparedData[key].begin(), preparedData[key].end(),
-                         [&](auto&& pt) { return pt.timestamp == startTime; });
-        preparedData[key].erase(preparedData[key].begin(), rawStart);
-      },
-      [](std::string_view key) {
-        return key.find("fast") != std::string_view::npos &&
-               key.find("raw") != std::string_view::npos;
-      });
-  // Confirm there's still data
-  if (std::any_of(preparedData.begin(), preparedData.end(),
-                  [](const auto& it) { return it.first().empty(); })) {
-    throw std::runtime_error("Trimming removed all data");
+      // Confirm there's still data
+      if (dataset.empty()) {
+        throw std::runtime_error("Quasistatic test trimming removed all data");
+      }
+    }
+
+    // Apply Median filter
+    if (key.find("raw") == std::string_view::npos) {
+      ApplyMedianFilter(&dataset, settings.windowSize);
+    }
+
+    // Recalculate Accel and Cosine
+    PrepareMechData(&dataset, unit);
+
+    // Trims filtered Dynamic Test Data and lines up the Raw Data to facilitate
+    // plotting
+    if (key.find("raw-fast") != std::string_view::npos) {
+      // Get the filtered dataset name
+      auto filteredKey = RemoveStr(key, "raw-");
+
+      // Trim Filtered Data
+      auto tempMinStepTime = TrimStepVoltageData(
+          &preparedData[filteredKey], &settings, minStepTime, maxStepTime);
+      minStepTime = tempMinStepTime;
+
+      // Set the Raw Data to start at the same time as the Filtered Data
+      auto startTime = preparedData[filteredKey].front().timestamp;
+      auto rawStart =
+          std::find_if(preparedData[key].begin(), preparedData[key].end(),
+                       [&](auto&& pt) { return pt.timestamp == startTime; });
+      preparedData[key].erase(preparedData[key].begin(), rawStart);
+
+      // Confirm there's still data
+      if (preparedData[key].empty()) {
+        throw std::runtime_error("Dynamic test trimming removed all data");
+      }
+    }
   }
 }
 
-void sysid::AccelAndTimeFilter(wpi::StringMap<std::vector<PreparedData>>* data,
-                               const Storage& tempCombined) {
+void sysid::AccelFilter(wpi::StringMap<std::vector<PreparedData>>* data) {
   auto& preparedData = *data;
 
-  // Remove points with accel = 0
-  sysid::ApplyToData(preparedData, [&](std::string_view key) {
-    FilterAccelData(&preparedData[key]);
-  });
+  // Remove points with acceleration = 0
+  for (auto& it : preparedData) {
+    auto& dataset = it.getValue();
+
+    for (int i = 0; i < dataset.size(); i++) {
+      if (dataset.at(i).acceleration == 0.0) {
+        dataset.erase(dataset.begin() + i);
+        i--;
+      }
+    }
+  }
 
   // Confirm there's still data
   if (std::any_of(preparedData.begin(), preparedData.end(),
-                  [](const auto& it) { return it.first().empty(); })) {
-    throw std::runtime_error("Trimming removed all data");
+                  [](const auto& it) { return it.getValue().empty(); })) {
+    throw std::runtime_error("Acceleration filtering removed all data");
   }
 }
