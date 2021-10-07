@@ -20,16 +20,6 @@
 namespace sysid {
 
 /**
- * Trims quasistatic data so that no point has a voltage of zero or a velocity
- * less than the motion threshold.
- *
- * @param data            A pointer to the vector of the prepared data.
- * @param motionThreshold The velocity threshold under which to delete data.
- */
-void TrimQuasistaticData(std::vector<PreparedData>* data,
-                         double motionThreshold);
-
-/**
  * Calculates the expected acceleration noise to be used as the floor of the
  * Voltage Trim. This is done by taking the standard deviation from the moving
  * average values of each point.
@@ -133,57 +123,6 @@ constexpr double CentralFiniteDifference(F&& f, size_t i, double h) {
 }
 
 /**
- * Filters out data with acceleration = 0
- *
- * @param data A pointer to a PreparedData vector that needs acceleration
- *             filtering.
- */
-void FilterAccelData(std::vector<PreparedData>* data);
-
-/**
- * Helper method that applies a function onto a dataset.
- *
- * @tparam T The type of data that is stored within a StringMap
- *
- * @param data   A StringMap representing a specific dataset
- * @param action A void function that takes a std::string_view representing a
- *               StringMap key and performs an action to the dataset stored with
- *               that passed key (e.g. applying a median filter)
- */
-template <typename T>
-void ApplyToData(const wpi::StringMap<T>& data,
-                 std::function<void(std::string_view)> action) {
-  for (const auto& it : data) {
-    action(it.first());
-  }
-}
-
-/**
- * Helper method that applies a function onto a dataset.
- *
- * @tparam T The type of data that is stored within a StringMap
- *
- * @param data      A StringMap representing a specific dataset
- * @param action    A void function that takes a std::string_view representing a
- *                  StringMap key and performs an action to the dataset stored
- *                  with that passed key (e.g. applying a median filter)
- * @param specifier A boolean function that takes a std::string_view
- *                  representing a StringMap key and returns true if `action`
- *                  should be run on the dataset stored with that key
- */
-template <typename T>
-void ApplyToData(const wpi::StringMap<T>& data,
-                 std::function<void(std::string_view)> action,
-                 std::function<bool(std::string_view)> specifier) {
-  for (const auto& it : data) {
-    auto key = it.first();
-    if (specifier(key)) {
-      action(key);
-    }
-  }
-}
-
-/**
  * Trims the quasistatic tests, applies a median filter to the velocity data,
  * calculates acceleration and cosine (arm only) data, and trims the dynamic
  * tests.
@@ -203,13 +142,10 @@ void InitialTrimAndFilter(wpi::StringMap<std::vector<PreparedData>>* data,
                           std::string_view unit = "");
 
 /**
- * Removes all points with accel = 0 and points with dt's greater than 1ms from
- * the mean dt.
+ * Removes all points with acceleration = 0.
  *
  * @param data A pointer to a PreparedData vector
- * @param tempCombined A reference to the combined filtered datasets
  */
-void AccelAndTimeFilter(wpi::StringMap<std::vector<PreparedData>>* data,
-                        const Storage& tempCombined);
+void AccelFilter(wpi::StringMap<std::vector<PreparedData>>* data);
 
 }  // namespace sysid
