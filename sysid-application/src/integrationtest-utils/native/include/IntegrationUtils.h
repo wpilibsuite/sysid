@@ -7,10 +7,9 @@
 #include <string>
 #include <string_view>
 
-#include <ntcore_c.h>
-#include <ntcore_cpp.h>
+#include <networktables/BooleanTopic.h>
+#include <networktables/NetworkTableInstance.h>
 
-#include "networktables/NetworkTableValue.h"
 #include "sysid/Util.h"
 
 /**
@@ -30,7 +29,7 @@ void LaunchSim(std::string_view projectDirectory);
  * @param kill the Network Tables Entry responsible for killing the simulated
  * code.
  */
-void Connect(NT_Inst nt, NT_Entry kill);
+void Connect(nt::NetworkTableInstance nt, nt::BooleanPublisher& kill);
 
 /**
  * Connects to a Simulation NT Entry and configures the kill variable to kill
@@ -43,4 +42,4 @@ void Connect(NT_Inst nt, NT_Entry kill);
  *
  * @return captured console output during the robot simulation.
  */
-std::string KillNT(NT_Inst nt, NT_Entry kill);
+std::string KillNT(nt::NetworkTableInstance nt, nt::BooleanPublisher& kill);

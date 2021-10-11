@@ -13,10 +13,10 @@ concurrency:
 jobs:
   wpiformat:
     name: "wpiformat"
-    runs-on: ubuntu-latest
-    container: wpilib/roborio-cross-ubuntu:2022-20.04
+    runs-on: ubuntu-22.04
+    container: wpilib/roborio-cross-ubuntu:2023-22.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Fetch all history and metadata
         run: |
           git config --global --add safe.directory /__w/sysid/sysid
@@ -42,17 +42,17 @@ jobs:
       - name: Generate diff
         run: git diff HEAD > wpiformat-fixes.patch
         if: ${{ failure() }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: wpiformat fixes
           path: wpiformat-fixes.patch
         if: ${{ failure() }}
   tidy:
     name: "clang-tidy"
-    runs-on: ubuntu-latest
-    container: wpilib/roborio-cross-ubuntu:2022-20.04
+    runs-on: ubuntu-22.04
+    container: wpilib/roborio-cross-ubuntu:2023-22.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Fetch all history and metadata
         run: |
           git config --global --add safe.directory /__w/sysid/sysid
