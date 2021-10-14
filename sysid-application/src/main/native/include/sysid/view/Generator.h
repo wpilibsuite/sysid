@@ -76,8 +76,8 @@ class Generator : public glass::View {
   void CANCoderSetup(bool drive);
 
   template <size_t X, size_t Y>
-  void GetEncoder(std::array<const char*, X> specificEncoders,
-                  std::array<const char*, Y> generalEncoders);
+  void GetEncoder(const std::array<const char*, X>& specificEncoders,
+                  const std::array<const char*, Y>& generalEncoders);
 
   // Configuration manager along with its settings -- used to generate the JSON
   // configuration.

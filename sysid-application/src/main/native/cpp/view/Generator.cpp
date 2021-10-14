@@ -70,8 +70,8 @@ static int GetNewIdx(const std::array<const char*, X>& arr,
 }
 
 template <size_t X, size_t Y>
-void Generator::GetEncoder(std::array<const char*, X> specificEncoders,
-                           std::array<const char*, Y> generalEncoders) {
+void Generator::GetEncoder(const std::array<const char*, X>& specificEncoders,
+                           const std::array<const char*, Y>& generalEncoders) {
   // TODO set to constexpr once this is upgraded to C++20
   const auto kEncoders = concat(specificEncoders, generalEncoders);
   ImGui::Combo("Encoder", &m_encoderIdx, kEncoders.data(), kEncoders.size());
