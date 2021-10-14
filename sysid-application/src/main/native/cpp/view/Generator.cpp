@@ -58,12 +58,102 @@ static int GetNewIdx(const char* const (&arr)[X], std::string_view value) {
   }
 }
 
+template <size_t X>
+static int GetNewIdx(const std::array<const char*, X>& arr,
+                     std::string_view value) {
+  auto it = std::find(std::begin(arr), std::end(arr), value);
+  if (it == std::cend(arr)) {
+    throw std::runtime_error(fmt::format("{} not found", value));
+  } else {
+    return std::distance(std::cbegin(arr), it);
+  }
+}
+
+template <size_t X, size_t Y>
+void Generator::GetEncoder(const std::array<const char*, X>& specificEncoders,
+                           const std::array<const char*, Y>& generalEncoders) {
+  // TODO set to constexpr once this is upgraded to C++20
+  const auto kEncoders = concat(specificEncoders, generalEncoders);
+  ImGui::Combo("Encoder", &m_encoderIdx, kEncoders.data(), kEncoders.size());
+  m_settings.encoderType = std::string{kEncoders[m_encoderIdx]};
+}
+
+void Generator::RoboRIOEncoderSetup(bool drive) {
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
+  ImGui::InputInt("A##1", &m_settings.primaryEncoderPorts[0], 0, 0);
+  ImGui::SameLine(ImGui::GetFontSize() * 4);
+
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
+  ImGui::InputInt("B##1", &m_settings.primaryEncoderPorts[1], 0, 0);
+  ImGui::SameLine();
+  ImGui::Checkbox(drive ? "Left Encoder Inverted" : "Encoder Inverted",
+                  &m_settings.primaryEncoderInverted);
+
+  if (drive) {
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
+    ImGui::InputInt("A##2", &m_settings.secondaryEncoderPorts[0], 0, 0);
+    ImGui::SameLine(ImGui::GetFontSize() * 4);
+
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
+    ImGui::InputInt("B##2", &m_settings.secondaryEncoderPorts[1], 0, 0);
+
+    ImGui::SameLine();
+    ImGui::Checkbox("Right Encoder Inverted",
+                    &m_settings.secondaryEncoderInverted);
+  }
+
+  ImGui::Checkbox("Reduce Encoding", &m_settings.encoding);
+  CreateTooltip(
+      "This helps reduce encoder noise for high CPR encoders such as the "
+      "CTRE Magnetic Encoder and REV Throughbore Encoder");
+}
+
+void Generator::CANCoderSetup(bool drive) {
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
+  ImGui::InputInt(drive ? "L CANCoder Port" : "CANCoder Port",
+                  &m_settings.primaryEncoderPorts[0], 0, 0);
+  ImGui::SameLine();
+  ImGui::Checkbox(drive ? "Left Encoder Inverted" : "Encoder Inverted",
+                  &m_settings.primaryEncoderInverted);
+  if (drive) {
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
+    ImGui::InputInt("R CANCoder Port", &m_settings.secondaryEncoderPorts[1], 0,
+                    0);
+    ImGui::SameLine();
+    ImGui::Checkbox("Right Encoder Inverted",
+                    &m_settings.secondaryEncoderInverted);
+  }
+}
+
+void Generator::RegularEncoderSetup(bool drive) {
+  ImGui::Checkbox(drive ? "Left Encoder Inverted" : "Encoder Inverted",
+                  &m_settings.primaryEncoderInverted);
+  if (drive) {
+    ImGui::SameLine();
+    ImGui::Checkbox("Right Encoder Inverted",
+                    &m_settings.secondaryEncoderInverted);
+  }
+}
+
 void Generator::UpdateFromConfig() {
   // Get Occupied Ports
   m_occupied = m_settings.motorControllers.size();
 
   // Idxs
-  m_encoderIdx = GetNewIdx(kEncoders, m_settings.encoderType);
+  std::string_view mainMotorController{m_settings.motorControllers[0]};
+  if (starts_with(mainMotorController, "Talon")) {
+    m_encoderIdx = GetNewIdx(concat(kTalonEncoders, kGeneralEncoders),
+                             m_settings.encoderType);
+  } else if (starts_with(mainMotorController, "SPARK MAX")) {
+    m_encoderIdx = GetNewIdx(concat(kSparkMaxEncoders, kGeneralEncoders),
+                             m_settings.encoderType);
+  } else if (mainMotorController == "Venom") {
+    m_encoderIdx = GetNewIdx(concat(kVenomEncoders, kGeneralEncoders),
+                             m_settings.encoderType);
+  } else {
+    m_encoderIdx = GetNewIdx(kGeneralEncoders, m_settings.encoderType);
+  }
+
   m_gyroIdx = GetNewIdx(kGyros, m_settings.gyro);
   m_periodIdx = GetNewIdx(kCTREPeriods, std::to_string(m_settings.period));
 
@@ -222,72 +312,59 @@ void Generator::Display() {
   ImGui::Spacing();
   ImGui::Text("Encoder Selection");
 
+  // Reset Encoder Selection if a new motor controller is chosen
+  std::string_view mainMotorController{m_settings.motorControllers[0]};
+  if (m_prevMainMotorController != mainMotorController) {
+    m_encoderIdx = 0;
+  }
+  m_prevMainMotorController = mainMotorController;
+
   // Add encoder selection.
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
-  ImGui::Combo("Encoder", &m_encoderIdx, kEncoders, IM_ARRAYSIZE(kEncoders));
-
-  // Configure Encoder Port inputs
-  switch (m_encoderIdx) {
-    case 0:  // Builtin
-
-      if (m_settings.motorControllers[0] != "SPARK MAX (Brushless)") {
-        ImGui::Checkbox(drive ? "Left Encoder Inverted" : "Encoder Inverted",
-                        &m_settings.primaryEncoderInverted);
-        if (drive) {
-          ImGui::SameLine();
-          ImGui::Checkbox("Right Encoder Inverted",
-                          &m_settings.secondaryEncoderInverted);
-        }
+  if (starts_with(mainMotorController, "Talon")) {
+    GetEncoder(kTalonEncoders, kGeneralEncoders);
+    if (m_encoderIdx <= 1) {
+      RegularEncoderSetup(drive);
+    } else if (m_encoderIdx == 2) {
+      CANCoderSetup(drive);
+    } else {
+      RoboRIOEncoderSetup(drive);
+    }
+  } else if (starts_with(mainMotorController, "SPARK MAX")) {
+    GetEncoder(kSparkMaxEncoders, kGeneralEncoders);
+    if (m_encoderIdx <= 1) {
+      if (m_encoderIdx == 1 ||
+          contains(
+              mainMotorController,
+              "Brushed")) {  // You're not allowed to invert the Neo encoder
+        RegularEncoderSetup(drive);
       }
-      break;
-    case 1:  // CANCoder / Alternate
-      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-      ImGui::InputInt(drive ? "L CANCoder Port" : "CANCoder Port",
-                      &m_settings.primaryEncoderPorts[0], 0, 0);
-      ImGui::SameLine();
-      ImGui::Checkbox(drive ? "Left Encoder Inverted" : "Encoder Inverted",
-                      &m_settings.primaryEncoderInverted);
-      if (drive) {
-        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-        ImGui::InputInt("R CANCoder Port", &m_settings.secondaryEncoderPorts[1],
-                        0, 0);
-        ImGui::SameLine();
-        ImGui::Checkbox("Right Encoder Inverted",
-                        &m_settings.secondaryEncoderInverted);
-      }
-      break;
-    case 2:  // roboRIO
-      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-      ImGui::InputInt("A##1", &m_settings.primaryEncoderPorts[0], 0, 0);
-      ImGui::SameLine(ImGui::GetFontSize() * 4);
-
-      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-      ImGui::InputInt("B##1", &m_settings.primaryEncoderPorts[1], 0, 0);
-      ImGui::SameLine();
-      ImGui::Checkbox(drive ? "Left Encoder Inverted" : "Encoder Inverted",
-                      &m_settings.primaryEncoderInverted);
-
-      if (drive) {
-        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-        ImGui::InputInt("A##2", &m_settings.secondaryEncoderPorts[0], 0, 0);
-        ImGui::SameLine(ImGui::GetFontSize() * 4);
-
-        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-        ImGui::InputInt("B##2", &m_settings.secondaryEncoderPorts[1], 0, 0);
-
-        ImGui::SameLine();
-        ImGui::Checkbox("Right Encoder Inverted",
-                        &m_settings.secondaryEncoderInverted);
-      }
-
-      ImGui::Checkbox("Reduce Encoding", &m_settings.encoding);
-      CreateTooltip(
-          "This helps reduce encoder noise for high CPR encoders such as the "
-          "CTRE Magnetic Encoder and REV Throughbore Encoder");
+    } else if (m_encoderIdx == 2) {
+      CANCoderSetup(drive);
+    } else {
+      RoboRIOEncoderSetup(drive);
+    }
+  } else if (mainMotorController == "Venom") {
+    GetEncoder(kVenomEncoders, kGeneralEncoders);
+    if (m_encoderIdx == 0) {
+      RegularEncoderSetup(drive);
+    } else if (m_encoderIdx == 1) {
+      CANCoderSetup(drive);
+    } else {
+      RoboRIOEncoderSetup(drive);
+    }
+  } else {
+    GetEncoder(std::array<const char*, 0>{}, kGeneralEncoders);
+    if (m_encoderIdx == 0) {
+      CANCoderSetup(drive);
+    } else {
+      RoboRIOEncoderSetup(drive);
+    }
   }
 
   // Venom built-in encoders can't change sampling or measurement period.
-  if (!(m_settings.motorControllers[0] == "Venom" && m_encoderIdx == 0)) {
+  if (!(mainMotorController == "Venom" &&
+        m_settings.encoderType == "Built-in")) {
     // Samples Per Average Setting
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
     ImGui::InputInt("Samples Per Average", &m_settings.numSamples, 0, 0);
@@ -296,10 +373,8 @@ void Generator::Display() {
         "together. A value from 5-10 is reccomended for encoders with high "
         "CPRs.");
 
-    m_settings.encoderType = std::string{kEncoders[m_encoderIdx]};
-
     // Add Velocity Measurement Period
-    if (m_encoderIdx <= 1) {
+    if (m_settings.encoderType != "roboRIO") {
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
       ImGui::Combo("Time Measurement Window", &m_periodIdx, kCTREPeriods,
                    IM_ARRAYSIZE(kCTREPeriods));

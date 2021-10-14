@@ -26,13 +26,30 @@
 
 using namespace std::chrono_literals;
 
-const wpi::SmallVector<std::string, 4> kPigeonCtors{"0", "WPI_TalonSRX-1"};
-const wpi::SmallVector<std::string, 4> kAnalogCtors{"0"};
-const wpi::SmallVector<std::string, 4> kNavXCtors{
+const wpi::SmallVector<std::string_view, 2> kTalonEncs{"Built-in",
+                                                       "Tachometer"};
+const wpi::SmallVector<std::string_view, 2> kSMaxEncs{"Encoder Port",
+                                                      "Data Port"};
+const wpi::SmallVector<std::string_view, 2> kVenomEncs{"Built-in"};
+const wpi::SmallVector<std::string_view, 2> kGeneralEncs{"CANCoder",
+                                                         "roboRIO quadrature"};
+
+wpi::StringMap<wpi::SmallVector<std::string_view, 2>>
+    motorControllerEncoderMap = {{"PWM", kGeneralEncs},
+                                 {"VictorSPX", kGeneralEncs},
+                                 {"TalonSRX", kTalonEncs},
+                                 {"TalonFX", kTalonEncs},
+                                 {"SPARK MAX (Brushless)", kSMaxEncs},
+                                 {"SPARK MAX (Brushed)", kSMaxEncs},
+                                 {"Venom", kVenomEncs}};
+
+const wpi::SmallVector<std::string_view, 4> kPigeonCtors{"0", "WPI_TalonSRX-1"};
+const wpi::SmallVector<std::string_view, 4> kAnalogCtors{"0"};
+const wpi::SmallVector<std::string_view, 4> kNavXCtors{
     "SerialPort.kUSB", "I2C", "SerialPort.kMXP", "SPI.kMXP"};
-const wpi::SmallVector<std::string, 4> kADXRS450Ctors{"SPI.kMXP",
-                                                      "kOnboardCS0"};
-wpi::StringMap<wpi::SmallVector<std::string, 4>> gyroCtorMap = {
+const wpi::SmallVector<std::string_view, 4> kADXRS450Ctors{"SPI.kMXP",
+                                                           "kOnboardCS0"};
+wpi::StringMap<wpi::SmallVector<std::string_view, 4>> gyroCtorMap = {
     {"AnalogGyro", kAnalogCtors},
     {"Pigeon", kPigeonCtors},
     {"ADXRS450", kADXRS450Ctors},
@@ -140,12 +157,7 @@ TEST_F(GenerationTest, GeneralMechanism) {
   for (auto&& motorController : sysid::kMotorControllers) {
     m_settings.motorControllers =
         wpi::SmallVector<std::string, 3>(size, std::string{motorController});
-    for (auto&& encoder : sysid::kEncoders) {
-      if (std::string_view{encoder} != "roboRIO" &&
-          (std::string_view{motorController} == "PWM" ||
-           std::string_view{motorController} == "VictorSPX")) {
-        continue;
-      }
+    for (auto&& encoder : motorControllerEncoderMap[motorController]) {
       m_settings.encoderType = encoder;
       fmt::print(stderr, "Testing: {} and {}\n", motorController, encoder);
 

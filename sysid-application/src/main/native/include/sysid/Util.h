@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <algorithm>
+#include <array>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -67,4 +69,27 @@ std::string GetAbbreviation(std::string_view unit);
  * @param location The file location.
  */
 void SaveFile(std::string_view contents, const fs::path& path);
+
+// C++20 shim for std::string_view::starts_with()
+static constexpr bool starts_with(std::string_view obj,
+                                  std::string_view x) noexcept {
+  return obj.substr(0, x.size()) == x;
+}
+
+// C++20 shim for std::string_view::contains()
+static constexpr bool contains(std::string_view obj,
+                               std::string_view x) noexcept {
+  return obj.npos != obj.find(x);
+}
+
+template <typename Type, std::size_t... sizes>
+constexpr auto concat(const std::array<Type, sizes>&... arrays) {
+  std::array<Type, (sizes + ...)> result;
+  size_t index{};
+
+  ((std::copy_n(arrays.begin(), sizes, result.begin() + index), index += sizes),
+   ...);
+
+  return result;
+}
 }  // namespace sysid

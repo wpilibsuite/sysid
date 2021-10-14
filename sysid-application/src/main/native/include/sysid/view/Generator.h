@@ -5,8 +5,10 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <glass/View.h>
@@ -15,6 +17,7 @@
 #include <wpi/Logger.h>
 #include <wpi/mutex.h>
 
+#include "sysid/Util.h"
 #include "sysid/deploy/DeploySession.h"
 #include "sysid/generation/ConfigManager.h"
 
@@ -29,8 +32,16 @@ static constexpr const char* kMotorControllers[] = {"PWM",
                                                     "SPARK MAX (Brushed)",
                                                     "Venom"};
 
-static constexpr const char* kEncoders[] = {"Built-In", "CANCoder / Alternate",
-                                            "roboRIO"};
+static constexpr std::array<const char*, 2> kGeneralEncoders = {
+    "CANCoder", "roboRIO quadrature"};
+
+static constexpr std::array<const char*, 2> kTalonEncoders = {"Built-in",
+                                                              "Tachometer"};
+
+static constexpr std::array<const char*, 2> kSparkMaxEncoders = {"Encoder Port",
+                                                                 "Data Port"};
+
+static constexpr std::array<const char*, 1> kVenomEncoders = {"Built-in"};
 
 static constexpr const char* kGyros[] = {"Analog", "ADXRS450", "NavX", "Pigeon",
                                          "None"};
@@ -60,6 +71,14 @@ class Generator : public glass::View {
   void SelectCTREVelocityPeriod();
   void UpdateFromConfig();
 
+  void RegularEncoderSetup(bool drive);
+  void RoboRIOEncoderSetup(bool drive);
+  void CANCoderSetup(bool drive);
+
+  template <size_t X, size_t Y>
+  void GetEncoder(const std::array<const char*, X>& specificEncoders,
+                  const std::array<const char*, Y>& generalEncoders);
+
   // Configuration manager along with its settings -- used to generate the JSON
   // configuration.
   std::unique_ptr<ConfigManager> m_manager;
@@ -75,6 +94,8 @@ class Generator : public glass::View {
   int m_gyroIdx = 2;
   int m_unitsIdx = 0;
   int m_periodIdx = 6;
+
+  std::string_view m_prevMainMotorController;
 
   // Keeps track of the number of motor ports the user wants.
   size_t m_occupied = 1;
