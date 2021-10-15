@@ -34,10 +34,13 @@ void Connect(NT_Inst nt, NT_Entry kill) {
   nt::SetEntryValue(kill, nt::Value::MakeBoolean(false));
   nt::Flush(nt);
 
-  // Wait for NT to connect or until it times out.
+  // Wait for NT to connect or fail it if it times out.
   auto time = wpi::Now();
   while (!nt::IsConnected(nt)) {
-    ASSERT_LT(wpi::Now() - time, 1.5E7);
+    if (wpi::Now() - time > 1.5E7) {
+      fmt::print(stderr, "The robot program crashed\n");
+      std::exit(1);
+    }
   }
 }
 
