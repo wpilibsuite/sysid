@@ -25,8 +25,9 @@ class SysIdDrivetrainLogger : public SysIdLogger {
   /**
    * Logs data for a drivetrain mechanism.
    *
-   * Outputs data in form: timestamp, l voltage, r voltage, l position, r
-   * position, l velocity, r velocity, angle, angular rate
+   * When SendData() is called it outputs data in the form: timestamp, l
+   * voltage, r voltage, l position, r position, l velocity, r velocity, angle,
+   * angular rate
    *
    * @param leftPosition the recorded rotations of the left shaft
    * @param rightPosition the recorded rotations of the right shaft

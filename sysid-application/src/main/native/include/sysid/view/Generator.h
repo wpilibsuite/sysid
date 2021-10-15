@@ -67,14 +67,47 @@ class Generator : public glass::View {
                                                    "Drivetrain", "Romi"};
 
  private:
-  void GeneratorUI();
+  /**
+   * Helper method to display widgets to select the CTRE Encoder Velocity Period
+   */
   void SelectCTREVelocityPeriod();
+
+  /**
+   * Updates GUI based on the stored config
+   */
   void UpdateFromConfig();
 
+  /**
+   * Displays the widgets to invert a motor controller specific encoder.
+   *
+   * @param drive True if the encoder setup is for a Drivetrain.
+   */
   void RegularEncoderSetup(bool drive);
+
+  /**
+   * Displays the widgets to setup encoders plugged into the roboRIO
+   *
+   * @param drive True if the encoder setup is for a Drivetrain.
+   */
   void RoboRIOEncoderSetup(bool drive);
+
+  /**
+   * Displays the widgets to setup the CANCoder
+   *
+   * @param drive True if the encoder setup is for a Drivetrain.
+   */
   void CANCoderSetup(bool drive);
 
+  /**
+   * Displays the encoder options for a specific combination of motor controller
+   * specific encoders and general encoders.
+   *
+   * @tparam X The size of the specific encoder array
+   * @tparam Y The size of the general encoder array
+   *
+   * @param specificEncoders The array storing motor controller specific arrays
+   * @param generalEncoder The array storing general encoders.
+   */
   template <size_t X, size_t Y>
   void GetEncoder(const std::array<const char*, X>& specificEncoders,
                   const std::array<const char*, Y>& generalEncoders);

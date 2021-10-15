@@ -52,7 +52,8 @@ void ApplyMedianFilter(std::vector<PreparedData>* data, int window);
  *
  * @param data A pointer to the step voltage data.
  * @param settings A pointer to the settings of an analysis manager object.
- * @param minStepTime The current minimum step test duration.
+ * @param minStepTime The current minimum step test duration as one of the
+ * trimming procedures will remove this amount from the start of the test.
  * @param maxStepTime The maximum step test duration.
  *
  * @return The updated minimum step test duration.
@@ -130,7 +131,8 @@ constexpr double CentralFiniteDifference(F&& f, size_t i, double h) {
  * @param data A pointer to a data vector recently created by the
  *             ConvertToPrepared method
  * @param settings A reference to the analysis settings
- * @param minStepTime A reference to the minimum dynamic test duration
+ * @param minStepTime A reference to the minimum dynamic test duration as one of
+ * the trimming procedures will remove this amount from the start of the test.
  * @param maxStepTime A reference to the maximum dynamic test duration
  * @param unit The angular unit that the arm test is in (only for calculating
  *             cosine data)

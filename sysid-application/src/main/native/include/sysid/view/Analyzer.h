@@ -42,15 +42,60 @@ class Analyzer : public glass::View {
   ~Analyzer() override { AbortDataPrep(); };
 
  private:
+  /**
+   * Handles the logic for selecting a json to analyze
+   */
   void SelectFile();
+
+  /**
+   * Internally turns the raw data into trimmed, filtered, prepared data for
+   * analysis.
+   */
   void PrepareData();
+
+  /**
+   * Calculates feedback and feedforward gains.
+   */
   void Calculate();
+
+  /**
+   * Disables the backend to avoid erroneous calculations from happening.
+   */
   void ResetManagerState();
+
+  /**
+   * Handles the logic of the diagnostic plots
+   */
   void PrepareGraphs();
+
+  /**
+   * Prepares the data, calculates it, and generates graphs. This should be
+   * called when the data needs to be reupdated after user input.
+   */
   void RefreshInformation();
+
+  /**
+   * Kills the data preparation thread
+   */
   void AbortDataPrep();
+
+  /**
+   * Handles the logic for displaying feedforward gains
+   *
+   * @param combined The feedforward gains should be displayed differently if
+   *                 they are on the combined diagnostic plots (combined = true)
+   */
   void DisplayFeedforwardGains(bool combined = false);
+
+  /**
+   * Estimates ideal step test duration, qp, and qv for the LQR based off of the
+   * data given
+   */
   void ConfigParamsOnFileSelect();
+
+  /**
+   * Handles logic of displaying a gain on ImGui
+   */
   void DisplayGain(const char* text, double* data);
 
   /**
