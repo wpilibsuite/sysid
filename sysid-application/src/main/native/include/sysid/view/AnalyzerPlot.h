@@ -66,6 +66,8 @@ class AnalyzerPlot {
   /**
    * Displays voltage-domain plots.
    *
+   * @param plotSize The size of the ImGui Plots
+   *
    * @return Returns true if plots aren't in the loading state
    */
   bool DisplayVoltageDomainPlots(ImVec2 plotSize = ImVec2(-1, 0));
@@ -73,16 +75,35 @@ class AnalyzerPlot {
   /**
    * Displays time-domain plots.
    *
+   * @param The size of the ImGui Plots
+   *
    * @return Returns true if plots aren't in the loading state
    */
   bool DisplayTimeDomainPlots(ImVec2 plotSize = ImVec2(-1, 0));
 
+  /**
+   * Method that displays the plots in a single view for the combined diagnostic
+   * plots
+   */
   void DisplayCombinedPlots();
 
+  /**
+   * Sees if both time domain and voltage domain plots are loaded
+   *
+   * @return If the plots are done loading
+   */
   bool LoadPlots();
 
+  /**
+   * Sets certain flags to true so that the GUI automatically fits the plots
+   */
   void FitPlots();
 
+  /**
+   * Gets the pointer to the stored Root Mean Squared Error for display
+   *
+   * @return A pointer to the RMSE
+   */
   double* GetRMSE() { return &m_RMSE; }
 
  private:

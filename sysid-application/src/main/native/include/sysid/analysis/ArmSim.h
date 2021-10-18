@@ -17,8 +17,8 @@ class ArmSim {
    * @param Kv              Velocity gain.
    * @param Ka              Acceleration gain.
    * @param Kcos            Gravity cosine gain.
-   * @param initialPosition Initial elevator position.
-   * @param initialVelocity Initial elevator velocity.
+   * @param initialPosition Initial arm position.
+   * @param initialVelocity Initial arm velocity.
    */
   ArmSim(double Ks, double Kv, double Ka, double Kcos,
          double initialPosition = 0.0, double initialVelocity = 0.0);

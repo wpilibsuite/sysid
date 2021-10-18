@@ -19,7 +19,8 @@ class SysIdGeneralMechanismLogger : public SysIdLogger {
   /**
    * Logs data for a single-sided mechanism (Elevator, Simple, Arm).
    *
-   * Outputs data in form: timestamp, voltage, position, velocity.
+   * When SendData() is called it outputs data in the form: timestamp, voltage,
+   * position, velocity.
    *
    * @param measuredPosition the recorded rotations of the shaft
    * @param measureVelocity the recorded rotations per second of the shaft

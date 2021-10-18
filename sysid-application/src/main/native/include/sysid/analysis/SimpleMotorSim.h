@@ -16,8 +16,8 @@ class SimpleMotorSim {
    * @param Ks              Static friction gain.
    * @param Kv              Velocity gain.
    * @param Ka              Acceleration gain.
-   * @param initialPosition Initial elevator position.
-   * @param initialVelocity Initial elevator velocity.
+   * @param initialPosition Initial flywheel position.
+   * @param initialVelocity Initial flywheel velocity.
    */
   SimpleMotorSim(double Ks, double Kv, double Ka, double initialPosition = 0.0,
                  double initialVelocity = 0.0);

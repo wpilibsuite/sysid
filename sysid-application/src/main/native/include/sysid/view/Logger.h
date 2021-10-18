@@ -33,6 +33,9 @@ class Logger : public glass::View {
                                            "Radians", "Rotations", "Degrees"};
 
  private:
+  /**
+   * Handles the logic of selecting a folder to save the SysId JSON to
+   */
   void SelectDataFolder();
 
   wpi::Logger& m_logger;

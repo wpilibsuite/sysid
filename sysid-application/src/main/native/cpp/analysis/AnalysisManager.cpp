@@ -65,6 +65,11 @@ static std::vector<PreparedData> ConvertToPrepared(
  * Concatenates a list of vectors to the end of a vector. The contents of the
  * source vectors are copied (not moved) into the new vector. Also sorts the
  * datapoints by timestamp to assist with future simulation.
+ *
+ * @param dest The destination vector
+ * @param srcs The source vectors
+ *
+ * @return The concatenated destination vector
  */
 static std::vector<PreparedData> Concatenate(
     std::vector<PreparedData> dest,
@@ -84,6 +89,15 @@ static std::vector<PreparedData> Concatenate(
   return dest;
 }
 
+/**
+ * To preserve a raw copy of the data, this method saves a raw version
+ * in the dataset StringMap where the key of the raw data starts with "raw-"
+ * before the name of the original data.
+ *
+ * @tparam S The size of the array data that's being used
+ *
+ * @param dataset A reference to the dataset being used
+ */
 template <size_t S>
 static void CopyRawData(
     wpi::StringMap<std::vector<std::array<double, S>>>* dataset) {
@@ -136,13 +150,23 @@ static void StoreDatasets(wpi::StringMap<Storage>* dataset,
  * in the analysis manager dataset.
  *
  * @param json     A reference to the JSON containing all of the collected
- * data.
+ *                 data.
  * @param settings A reference to the settings being used by the analysis
  *                 manager instance.
  * @param factor   The units per rotation to multiply positions and velocities
  *                 by.
- * @param datasets A reference to the datasets object of the relevant analysis
- *                 manager instance.
+ * @param unit The name of the unit being used
+ * @param rawDatasets A reference to the String Map storing the raw datasets
+ * @param filteredDatasets A reference to the String Map storing the filtered
+ *                         datasets
+ * @param startTimes A reference to an array containing the start times for the
+ *                   4 different tests
+ * @param minStepTime A reference to the minimum duration of the step test as
+ *                    one of the trimming procedures will remove this amount
+ *                    from the start of the test.
+ * @param maxStepTime A reference to the maximum duration of the step test
+ *                    mainly for use in the GUI
+ * @param logger A reference to a logger to help with debugging
  */
 static void PrepareGeneralData(
     const wpi::json& json, AnalysisManager::Settings& settings, double factor,
@@ -226,8 +250,17 @@ static void PrepareGeneralData(
  *                   by.
  * @param trackWidth A reference to the std::optional where the track width will
  *                   be stored.
- * @param datasets   A reference to the datasets object of the relevant analysis
- *                   manager instance.
+ * @param rawDatasets A reference to the String Map storing the raw datasets
+ * @param filteredDatasets A reference to the String Map storing the filtered
+ *                         datasets
+ * @param startTimes A reference to an array containing the start times for the
+ *                   4 different tests
+ * @param minStepTime A reference to the minimum duration of the step test as
+ *                    one of the trimming procedures will remove this amount
+ *                    from the start of the test.
+ * @param maxStepTime A reference to the maximum duration of the step test
+ *                    mainly for use in the GUI
+ * @param logger A reference to a logger to help with debugging
  */
 static void PrepareAngularDrivetrainData(
     const wpi::json& json, AnalysisManager::Settings& settings, double factor,
@@ -336,13 +369,22 @@ static void PrepareAngularDrivetrainData(
  * the analysis manager dataset.
  *
  * @param json     A reference to the JSON containing all of the collected
- * data.
+ *                 data.
  * @param settings A reference to the settings being used by the analysis
  *                 manager instance.
  * @param factor   The units per rotation to multiply positions and velocities
  *                 by.
- * @param datasets A reference to the datasets object of the relevant analysis
- *                 manager instance.
+ * @param rawDatasets A reference to the String Map storing the raw datasets
+ * @param filteredDatasets A reference to the String Map storing the filtered
+ *                         datasets
+ * @param startTimes A reference to an array containing the start times for the
+ *                   4 different tests
+ * @param minStepTime A reference to the minimum duration of the step test as
+ *                    one of the trimming procedures will remove this amount
+ *                    from the start of the test.
+ * @param maxStepTime A reference to the maximum duration of the step test
+ *                    mainly for use in the GUI
+ * @param logger A reference to a logger to help with debugging
  */
 static void PrepareLinearDrivetrainData(
     const wpi::json& json, AnalysisManager::Settings& settings, double factor,

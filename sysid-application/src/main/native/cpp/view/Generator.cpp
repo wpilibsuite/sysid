@@ -48,6 +48,16 @@ Generator::Generator(wpi::Logger& logger) : m_logger{logger} {
       glass::GetStorage("NetworkTables Settings").GetStringRef("serverTeam");
 }
 
+/**
+ * Finds the index of a certain string in a C-style array
+ *
+ * @tparam X The size of the array
+ *
+ * @param arr The array to search through
+ * @param value The string value to find
+ *
+ * @return The index of the string value
+ */
 template <size_t X>
 static int GetNewIdx(const char* const (&arr)[X], std::string_view value) {
   auto it = std::find(std::cbegin(arr), std::cend(arr), value);
@@ -58,6 +68,16 @@ static int GetNewIdx(const char* const (&arr)[X], std::string_view value) {
   }
 }
 
+/**
+ * Finds the index of a certain string in a standard array
+ *
+ * @tparam X The size of the array
+ *
+ * @param arr The array to search through
+ * @param value The string value to find
+ *
+ * @return The index of the string value
+ */
 template <size_t X>
 static int GetNewIdx(const std::array<const char*, X>& arr,
                      std::string_view value) {
