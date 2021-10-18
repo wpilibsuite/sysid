@@ -132,7 +132,8 @@ constexpr double CentralFiniteDifference(F&& f, size_t i, double h) {
  *             ConvertToPrepared method
  * @param settings A reference to the analysis settings
  * @param minStepTime A reference to the minimum dynamic test duration as one of
- * the trimming procedures will remove this amount from the start of the test.
+ *                    the trimming procedures will remove this amount from the
+ *                    start of the test.
  * @param maxStepTime A reference to the maximum dynamic test duration
  * @param unit The angular unit that the arm test is in (only for calculating
  *             cosine data)
