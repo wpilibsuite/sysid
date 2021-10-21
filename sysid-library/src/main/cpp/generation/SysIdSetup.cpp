@@ -67,6 +67,7 @@ void AddMotorController(
 
     auto* ctreController =
         dynamic_cast<WPI_BaseMotorController*>(controllers->back().get());
+    ctreController->ConfigFactoryDefault();
     ctreController->SetInverted(inverted);
     ctreController->SetNeutralMode(motorcontrol::NeutralMode::Brake);
   } else if (controller == "SPARK MAX (Brushless)" ||
@@ -80,6 +81,7 @@ void AddMotorController(
     }
 
     auto* sparkMax = static_cast<rev::CANSparkMax*>(controllers->back().get());
+    sparkMax->RestoreFactoryDefaults();
     sparkMax->SetInverted(inverted);
     sparkMax->SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
   } else if (controller == "Venom") {
@@ -164,7 +166,7 @@ void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
                    std::unique_ptr<frc::Encoder>& encoder,
                    std::function<double()>& position,
                    std::function<double()>& rate) {
-  if (encoderType == "Built-In") {
+  if (encoderType == "Built-in") {
     if (starts_with(controllerName, "Talon")) {
       FeedbackDevice feedbackDevice;
       if (controllerName == "TalonSRX") {

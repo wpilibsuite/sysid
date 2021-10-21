@@ -181,7 +181,7 @@ TEST_F(GenerationTest, Drivetrain) {
   m_settings.motorControllers =
       wpi::SmallVector<std::string, 3>(size, std::string{"TalonSRX"});
 
-  m_settings.encoderType = "Built-In";
+  m_settings.encoderType = "Built-in";
 
   // Encoders + Motor controllers already tested, now just need to test the
   // gyros
