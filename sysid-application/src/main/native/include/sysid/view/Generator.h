@@ -35,13 +35,13 @@ static constexpr const char* kMotorControllers[] = {"PWM",
 static constexpr std::array<const char*, 2> kGeneralEncoders = {
     "CANCoder", "roboRIO quadrature"};
 
-static constexpr std::array<const char*, 2> kTalonEncoders = {"Built-in",
-                                                              "Tachometer"};
+static constexpr std::array<const char*, 2> kTalonSRXEncoders = {"Built-in",
+                                                                 "Tachometer"};
+
+static constexpr std::array<const char*, 1> kBuiltInEncoders = {"Built-in"};
 
 static constexpr std::array<const char*, 2> kSparkMaxEncoders = {"Encoder Port",
                                                                  "Data Port"};
-
-static constexpr std::array<const char*, 1> kVenomEncoders = {"Built-in"};
 
 static constexpr const char* kGyros[] = {"Analog", "ADXRS450", "NavX", "Pigeon",
                                          "None"};

@@ -30,7 +30,7 @@ const wpi::SmallVector<std::string_view, 2> kTalonEncs{"Built-in",
                                                        "Tachometer"};
 const wpi::SmallVector<std::string_view, 2> kSMaxEncs{"Encoder Port",
                                                       "Data Port"};
-const wpi::SmallVector<std::string_view, 2> kVenomEncs{"Built-in"};
+const wpi::SmallVector<std::string_view, 2> kBuiltInEncs{"Built-in"};
 const wpi::SmallVector<std::string_view, 2> kGeneralEncs{"CANCoder",
                                                          "roboRIO quadrature"};
 
@@ -38,10 +38,10 @@ wpi::StringMap<wpi::SmallVector<std::string_view, 2>>
     motorControllerEncoderMap = {{"PWM", kGeneralEncs},
                                  {"VictorSPX", kGeneralEncs},
                                  {"TalonSRX", kTalonEncs},
-                                 {"TalonFX", kTalonEncs},
+                                 {"TalonFX", kBuiltInEncs},
                                  {"SPARK MAX (Brushless)", kSMaxEncs},
                                  {"SPARK MAX (Brushed)", kSMaxEncs},
-                                 {"Venom", kVenomEncs}};
+                                 {"Venom", kBuiltInEncs}};
 
 const wpi::SmallVector<std::string_view, 4> kPigeonCtors{"0", "WPI_TalonSRX-1"};
 const wpi::SmallVector<std::string_view, 4> kAnalogCtors{"0"};
