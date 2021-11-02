@@ -162,13 +162,19 @@ void Generator::UpdateFromConfig() {
   // Idxs
   std::string_view mainMotorController{m_settings.motorControllers[0]};
   if (starts_with(mainMotorController, "Talon")) {
-    m_encoderIdx = GetNewIdx(concat(kTalonEncoders, kGeneralEncoders),
-                             m_settings.encoderType);
+    if (mainMotorController == "TalonFX") {
+      m_encoderIdx = GetNewIdx(concat(kBuiltInEncoders, kGeneralEncoders),
+                               m_settings.encoderType);
+    } else {
+      m_encoderIdx = GetNewIdx(concat(kTalonSRXEncoders, kGeneralEncoders),
+                               m_settings.encoderType);
+    }
+
   } else if (starts_with(mainMotorController, "SPARK MAX")) {
     m_encoderIdx = GetNewIdx(concat(kSparkMaxEncoders, kGeneralEncoders),
                              m_settings.encoderType);
   } else if (mainMotorController == "Venom") {
-    m_encoderIdx = GetNewIdx(concat(kVenomEncoders, kGeneralEncoders),
+    m_encoderIdx = GetNewIdx(concat(kBuiltInEncoders, kGeneralEncoders),
                              m_settings.encoderType);
   } else {
     m_encoderIdx = GetNewIdx(kGeneralEncoders, m_settings.encoderType);
@@ -342,7 +348,11 @@ void Generator::Display() {
   // Add encoder selection.
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
   if (starts_with(mainMotorController, "Talon")) {
-    GetEncoder(kTalonEncoders, kGeneralEncoders);
+    if (mainMotorController == "TalonFX") {
+      GetEncoder(kBuiltInEncoders, kGeneralEncoders);
+    } else {
+      GetEncoder(kTalonSRXEncoders, kGeneralEncoders);
+    }
     if (m_encoderIdx <= 1) {
       RegularEncoderSetup(drive);
     } else if (m_encoderIdx == 2) {
@@ -365,7 +375,7 @@ void Generator::Display() {
       RoboRIOEncoderSetup(drive);
     }
   } else if (mainMotorController == "Venom") {
-    GetEncoder(kVenomEncoders, kGeneralEncoders);
+    GetEncoder(kBuiltInEncoders, kGeneralEncoders);
     if (m_encoderIdx == 0) {
       RegularEncoderSetup(drive);
     } else if (m_encoderIdx == 1) {
