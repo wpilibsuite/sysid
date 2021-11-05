@@ -31,15 +31,15 @@ const wpi::SmallVector<std::string_view, 2> kTalonEncs{"Built-in",
 const wpi::SmallVector<std::string_view, 2> kSMaxEncs{"Encoder Port",
                                                       "Data Port"};
 const wpi::SmallVector<std::string_view, 2> kBuiltInEncs{"Built-in"};
-const wpi::SmallVector<std::string_view, 2> kGeneralEncs{"CANCoder",
+const wpi::SmallVector<std::string_view, 2> kGeneralEncs{// "CANCoder",
                                                          "roboRIO quadrature"};
 
 wpi::StringMap<wpi::SmallVector<std::string_view, 2>>
     motorControllerEncoderMap = {
         {"PWM", kGeneralEncs},
-        {"VictorSPX", kGeneralEncs},
-        {"TalonSRX", kTalonEncs},
-        {"TalonFX", kBuiltInEncs},
+        //  {"VictorSPX", kGeneralEncs},
+        //  {"TalonSRX", kTalonEncs},
+        //  {"TalonFX", kBuiltInEncs},
         // {"SPARK MAX (Brushless)", kSMaxEncs},
         // {"SPARK MAX (Brushed)", kSMaxEncs},
         // {"Venom", kBuiltInEncs}
@@ -53,8 +53,8 @@ const wpi::SmallVector<std::string_view, 4> kADXRS450Ctors{"SPI.kMXP",
                                                            "kOnboardCS0"};
 wpi::StringMap<wpi::SmallVector<std::string_view, 4>> gyroCtorMap = {
     {"AnalogGyro", kAnalogCtors},
-    {"Pigeon", kPigeonCtors},
-    {"ADXRS450", kADXRS450Ctors},
+    // {"Pigeon", kPigeonCtors},
+    // {"ADXRS450", kADXRS450Ctors},
     // FIXME: Waiting on Linux and macOS builds for navX AHRS
     // {"NavX", kNavXCtors},
     {"None", kAnalogCtors}};
@@ -179,11 +179,13 @@ TEST_F(GenerationTest, Drivetrain) {
   SetUp("sysid-projects:drive");
   constexpr size_t size = 2;
 
+  // FIXME: Switch back to talon + built-in setup once CTRE is fixed
   // Talons were chosen due to the pigeon having a case where it plugs into one
+  // (Temporarily ignored)
   m_settings.motorControllers =
-      wpi::SmallVector<std::string, 3>(size, std::string{"TalonSRX"});
+      wpi::SmallVector<std::string, 3>(size, std::string{"PWM"});
 
-  m_settings.encoderType = "Built-in";
+  m_settings.encoderType = "roboRIO quadrature";
 
   // Encoders + Motor controllers already tested, now just need to test the
   // gyros

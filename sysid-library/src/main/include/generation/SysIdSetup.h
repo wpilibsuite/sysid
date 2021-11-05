@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <ctre/Phoenix.h>
+// #include <ctre/Phoenix.h>
 
 #include <functional>
 #include <memory>
@@ -79,7 +79,7 @@ void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
                    double cpr, int numSamples, std::string_view controllerName,
                    frc::MotorController* controller, bool encoderInverted,
                    const std::vector<int>& encoderPorts,
-                   std::unique_ptr<CANCoder>& cancoder,
+                   // std::unique_ptr<CANCoder>& cancoder,
                    std::unique_ptr<frc::Encoder>& encoder,
                    std::function<double()>& position,
                    std::function<double()>& rate);

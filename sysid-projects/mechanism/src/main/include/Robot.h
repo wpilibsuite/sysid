@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <ctre/Phoenix.h>
+// #include <ctre/Phoenix.h>
 
 #include <functional>
 #include <memory>
@@ -40,7 +40,7 @@ class Robot : public frc::TimedRobot {
   std::function<double()> m_position;
   std::function<double()> m_rate;
   wpi::json m_json;
-  std::unique_ptr<CANCoder> m_cancoder;
+  // std::unique_ptr<CANCoder> m_cancoder;
   std::unique_ptr<frc::Encoder> m_encoder;
   SysIdGeneralMechanismLogger m_logger;
 };

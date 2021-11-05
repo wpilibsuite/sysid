@@ -72,11 +72,11 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
     fmt::print("Setup encoders\n");
     SetupEncoders(encoderType, isEncoding, period, cpr * gearing, numSamples,
                   controllerNames[0], m_leftControllers.at(0).get(),
-                  leftEncoderInverted, leftEncoderPorts, m_leftCancoder,
+                  leftEncoderInverted, leftEncoderPorts,  // m_leftCancoder,
                   m_leftEncoder, m_leftPosition, m_leftRate);
     SetupEncoders(encoderType, isEncoding, period, cpr * gearing, numSamples,
                   controllerNames[0], m_rightControllers.at(0).get(),
-                  rightEncoderInverted, rightEncoderPorts, m_rightCancoder,
+                  rightEncoderInverted, rightEncoderPorts,  // m_rightCancoder,
                   m_rightEncoder, m_rightPosition, m_rightRate);
 
     fmt::print("Setup gyro\n");
@@ -90,49 +90,51 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 
       fmt::print("Port String: {}\n", portStr);
       // converts gyroCtor into port #
-      int srxPort = std::stoi(portStr);
-      if (gyroCtor.find("WPI_TalonSRX") != std::string_view::npos) {
-        bool talonDeclared = false;
-        // Check if there is a Talon Port in Left Ports
-        auto findPort = std::find(leftPorts.begin(), leftPorts.end(), srxPort);
+      // int srxPort = std::stoi(portStr);
+      // if (gyroCtor.find("WPI_TalonSRX") != std::string_view::npos) {
+      //   bool talonDeclared = false;
+      //   // Check if there is a Talon Port in Left Ports
+      //   auto findPort = std::find(leftPorts.begin(), leftPorts.end(),
+      //   srxPort);
 
-        // Check Right Ports if not found
-        if (findPort == leftPorts.end()) {
-          findPort = std::find(rightPorts.begin(), rightPorts.end(), srxPort);
-          if (findPort != rightPorts.end() &&
-              controllerNames[findPort - rightPorts.begin()] == "TalonSRX") {
-            m_pigeon = std::make_unique<PigeonIMU>(dynamic_cast<WPI_TalonSRX*>(
-                m_rightControllers.at(findPort - rightPorts.begin()).get()));
-            talonDeclared = true;
-          }
-        } else if (controllerNames[findPort - leftPorts.begin()] ==
-                   "TalonSRX") {
-          m_pigeon = std::make_unique<PigeonIMU>(dynamic_cast<WPI_TalonSRX*>(
-              m_leftControllers.at(findPort - leftPorts.begin()).get()));
-          talonDeclared = true;
-        }
+      // Check Right Ports if not found
+      //   if (findPort == leftPorts.end()) {
+      //     findPort = std::find(rightPorts.begin(), rightPorts.end(),
+      //     srxPort); if (findPort != rightPorts.end() &&
+      //         controllerNames[findPort - rightPorts.begin()] == "TalonSRX") {
+      //       m_pigeon =
+      //       std::make_unique<PigeonIMU>(dynamic_cast<WPI_TalonSRX*>(
+      //           m_rightControllers.at(findPort - rightPorts.begin()).get()));
+      //       talonDeclared = true;
+      //     }
+      //   } else if (controllerNames[findPort - leftPorts.begin()] ==
+      //              "TalonSRX") {
+      //     m_pigeon = std::make_unique<PigeonIMU>(dynamic_cast<WPI_TalonSRX*>(
+      //         m_leftControllers.at(findPort - leftPorts.begin()).get()));
+      //     talonDeclared = true;
+      //   }
 
-        // If it isn't tied to an existing Talon, create a new object
-        if (!talonDeclared) {
-          m_pigeon = std::make_unique<PigeonIMU>(new WPI_TalonSRX(srxPort));
-        }
-      } else {
-        m_pigeon = std::make_unique<PigeonIMU>(srxPort);
-      }
+      //   // If it isn't tied to an existing Talon, create a new object
+      //   if (!talonDeclared) {
+      //     m_pigeon = std::make_unique<PigeonIMU>(new WPI_TalonSRX(srxPort));
+      //   }
+      // } else {
+      //   m_pigeon = std::make_unique<PigeonIMU>(srxPort);
+      // }
 
-      // setup functions
-      m_gyroPosition = [&, this] {
-        double xyz[3];
-        m_pigeon->GetAccumGyro(xyz);
-        return xyz[2];
-      };
+      // // setup functions
+      // m_gyroPosition = [&, this] {
+      //   double xyz[3];
+      //   m_pigeon->GetAccumGyro(xyz);
+      //   return xyz[2];
+      // };
 
-      m_gyroRate = [&, this] {
-        double xyz_dps[3];
-        m_pigeon->GetRawGyro(xyz_dps);
-        units::degrees_per_second_t rate{xyz_dps[2]};
-        return units::radians_per_second_t{rate}.to<double>();
-      };
+      // m_gyroRate = [&, this] {
+      //   double xyz_dps[3];
+      //   m_pigeon->GetRawGyro(xyz_dps);
+      //   units::degrees_per_second_t rate{xyz_dps[2]};
+      //   return units::radians_per_second_t{rate}.to<double>();
+      // };
 
       // } else if (gyroType != "None") {
       //   if (gyroType == "ADXRS450") {

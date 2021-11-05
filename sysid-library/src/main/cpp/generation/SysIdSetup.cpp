@@ -55,18 +55,18 @@ void AddMotorController(
   if (controller == "TalonSRX" || controller == "VictorSPX" ||
       controller == "TalonFX") {
     if (controller == "TalonSRX") {
-      controllers->push_back(std::make_unique<WPI_TalonSRX>(port));
+      //   controllers->push_back(std::make_unique<WPI_TalonSRX>(port));
     } else if (controller == "TalonFX") {
-      controllers->emplace_back(std::make_unique<WPI_TalonFX>(port));
+      //   controllers->emplace_back(std::make_unique<WPI_TalonFX>(port));
     } else {
-      controllers->emplace_back(std::make_unique<WPI_VictorSPX>(port));
+      //   controllers->emplace_back(std::make_unique<WPI_VictorSPX>(port));
     }
 
-    auto* ctreController =
-        dynamic_cast<WPI_BaseMotorController*>(controllers->back().get());
-    ctreController->ConfigFactoryDefault();
-    ctreController->SetInverted(inverted);
-    ctreController->SetNeutralMode(motorcontrol::NeutralMode::Brake);
+    // auto* ctreController =
+    //     dynamic_cast<WPI_BaseMotorController*>(controllers->back().get());
+    // ctreController->ConfigFactoryDefault();
+    // ctreController->SetInverted(inverted);
+    // ctreController->SetNeutralMode(motorcontrol::NeutralMode::Brake);
   } else if (controller == "SPARK MAX (Brushless)" ||
              controller == "SPARK MAX (Brushed)") {
     if (controller == "SPARK MAX (Brushless)") {
@@ -96,64 +96,64 @@ void AddMotorController(
   }
 }
 
-static sensors::SensorVelocityMeasPeriod getCTREVelocityPeriod(int period) {
-  switch (period) {
-    case 1:
-      return sensors::SensorVelocityMeasPeriod::Period_1Ms;
-    case 2:
-      return sensors::SensorVelocityMeasPeriod::Period_2Ms;
-    case 5:
-      return sensors::SensorVelocityMeasPeriod::Period_5Ms;
-    case 10:
-      return sensors::SensorVelocityMeasPeriod::Period_10Ms;
-    case 25:
-      return sensors::SensorVelocityMeasPeriod::Period_25Ms;
-    case 50:
-      return sensors::SensorVelocityMeasPeriod::Period_50Ms;
-    default:
-      return sensors::SensorVelocityMeasPeriod::Period_100Ms;
-  }
-}
+// static sensors::SensorVelocityMeasPeriod getCTREVelocityPeriod(int period) {
+//   switch (period) {
+//     case 1:
+//       return sensors::SensorVelocityMeasPeriod::Period_1Ms;
+//     case 2:
+//       return sensors::SensorVelocityMeasPeriod::Period_2Ms;
+//     case 5:
+//       return sensors::SensorVelocityMeasPeriod::Period_5Ms;
+//     case 10:
+//       return sensors::SensorVelocityMeasPeriod::Period_10Ms;
+//     case 25:
+//       return sensors::SensorVelocityMeasPeriod::Period_25Ms;
+//     case 50:
+//       return sensors::SensorVelocityMeasPeriod::Period_50Ms;
+//     default:
+//       return sensors::SensorVelocityMeasPeriod::Period_100Ms;
+//   }
+// }
 
-static void SetupCTREEncoder(frc::MotorController* controller,
-                             FeedbackDevice feedbackDevice, int period,
-                             double cpr, int numSamples, bool encoderInverted,
-                             std::function<double()>& position,
-                             std::function<double()>& rate) {
-  auto* talonController = dynamic_cast<WPI_BaseMotorController*>(controller);
-  talonController->ConfigSelectedFeedbackSensor(feedbackDevice);
-  talonController->SetSensorPhase(encoderInverted);
-  talonController->ConfigVelocityMeasurementWindow(numSamples);
+// static void SetupCTREEncoder(frc::MotorController* controller,
+//                              FeedbackDevice feedbackDevice, int period,
+//                              double cpr, int numSamples, bool
+//                              encoderInverted, std::function<double()>&
+//                              position, std::function<double()>& rate) {
+//   auto* talonController = dynamic_cast<WPI_BaseMotorController*>(controller);
+//   talonController->ConfigSelectedFeedbackSensor(feedbackDevice);
+//   talonController->SetSensorPhase(encoderInverted);
+//   talonController->ConfigVelocityMeasurementWindow(numSamples);
 
-  // Determine velocity measurement period
-  auto talonPeriod = getCTREVelocityPeriod(period);
+//   // Determine velocity measurement period
+//   auto talonPeriod = getCTREVelocityPeriod(period);
 
-  talonController->ConfigVelocityMeasurementPeriod(talonPeriod);
-  position = [=] { return talonController->GetSelectedSensorPosition() / cpr; };
-  rate = [=] {
-    return talonController->GetSelectedSensorVelocity() / cpr /
-           0.1;  // Conversion factor from 100 ms to seconds
-  };
-}
+//   talonController->ConfigVelocityMeasurementPeriod(talonPeriod);
+//   position = [=] { return talonController->GetSelectedSensorPosition() / cpr;
+//   }; rate = [=] {
+//     return talonController->GetSelectedSensorVelocity() / cpr /
+//            0.1;  // Conversion factor from 100 ms to seconds
+//   };
+// }
 
 void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
                    double cpr, int numSamples, std::string_view controllerName,
                    frc::MotorController* controller, bool encoderInverted,
                    const std::vector<int>& encoderPorts,
-                   std::unique_ptr<CANCoder>& cancoder,
+                   // std::unique_ptr<CANCoder>& cancoder,
                    std::unique_ptr<frc::Encoder>& encoder,
                    std::function<double()>& position,
                    std::function<double()>& rate) {
   if (encoderType == "Built-in") {
     if (starts_with(controllerName, "Talon")) {
-      FeedbackDevice feedbackDevice;
-      if (controllerName == "TalonSRX") {
-        feedbackDevice = FeedbackDevice::QuadEncoder;
-      } else {
-        feedbackDevice = FeedbackDevice::IntegratedSensor;
-      }
-      SetupCTREEncoder(controller, feedbackDevice, period, cpr, numSamples,
-                       encoderInverted, position, rate);
+      // FeedbackDevice feedbackDevice;
+      // if (controllerName == "TalonSRX") {
+      //   feedbackDevice = FeedbackDevice::QuadEncoder;
+      // } else {
+      //   feedbackDevice = FeedbackDevice::IntegratedSensor;
+      // }
+      // SetupCTREEncoder(controller, feedbackDevice, period, cpr, numSamples,
+      //                  encoderInverted, position, rate);
     } else {  // Venom
       //   auto* venom = static_cast<frc::CANVenom*>(controller);
       //   position = [=] { return venom->GetPosition(); };
@@ -204,20 +204,20 @@ void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
     //            60;
     //   };
   } else if (encoderType == "Tachometer") {
-    SetupCTREEncoder(controller, FeedbackDevice::Tachometer, period, cpr,
-                     numSamples, encoderInverted, position, rate);
+    // SetupCTREEncoder(controller, FeedbackDevice::Tachometer, period, cpr,
+    //                  numSamples, encoderInverted, position, rate);
   } else if (encoderType == "CANCoder") {
-    cancoder = std::make_unique<CANCoder>(encoderPorts[0]);
-    cancoder->ConfigSensorDirection(encoderInverted);
+    // cancoder = std::make_unique<CANCoder>(encoderPorts[0]);
+    // cancoder->ConfigSensorDirection(encoderInverted);
 
-    sensors::SensorVelocityMeasPeriod cancoderPeriod =
-        getCTREVelocityPeriod(period);
+    // sensors::SensorVelocityMeasPeriod cancoderPeriod =
+    //     getCTREVelocityPeriod(period);
 
-    cancoder->ConfigVelocityMeasurementPeriod(cancoderPeriod);
-    cancoder->ConfigVelocityMeasurementWindow(numSamples);
+    // cancoder->ConfigVelocityMeasurementPeriod(cancoderPeriod);
+    // cancoder->ConfigVelocityMeasurementWindow(numSamples);
 
-    position = [&] { return cancoder->GetPosition() / cpr; };
-    rate = [&] { return cancoder->GetVelocity() / cpr; };
+    // position = [&] { return cancoder->GetPosition() / cpr; };
+    // rate = [&] { return cancoder->GetVelocity() / cpr; };
   } else {
     if (isEncoding) {
       encoder = std::make_unique<frc::Encoder>(
