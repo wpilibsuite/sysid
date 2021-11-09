@@ -4,6 +4,12 @@ plugins {
   id "edu.wpi.first.GradleRIO"
 }
 
+wpi.wpilibVersion = '2022.0.0-alpha-2-37-ge47451f'
+wpi.wpimathVersion = '2022.0.0-alpha-2-37-ge47451f'
+
+// For using remote development artifacts
+wpi.maven.useDevelopment = true
+
 // Define my targets (RoboRIO) and artifacts (deployable files)
 // This is added by GradleRIO's backing project EmbeddedTools.
 deploy {

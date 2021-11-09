@@ -6,14 +6,14 @@
 
 #include <frc/AnalogGyro.h>
 #include <frc/Encoder.h>
-#include <frc/PWMVictorSPX.h>
 #include <frc/RobotController.h>
-#include <frc/SpeedControllerGroup.h>
+#include <frc/motorcontrol/MotorControllerGroup.h>
+#include <frc/motorcontrol/PWMVictorSPX.h>
 #include <frc/simulation/EncoderSim.h>
 #include <frc/simulation/SingleJointedArmSim.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc/system/plant/LinearSystemId.h>
-#include <wpi/math>
+#include <wpi/numbers>
 
 #include "Constants.h"
 #include "interface/SysIdGeneralMechanism.h"
@@ -27,7 +27,7 @@ class Arm : public SysIdGeneralMechanism {
     // Set the distance per pulse for the flywheel encoders. We can simply use
     // the 1 divided by the resolution as that denotes one rotation of the
     // flywheel.
-    m_encoder.SetDistancePerPulse(2 * wpi::math::pi / kEncoderResolution);
+    m_encoder.SetDistancePerPulse(2 * wpi::numbers::pi / kEncoderResolution);
 
     m_encoder.Reset();
   }
@@ -40,10 +40,10 @@ class Arm : public SysIdGeneralMechanism {
   void SimulationPeriodic();
 
   void ResetReadings() {
-    m_armSimulator.SetState(frc::MakeMatrix<2, 1>(wpi::math::pi / 2, 0.0));
+    m_armSimulator.SetState(frc::MakeMatrix<2, 1>(wpi::numbers::pi / 2, 0.0));
     m_armSimulator.Update(5_ms);
     m_encoderSim.SetRate(0);
-    m_encoderSim.SetDistance(wpi::math::pi / 2);
+    m_encoderSim.SetDistance(wpi::numbers::pi / 2);
   }
 
   void Periodic() {
@@ -64,7 +64,7 @@ class Arm : public SysIdGeneralMechanism {
   frc::PWMVictorSPX m_leader{Constants::Arm::kLeaderPort};
   frc::PWMVictorSPX m_follower{Constants::Arm::kFollowerPort};
 
-  frc::SpeedControllerGroup m_group{m_leader, m_follower};
+  frc::MotorControllerGroup m_group{m_leader, m_follower};
 
   frc::Encoder m_encoder{Constants::Arm::kEncoderPorts[0],
                          Constants::Arm::kEncoderPorts[1]};

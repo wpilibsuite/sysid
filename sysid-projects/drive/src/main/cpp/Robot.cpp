@@ -10,6 +10,7 @@
 #include <string>
 #include <string_view>
 
+#include <fmt/format.h>
 #include <frc/ADXRS450_Gyro.h>
 #include <frc/AnalogGyro.h>
 // #include <frc/romi/RomiGyro.h>
@@ -25,8 +26,8 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
   m_json = GetConfigJson();
 
   try {
-    wpi::outs() << "Read JSON\n";
-    wpi::outs().flush();
+    fmt::print("Read JSON\n");
+
     std::vector<int> leftPorts =
         m_json.at("primary motor ports").get<std::vector<int>>();
     std::vector<std::string> controllerNames =
@@ -60,8 +61,7 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 
     int period = m_json.at("velocity measurement period").get<int>();
 
-    wpi::outs() << "Setup motors\n";
-    wpi::outs().flush();
+    fmt::print("Setup motors\n");
     for (size_t i = 0; i < leftPorts.size(); i++) {
       AddMotorController(leftPorts[i], controllerNames[i],
                          leftMotorsInverted[i], &m_leftControllers);
@@ -69,19 +69,17 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
                          rightMotorsInverted[i], &m_rightControllers);
     }
 
-    wpi::outs() << "Setup encoders\n";
-    wpi::outs().flush();
+    fmt::print("Setup encoders\n");
     SetupEncoders(encoderType, isEncoding, period, cpr * gearing, numSamples,
                   controllerNames[0], m_leftControllers.at(0).get(),
-                  leftEncoderInverted, leftEncoderPorts, m_leftCancoder,
+                  leftEncoderInverted, leftEncoderPorts,  // m_leftCancoder,
                   m_leftEncoder, m_leftPosition, m_leftRate);
     SetupEncoders(encoderType, isEncoding, period, cpr * gearing, numSamples,
                   controllerNames[0], m_rightControllers.at(0).get(),
-                  rightEncoderInverted, rightEncoderPorts, m_rightCancoder,
+                  rightEncoderInverted, rightEncoderPorts,  // m_rightCancoder,
                   m_rightEncoder, m_rightPosition, m_rightRate);
 
-    wpi::outs() << "setup gyro\n";
-    wpi::outs().flush();
+    fmt::print("Setup gyro\n");
     if (gyroType == "Pigeon") {
       std::string portStr = "";
       if (gyroCtor.find("WPI_TalonSRX") != std::string_view::npos) {
@@ -90,101 +88,107 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
         portStr = gyroCtor;
       }
 
-      wpi::outs() << portStr << "\n";
-      wpi::outs().flush();
+      fmt::print("Port String: {}\n", portStr);
       // converts gyroCtor into port #
-      int srxPort = std::stoi(portStr);
-      if (gyroCtor.find("WPI_TalonSRX") != std::string_view::npos) {
-        bool talonDeclared = false;
-        // Check if there is a Talon Port in Left Ports
-        auto findPort = std::find(leftPorts.begin(), leftPorts.end(), srxPort);
+      // int srxPort = std::stoi(portStr);
+      // if (gyroCtor.find("WPI_TalonSRX") != std::string_view::npos) {
+      //   bool talonDeclared = false;
+      //   // Check if there is a Talon Port in Left Ports
+      //   auto findPort = std::find(leftPorts.begin(), leftPorts.end(),
+      //   srxPort);
 
-        // Check Right Ports if not found
-        if (findPort == leftPorts.end()) {
-          findPort = std::find(rightPorts.begin(), rightPorts.end(), srxPort);
-          if (findPort != rightPorts.end() &&
-              controllerNames[findPort - rightPorts.begin()] == "TalonSRX") {
-            m_pigeon = std::make_unique<PigeonIMU>(dynamic_cast<WPI_TalonSRX*>(
-                m_rightControllers.at(findPort - rightPorts.begin()).get()));
-            talonDeclared = true;
-          }
-        } else if (controllerNames[findPort - leftPorts.begin()] ==
-                   "TalonSRX") {
-          m_pigeon = std::make_unique<PigeonIMU>(dynamic_cast<WPI_TalonSRX*>(
-              m_leftControllers.at(findPort - leftPorts.begin()).get()));
-          talonDeclared = true;
-        }
+      // Check Right Ports if not found
+      //   if (findPort == leftPorts.end()) {
+      //     findPort = std::find(rightPorts.begin(), rightPorts.end(),
+      //     srxPort); if (findPort != rightPorts.end() &&
+      //         controllerNames[findPort - rightPorts.begin()] == "TalonSRX") {
+      //       m_pigeon =
+      //       std::make_unique<PigeonIMU>(dynamic_cast<WPI_TalonSRX*>(
+      //           m_rightControllers.at(findPort - rightPorts.begin()).get()));
+      //       talonDeclared = true;
+      //     }
+      //   } else if (controllerNames[findPort - leftPorts.begin()] ==
+      //              "TalonSRX") {
+      //     m_pigeon = std::make_unique<PigeonIMU>(dynamic_cast<WPI_TalonSRX*>(
+      //         m_leftControllers.at(findPort - leftPorts.begin()).get()));
+      //     talonDeclared = true;
+      //   }
 
-        // If it isn't tied to an existing Talon, create a new object
-        if (!talonDeclared) {
-          m_pigeon = std::make_unique<PigeonIMU>(new WPI_TalonSRX(srxPort));
-        }
-      } else {
-        m_pigeon = std::make_unique<PigeonIMU>(srxPort);
-      }
+      //   // If it isn't tied to an existing Talon, create a new object
+      //   if (!talonDeclared) {
+      //     m_pigeon = std::make_unique<PigeonIMU>(new WPI_TalonSRX(srxPort));
+      //   }
+      // } else {
+      //   m_pigeon = std::make_unique<PigeonIMU>(srxPort);
+      // }
 
-      // setup functions
-      m_gyroPosition = [&, this] {
-        double xyz[3];
-        m_pigeon->GetAccumGyro(xyz);
-        return xyz[2];
-      };
+      // // setup functions
+      // m_gyroPosition = [&, this] {
+      //   double xyz[3];
+      //   m_pigeon->GetAccumGyro(xyz);
+      //   return xyz[2];
+      // };
 
-      m_gyroRate = [&, this] {
-        double xyz_dps[3];
-        m_pigeon->GetRawGyro(xyz_dps);
-        units::degrees_per_second_t rate{xyz_dps[2]};
-        return units::radians_per_second_t{rate}.to<double>();
-      };
+      // m_gyroRate = [&, this] {
+      //   double xyz_dps[3];
+      //   m_pigeon->GetRawGyro(xyz_dps);
+      //   units::degrees_per_second_t rate{xyz_dps[2]};
+      //   return units::radians_per_second_t{rate}.to<double>();
+      // };
 
-    } else if (gyroType != "None") {
-      if (gyroType == "ADXRS450") {
-        if (gyroCtor == "SPI.kMXP") {
-          m_gyro = std::make_unique<frc::ADXRS450_Gyro>(frc::SPI::Port::kMXP);
-        } else {
-          m_gyro =
-              std::make_unique<frc::ADXRS450_Gyro>(frc::SPI::Port::kOnboardCS0);
-        }
-        // FIXME: waiting on Linux and macOS builds for navX AHRS
-        // } else if (gyroType == "NavX") {
-        //   if (gyroCtor == "SerialPort.kUSB") {
-        //     m_gyro = std::make_unique<AHRS>(frc::SerialPort::Port::kUSB);
-        //   } else if (gyroCtor == "I2C") {
-        //     m_gyro = std::make_unique<AHRS>(frc::I2C::Port::kMXP);
-        //   } else if (gyroCtor == "SerialPort.kMXP") {
-        //     m_gyro = std::make_unique<AHRS>(frc::SerialPort::Port::kMXP);
-        //   } else {
-        //     m_gyro = std::make_unique<AHRS>(frc::SPI::Port::kMXP);
-        //   }
-        // FIXME: Update Romi Gyro once vendordep is out
-        // } else if (gyroType == "Romi") {
-        //   m_gyro = std::make_unique<frc::RomiGyro>();
-      } else {
-        try {
-          m_gyro = std::make_unique<frc::AnalogGyro>(std::stoi(gyroCtor));
-        } catch (std::invalid_argument& e) {
-          m_gyro = std::make_unique<frc::AnalogGyro>(0);
-        }
-      }
+      // } else if (gyroType != "None") {
+      //   if (gyroType == "ADXRS450") {
+      //     if (gyroCtor == "SPI.kMXP") {
+      //       m_gyro =
+      //       std::make_unique<frc::ADXRS450_Gyro>(frc::SPI::Port::kMXP);
+      //     } else {
+      //       m_gyro =
+      //           std::make_unique<frc::ADXRS450_Gyro>(frc::SPI::Port::kOnboardCS0);
+      //     }
+      //     // FIXME: waiting on Linux and macOS builds for navX AHRS
+      //     // } else if (gyroType == "NavX") {
+      //     //   if (gyroCtor == "SerialPort.kUSB") {
+      //     //     m_gyro =
+      //     std::make_unique<AHRS>(frc::SerialPort::Port::kUSB);
+      //     //   } else if (gyroCtor == "I2C") {
+      //     //     m_gyro = std::make_unique<AHRS>(frc::I2C::Port::kMXP);
+      //     //   } else if (gyroCtor == "SerialPort.kMXP") {
+      //     //     m_gyro =
+      //     std::make_unique<AHRS>(frc::SerialPort::Port::kMXP);
+      //     //   } else {
+      //     //     m_gyro = std::make_unique<AHRS>(frc::SPI::Port::kMXP);
+      //     //   }
+      //     // FIXME: Update Romi Gyro once vendordep is out
+      //     // } else if (gyroType == "Romi") {
+      //     //   m_gyro = std::make_unique<frc::RomiGyro>();
+      //   } else {
+      //     try {
+      //       m_gyro = std::make_unique<frc::AnalogGyro>(std::stoi(gyroCtor));
+      //     } catch (std::invalid_argument& e) {
+      //       m_gyro = std::make_unique<frc::AnalogGyro>(0);
+      //     }
+      //   }
 
-      m_gyroPosition = [&, this] {
-        return units::radian_t(units::degree_t{m_gyro->GetAngle()})
-            .to<double>();
-      };
+      //   m_gyroPosition = [&, this] {
+      //     return units::radian_t(units::degree_t{m_gyro->GetAngle()})
+      //         .to<double>();
+      //   };
 
-      m_gyroRate = [&, this] {
-        return units::radians_per_second_t(
-                   units::degrees_per_second_t{m_gyro->GetAngle()})
-            .to<double>();
-      };
-    } else {
+      //   m_gyroRate = [&, this] {
+      //     return units::radians_per_second_t(
+      //                units::degrees_per_second_t{m_gyro->GetAngle()})
+      //         .to<double>();
+      //   };
+      // } else {
       // Default behaviour is to make the gyro functions return zero
+    } else {
       m_gyroPosition = [&] { return 0.0; };
       m_gyroRate = [&] { return 0.0; };
     }
+
+    // }
   } catch (std::exception& e) {
-    wpi::outs() << "Project failed: " << e.what() << "\n";
-    wpi::outs().flush();
+    fmt::print("Project failed: {}\n", e.what());
     std::exit(-1);
   }
   m_logger.UpdateThreadPriority();
@@ -207,21 +211,18 @@ void Robot::RobotInit() {}
  * LiveWindow and SmartDashboard integrated updating.
  */
 void Robot::RobotPeriodic() {
-  // TODO Enable once sim is fixed
-  // try {
-  frc::SmartDashboard::PutNumber("Left Position", m_leftPosition());
-  frc::SmartDashboard::PutNumber("Right Position", m_rightPosition());
-  frc::SmartDashboard::PutNumber("Left Velocity", m_leftRate());
-  frc::SmartDashboard::PutNumber("Right Position", m_rightRate());
+  try {
+    frc::SmartDashboard::PutNumber("Left Position", m_leftPosition());
+    frc::SmartDashboard::PutNumber("Right Position", m_rightPosition());
+    frc::SmartDashboard::PutNumber("Left Velocity", m_leftRate());
+    frc::SmartDashboard::PutNumber("Right Position", m_rightRate());
 
-  frc::SmartDashboard::PutNumber("Gyro Reading", m_gyroPosition());
-  frc::SmartDashboard::PutNumber("Gyro Rate", m_gyroRate());
-
-  // } catch (std::exception& e) {
-  //   wpi::outs() << "Project failed: " << e.what() << "\n";
-  //   wpi::outs().flush();
-  //   std::exit(-1);
-  // }
+    frc::SmartDashboard::PutNumber("Gyro Reading", m_gyroPosition());
+    frc::SmartDashboard::PutNumber("Gyro Rate", m_gyroRate());
+  } catch (std::exception& e) {
+    fmt::print("Project failed: {}\n", e.what());
+    std::exit(-1);
+  }
 }
 
 /**
@@ -257,7 +258,7 @@ void Robot::TeleopPeriodic() {}
 void Robot::DisabledInit() {
   SetMotorControllers(0_V, m_leftControllers);
   SetMotorControllers(0_V, m_rightControllers);
-  wpi::outs() << "Robot disabled\n";
+  fmt::print("Robot disabled\n");
   m_logger.SendData();
 }
 

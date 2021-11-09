@@ -4,6 +4,7 @@
 
 #include "Drivetrain.h"
 
+#include <fmt/format.h>
 #include <frc/RobotController.h>
 
 void Drivetrain::SetSpeeds(const frc::DifferentialDriveWheelSpeeds& speeds) {
@@ -47,6 +48,8 @@ void Drivetrain::SimulationPeriodic() {
                                       frc::RobotController::GetInputVoltage());
   m_drivetrainSimulator.Update(5_ms);
 
+  fmt::print("{}\n", m_drivetrainSimulator.GetLeftPosition().value());
+
   m_leftEncoderSim.SetDistance(
       m_drivetrainSimulator.GetLeftPosition().to<double>());
   m_leftEncoderSim.SetRate(
@@ -62,8 +65,6 @@ void Drivetrain::SimulationPeriodic() {
   m_gyroSim.SetRate((m_drivetrainSimulator.GetRightVelocity().to<double>() -
                      m_drivetrainSimulator.GetLeftVelocity().to<double>()) /
                     Constants::Drivetrain::kTrackWidth.to<double>());
-
-  m_prevAngle = angle;
 }
 
 void Drivetrain::Periodic() {

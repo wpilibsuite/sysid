@@ -9,7 +9,7 @@ plugins {
 wpilibVersioning.buildServerMode = project.hasProperty("buildServer")
 wpilibVersioning.releaseMode = project.hasProperty("releaseMode")
 wpilibVersioning.useAllTags = true
-
+//wpi.maven.useDevelopment = true
 // Configure what repositories we should get dependencies from.
 allprojects {
   if (project.hasProperty("releaseMode")) {
