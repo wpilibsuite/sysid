@@ -4,9 +4,6 @@ plugins {
   id "edu.wpi.first.GradleRIO"
 }
 
-wpi.wpilibVersion = '2022.0.0-alpha-2-37-ge47451f'
-wpi.wpimathVersion = '2022.0.0-alpha-2-37-ge47451f'
-
 // For using remote development artifacts
 wpi.maven.useDevelopment = true
 
@@ -14,47 +11,47 @@ wpi.maven.useDevelopment = true
 // This is added by GradleRIO's backing project EmbeddedTools.
 deploy {
   targets {
-    roboRIO("roborio") {
+    roborio(getTargetTypeClass('RoboRIO')) {
       // Team number is loaded either from the .wpilib/wpilib_preferences.json
       // or from command line. If not found an exception will be thrown.
       // You can use getTeamOrDefault(team) instead of getTeamNumber if you
       // want to store a team number in this file.
-      team = frc.getTeamNumber()
-    }
-  }
-  artifacts {
-    frcNativeArtifact('frcCpp') {
-      targets << "roborio"
-      component = 'frcUserProgram'
-      // Debug can be overridden by command line, for use with VSCode
-      debug = frc.getDebugOrDefault(false)
-    }
-    // Built in artifact to deploy arbitrary files to the roboRIO.
-    fileTreeArtifact('frcStaticFileDeploy') {
-      // The directory below is the local directory to deploy
-      files = fileTree(dir: '../deploy')
-      // Deploy to RoboRIO target, into /home/lvuser/deploy
-      targets << "roborio"
-      directory = '/home/lvuser/deploy'
+      team = project.frc.getTeamNumber()
+      debug = project.frc.getDebugOrDefault(false)
+
+      artifacts {
+        // First part is artifact name, 2nd is artifact type
+        // getTargetTypeClass is a shortcut to get the class type using a string
+        frcCpp(getArtifactTypeClass('FRCNativeArtifact')) {
+        }
+
+        // Static files artifact
+        frcStaticFileDeploy(getArtifactTypeClass('FileTreeArtifact')) {
+          files = project.fileTree('src/main/deploy')
+          directory = '/home/lvuser/deploy'
+        }
+      }
     }
   }
 }
 
-// Enable simulation gui support. Must check the box in vscode to enable support
-// upon debugging
+// Define the deploy artifact to use later.
+def deployArtifact = deploy.targets.roborio.artifacts.frcCpp
+
+// Use release mode for simulation.
+wpi.cpp.debugSimulation = false
+
+// Enable simulation extensions when not in CI. Also add ws_client when
+// using Romi.
 dependencies {
   if (System.getenv()["CI"] == null) {
-    simulation wpi.deps.sim.gui(wpi.platforms.desktop, false)
-    simulation wpi.deps.sim.driverstation(wpi.platforms.desktop, false)
+    wpi.sim.addGui().defaultEnabled = true
+    wpi.sim.addDriverstation()
   }
 
-  if (project.hasProperty("romi"))
-    simulation wpi.deps.sim.ws_client(wpi.platforms.desktop, false)
-}
-
-if (project.hasProperty("romi")) {
-  sim {
-    envVar "HALSIMWS_HOST", "10.0.0.2"
+  if (project.hasProperty("romi")) {
+    wpi.sim.addWebsocketsClient().defaultEnabled = true
+    wpi.sim.envVar("HALSIMWS_HOST", "10.0.0.2")
   }
 }
 
@@ -73,6 +70,11 @@ model {
         exportedHeaders.srcDirs 'src/main/include'
       }
 
+      deployArtifact.component = it
+      wpi.cpp.enableExternalTasks(it)
+
+      wpi.sim.enable(it)
+
       binaries.all {
         it.cppCompiler.define("PROJECT_ROOT_DIR", "$projectDir")
         if (project.hasProperty("integration")) {
@@ -80,15 +82,15 @@ model {
         }
         lib project: ":sysid-library", library: "libsysid", linkage: "static"
 
-        wpi.deps.vendor.cpp(it)
+        wpi.cpp.vendor.cpp(it)
 
         // We must build statically for roboRIO; however, we have to build shared for desktop
         // in order for simulation modules to work correctly.
         // TODO: Remove project name check once GR and NU are updated.
         if (it.targetPlatform.name == wpi.platforms.roborio && project.name != "analysis-test")
-          wpi.deps.wpilibStatic(it)
+          wpi.cpp.deps.wpilibStatic(it)
         else
-          wpi.deps.wpilib(it)
+          wpi.cpp.deps.wpilib(it)
 
       }
     }
@@ -117,8 +119,4 @@ model {
       }
     }
   }
-}
-
-task simulateCpp {
-  dependsOn 'simulateFrcUserProgram' + wpi.platforms.desktop.capitalize() + 'ReleaseExecutable'
 }

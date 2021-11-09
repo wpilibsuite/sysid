@@ -14,7 +14,7 @@
 void LaunchSim(std::string_view projectDirectory) {
   // Start the robot program.
   std::string cmd =
-      fmt::format("cd {}/ && {} :{}:simulateCpp -Pintegration",
+      fmt::format("cd {}/ && {} :{}:simulateNativeRelease -Pintegration",
                   EXPAND_STRINGIZE(PROJECT_ROOT_DIR), LAUNCH, projectDirectory);
 
   fmt::print(stderr, "Executing: {}\n", cmd);
