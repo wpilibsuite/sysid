@@ -4,7 +4,7 @@ plugins {
   id "cpp"
   id "google-test-test-suite"
   id "maven-publish"
-  id "edu.wpi.first.NativeUtils" version "2022.3.1"
+  id "edu.wpi.first.NativeUtils" version "2022.4.4"
 }
 
 // Support RC files on Windows.
@@ -67,6 +67,7 @@ apply from: "config/resources.gradle"
 def generateTask = createGenerateResourcesTask('main', 'SYSID', 'sysid', project)
 
 // Before we generate resources, we need to make sure that the RIO executables are built and copied.
+generateTask.dependsOn ":sysid-projects:installRioExe"
 generateTask.dependsOn ":sysid-projects:drive:installRioExe"
 generateTask.dependsOn ":sysid-projects:mechanism:installRioExe"
 
