@@ -40,7 +40,8 @@ class Arm : public SysIdGeneralMechanism {
   void SimulationPeriodic();
 
   void ResetReadings() {
-    m_armSimulator.SetState(frc::MakeMatrix<2, 1>(wpi::numbers::pi / 2, 0.0));
+    m_armSimulator.SetState(
+        Eigen::Matrix<double, 2, 1>{wpi::numbers::pi / 2, 0.0});
     m_armSimulator.Update(5_ms);
     m_encoderSim.SetRate(0);
     m_encoderSim.SetDistance(wpi::numbers::pi / 2);

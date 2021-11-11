@@ -40,7 +40,7 @@ class Elevator : public SysIdGeneralMechanism {
   void SimulationPeriodic();
 
   void ResetReadings() {
-    m_elevatorSimulator.SetState(frc::MakeMatrix<2, 1>(0.0, 0.0));
+    m_elevatorSimulator.SetState(Eigen::Matrix<double, 2, 1>{0.0, 0.0});
     m_encoderSim.SetRate(0);
     m_encoderSim.SetDistance(0);
   }

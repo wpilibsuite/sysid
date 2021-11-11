@@ -1,10 +1,7 @@
 plugins {
   id "cpp"
-  id "edu.wpi.first.GradleRIO" version "2022.0.0-alpha-2"
+  id "edu.wpi.first.GradleRIO"
 }
-
-wpi.wpilibVersion = '2022.0.0-alpha-2-37-ge47451f'
-wpi.wpimathVersion = '2022.0.0-alpha-2-37-ge47451f'
 
 // For using remote development artifacts
 wpi.maven.useDevelopment = true
@@ -34,8 +31,8 @@ model {
           it.cppCompiler.define("INTEGRATION")
       }
 
-      wpi.deps.vendor.cpp(it)
-      wpi.deps.wpilib(it)
+      wpi.cpp.vendor.cpp(it)
+      wpi.cpp.deps.wpilib(it)
     }
   }
 }
