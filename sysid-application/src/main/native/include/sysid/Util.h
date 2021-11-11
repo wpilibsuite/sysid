@@ -23,8 +23,12 @@
 
 #ifdef _WIN32
 #define LAUNCH "gradlew"
+#define LAUNCH_DETACHED "start /b gradlew"
+#define DETACHED_SUFFIX ""
 #else
 #define LAUNCH "./gradlew"
+#define LAUNCH_DETACHED "./gradlew"
+#define DETACHED_SUFFIX "&"
 #endif
 
 // Based on https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html

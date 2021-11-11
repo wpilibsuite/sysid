@@ -12,18 +12,32 @@
 #include "gtest/gtest.h"
 
 void LaunchSim(std::string_view projectDirectory) {
-  // Start the robot program.
-  std::string cmd =
-      fmt::format("cd {}/ && {} :{}:simulateNativeRelease -Pintegration",
+  // Install the robot program.
+  std::string installCmd =
+      fmt::format("cd {}/ && {} :{}:installSimulateNativeRelease -Pintegration",
                   EXPAND_STRINGIZE(PROJECT_ROOT_DIR), LAUNCH, projectDirectory);
+  fmt::print(stderr, "Executing: {}\n", installCmd);
 
-  fmt::print(stderr, "Executing: {}\n", cmd);
+  int result = std::system(installCmd.c_str());
 
-  int result = std::system(cmd.c_str());
-
-  // Exit Test if Sim is unable to start
+  // Exit the test if we could not install the robot program.
   if (result != 0) {
-    fmt::print(stderr, "The robot program could not be started\n");
+    fmt::print(stderr, "The robot program could be installed.\n");
+    std::exit(1);
+  }
+
+  // Run the robot program.
+  std::string runCmd =
+      fmt::format("cd {}/ && {} :{}:simulateNativeRelease -Pintegration {}",
+                  EXPAND_STRINGIZE(PROJECT_ROOT_DIR), LAUNCH_DETACHED,
+                  projectDirectory, DETACHED_SUFFIX);
+  fmt::print(stderr, "Executing: {}\n", runCmd);
+
+  result = std::system(runCmd.c_str());
+
+  // Exit the test if we could not run the robot program.
+  if (result != 0) {
+    fmt::print(stderr, "The robot program could be started.\n");
     std::exit(1);
   }
 }

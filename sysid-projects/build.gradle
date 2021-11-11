@@ -120,3 +120,7 @@ model {
     }
   }
 }
+
+task installSimulateNativeRelease {
+  dependsOn 'installFrcUserProgram' + wpi.platforms.desktop.capitalize() + 'ReleaseExecutable'
+}
