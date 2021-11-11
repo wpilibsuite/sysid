@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <glass/View.h>
+#include <imgui.h>
 #include <portable-file-dialogs.h>
 #include <wpi/EventLoopRunner.h>
 #include <wpi/Logger.h>
@@ -99,17 +100,17 @@ class Generator : public glass::View {
 
   /**
    * Displays the encoder options for a specific combination of motor controller
-   * specific encoders and general encoders.
+   * encoders.
    *
-   * @tparam X The size of the specific encoder array
-   * @tparam Y The size of the general encoder array
-   *
-   * @param specificEncoders The array storing motor controller specific arrays
-   * @param generalEncoder The array storing general encoders.
+   * @tparam Size The size of the encoder array
+   * @param encoders The array of motor controller specific encoders and general
+   *                 encoders.
    */
-  template <size_t X, size_t Y>
-  void GetEncoder(const std::array<const char*, X>& specificEncoders,
-                  const std::array<const char*, Y>& generalEncoders);
+  template <size_t Size>
+  void GetEncoder(const std::array<const char*, Size>& encoders) {
+    ImGui::Combo("Encoder", &m_encoderIdx, encoders.data(), encoders.size());
+    m_settings.encoderType = std::string{encoders[m_encoderIdx]};
+  }
 
   // Configuration manager along with its settings -- used to generate the JSON
   // configuration.

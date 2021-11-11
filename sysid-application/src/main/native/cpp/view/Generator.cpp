@@ -12,7 +12,6 @@
 
 #include <fmt/format.h>
 #include <glass/Context.h>
-#include <imgui.h>
 #include <imgui_stdlib.h>
 #include <wpi/Logger.h>
 #include <wpi/StringExtras.h>
@@ -88,15 +87,6 @@ static int GetNewIdx(const std::array<const char*, X>& arr,
   } else {
     return std::distance(std::cbegin(arr), it);
   }
-}
-
-template <size_t X, size_t Y>
-void Generator::GetEncoder(const std::array<const char*, X>& specificEncoders,
-                           const std::array<const char*, Y>& generalEncoders) {
-  // TODO set to constexpr once this is upgraded to C++20
-  const auto kEncoders = concat(specificEncoders, generalEncoders);
-  ImGui::Combo("Encoder", &m_encoderIdx, kEncoders.data(), kEncoders.size());
-  m_settings.encoderType = std::string{kEncoders[m_encoderIdx]};
 }
 
 void Generator::RoboRIOEncoderSetup(bool drive) {
@@ -350,9 +340,9 @@ void Generator::Display() {
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
   if (wpi::starts_with(mainMotorController, "Talon")) {
     if (mainMotorController == "TalonFX") {
-      GetEncoder(kBuiltInEncoders, kGeneralEncoders);
+      GetEncoder(concat(kBuiltInEncoders, kGeneralEncoders));
     } else {
-      GetEncoder(kTalonSRXEncoders, kGeneralEncoders);
+      GetEncoder(concat(kTalonSRXEncoders, kGeneralEncoders));
     }
     if (m_encoderIdx <= 1) {
       RegularEncoderSetup(drive);
@@ -362,7 +352,7 @@ void Generator::Display() {
       RoboRIOEncoderSetup(drive);
     }
   } else if (wpi::starts_with(mainMotorController, "SPARK MAX")) {
-    GetEncoder(kSparkMaxEncoders, kGeneralEncoders);
+    GetEncoder(concat(kSparkMaxEncoders, kGeneralEncoders));
     if (m_encoderIdx <= 1) {
       if (m_encoderIdx == 1 || wpi::contains(mainMotorController, "Brushed")) {
         // You're not allowed to invert the NEO encoder
@@ -374,7 +364,7 @@ void Generator::Display() {
       RoboRIOEncoderSetup(drive);
     }
   } else if (mainMotorController == "Venom") {
-    GetEncoder(kBuiltInEncoders, kGeneralEncoders);
+    GetEncoder(concat(kBuiltInEncoders, kGeneralEncoders));
     if (m_encoderIdx == 0) {
       RegularEncoderSetup(drive);
     } else if (m_encoderIdx == 1) {
@@ -383,7 +373,7 @@ void Generator::Display() {
       RoboRIOEncoderSetup(drive);
     }
   } else {
-    GetEncoder(std::array<const char*, 0>{}, kGeneralEncoders);
+    GetEncoder(kGeneralEncoders);
     if (m_encoderIdx == 0) {
       CANCoderSetup(drive);
     } else {
