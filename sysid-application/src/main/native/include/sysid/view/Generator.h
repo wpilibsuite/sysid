@@ -17,7 +17,6 @@
 #include <wpi/Logger.h>
 #include <wpi/mutex.h>
 
-#include "sysid/Util.h"
 #include "sysid/deploy/DeploySession.h"
 #include "sysid/generation/ConfigManager.h"
 

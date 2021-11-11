@@ -4,11 +4,10 @@
 
 #include "sysid/Util.h"
 
-#include <sstream>
 #include <stdexcept>
-#include <vector>
 
 #include <imgui.h>
+#include <wpi/StringExtras.h>
 #include <wpi/fs.h>
 #include <wpi/raw_ostream.h>
 
@@ -25,13 +24,15 @@ void sysid::CreateTooltip(const char* text) {
   }
 }
 
-std::vector<std::string> sysid::Split(const std::string& s, char c) {
+std::vector<std::string> sysid::Split(std::string_view str, char separator) {
   std::vector<std::string> result;
-  std::stringstream ss{s};
-  std::string item;
 
-  while (std::getline(ss, item, c)) {
-    result.push_back(item);
+  size_t idx = str.find(separator);
+  result.push_back(std::string{str.substr(0, idx)});
+  while (idx != std::string_view::npos) {
+    str.remove_prefix(idx + 1);
+    idx = str.find(separator);
+    result.push_back(std::string{str.substr(0, idx)});
   }
 
   return result;
