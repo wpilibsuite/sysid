@@ -22,7 +22,7 @@ void LaunchSim(std::string_view projectDirectory) {
 
   // Exit the test if we could not install the robot program.
   if (result != 0) {
-    fmt::print(stderr, "The robot program could be installed.\n");
+    fmt::print(stderr, "The robot program could not be installed.\n");
     std::exit(1);
   }
 
@@ -37,7 +37,7 @@ void LaunchSim(std::string_view projectDirectory) {
 
   // Exit the test if we could not run the robot program.
   if (result != 0) {
-    fmt::print(stderr, "The robot program could be started.\n");
+    fmt::print(stderr, "The robot program could not be started.\n");
     std::exit(1);
   }
 }
