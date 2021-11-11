@@ -19,7 +19,6 @@
 #include <units/math.h>
 #include <wpi/StringMap.h>
 #include <wpi/json.h>
-#include <wpi/numbers>
 #include <wpi/raw_istream.h>
 
 #include "sysid/analysis/AnalysisType.h"
