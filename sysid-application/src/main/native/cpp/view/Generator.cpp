@@ -281,30 +281,14 @@ void Generator::Display() {
     ImGui::Spacing();
     ImGui::PushID(i);
 
-    // Add primary (left for drivetrain) motor ports.
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-    auto primaryName =
-        fmt::format(drive ? "L Motor Port {}" : "Motor Port {}", i);
-    ImGui::InputInt(primaryName.c_str(), &pm[i], 0, 0);
-
-    // Add inverted setting.
-    ImGui::SameLine();
-    ImGui::Checkbox(drive ? "L Inverted" : "Inverted", &pi[i]);
-
-    // Add right side drivetrain ports (if the analysis type is drivetrain).
-    if (drive) {
-      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-      auto secondaryName = fmt::format("R Motor Port {}", i);
-      ImGui::InputInt(secondaryName.c_str(), &sm[i], 0, 0);
-
-      // Add inverted setting.
-      ImGui::SameLine();
-      ImGui::Checkbox("R Inverted", &si[i]);
-    }
     // Add motor controller selector.
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
-    auto motorControllerName = fmt::format(
-        drive ? "Motor Controller Pair {}" : "Motor Controller {}", i);
+    std::string motorControllerName;
+    if (drive) {
+      motorControllerName = fmt::format("Motor Controller Pair {}", i);
+    } else {
+      motorControllerName = fmt::format("Motor Controller {}", i);
+    }
 
     if (ImGui::BeginCombo(motorControllerName.c_str(), mc[i].c_str())) {
       for (size_t n = 0; n < IM_ARRAYSIZE(kMotorControllers); ++n) {
@@ -318,6 +302,40 @@ void Generator::Display() {
       }
       ImGui::EndCombo();
     }
+
+    // Add primary (left for drivetrain) motor ports.
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
+    std::string primaryName;
+    if (drive) {
+      primaryName += "L ";
+    }
+    if (m_settings.motorControllers[i] == "PWM") {
+      primaryName += "Motor Port";
+    } else {
+      primaryName += "Motor CAN ID";
+    }
+    ImGui::InputInt(primaryName.c_str(), &pm[i], 0, 0);
+
+    // Add inverted setting.
+    ImGui::SameLine();
+    ImGui::Checkbox(drive ? "L Inverted" : "Inverted", &pi[i]);
+
+    // Add right side drivetrain ports (if the analysis type is drivetrain).
+    if (drive) {
+      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
+      std::string secondaryName = "R ";
+      if (m_settings.motorControllers[i] == "PWM") {
+        secondaryName += "Motor Port";
+      } else {
+        secondaryName += "Motor CAN ID";
+      }
+      ImGui::InputInt(secondaryName.c_str(), &sm[i], 0, 0);
+
+      // Add inverted setting.
+      ImGui::SameLine();
+      ImGui::Checkbox("R Inverted", &si[i]);
+    }
+
     ImGui::PopID();
 
     // If we selected Spark Max with Brushed mode, set our flag to true.
