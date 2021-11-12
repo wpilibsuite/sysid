@@ -63,12 +63,19 @@ std::string GetAbbreviation(std::string_view unit);
  */
 void SaveFile(std::string_view contents, const fs::path& path);
 
-template <typename Type, std::size_t... sizes>
-constexpr auto concat(const std::array<Type, sizes>&... arrays) {
-  std::array<Type, (sizes + ...)> result;
-  size_t index{};
+/**
+ * Concatenates all the arrays passed as arguments and returns the result.
+ *
+ * @tparam Type The array element type.
+ * @tparam Sizes The array sizes.
+ * @param arrays Parameter pack of arrays to concatenate.
+ */
+template <typename Type, std::size_t... Sizes>
+constexpr auto ArrayConcat(const std::array<Type, Sizes>&... arrays) {
+  std::array<Type, (Sizes + ...)> result;
+  size_t index = 0;
 
-  ((std::copy_n(arrays.begin(), sizes, result.begin() + index), index += sizes),
+  ((std::copy_n(arrays.begin(), Sizes, result.begin() + index), index += Sizes),
    ...);
 
   return result;

@@ -154,18 +154,18 @@ void Generator::UpdateFromConfig() {
   std::string_view mainMotorController{m_settings.motorControllers[0]};
   if (wpi::starts_with(mainMotorController, "Talon")) {
     if (mainMotorController == "TalonFX") {
-      m_encoderIdx = GetNewIdx(concat(kBuiltInEncoders, kGeneralEncoders),
+      m_encoderIdx = GetNewIdx(ArrayConcat(kBuiltInEncoders, kGeneralEncoders),
                                m_settings.encoderType);
     } else {
-      m_encoderIdx = GetNewIdx(concat(kTalonSRXEncoders, kGeneralEncoders),
+      m_encoderIdx = GetNewIdx(ArrayConcat(kTalonSRXEncoders, kGeneralEncoders),
                                m_settings.encoderType);
     }
 
   } else if (wpi::starts_with(mainMotorController, "SPARK MAX")) {
-    m_encoderIdx = GetNewIdx(concat(kSparkMaxEncoders, kGeneralEncoders),
+    m_encoderIdx = GetNewIdx(ArrayConcat(kSparkMaxEncoders, kGeneralEncoders),
                              m_settings.encoderType);
   } else if (mainMotorController == "Venom") {
-    m_encoderIdx = GetNewIdx(concat(kBuiltInEncoders, kGeneralEncoders),
+    m_encoderIdx = GetNewIdx(ArrayConcat(kBuiltInEncoders, kGeneralEncoders),
                              m_settings.encoderType);
   } else {
     m_encoderIdx = GetNewIdx(kGeneralEncoders, m_settings.encoderType);
@@ -340,9 +340,9 @@ void Generator::Display() {
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
   if (wpi::starts_with(mainMotorController, "Talon")) {
     if (mainMotorController == "TalonFX") {
-      GetEncoder(concat(kBuiltInEncoders, kGeneralEncoders));
+      GetEncoder(ArrayConcat(kBuiltInEncoders, kGeneralEncoders));
     } else {
-      GetEncoder(concat(kTalonSRXEncoders, kGeneralEncoders));
+      GetEncoder(ArrayConcat(kTalonSRXEncoders, kGeneralEncoders));
     }
     if (m_encoderIdx <= 1) {
       RegularEncoderSetup(drive);
@@ -352,7 +352,7 @@ void Generator::Display() {
       RoboRIOEncoderSetup(drive);
     }
   } else if (wpi::starts_with(mainMotorController, "SPARK MAX")) {
-    GetEncoder(concat(kSparkMaxEncoders, kGeneralEncoders));
+    GetEncoder(ArrayConcat(kSparkMaxEncoders, kGeneralEncoders));
     if (m_encoderIdx <= 1) {
       if (m_encoderIdx == 1 || wpi::contains(mainMotorController, "Brushed")) {
         // You're not allowed to invert the NEO encoder
@@ -364,7 +364,7 @@ void Generator::Display() {
       RoboRIOEncoderSetup(drive);
     }
   } else if (mainMotorController == "Venom") {
-    GetEncoder(concat(kBuiltInEncoders, kGeneralEncoders));
+    GetEncoder(ArrayConcat(kBuiltInEncoders, kGeneralEncoders));
     if (m_encoderIdx == 0) {
       RegularEncoderSetup(drive);
     } else if (m_encoderIdx == 1) {
