@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <ctime>
 #include <stdexcept>
 #include <string>
@@ -14,6 +15,7 @@
 #include <fmt/chrono.h>
 #include <ntcore_cpp.h>
 #include <wpi/Logger.h>
+#include <wpi/SmallVector.h>
 #include <wpi/StringExtras.h>
 #include <wpi/numbers>
 #include <wpi/raw_ostream.h>
@@ -249,13 +251,17 @@ void TelemetryManager::Update() {
           m_params.raw.end());
 
       // Split the string into individual components.
-      auto res = sysid::Split(m_params.raw, ',');
+      wpi::SmallVector<std::string_view, 16> res;
+      wpi::split(m_params.raw, res, ',');
 
       // Convert each string to double.
       std::vector<double> values;
       values.reserve(res.size());
       for (auto&& str : res) {
-        values.push_back(std::stod(str));
+        double value;
+        auto [ptr,
+              ec]{std::from_chars(str.data(), str.data() + str.size(), value)};
+        values.push_back(value);
       }
 
       // Add the values to our result vector.

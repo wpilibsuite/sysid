@@ -7,7 +7,6 @@
 #include <stdexcept>
 
 #include <imgui.h>
-#include <wpi/StringExtras.h>
 #include <wpi/fs.h>
 #include <wpi/raw_ostream.h>
 
@@ -22,20 +21,6 @@ void sysid::CreateTooltip(const char* text) {
     ImGui::PopTextWrapPos();
     ImGui::EndTooltip();
   }
-}
-
-std::vector<std::string> sysid::Split(std::string_view str, char separator) {
-  std::vector<std::string> result;
-
-  size_t idx = str.find(separator);
-  result.push_back(std::string{str.substr(0, idx)});
-  while (idx != std::string_view::npos) {
-    str.remove_prefix(idx + 1);
-    idx = str.find(separator);
-    result.push_back(std::string{str.substr(0, idx)});
-  }
-
-  return result;
 }
 
 std::string sysid::GetAbbreviation(std::string_view unit) {

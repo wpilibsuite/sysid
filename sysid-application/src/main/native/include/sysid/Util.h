@@ -8,7 +8,6 @@
 #include <array>
 #include <string>
 #include <string_view>
-#include <vector>
 
 #include <wpi/fs.h>
 
@@ -46,16 +45,6 @@ static constexpr const char* kUnits[] = {"Meters",  "Feet",      "Inches",
  * @param text The text to show in the tooltip.
  */
 void CreateTooltip(const char* text);
-
-/**
- * Splits a string into a vector of strings.
- *
- * @param str The string to split.
- * @param separator The delimiter.
- *
- * @return The split string.
- */
-std::vector<std::string> Split(std::string_view str, char separator);
 
 /**
  * Returns the abbreviation for the unit.
