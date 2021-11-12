@@ -12,17 +12,12 @@
 #include <frc/motorcontrol/Spark.h>
 // #include <rev/CANSparkMax.h>
 #include <wpi/SmallString.h>
+#include <wpi/StringExtras.h>
 #include <wpi/fs.h>
 
 // Based on https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html
 #define EXPAND_STRINGIZE(s) STRINGIZE(s)
 #define STRINGIZE(s) #s
-
-// C++20 shim for std::string_view::starts_with()
-static constexpr bool starts_with(std::string_view obj,
-                                  std::string_view x) noexcept {
-  return obj.substr(0, x.size()) == x;
-}
 
 wpi::json GetConfigJson() {
   std::string path;
@@ -145,7 +140,7 @@ void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
                    std::function<double()>& position,
                    std::function<double()>& rate) {
   if (encoderType == "Built-in") {
-    if (starts_with(controllerName, "Talon")) {
+    if (wpi::starts_with(controllerName, "Talon")) {
       // FeedbackDevice feedbackDevice;
       // if (controllerName == "TalonSRX") {
       //   feedbackDevice = FeedbackDevice::QuadEncoder;

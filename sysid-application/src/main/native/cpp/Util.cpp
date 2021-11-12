@@ -4,9 +4,7 @@
 
 #include "sysid/Util.h"
 
-#include <sstream>
 #include <stdexcept>
-#include <vector>
 
 #include <imgui.h>
 #include <wpi/fs.h>
@@ -23,18 +21,6 @@ void sysid::CreateTooltip(const char* text) {
     ImGui::PopTextWrapPos();
     ImGui::EndTooltip();
   }
-}
-
-std::vector<std::string> sysid::Split(const std::string& s, char c) {
-  std::vector<std::string> result;
-  std::stringstream ss{s};
-  std::string item;
-
-  while (std::getline(ss, item, c)) {
-    result.push_back(item);
-  }
-
-  return result;
 }
 
 std::string sysid::GetAbbreviation(std::string_view unit) {

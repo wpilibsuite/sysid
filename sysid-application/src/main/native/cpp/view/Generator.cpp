@@ -15,6 +15,7 @@
 #include <imgui.h>
 #include <imgui_stdlib.h>
 #include <wpi/Logger.h>
+#include <wpi/StringExtras.h>
 
 #include "sysid/Util.h"
 #include "sysid/analysis/AnalysisType.h"
@@ -161,7 +162,7 @@ void Generator::UpdateFromConfig() {
 
   // Idxs
   std::string_view mainMotorController{m_settings.motorControllers[0]};
-  if (starts_with(mainMotorController, "Talon")) {
+  if (wpi::starts_with(mainMotorController, "Talon")) {
     if (mainMotorController == "TalonFX") {
       m_encoderIdx = GetNewIdx(concat(kBuiltInEncoders, kGeneralEncoders),
                                m_settings.encoderType);
@@ -170,7 +171,7 @@ void Generator::UpdateFromConfig() {
                                m_settings.encoderType);
     }
 
-  } else if (starts_with(mainMotorController, "SPARK MAX")) {
+  } else if (wpi::starts_with(mainMotorController, "SPARK MAX")) {
     m_encoderIdx = GetNewIdx(concat(kSparkMaxEncoders, kGeneralEncoders),
                              m_settings.encoderType);
   } else if (mainMotorController == "Venom") {
@@ -347,7 +348,7 @@ void Generator::Display() {
 
   // Add encoder selection.
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
-  if (starts_with(mainMotorController, "Talon")) {
+  if (wpi::starts_with(mainMotorController, "Talon")) {
     if (mainMotorController == "TalonFX") {
       GetEncoder(kBuiltInEncoders, kGeneralEncoders);
     } else {
@@ -360,13 +361,11 @@ void Generator::Display() {
     } else {
       RoboRIOEncoderSetup(drive);
     }
-  } else if (starts_with(mainMotorController, "SPARK MAX")) {
+  } else if (wpi::starts_with(mainMotorController, "SPARK MAX")) {
     GetEncoder(kSparkMaxEncoders, kGeneralEncoders);
     if (m_encoderIdx <= 1) {
-      if (m_encoderIdx == 1 ||
-          contains(
-              mainMotorController,
-              "Brushed")) {  // You're not allowed to invert the Neo encoder
+      if (m_encoderIdx == 1 || wpi::contains(mainMotorController, "Brushed")) {
+        // You're not allowed to invert the NEO encoder
         RegularEncoderSetup(drive);
       }
     } else if (m_encoderIdx == 2) {

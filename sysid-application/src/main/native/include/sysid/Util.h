@@ -8,7 +8,6 @@
 #include <array>
 #include <string>
 #include <string_view>
-#include <vector>
 
 #include <wpi/fs.h>
 
@@ -48,16 +47,6 @@ static constexpr const char* kUnits[] = {"Meters",  "Feet",      "Inches",
 void CreateTooltip(const char* text);
 
 /**
- * Splits a string into a vector of strings.
- *
- * @param s The string to split.
- * @param c The delimiter.
- *
- * @return The split string.
- */
-std::vector<std::string> Split(const std::string& s, char c);
-
-/**
  * Returns the abbreviation for the unit.
  *
  * @param unit The unit to return the abbreviation for.
@@ -73,18 +62,6 @@ std::string GetAbbreviation(std::string_view unit);
  * @param location The file location.
  */
 void SaveFile(std::string_view contents, const fs::path& path);
-
-// C++20 shim for std::string_view::starts_with()
-static constexpr bool starts_with(std::string_view obj,
-                                  std::string_view x) noexcept {
-  return obj.substr(0, x.size()) == x;
-}
-
-// C++20 shim for std::string_view::contains()
-static constexpr bool contains(std::string_view obj,
-                               std::string_view x) noexcept {
-  return obj.npos != obj.find(x);
-}
 
 template <typename Type, std::size_t... sizes>
 constexpr auto concat(const std::array<Type, sizes>&... arrays) {
