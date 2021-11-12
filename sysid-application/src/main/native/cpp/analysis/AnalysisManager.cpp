@@ -9,7 +9,6 @@
 #include <cmath>
 #include <cstddef>
 #include <functional>
-#include <initializer_list>
 #include <stdexcept>
 #include <string_view>
 #include <vector>
@@ -61,31 +60,25 @@ static std::vector<PreparedData> ConvertToPrepared(
 }
 
 /**
- * Concatenates a list of vectors to the end of a vector. The contents of the
- * source vectors are copied (not moved) into the new vector. Also sorts the
- * datapoints by timestamp to assist with future simulation.
+ * Concatenates a list of vectors. The contents of the source vectors are copied
+ * (not moved) into the new vector. Also sorts the datapoints by timestamp to
+ * assist with future simulation.
  *
- * @param dest The destination vector
- * @param srcs The source vectors
- *
- * @return The concatenated destination vector
+ * @param sources The source vectors.
+ * @return The concatenated vector
  */
-static std::vector<PreparedData> Concatenate(
-    std::vector<PreparedData> dest,
-    std::initializer_list<const std::vector<PreparedData>*> srcs) {
-  // Copy the contents of the source vectors into the dest vector.
-  for (auto ptr : srcs) {
-    dest.insert(dest.end(), ptr->cbegin(), ptr->cend());
-  }
+template <typename... Sources>
+std::vector<PreparedData> DataConcat(const Sources&... sources) {
+  std::vector<PreparedData> result;
+  (result.insert(result.end(), sources.begin(), sources.end()), ...);
 
   // Sort data by timestamp to remove the possibility of negative dts in future
   // simulations.
-  std::sort(dest.begin(), dest.end(), [](const auto& a, const auto& b) {
+  std::sort(result.begin(), result.end(), [](const auto& a, const auto& b) {
     return a.timestamp < b.timestamp;
   });
 
-  // Return the dest vector.
-  return dest;
+  return result;
 }
 
 /**
@@ -140,8 +133,8 @@ static void StoreDatasets(wpi::StringMap<Storage>* dataset,
   outputData[prefixStr + "Forward"] = Storage{slowForward, fastForward};
   outputData[prefixStr + "Backward"] = Storage{slowBackward, slowForward};
   outputData[prefixStr + "Combined"] =
-      Storage{Concatenate(slowForward, {&slowBackward}),
-              Concatenate(fastForward, {&fastBackward})};
+      Storage{DataConcat(slowForward, slowBackward),
+              DataConcat(fastForward, fastBackward)};
 }
 
 /**
@@ -453,10 +446,10 @@ static void PrepareLinearDrivetrainData(
   auto& fastBackwardLeft = preparedData["left-fast-backward"];
   auto& fastBackwardRight = preparedData["right-fast-backward"];
 
-  auto slowForward = Concatenate(slowForwardLeft, {&slowForwardRight});
-  auto slowBackward = Concatenate(slowBackwardLeft, {&slowBackwardRight});
-  auto fastForward = Concatenate(fastForwardLeft, {&fastForwardRight});
-  auto fastBackward = Concatenate(fastBackwardLeft, {&fastBackwardRight});
+  auto slowForward = DataConcat(slowForwardLeft, slowForwardRight);
+  auto slowBackward = DataConcat(slowBackwardLeft, slowBackwardRight);
+  auto fastForward = DataConcat(fastForwardLeft, fastForwardRight);
+  auto fastBackward = DataConcat(fastBackwardLeft, fastBackwardRight);
 
   WPI_DEBUG(logger, "{}", "Acceleration filtering.");
   sysid::AccelFilter(&preparedData);
@@ -473,12 +466,10 @@ static void PrepareLinearDrivetrainData(
   auto rawFastBackwardRight = preparedData["right-raw-fast-backward"];
 
   // Create the distinct raw datasets and store them in our StringMap.
-  auto rawSlowForward = Concatenate(rawSlowForwardLeft, {&rawSlowForwardRight});
-  auto rawSlowBackward =
-      Concatenate(rawSlowBackwardLeft, {&rawSlowBackwardRight});
-  auto rawFastForward = Concatenate(rawFastForwardLeft, {&rawFastForwardRight});
-  auto rawFastBackward =
-      Concatenate(rawFastBackwardLeft, {&rawFastBackwardRight});
+  auto rawSlowForward = DataConcat(rawSlowForwardLeft, rawSlowForwardRight);
+  auto rawSlowBackward = DataConcat(rawSlowBackwardLeft, rawSlowBackwardRight);
+  auto rawFastForward = DataConcat(rawFastForwardLeft, rawFastForwardRight);
+  auto rawFastBackward = DataConcat(rawFastBackwardLeft, rawFastBackwardRight);
 
   StoreDatasets(&rawDatasets, rawSlowForward, rawSlowBackward, rawFastForward,
                 rawFastBackward);
