@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <cctype>
-#include <charconv>
 #include <ctime>
 #include <stdexcept>
 #include <string>
@@ -258,10 +257,7 @@ void TelemetryManager::Update() {
       std::vector<double> values;
       values.reserve(res.size());
       for (auto&& str : res) {
-        double value;
-        auto [ptr,
-              ec]{std::from_chars(str.data(), str.data() + str.size(), value)};
-        values.push_back(value);
+        values.push_back(wpi::parse_float<double>(str).value());
       }
 
       // Add the values to our result vector.
