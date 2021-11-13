@@ -46,18 +46,18 @@ wpi::StringMap<wpi::SmallVector<std::string_view, 2>>
 };
 
 const wpi::SmallVector<std::string_view, 4> kPigeonCtors{"0", "WPI_TalonSRX-1"};
-const wpi::SmallVector<std::string_view, 4> kAnalogCtors{"0"};
+const wpi::SmallVector<std::string_view, 4> kAnalogGyroCtors{"0"};
 const wpi::SmallVector<std::string_view, 4> kNavXCtors{
     "SerialPort.kUSB", "I2C", "SerialPort.kMXP", "SPI.kMXP"};
 const wpi::SmallVector<std::string_view, 4> kADXRS450Ctors{"SPI.kMXP",
                                                            "kOnboardCS0"};
 wpi::StringMap<wpi::SmallVector<std::string_view, 4>> gyroCtorMap = {
-    {"AnalogGyro", kAnalogCtors},
+    {"AnalogGyro", kAnalogGyroCtors},
     // {"Pigeon", kPigeonCtors},
     // {"ADXRS450", kADXRS450Ctors},
     // FIXME: Waiting on Linux and macOS builds for navX AHRS
     // {"NavX", kNavXCtors},
-    {"None", kAnalogCtors}};
+    {"None", kAnalogGyroCtors}};
 
 class GenerationTest : public ::testing::Test {
  public:

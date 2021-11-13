@@ -43,8 +43,8 @@ static constexpr std::array<const char*, 1> kBuiltInEncoders = {"Built-in"};
 static constexpr std::array<const char*, 2> kSparkMaxEncoders = {"Encoder Port",
                                                                  "Data Port"};
 
-static constexpr const char* kGyros[] = {"Analog", "ADXRS450", "NavX", "Pigeon",
-                                         "None"};
+static constexpr const char* kGyros[] = {"AnalogGyro", "ADXRS450", "NavX",
+                                         "Pigeon", "None"};
 static constexpr const char* kNavXCtors[] = {"SerialPort.kUSB", "I2C",
                                              "SerialPort.kMXP", "SPI.kMXP"};
 
