@@ -22,27 +22,30 @@
 #include "networktables/NetworkTableValue.h"
 #include "sysid/Util.h"
 #include "sysid/generation/ConfigManager.h"
+#include "sysid/generation/HardwareType.h"
 #include "sysid/view/Generator.h"
 
 using namespace std::chrono_literals;
 
-const wpi::SmallVector<std::string_view, 2> kTalonEncs{"Built-in",
-                                                       "Tachometer"};
-const wpi::SmallVector<std::string_view, 2> kSMaxEncs{"Encoder Port",
-                                                      "Data Port"};
-const wpi::SmallVector<std::string_view, 2> kBuiltInEncs{"Built-in"};
-const wpi::SmallVector<std::string_view, 2> kGeneralEncs{// "CANCoder",
-                                                         "roboRIO quadrature"};
+const wpi::SmallVector<sysid::HardwareType, 2> kTalonEncs{
+    sysid::encoder::kBuiltInSetting, sysid::encoder::kCTRETachometer};
+const wpi::SmallVector<sysid::HardwareType, 2> kSMaxEncs{
+    sysid::encoder::kSMaxEncoderPort, sysid::encoder::kSMaxDataPort};
+const wpi::SmallVector<sysid::HardwareType, 2> kBuiltInEncs{
+    sysid::encoder::kBuiltInSetting};
+const wpi::SmallVector<sysid::HardwareType, 2> kGeneralEncs{
+    // sysid::encoder::kCANCoder,
+    sysid::encoder::kRoboRIO};
 
-wpi::StringMap<wpi::SmallVector<std::string_view, 2>>
+wpi::StringMap<wpi::SmallVector<sysid::HardwareType, 2>>
     motorControllerEncoderMap = {
-        {"PWM", kGeneralEncs},
-        //  {"VictorSPX", kGeneralEncs},
-        //  {"TalonSRX", kTalonEncs},
-        //  {"TalonFX", kBuiltInEncs},
-        // {"SPARK MAX (Brushless)", kSMaxEncs},
-        // {"SPARK MAX (Brushed)", kSMaxEncs},
-        // {"Venom", kBuiltInEncs}
+        {std::string{sysid::motorcontroller::kPWM.name}, kGeneralEncs},
+        //  {std::string{sysid::motorcontroller::kVictorSPX}, kGeneralEncs},
+        //  {std::string{sysid::motorcontroller::kTalonSRX}, kTalonEncs},
+        //  {std::string{sysid::motorcontroller::kTalonFX}, kBuiltInEncs},
+        // {std::string{sysid::motorcontroller::kSPARKMAXBrushless}, kSMaxEncs},
+        // {std::string{sysid::motorcontroller::kSPARKMAXBrushed}, kSMaxEncs},
+        // {std::string{sysid::motorcontroller::kVenom}, kBuiltInEncs}
 };
 
 const wpi::SmallVector<std::string_view, 4> kPigeonCtors{"0", "WPI_TalonSRX-1"};
@@ -52,12 +55,12 @@ const wpi::SmallVector<std::string_view, 4> kNavXCtors{
 const wpi::SmallVector<std::string_view, 4> kADXRS450Ctors{"SPI.kMXP",
                                                            "kOnboardCS0"};
 wpi::StringMap<wpi::SmallVector<std::string_view, 4>> gyroCtorMap = {
-    {"AnalogGyro", kAnalogCtors},
-    // {"Pigeon", kPigeonCtors},
-    // {"ADXRS450", kADXRS450Ctors},
+    {std::string{sysid::gyro::kAnalogGyro.name}, kAnalogCtors},
+    // {std::string{sysid::gyro::kPigeon.name}, kPigeonCtors},
+    // {std::string{sysid::gyro::kADXRS450.name}, kADXRS450Ctors},
     // FIXME: Waiting on Linux and macOS builds for navX AHRS
-    // {"NavX", kNavXCtors},
-    {"None", kAnalogCtors}};
+    // {std::string{sysid::gyro::kNavX.name}, kNavXCtors},
+    {std::string{sysid::gyro::kNoGyroOption.name}, kAnalogCtors}};
 
 class GenerationTest : public ::testing::Test {
  public:
@@ -156,12 +159,13 @@ wpi::Logger GenerationTest::m_logger;
 TEST_F(GenerationTest, GeneralMechanism) {
   SetUp("sysid-projects:mechanism");
   constexpr size_t size = 2;
-  for (auto&& motorController : sysid::kMotorControllers) {
+  for (auto&& motorController : sysid::motorcontroller::kMotorControllers) {
     m_settings.motorControllers =
-        wpi::SmallVector<std::string, 3>(size, std::string{motorController});
-    for (auto&& encoder : motorControllerEncoderMap[motorController]) {
+        wpi::SmallVector<sysid::HardwareType, 3>(size, motorController);
+    for (auto&& encoder : motorControllerEncoderMap[motorController.name]) {
       m_settings.encoderType = encoder;
-      fmt::print(stderr, "Testing: {} and {}\n", motorController, encoder);
+      fmt::print(stderr, "Testing: {} and {}\n", motorController.name,
+                 encoder.name);
 
       auto json = m_manager.Generate(size);
       sysid::SaveFile(json.dump(), m_jsonPath);
@@ -182,21 +186,21 @@ TEST_F(GenerationTest, Drivetrain) {
   // FIXME: Switch back to talon + built-in setup once CTRE is fixed
   // Talons were chosen due to the pigeon having a case where it plugs into one
   // (Temporarily ignored)
-  m_settings.motorControllers =
-      wpi::SmallVector<std::string, 3>(size, std::string{"PWM"});
+  m_settings.motorControllers = wpi::SmallVector<sysid::HardwareType, 3>(
+      size, sysid::motorcontroller::kPWM);
 
-  m_settings.encoderType = "roboRIO quadrature";
+  m_settings.encoderType = sysid::encoder::kRoboRIO;
 
   // Encoders + Motor controllers already tested, now just need to test the
   // gyros
-  for (auto&& gyro : sysid::kGyros) {
-    if (std::string_view{gyro} == "Romi") {
+  for (auto&& gyro : sysid::gyro::kGyros) {
+    if (gyro == sysid::gyro::kRomiGyro) {
       continue;
     }
     m_settings.gyro = gyro;
-    for (auto&& gyroCtor : gyroCtorMap[gyro]) {
+    for (auto&& gyroCtor : gyroCtorMap[gyro.name]) {
       m_settings.gyroCtor = gyroCtor;
-      fmt::print(stderr, "Testing: {} using {}\n", gyro, gyroCtor);
+      fmt::print(stderr, "Testing: {} using {}\n", gyro.name, gyroCtor);
 
       auto json = m_manager.Generate(size);
       sysid::SaveFile(json.dump(), m_jsonPath);

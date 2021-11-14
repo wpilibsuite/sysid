@@ -14,6 +14,8 @@
 #include <wpi/SmallVector.h>
 #include <wpi/json.h>
 
+#include "sysid/generation/HardwareType.h"
+
 namespace sysid {
 /**
  * This represents the settings for configuring a robot project -- including
@@ -26,14 +28,15 @@ struct ConfigSettings {
   wpi::SmallVector<int, 3> secondaryMotorPorts = {2, 3};
 
   // Type of motor controller.
-  wpi::SmallVector<std::string, 3> motorControllers = {"PWM", "PWM"};
+  wpi::SmallVector<HardwareType, 3> motorControllers = {
+      sysid::motorcontroller::kPWM, sysid::motorcontroller::kPWM};
 
   // Whether motors should be inverted.
   wpi::SmallVector<bool, 3> primaryMotorsInverted = {false, false};
   wpi::SmallVector<bool, 3> secondaryMotorsInverted = {false, false};
 
   // Encoder type and ports.
-  std::string encoderType = "roboRIO";
+  HardwareType encoderType = sysid::encoder::kRoboRIO;
   std::array<int, 2> primaryEncoderPorts = {0, 1};
   std::array<int, 2> secondaryEncoderPorts = {2, 3};
 
@@ -46,7 +49,7 @@ struct ConfigSettings {
   double gearing = 1.0;
 
   // Gyro type and constructor.
-  std::string gyro = "AnalogGyro";
+  HardwareType gyro = sysid::gyro::kAnalogGyro;
   std::string gyroCtor = "0";
 
   // Advanced encoder settings.
@@ -59,9 +62,20 @@ struct ConfigSettings {
 };
 
 // Pre-built configuration for the Romi -- all Romis have the same setup.
-const ConfigSettings kRomiConfig{{0},       {1},    {"PWM"}, {true}, {false},
-                                 "roboRIO", {4, 5}, {6, 7},  false,  false,
-                                 1440.0,    1.0,    "Romi",  ""};
+const ConfigSettings kRomiConfig{{0},
+                                 {1},
+                                 {sysid::motorcontroller::kPWM},
+                                 {true},
+                                 {false},
+                                 sysid::encoder::kRoboRIO,
+                                 {4, 5},
+                                 {6, 7},
+                                 false,
+                                 false,
+                                 1440.0,
+                                 1.0,
+                                 sysid::gyro::kRomiGyro,
+                                 ""};
 
 /**
  * This class manages generating the JSON configuration from a reference to the

@@ -32,7 +32,11 @@ wpi::json ConfigManager::Generate(size_t occupied) {
       SliceVector(m_config.secondaryMotorPorts, occupied);
 
   // Add motor types.
-  json["motor controllers"] = SliceVector(m_config.motorControllers, occupied);
+  std::vector<std::string_view> motorControllers;
+  for (int i = 0; i < occupied; i++) {
+    motorControllers.push_back(m_config.motorControllers[i].name);
+  }
+  json["motor controllers"] = motorControllers;
 
   // Add motor inversions.
   json["primary motors inverted"] =
@@ -45,7 +49,7 @@ wpi::json ConfigManager::Generate(size_t occupied) {
   json["secondary encoder ports"] = m_config.secondaryEncoderPorts;
 
   // Add encoder type.
-  json["encoder type"] = m_config.encoderType;
+  json["encoder type"] = m_config.encoderType.name;
 
   // Add encoder inversions.
   json["primary encoder inverted"] = m_config.primaryEncoderInverted;
@@ -56,7 +60,7 @@ wpi::json ConfigManager::Generate(size_t occupied) {
   json["gearing"] = m_config.gearing;
 
   // Add gyro type and constructor.
-  json["gyro"] = m_config.gyro;
+  json["gyro"] = m_config.gyro.name;
   json["gyro ctor"] = m_config.gyroCtor;
 
   // Add advanced encoder settings.
@@ -114,14 +118,23 @@ void ConfigManager::ReadJSON(std::string_view path) {
       json_file.at("primary motor ports").get<wpi::SmallVector<int, 3>>();
   m_config.secondaryMotorPorts =
       json_file.at("secondary motor ports").get<wpi::SmallVector<int, 3>>();
-  m_config.motorControllers =
+
+  // Parse motor controllers
+  auto motorControllers =
       json_file.at("motor controllers").get<wpi::SmallVector<std::string, 3>>();
+  m_config.motorControllers.clear();
+  for (auto&& controller : motorControllers) {
+    m_config.motorControllers.push_back(
+        sysid::motorcontroller::FromMotorControllerName(controller));
+  }
+
   m_config.primaryMotorsInverted =
       json_file.at("primary motors inverted").get<wpi::SmallVector<bool, 3>>();
   m_config.secondaryMotorsInverted = json_file.at("secondary motors inverted")
                                          .get<wpi::SmallVector<bool, 3>>();
 
-  m_config.encoderType = json_file.at("encoder type").get<std::string>();
+  m_config.encoderType = sysid::encoder::FromEncoderName(
+      json_file.at("encoder type").get<std::string>());
   m_config.primaryEncoderPorts =
       json_file.at("primary encoder ports").get<std::array<int, 2>>();
   m_config.secondaryEncoderPorts =
@@ -135,7 +148,8 @@ void ConfigManager::ReadJSON(std::string_view path) {
   m_config.cpr = json_file.at("counts per rotation").get<double>();
   m_config.gearing = json_file.at("gearing").get<double>();
 
-  m_config.gyro = json_file.at("gyro").get<std::string>();
+  m_config.gyro =
+      sysid::gyro::FromGyroName(json_file.at("gyro").get<std::string>());
   m_config.gyroCtor = json_file.at("gyro ctor").get<std::string>();
 
   m_config.encoding = json_file.at("encoding").get<bool>();

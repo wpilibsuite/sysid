@@ -20,31 +20,56 @@
 
 #include "sysid/deploy/DeploySession.h"
 #include "sysid/generation/ConfigManager.h"
+#include "sysid/generation/HardwareType.h"
 
 namespace sysid {
+/**
+ * Constexpr way of storing a const char* array of HardwareType names to be used
+ * with ImGui's const char* setup. Adapted from:
+ * https://stackoverflow.com/a/34465458
+ *
+ * @tparam S The size of the array storing the HardwareTypes that will be used.
+ */
+template <size_t S>
+struct DisplayNameStorage {
+  /**
+   * A const char* array to hold all the HardwareType names
+   */
+  const char* names[S];
+
+  /**
+   * An int to pass into the size parameter of functions like `ImGui::Combo`
+   */
+  const int size{S};
+
+  explicit constexpr DisplayNameStorage(std::array<HardwareType, S> devices)
+      : names() {
+    for (int i = 0; i < S; i++) {
+      names[i] = devices[i].displayName;
+    }
+  }
+};
 
 // Options
-static constexpr const char* kMotorControllers[] = {"PWM",
-                                                    "TalonSRX",
-                                                    "VictorSPX",
-                                                    "TalonFX",
-                                                    "SPARK MAX (Brushless)",
-                                                    "SPARK MAX (Brushed)",
-                                                    "Venom"};
+static constexpr auto kMotorControllerNames =
+    DisplayNameStorage(sysid::motorcontroller::kMotorControllers);
 
 static constexpr std::array<const char*, 2> kGeneralEncoders = {
-    "CANCoder", "roboRIO quadrature"};
+    sysid::encoder::kRoboRIO.displayName,
+    sysid::encoder::kCANCoder.displayName};
 
-static constexpr std::array<const char*, 2> kTalonSRXEncoders = {"Built-in",
-                                                                 "Tachometer"};
+static constexpr std::array<const char*, 2> kTalonSRXEncoders = {
+    sysid::encoder::kBuiltInSetting.displayName,
+    sysid::encoder::kCTRETachometer.displayName};
 
-static constexpr std::array<const char*, 1> kBuiltInEncoders = {"Built-in"};
+static constexpr std::array<const char*, 1> kBuiltInEncoders = {
+    sysid::encoder::kBuiltInSetting.displayName};
 
-static constexpr std::array<const char*, 2> kSparkMaxEncoders = {"Encoder Port",
-                                                                 "Data Port"};
+static constexpr std::array<const char*, 2> kSparkMaxEncoders = {
+    sysid::encoder::kSMaxDataPort.displayName,
+    sysid::encoder::kSMaxEncoderPort.displayName};
 
-static constexpr const char* kGyros[] = {"Analog", "ADXRS450", "NavX", "Pigeon",
-                                         "None"};
+static constexpr auto kGyroNames = DisplayNameStorage(sysid::gyro::kGyros);
 static constexpr const char* kNavXCtors[] = {"SerialPort.kUSB", "I2C",
                                              "SerialPort.kMXP", "SPI.kMXP"};
 
@@ -109,7 +134,8 @@ class Generator : public glass::View {
   template <size_t Size>
   void GetEncoder(const std::array<const char*, Size>& encoders) {
     ImGui::Combo("Encoder", &m_encoderIdx, encoders.data(), encoders.size());
-    m_settings.encoderType = std::string{encoders[m_encoderIdx]};
+    m_settings.encoderType =
+        sysid::encoder::FromEncoderName(encoders[m_encoderIdx]);
   }
 
   // Configuration manager along with its settings -- used to generate the JSON
@@ -128,7 +154,7 @@ class Generator : public glass::View {
   int m_unitsIdx = 0;
   int m_periodIdx = 6;
 
-  std::string_view m_prevMainMotorController;
+  HardwareType m_prevMainMotorController = sysid::motorcontroller::kPWM;
 
   // Keeps track of the number of motor ports the user wants.
   size_t m_occupied = 1;
