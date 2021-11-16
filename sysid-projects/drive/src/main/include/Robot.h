@@ -18,7 +18,7 @@
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
 
-#include "logging/SysIdDrivetrainLogger.h"
+#include "sysid/logging/SysIdDrivetrainLogger.h"
 
 class Robot : public frc::TimedRobot {
  public:
@@ -54,5 +54,5 @@ class Robot : public frc::TimedRobot {
   std::unique_ptr<frc::Gyro> m_gyro;
   // std::unique_ptr<PigeonIMU> m_pigeon;
 
-  SysIdDrivetrainLogger m_logger;
+  sysid::SysIdDrivetrainLogger m_logger;
 };

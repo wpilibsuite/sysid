@@ -18,7 +18,7 @@
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
 
-#include "logging/SysIdGeneralMechanismLogger.h"
+#include "sysid/logging/SysIdGeneralMechanismLogger.h"
 
 class Robot : public frc::TimedRobot {
  public:
@@ -42,5 +42,5 @@ class Robot : public frc::TimedRobot {
   wpi::json m_json;
   // std::unique_ptr<CANCoder> m_cancoder;
   std::unique_ptr<frc::Encoder> m_encoder;
-  SysIdGeneralMechanismLogger m_logger;
+  sysid::SysIdGeneralMechanismLogger m_logger;
 };

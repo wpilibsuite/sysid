@@ -18,8 +18,8 @@
 #include "SimpleMotor.h"
 #include "interface/SysIdDrivetrain.h"
 #include "interface/SysIdGeneralMechanism.h"
-#include "logging/SysIdDrivetrainLogger.h"
-#include "logging/SysIdGeneralMechanismLogger.h"
+#include "sysid/logging/SysIdDrivetrainLogger.h"
+#include "sysid/logging/SysIdGeneralMechanismLogger.h"
 
 class Robot : public frc::TimedRobot {
  public:
@@ -141,8 +141,8 @@ class Robot : public frc::TimedRobot {
 
   SysIdGeneralMechanism* m_mechanism = &m_flywheel;
   SysIdDrivetrain* m_driveMechanism = &m_drive;
-  SysIdGeneralMechanismLogger m_generalLogger;
-  SysIdDrivetrainLogger m_driveLogger;
+  sysid::SysIdGeneralMechanismLogger m_generalLogger;
+  sysid::SysIdDrivetrainLogger m_driveLogger;
 
   std::string m_test = "Drivetrain";
   std::vector<double> m_data;

@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+namespace sysid {
+
 class SysIdLogger {
  public:
   void InitLogging();
@@ -65,3 +67,5 @@ class SysIdLogger {
   static constexpr int kThreadPriority = 15;
   static constexpr int kHALThreadPriority = 40;
 };
+
+}  // namespace sysid

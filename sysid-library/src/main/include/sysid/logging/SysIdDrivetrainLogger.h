@@ -6,7 +6,9 @@
 
 #include <units/voltage.h>
 
-#include "logging/SysIdLogger.h"
+#include "sysid/logging/SysIdLogger.h"
+
+namespace sysid {
 
 // TODO Set to proper number after telemetry data refactor
 class SysIdDrivetrainLogger : public SysIdLogger {
@@ -48,3 +50,5 @@ class SysIdDrivetrainLogger : public SysIdLogger {
   units::volt_t m_primaryMotorVoltage = 0_V;
   units::volt_t m_secondaryMotorVoltage = 0_V;
 };
+
+}  // namespace sysid
