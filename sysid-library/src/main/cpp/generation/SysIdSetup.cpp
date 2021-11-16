@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-#include "generation/SysIdSetup.h"
+#include "sysid/generation/SysIdSetup.h"
 
 #include <stdexcept>
 
@@ -18,6 +18,8 @@
 // Based on https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html
 #define EXPAND_STRINGIZE(s) STRINGIZE(s)
 #define STRINGIZE(s) #s
+
+namespace sysid {
 
 wpi::json GetConfigJson() {
   std::string path;
@@ -237,3 +239,5 @@ void SetMotorControllers(
     controller->SetVoltage(motorVoltage);
   }
 }
+
+}  // namespace sysid

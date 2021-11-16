@@ -20,10 +20,10 @@
 #include <units/angular_velocity.h>
 
 // #include "AHRS.h"
-#include "generation/SysIdSetup.h"
+#include "sysid/generation/SysIdSetup.h"
 
 Robot::Robot() : frc::TimedRobot(5_ms) {
-  m_json = GetConfigJson();
+  m_json = sysid::GetConfigJson();
 
   try {
     fmt::print("Read JSON\n");
@@ -63,21 +63,23 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 
     fmt::print("Setup motors\n");
     for (size_t i = 0; i < leftPorts.size(); i++) {
-      AddMotorController(leftPorts[i], controllerNames[i],
-                         leftMotorsInverted[i], &m_leftControllers);
-      AddMotorController(rightPorts[i], controllerNames[i],
-                         rightMotorsInverted[i], &m_rightControllers);
+      sysid::AddMotorController(leftPorts[i], controllerNames[i],
+                                leftMotorsInverted[i], &m_leftControllers);
+      sysid::AddMotorController(rightPorts[i], controllerNames[i],
+                                rightMotorsInverted[i], &m_rightControllers);
     }
 
     fmt::print("Setup encoders\n");
-    SetupEncoders(encoderType, isEncoding, period, cpr * gearing, numSamples,
-                  controllerNames[0], m_leftControllers.at(0).get(),
-                  leftEncoderInverted, leftEncoderPorts,  // m_leftCancoder,
-                  m_leftEncoder, m_leftPosition, m_leftRate);
-    SetupEncoders(encoderType, isEncoding, period, cpr * gearing, numSamples,
-                  controllerNames[0], m_rightControllers.at(0).get(),
-                  rightEncoderInverted, rightEncoderPorts,  // m_rightCancoder,
-                  m_rightEncoder, m_rightPosition, m_rightRate);
+    sysid::SetupEncoders(encoderType, isEncoding, period, cpr * gearing,
+                         numSamples, controllerNames[0],
+                         m_leftControllers.at(0).get(), leftEncoderInverted,
+                         leftEncoderPorts,  // m_leftCancoder,
+                         m_leftEncoder, m_leftPosition, m_leftRate);
+    sysid::SetupEncoders(encoderType, isEncoding, period, cpr * gearing,
+                         numSamples, controllerNames[0],
+                         m_rightControllers.at(0).get(), rightEncoderInverted,
+                         rightEncoderPorts,  // m_rightCancoder,
+                         m_rightEncoder, m_rightPosition, m_rightRate);
 
     fmt::print("Setup gyro\n");
     if (gyroType == "Pigeon") {
@@ -247,8 +249,9 @@ void Robot::AutonomousInit() {
 void Robot::AutonomousPeriodic() {
   m_logger.Log(m_leftPosition(), m_rightPosition(), m_leftRate(), m_rightRate(),
                m_gyroPosition(), m_gyroRate());
-  SetMotorControllers(m_logger.GetLeftMotorVoltage(), m_leftControllers);
-  SetMotorControllers(m_logger.GetRightMotorVoltage(), m_rightControllers);
+  sysid::SetMotorControllers(m_logger.GetLeftMotorVoltage(), m_leftControllers);
+  sysid::SetMotorControllers(m_logger.GetRightMotorVoltage(),
+                             m_rightControllers);
 }
 
 void Robot::TeleopInit() {}
@@ -256,8 +259,8 @@ void Robot::TeleopInit() {}
 void Robot::TeleopPeriodic() {}
 
 void Robot::DisabledInit() {
-  SetMotorControllers(0_V, m_leftControllers);
-  SetMotorControllers(0_V, m_rightControllers);
+  sysid::SetMotorControllers(0_V, m_leftControllers);
+  sysid::SetMotorControllers(0_V, m_rightControllers);
   fmt::print("Robot disabled\n");
   m_logger.SendData();
 }

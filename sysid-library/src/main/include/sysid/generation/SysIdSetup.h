@@ -17,6 +17,8 @@
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
 
+namespace sysid {
+
 wpi::json GetConfigJson();
 
 /**
@@ -83,3 +85,5 @@ void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
                    std::unique_ptr<frc::Encoder>& encoder,
                    std::function<double()>& position,
                    std::function<double()>& rate);
+
+}  // namespace sysid

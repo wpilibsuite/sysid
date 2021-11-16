@@ -14,11 +14,11 @@
 // #include <rev/CANEncoder.h>
 #include <units/voltage.h>
 
-#include "generation/SysIdSetup.h"
+#include "sysid/generation/SysIdSetup.h"
 
 Robot::Robot() : frc::TimedRobot(5_ms) {
   try {
-    m_json = GetConfigJson();
+    m_json = sysid::GetConfigJson();
     fmt::print("Reading JSON\n");
     std::vector<int> ports =
         m_json.at("primary motor ports").get<std::vector<int>>();
@@ -43,16 +43,17 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 
     fmt::print("Initializing Motors\n");
     for (size_t i = 0; i < ports.size(); i++) {
-      AddMotorController(ports[i], controllerNames[i], motorsInverted[i],
-                         &m_controllers);
+      sysid::AddMotorController(ports[i], controllerNames[i], motorsInverted[i],
+                                &m_controllers);
     }
 
     fmt::print("Initializing encoder\n");
-    SetupEncoders(encoderType, isEncoding, period, cpr * gearing, numSamples,
-                  controllerNames[0], m_controllers.front().get(),
-                  encoderInverted, encoderPorts,
-                  // m_cancoder,
-                  m_encoder, m_position, m_rate);
+    sysid::SetupEncoders(encoderType, isEncoding, period, cpr * gearing,
+                         numSamples, controllerNames[0],
+                         m_controllers.front().get(), encoderInverted,
+                         encoderPorts,
+                         // m_cancoder,
+                         m_encoder, m_position, m_rate);
   } catch (std::exception& e) {
     fmt::print("Project failed: {}\n", e.what());
     std::exit(-1);
@@ -105,7 +106,7 @@ void Robot::AutonomousInit() {
  */
 void Robot::AutonomousPeriodic() {
   m_logger.Log(m_position(), m_rate());
-  SetMotorControllers(m_logger.GetMotorVoltage(), m_controllers);
+  sysid::SetMotorControllers(m_logger.GetMotorVoltage(), m_controllers);
 }
 
 void Robot::TeleopInit() {}
@@ -113,7 +114,7 @@ void Robot::TeleopInit() {}
 void Robot::TeleopPeriodic() {}
 
 void Robot::DisabledInit() {
-  SetMotorControllers(0_V, m_controllers);
+  sysid::SetMotorControllers(0_V, m_controllers);
   fmt::print("Robot Disabled\n");
   m_logger.SendData();
 }

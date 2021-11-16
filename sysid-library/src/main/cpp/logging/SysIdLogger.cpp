@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-#include "logging/SysIdLogger.h"
+#include "sysid/logging/SysIdLogger.h"
 
 #include <cstddef>
 #include <sstream>
@@ -14,6 +14,8 @@
 #include <frc/Timer.h>
 #include <frc/livewindow/LiveWindow.h>
 #include <frc/smartdashboard/SmartDashboard.h>
+
+using namespace sysid;
 
 void SysIdLogger::InitLogging() {
   m_mechanism = frc::SmartDashboard::GetString("SysIdTest", "");
