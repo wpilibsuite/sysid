@@ -62,7 +62,12 @@ template <size_t X>
 static int GetNewIdx(const char* const (&arr)[X], std::string_view value) {
   auto it = std::find(std::cbegin(arr), std::cend(arr), value);
   if (it == std::cend(arr)) {
-    throw std::runtime_error(fmt::format("{} not found", value));
+    // Throws with array to help with debugging
+    std::string array;
+    for (auto&& element : arr) {
+      array += fmt::format("{}, ", element);
+    }
+    throw std::runtime_error(fmt::format("{} not found in: {}", value, array));
   } else {
     return std::distance(std::cbegin(arr), it);
   }
@@ -83,7 +88,12 @@ static int GetNewIdx(const std::array<const char*, X>& arr,
                      std::string_view value) {
   auto it = std::find(std::begin(arr), std::end(arr), value);
   if (it == std::cend(arr)) {
-    throw std::runtime_error(fmt::format("{} not found", value));
+    // Throws with array to help with debugging
+    std::string array;
+    for (auto&& element : arr) {
+      array += fmt::format("{}, ", element);
+    }
+    throw std::runtime_error(fmt::format("{} not found in: {}", value, array));
   } else {
     return std::distance(std::cbegin(arr), it);
   }
@@ -150,32 +160,42 @@ void Generator::UpdateFromConfig() {
   // Get Occupied Ports
   m_occupied = m_settings.motorControllers.size();
 
-  // Idxs
-  std::string_view mainMotorController{m_settings.motorControllers[0]};
-  if (wpi::starts_with(mainMotorController, "Talon")) {
-    if (mainMotorController == "TalonFX") {
+  // Storing important information for Idx settings
+  const auto& mainMotorController = m_settings.motorControllers[0];
+  const auto& encoderTypeName = m_settings.encoderType.displayName;
+
+  // Set Previous Main Controller to current to not reset encoder selection
+  m_prevMainMotorController = mainMotorController;
+
+  // Setting right Idxs for the GUI
+  if (mainMotorController == sysid::motorcontroller::kTalonSRX ||
+      mainMotorController == sysid::motorcontroller::kTalonFX) {
+    if (mainMotorController == sysid::motorcontroller::kTalonFX) {
       m_encoderIdx = GetNewIdx(ArrayConcat(kBuiltInEncoders, kGeneralEncoders),
-                               m_settings.encoderType);
+                               encoderTypeName);
     } else {
       m_encoderIdx = GetNewIdx(ArrayConcat(kTalonSRXEncoders, kGeneralEncoders),
-                               m_settings.encoderType);
+                               encoderTypeName);
     }
 
-  } else if (wpi::starts_with(mainMotorController, "SPARK MAX")) {
+  } else if (mainMotorController == sysid::motorcontroller::kSPARKMAXBrushed ||
+             mainMotorController ==
+                 sysid::motorcontroller::kSPARKMAXBrushless) {
     m_encoderIdx = GetNewIdx(ArrayConcat(kSparkMaxEncoders, kGeneralEncoders),
-                             m_settings.encoderType);
-  } else if (mainMotorController == "Venom") {
+                             encoderTypeName);
+  } else if (mainMotorController == sysid::motorcontroller::kVenom) {
     m_encoderIdx = GetNewIdx(ArrayConcat(kBuiltInEncoders, kGeneralEncoders),
-                             m_settings.encoderType);
+                             encoderTypeName);
   } else {
-    m_encoderIdx = GetNewIdx(kGeneralEncoders, m_settings.encoderType);
+    m_encoderIdx = GetNewIdx(kGeneralEncoders, encoderTypeName);
   }
 
-  m_gyroIdx = GetNewIdx(kGyros, m_settings.gyro);
+  const auto& gyroNames = kGyroNames.names;
+  m_gyroIdx = GetNewIdx(gyroNames, m_settings.gyro.displayName);
   m_periodIdx = GetNewIdx(kCTREPeriods, std::to_string(m_settings.period));
 
   // Read in Gyro Constructors
-  if (m_settings.gyro == "Pigeon") {
+  if (m_settings.gyro == sysid::gyro::kPigeon) {
     auto pos = m_settings.gyroCtor.find("WPI_TalonSRX");
     if (pos != std::string_view::npos) {
       m_gyroPort = std::stoi(m_settings.gyroCtor.substr(pos + 13));
@@ -184,9 +204,9 @@ void Generator::UpdateFromConfig() {
       m_gyroPort = std::stoi(m_settings.gyroCtor);
       m_isTalon = false;
     }
-  } else if (m_settings.gyro == "ADXRS450") {
+  } else if (m_settings.gyro == sysid::gyro::kADXRS450) {
     m_gyroParam = GetNewIdx(sysid::kADXRS450Ctors, m_settings.gyroCtor);
-  } else if (m_settings.gyro == "NavX") {
+  } else if (m_settings.gyro == sysid::gyro::kNavX) {
     m_gyroParam = GetNewIdx(sysid::kNavXCtors, m_settings.gyroCtor);
   } else {
     m_gyroPort = std::stoi(m_settings.gyroCtor);
@@ -197,6 +217,9 @@ void Generator::UpdateFromConfig() {
 }
 
 void Generator::Display() {
+  // Get Hardware Device Names
+  const auto& motorControllerNames = kMotorControllerNames.names;
+  const auto& gyroNames = kGyroNames.names;
   // Add team / IP selection.
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
   ImGui::InputText("Team/IP", m_pTeam);
@@ -272,7 +295,7 @@ void Generator::Display() {
     if (pm.size() == i) {
       pm.emplace_back((drive ? 2 : 1) * i);
       sm.emplace_back(pm.size() + i);
-      mc.emplace_back(kMotorControllers[0]);
+      mc.emplace_back(motorControllerNames[0]);
       pi.emplace_back(false);
       si.emplace_back(false);
     }
@@ -290,11 +313,12 @@ void Generator::Display() {
       motorControllerName = fmt::format("Motor Controller {}", i);
     }
 
-    if (ImGui::BeginCombo(motorControllerName.c_str(), mc[i].c_str())) {
-      for (size_t n = 0; n < IM_ARRAYSIZE(kMotorControllers); ++n) {
-        bool selected = mc[i] == kMotorControllers[n];
-        if (ImGui::Selectable(kMotorControllers[n], selected)) {
-          mc[i] = kMotorControllers[n];
+    if (ImGui::BeginCombo(motorControllerName.c_str(), mc[i].displayName)) {
+      for (size_t n = 0; n < kMotorControllerNames.size; ++n) {
+        bool selected = mc[i].displayName == motorControllerNames[n];
+        if (ImGui::Selectable(motorControllerNames[n], selected)) {
+          mc[i] = sysid::motorcontroller::FromMotorControllerName(
+              motorControllerNames[n]);
         }
         if (selected) {
           ImGui::SetItemDefaultFocus();
@@ -309,7 +333,7 @@ void Generator::Display() {
     if (drive) {
       primaryName += "L ";
     }
-    if (m_settings.motorControllers[i] == "PWM") {
+    if (m_settings.motorControllers[i] == sysid::motorcontroller::kPWM) {
       primaryName += "Motor Port";
     } else {
       primaryName += "Motor CAN ID";
@@ -324,7 +348,7 @@ void Generator::Display() {
     if (drive) {
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
       std::string secondaryName = "R ";
-      if (m_settings.motorControllers[i] == "PWM") {
+      if (m_settings.motorControllers[i] == sysid::motorcontroller::kPWM) {
         secondaryName += "Motor Port";
       } else {
         secondaryName += "Motor CAN ID";
@@ -339,7 +363,7 @@ void Generator::Display() {
     ImGui::PopID();
 
     // If we selected Spark Max with Brushed mode, set our flag to true.
-    m_isSparkMaxBrushed = mc[i] == "SPARK MAX (Brushed)";
+    m_isSparkMaxBrushed = mc[i] == sysid::motorcontroller::kSPARKMAXBrushed;
   }
 
   // Add section for encoders.
@@ -348,7 +372,7 @@ void Generator::Display() {
   ImGui::Text("Encoder Selection");
 
   // Reset Encoder Selection if a new motor controller is chosen
-  std::string_view mainMotorController{m_settings.motorControllers[0]};
+  HardwareType mainMotorController{m_settings.motorControllers[0]};
   if (m_prevMainMotorController != mainMotorController) {
     m_encoderIdx = 0;
   }
@@ -356,8 +380,9 @@ void Generator::Display() {
 
   // Add encoder selection.
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
-  if (wpi::starts_with(mainMotorController, "Talon")) {
-    if (mainMotorController == "TalonFX") {
+  if (mainMotorController == sysid::motorcontroller::kTalonSRX ||
+      mainMotorController == sysid::motorcontroller::kTalonFX) {
+    if (mainMotorController == sysid::motorcontroller::kTalonFX) {
       GetEncoder(ArrayConcat(kBuiltInEncoders, kGeneralEncoders));
     } else {
       GetEncoder(ArrayConcat(kTalonSRXEncoders, kGeneralEncoders));
@@ -369,10 +394,13 @@ void Generator::Display() {
     } else {
       RoboRIOEncoderSetup(drive);
     }
-  } else if (wpi::starts_with(mainMotorController, "SPARK MAX")) {
+  } else if (mainMotorController == sysid::motorcontroller::kSPARKMAXBrushed ||
+             mainMotorController ==
+                 sysid::motorcontroller::kSPARKMAXBrushless) {
     GetEncoder(ArrayConcat(kSparkMaxEncoders, kGeneralEncoders));
     if (m_encoderIdx <= 1) {
-      if (m_encoderIdx == 1 || wpi::contains(mainMotorController, "Brushed")) {
+      if (m_encoderIdx == 1 ||
+          mainMotorController == sysid::motorcontroller::kSPARKMAXBrushed) {
         // You're not allowed to invert the NEO encoder
         RegularEncoderSetup(drive);
       }
@@ -381,7 +409,7 @@ void Generator::Display() {
     } else {
       RoboRIOEncoderSetup(drive);
     }
-  } else if (mainMotorController == "Venom") {
+  } else if (mainMotorController == sysid::motorcontroller::kVenom) {
     GetEncoder(ArrayConcat(kBuiltInEncoders, kGeneralEncoders));
     if (m_encoderIdx == 0) {
       RegularEncoderSetup(drive);
@@ -400,8 +428,8 @@ void Generator::Display() {
   }
 
   // Venom built-in encoders can't change sampling or measurement period.
-  if (!(mainMotorController == "Venom" &&
-        m_settings.encoderType == "Built-in")) {
+  if (!(mainMotorController == sysid::motorcontroller::kVenom &&
+        m_settings.encoderType == sysid::encoder::kBuiltInSetting)) {
     // Samples Per Average Setting
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
     ImGui::InputInt("Samples Per Average", &m_settings.numSamples, 0, 0);
@@ -411,7 +439,7 @@ void Generator::Display() {
         "CPRs.");
 
     // Add Velocity Measurement Period
-    if (m_settings.encoderType != "roboRIO") {
+    if (m_settings.encoderType != sysid::encoder::kRoboRIO) {
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
       ImGui::Combo("Time Measurement Window", &m_periodIdx, kCTREPeriods,
                    IM_ARRAYSIZE(kCTREPeriods));
@@ -428,14 +456,15 @@ void Generator::Display() {
 
     // Add gyro combo box.
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
-    ImGui::Combo("Gyro", &m_gyroIdx, kGyros, IM_ARRAYSIZE(kGyros));
+    ImGui::Combo("Gyro", &m_gyroIdx, gyroNames, kGyroNames.size);
 
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
 
-    std::string_view gyroType{kGyros[m_gyroIdx]};
+    auto gyroType =
+        sysid::gyro::FromGyroName(std::string_view{gyroNames[m_gyroIdx]});
 
     // Handle each gyro and its special cases.
-    if (gyroType == "Pigeon") {
+    if (gyroType == sysid::gyro::kPigeon) {
       ImGui::InputInt("Gyro Parameter", &m_gyroPort, 0, 0);
       ImGui::SameLine();
       ImGui::Checkbox("Is Talon", &m_isTalon);
@@ -448,11 +477,11 @@ void Generator::Display() {
       if (m_isTalon) {
         m_settings.gyroCtor = "WPI_TalonSRX-" + m_settings.gyroCtor;
       }
-    } else if (gyroType == "ADXRS450") {
+    } else if (gyroType == sysid::gyro::kADXRS450) {
       ImGui::Combo("Gyro Parameter", &m_gyroParam, kADXRS450Ctors,
                    IM_ARRAYSIZE(kADXRS450Ctors));
       m_settings.gyroCtor = std::string(kADXRS450Ctors[m_gyroParam]);
-    } else if (gyroType == "NavX") {
+    } else if (gyroType == sysid::gyro::kNavX) {
       ImGui::Combo("Gyro Parameter", &m_gyroParam, kNavXCtors,
                    IM_ARRAYSIZE(kNavXCtors));
       m_settings.gyroCtor = std::string(kNavXCtors[m_gyroParam]);
