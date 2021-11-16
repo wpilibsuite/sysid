@@ -27,7 +27,7 @@ void SysIdLogger::InitLogging() {
   m_testType = frc::SmartDashboard::GetString("SysIdTestType", "");
   m_rotate = frc::SmartDashboard::GetBoolean("SysIdRotate", false);
   m_voltageCommand = frc::SmartDashboard::GetNumber("SysIdVoltageCommand", 0.0);
-  m_startTime = frc::Timer::GetFPGATimestamp().to<double>();
+  m_startTime = frc::Timer::GetFPGATimestamp().value();
   m_data.clear();
 }
 
@@ -72,7 +72,7 @@ SysIdLogger::SysIdLogger() {
 }
 
 void SysIdLogger::UpdateData() {
-  m_timestamp = frc::Timer::GetFPGATimestamp().to<double>();
+  m_timestamp = frc::Timer::GetFPGATimestamp().value();
 
   // Don't let robot move if it's characterizing the wrong mechanism
   if (!IsWrongMechanism()) {

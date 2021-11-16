@@ -21,7 +21,7 @@ ElevatorSim::ElevatorSim(double Ks, double Kv, double Ka, double Kg,
 }
 
 void ElevatorSim::Update(units::volt_t voltage, units::second_t dt) {
-  Eigen::Vector<double, 1> u{voltage.to<double>()};
+  Eigen::Vector<double, 1> u{voltage.value()};
 
   // Given dx/dt = Ax + Bu + c sgn(x) + d,
   // x_k+1 = e^(AT) x_k + A^-1 (e^(AT) - 1) (Bu + c sgn(x) + d)
@@ -41,7 +41,7 @@ double ElevatorSim::GetVelocity() const {
 }
 
 double ElevatorSim::GetAcceleration(units::volt_t voltage) const {
-  Eigen::Vector<double, 1> u{voltage.to<double>()};
+  Eigen::Vector<double, 1> u{voltage.value()};
   return (m_A * m_x + m_B * u + m_c * wpi::sgn(GetVelocity()) + m_d)(1);
 }
 

@@ -75,7 +75,7 @@ class Drivetrain : public SysIdDrivetrain {
   double GetREncDistance() override { return m_rightEncoder.GetDistance(); }
   double GetREncVelocity() override { return m_rightEncoder.GetRate(); }
 
-  double GetGyroAngle() override { return GetGyro().to<double>(); }
+  double GetGyroAngle() override { return GetGyro().value(); }
   double GetGyroAngularRate() override { return m_gyro.GetRate(); }
 
   double GetSpeed() { return (m_leftGroup.Get() + m_rightGroup.Get()) / 2; }

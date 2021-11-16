@@ -50,8 +50,8 @@ class Arm : public SysIdGeneralMechanism {
   void Periodic() {
     frc::SmartDashboard::PutNumber("Arm Speed", m_encoder.GetRate());
     frc::SmartDashboard::PutNumber("Arm Position", m_encoder.GetDistance());
-    frc::SmartDashboard::PutNumber(
-        "Current Draw", m_armSimulator.GetCurrentDraw().to<double>());
+    frc::SmartDashboard::PutNumber("Current Draw",
+                                   m_armSimulator.GetCurrentDraw().value());
     frc::SmartDashboard::PutBoolean("Hit Top Limit",
                                     m_armSimulator.HasHitUpperLimit());
     frc::SmartDashboard::PutBoolean("Hit bottom Limit",

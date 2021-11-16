@@ -11,6 +11,6 @@ void Arm::SimulationPeriodic() {
                                  frc::RobotController::GetInputVoltage());
   m_armSimulator.Update(5_ms);
 
-  m_encoderSim.SetDistance(m_armSimulator.GetAngle().to<double>());
-  m_encoderSim.SetRate(m_armSimulator.GetVelocity().to<double>());
+  m_encoderSim.SetDistance(m_armSimulator.GetAngle().value());
+  m_encoderSim.SetRate(m_armSimulator.GetVelocity().value());
 }

@@ -22,8 +22,8 @@ void SysIdDrivetrainLogger::Log(double leftPosition, double rightPosition,
   UpdateData();
   if (m_data.size() < kDataVectorSize) {
     std::array<double, 9> arr = {m_timestamp,
-                                 m_primaryMotorVoltage.to<double>(),
-                                 m_secondaryMotorVoltage.to<double>(),
+                                 m_primaryMotorVoltage.value(),
+                                 m_secondaryMotorVoltage.value(),
                                  leftPosition,
                                  rightPosition,
                                  leftVelocity,

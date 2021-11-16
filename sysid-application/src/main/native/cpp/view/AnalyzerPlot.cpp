@@ -43,7 +43,7 @@ static std::vector<std::vector<ImPlotPoint>> PopulateTimeDomainSim(
 
   auto startTime = data[0].timestamp;
 
-  tmp.emplace_back(startTime.to<double>(), data[0].velocity);
+  tmp.emplace_back(startTime.value(), data[0].velocity);
 
   model.Reset(data[0].position, data[0].velocity);
   units::second_t t = 0_s;
@@ -65,7 +65,7 @@ static std::vector<std::vector<ImPlotPoint>> PopulateTimeDomainSim(
     }
 
     model.Update(units::volt_t{pre.voltage}, pre.dt);
-    tmp.emplace_back((startTime + t).to<double>(), model.GetVelocity());
+    tmp.emplace_back((startTime + t).value(), model.GetVelocity());
     simSquaredErrorSum += std::pow(now.velocity - model.GetVelocity(), 2);
     timeSeriesPoints++;
   }
@@ -167,10 +167,10 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
     m_KvFit[1] = ImPlotPoint(Kv * slowMaxElement, slowMaxElement);
 
     m_filteredData[kChartTitles[0]].emplace_back(Vportion, slow[i].velocity);
-    m_filteredData[kChartTitles[2]].emplace_back(
-        (slow[i].timestamp).to<double>(), slow[i].velocity);
-    m_filteredData[kChartTitles[3]].emplace_back(
-        (slow[i].timestamp).to<double>(), slow[i].acceleration);
+    m_filteredData[kChartTitles[2]].emplace_back((slow[i].timestamp).value(),
+                                                 slow[i].velocity);
+    m_filteredData[kChartTitles[3]].emplace_back((slow[i].timestamp).value(),
+                                                 slow[i].acceleration);
 
     if (i > 0) {
       // If the current timestamp is not in the startTimes array, it is the
@@ -182,8 +182,8 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
           std::find(startTimes.begin(), startTimes.end(), slow[i].timestamp) ==
               startTimes.end()) {
         m_filteredData[kChartTitles[6]].emplace_back(
-            (slow[i].timestamp).to<double>(),
-            units::millisecond_t{slow[i].dt}.to<double>());
+            (slow[i].timestamp).value(),
+            units::millisecond_t{slow[i].dt}.value());
       }
     }
   }
@@ -212,10 +212,10 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
 
     m_filteredData[kChartTitles[1]].emplace_back(Vportion,
                                                  fast[i].acceleration);
-    m_filteredData[kChartTitles[4]].emplace_back(
-        (fast[i].timestamp).to<double>(), fast[i].velocity);
-    m_filteredData[kChartTitles[5]].emplace_back(
-        (fast[i].timestamp).to<double>(), fast[i].acceleration);
+    m_filteredData[kChartTitles[4]].emplace_back((fast[i].timestamp).value(),
+                                                 fast[i].velocity);
+    m_filteredData[kChartTitles[5]].emplace_back((fast[i].timestamp).value(),
+                                                 fast[i].acceleration);
     if (i > 0) {
       // If the current timestamp is not in the startTimes array, it is the
       // during a test and should be included. If it is in the startTimes array,
@@ -226,8 +226,8 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
           std::find(startTimes.begin(), startTimes.end(), fast[i].timestamp) ==
               startTimes.end()) {
         m_filteredData[kChartTitles[6]].emplace_back(
-            (fast[i].timestamp).to<double>(),
-            units::millisecond_t{fast[i].dt}.to<double>());
+            (fast[i].timestamp).value(),
+            units::millisecond_t{fast[i].dt}.value());
       }
     }
   }
@@ -237,26 +237,26 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
   auto maxTime = units::math::max(slow.back().timestamp, fast.back().timestamp);
 
   // Set first recorded timestamp to mean
-  m_dtMeanLine.emplace_back(minTime.to<double>(),
-                            units::millisecond_t{dtMean}.to<double>());
+  m_dtMeanLine.emplace_back(minTime.value(),
+                            units::millisecond_t{dtMean}.value());
 
   // Set last recorded timestamp to mean
-  m_dtMeanLine.emplace_back(maxTime.to<double>(),
-                            units::millisecond_t{dtMean}.to<double>());
+  m_dtMeanLine.emplace_back(maxTime.value(),
+                            units::millisecond_t{dtMean}.value());
 
   // Populate Raw Slow Time Series Data
   for (size_t i = 0; i < rawSlow.size(); i += rawSlowStep) {
-    m_rawData[kChartTitles[2]].emplace_back((rawSlow[i].timestamp).to<double>(),
+    m_rawData[kChartTitles[2]].emplace_back((rawSlow[i].timestamp).value(),
                                             rawSlow[i].velocity);
-    m_rawData[kChartTitles[3]].emplace_back((rawSlow[i].timestamp).to<double>(),
+    m_rawData[kChartTitles[3]].emplace_back((rawSlow[i].timestamp).value(),
                                             rawSlow[i].acceleration);
   }
 
   // Populate Raw fast Time Series Data
   for (size_t i = 0; i < rawFast.size(); i += rawFastStep) {
-    m_rawData[kChartTitles[4]].emplace_back((rawFast[i].timestamp).to<double>(),
+    m_rawData[kChartTitles[4]].emplace_back((rawFast[i].timestamp).value(),
                                             rawFast[i].velocity);
-    m_rawData[kChartTitles[5]].emplace_back((rawFast[i].timestamp).to<double>(),
+    m_rawData[kChartTitles[5]].emplace_back((rawFast[i].timestamp).value(),
                                             rawFast[i].acceleration);
   }
 

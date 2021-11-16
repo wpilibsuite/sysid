@@ -166,13 +166,13 @@ class AnalysisManager {
    * Returns the minimum duration of the Step Voltage Test of the currently
    * stored data.
    */
-  double GetMinDuration() const { return m_minDuration.to<double>(); }
+  double GetMinDuration() const { return m_minDuration.value(); }
 
   /**
    * Returns the maximum duration of the Step Voltage Test of the currently
    * stored data.
    */
-  double GetMaxDuration() const { return m_maxDuration.to<double>(); }
+  double GetMaxDuration() const { return m_maxDuration.value(); }
 
   /**
    * Returns the different start times of the recorded tests.

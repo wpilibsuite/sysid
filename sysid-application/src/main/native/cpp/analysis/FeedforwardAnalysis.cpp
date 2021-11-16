@@ -112,7 +112,7 @@ std::tuple<std::vector<double>, double> sysid::CalculateFeedforwardGains(
     // Initialize gains list with Ks, Kv, and Ka
     std::vector<double> gains{
         {-gamma / beta, (1 - alpha) / beta,
-         dtMean.to<double>() * (alpha - 1) / (beta * std::log(alpha))}};
+         dtMean.value() * (alpha - 1) / (beta * std::log(alpha))}};
 
     if (type == analysis::kElevator) {
       // Add Kg to gains list
