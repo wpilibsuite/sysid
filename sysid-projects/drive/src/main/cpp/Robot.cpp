@@ -133,7 +133,7 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
       //   double xyz_dps[3];
       //   m_pigeon->GetRawGyro(xyz_dps);
       //   units::degrees_per_second_t rate{xyz_dps[2]};
-      //   return units::radians_per_second_t{rate}.to<double>();
+      //   return units::radians_per_second_t{rate}.value();
       // };
 
       // } else if (gyroType != "None") {
@@ -171,13 +171,13 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 
       //   m_gyroPosition = [&, this] {
       //     return units::radian_t(units::degree_t{m_gyro->GetAngle()})
-      //         .to<double>();
+      //         .value();
       //   };
 
       //   m_gyroRate = [&, this] {
       //     return units::radians_per_second_t(
       //                units::degrees_per_second_t{m_gyro->GetAngle()})
-      //         .to<double>();
+      //         .value();
       //   };
       // } else {
       // Default behaviour is to make the gyro functions return zero

@@ -36,7 +36,7 @@ void ArmSim::Update(units::volt_t voltage, units::second_t dt) {
   // finishing in a timely manner. Otherwise, the timestep can become absurdly
   // small for ill-conditioned data (e.g., high velocities with sharp spikes in
   // acceleration).
-  Eigen::Vector<double, 1> u{voltage.to<double>()};
+  Eigen::Vector<double, 1> u{voltage.value()};
   m_x = frc::RKF45(f, m_x, u, dt, 0.25);
 }
 
@@ -49,7 +49,7 @@ double ArmSim::GetVelocity() const {
 }
 
 double ArmSim::GetAcceleration(units::volt_t voltage) const {
-  Eigen::Vector<double, 1> u{voltage.to<double>()};
+  Eigen::Vector<double, 1> u{voltage.value()};
   return (m_A * m_x.block<1, 1>(1, 0) + m_B * u +
           m_c * wpi::sgn(GetVelocity()) + m_d * std::cos(m_x(0)))(0);
 }

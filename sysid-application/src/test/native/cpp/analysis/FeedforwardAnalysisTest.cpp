@@ -35,10 +35,10 @@ sysid::Storage CollectData(Model& model) {
 
   // Slow forward test
   auto voltage = 0_V;
-  for (int i = 0; i < (kTestDuration / T).to<double>(); ++i) {
+  for (int i = 0; i < (kTestDuration / T).value(); ++i) {
     slow.emplace_back(sysid::PreparedData{
-        i * T, voltage.to<double>(), model.GetPosition(), model.GetVelocity(),
-        0.0, T, model.GetAcceleration(voltage), std::cos(model.GetPosition())});
+        i * T, voltage.value(), model.GetPosition(), model.GetVelocity(), 0.0,
+        T, model.GetAcceleration(voltage), std::cos(model.GetPosition())});
 
     model.Update(voltage, T);
     slow.back().nextVelocity = model.GetVelocity();
@@ -48,10 +48,10 @@ sysid::Storage CollectData(Model& model) {
   // Slow backward test
   model.Reset();
   voltage = 0_V;
-  for (int i = 0; i < (kTestDuration / T).to<double>(); ++i) {
+  for (int i = 0; i < (kTestDuration / T).value(); ++i) {
     slow.emplace_back(sysid::PreparedData{
-        i * T, voltage.to<double>(), model.GetPosition(), model.GetVelocity(),
-        0.0, T, model.GetAcceleration(voltage), std::cos(model.GetPosition())});
+        i * T, voltage.value(), model.GetPosition(), model.GetVelocity(), 0.0,
+        T, model.GetAcceleration(voltage), std::cos(model.GetPosition())});
 
     model.Update(voltage, T);
     slow.back().nextVelocity = model.GetVelocity();
@@ -61,10 +61,10 @@ sysid::Storage CollectData(Model& model) {
   // Fast forward test
   model.Reset();
   voltage = 0_V;
-  for (int i = 0; i < (kTestDuration / T).to<double>(); ++i) {
+  for (int i = 0; i < (kTestDuration / T).value(); ++i) {
     fast.emplace_back(sysid::PreparedData{
-        i * T, voltage.to<double>(), model.GetPosition(), model.GetVelocity(),
-        0.0, T, model.GetAcceleration(voltage), std::cos(model.GetPosition())});
+        i * T, voltage.value(), model.GetPosition(), model.GetVelocity(), 0.0,
+        T, model.GetAcceleration(voltage), std::cos(model.GetPosition())});
 
     model.Update(voltage, T);
     fast.back().nextVelocity = model.GetVelocity();
@@ -74,10 +74,10 @@ sysid::Storage CollectData(Model& model) {
   // Fast backward test
   model.Reset();
   voltage = 0_V;
-  for (int i = 0; i < (kTestDuration / T).to<double>(); ++i) {
+  for (int i = 0; i < (kTestDuration / T).value(); ++i) {
     fast.emplace_back(sysid::PreparedData{
-        i * T, voltage.to<double>(), model.GetPosition(), model.GetVelocity(),
-        0.0, T, model.GetAcceleration(voltage), std::cos(model.GetPosition())});
+        i * T, voltage.value(), model.GetPosition(), model.GetVelocity(), 0.0,
+        T, model.GetAcceleration(voltage), std::cos(model.GetPosition())});
 
     model.Update(voltage, T);
     fast.back().nextVelocity = model.GetVelocity();

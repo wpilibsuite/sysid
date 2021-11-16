@@ -11,9 +11,9 @@ void SimpleMotor::SimulationPeriodic() {
                                       frc::RobotController::GetInputVoltage());
   m_flywheelSimulator.Update(5_ms);
 
-  auto delta = m_flywheelSimulator.GetAngularVelocity().to<double>() * 5_ms;
-  distance += delta.to<double>();
+  auto delta = m_flywheelSimulator.GetAngularVelocity().value() * 5_ms;
+  distance += delta.value();
 
   m_encoderSim.SetDistance(distance);
-  m_encoderSim.SetRate(m_flywheelSimulator.GetAngularVelocity().to<double>());
+  m_encoderSim.SetRate(m_flywheelSimulator.GetAngularVelocity().value());
 }

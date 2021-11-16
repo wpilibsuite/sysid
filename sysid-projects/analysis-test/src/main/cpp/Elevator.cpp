@@ -11,6 +11,6 @@ void Elevator::SimulationPeriodic() {
                                       frc::RobotController::GetInputVoltage());
   m_elevatorSimulator.Update(5_ms);
 
-  m_encoderSim.SetDistance(m_elevatorSimulator.GetPosition().to<double>());
-  m_encoderSim.SetRate(m_elevatorSimulator.GetVelocity().to<double>());
+  m_encoderSim.SetDistance(m_elevatorSimulator.GetPosition().value());
+  m_encoderSim.SetRate(m_elevatorSimulator.GetVelocity().value());
 }

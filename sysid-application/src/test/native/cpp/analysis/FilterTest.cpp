@@ -64,8 +64,8 @@ TEST(FilterTest, StepTrim) {
 
   EXPECT_EQ(expectedData[0].acceleration, testData[0].acceleration);
   EXPECT_EQ(expectedData.back().acceleration, testData.back().acceleration);
-  EXPECT_EQ(5, settings.stepTestDuration.to<double>());
-  EXPECT_EQ(2, minTime.to<double>());
+  EXPECT_EQ(5, settings.stepTestDuration.value());
+  EXPECT_EQ(2, minTime.value());
 }
 
 TEST(FilterTest, CentralFiniteDifference) {

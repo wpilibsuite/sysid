@@ -18,7 +18,7 @@ SimpleMotorSim::SimpleMotorSim(double Ks, double Kv, double Ka,
 }
 
 void SimpleMotorSim::Update(units::volt_t voltage, units::second_t dt) {
-  Eigen::Vector<double, 1> u{voltage.to<double>()};
+  Eigen::Vector<double, 1> u{voltage.value()};
 
   // Given dx/dt = Ax + Bu + c sgn(x),
   // x_k+1 = e^(AT) x_k + A^-1 (e^(AT) - 1) (Bu + c sgn(x))
@@ -38,7 +38,7 @@ double SimpleMotorSim::GetVelocity() const {
 }
 
 double SimpleMotorSim::GetAcceleration(units::volt_t voltage) const {
-  Eigen::Vector<double, 1> u{voltage.to<double>()};
+  Eigen::Vector<double, 1> u{voltage.value()};
   return (m_A * m_x + m_B * u + m_c * wpi::sgn(GetVelocity()))(1);
 }
 

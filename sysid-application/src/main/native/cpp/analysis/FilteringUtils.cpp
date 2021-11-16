@@ -45,7 +45,7 @@ static void PrepareMechData(std::vector<PreparedData>* data,
 
   CheckSize(*data, kWindow);
 
-  const double h = GetMeanTimeDelta(*data).to<double>();
+  const double h = GetMeanTimeDelta(*data).value();
 
   // Compute acceleration and add it to the vector.
   for (size_t i = kWindow / 2; i < data->size() - kWindow / 2; ++i) {
