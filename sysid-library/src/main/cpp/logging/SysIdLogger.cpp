@@ -8,6 +8,7 @@
 #include <sstream>
 #include <stdexcept>
 
+#include <fmt/core.h>
 #include <frc/Notifier.h>
 #include <frc/RobotBase.h>
 #include <frc/Threads.h>

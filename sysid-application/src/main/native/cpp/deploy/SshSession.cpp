@@ -12,7 +12,6 @@
 #include <iostream>
 #include <stdexcept>
 
-#include <fmt/format.h>
 #include <libssh/libssh.h>
 #include <libssh/sftp.h>
 #include <wpi/Logger.h>

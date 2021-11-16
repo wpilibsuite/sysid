@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <fmt/format.h>
 #include <frc/AnalogGyro.h>
 #include <frc/Encoder.h>
 #include <frc/controller/PIDController.h>

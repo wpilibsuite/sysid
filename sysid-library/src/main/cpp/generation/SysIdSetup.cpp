@@ -7,6 +7,7 @@
 #include <stdexcept>
 
 // #include <CANVenom.h>
+#include <fmt/core.h>
 #include <frc/Filesystem.h>
 #include <frc/TimedRobot.h>
 #include <frc/motorcontrol/Spark.h>
