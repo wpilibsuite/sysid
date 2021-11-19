@@ -213,5 +213,29 @@ model {
   }
 }
 
+if (project.hasProperty("asan")) {
+    nativeUtils.platformConfigs.named("linuxx86-64").configure {
+        it.cppCompiler.args.add('-g3')
+        it.cppCompiler.args.add('-fsanitize=address')
+        it.linker.args.add('-fsanitize=address')
+    }
+}
+
+if (project.hasProperty("tsan")) {
+    nativeUtils.platformConfigs.named("linuxx86-64").configure {
+        it.cppCompiler.args.add('-g3')
+        it.cppCompiler.args.add('-fsanitize=thread')
+        it.linker.args.add('-fsanitize=thread')
+    }
+}
+
+if (project.hasProperty("ubsan")) {
+    nativeUtils.platformConfigs.named("linuxx86-64").configure {
+        it.cppCompiler.args.add('-g3')
+        it.cppCompiler.args.add('-fsanitize=undefined')
+        it.linker.args.add('-fsanitize=undefined')
+    }
+}
+
 // Configure publishing.
 apply from: "config/publish.gradle"

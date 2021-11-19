@@ -1,0 +1,45 @@
+name: Sanitizers
+
+on: [pull_request, push]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: asan
+            build-env: ""
+            build-options: "-Pasan"
+          - name: tsan
+            build-env: "TSAN_OPTIONS=second_deadlock_stack=1"
+            build-options: "-Ptsan"
+          - name: ubsan
+            build-env: ""
+            build-options: "-Pubsan"
+    name: "${{ matrix.name }}"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 11
+          architecture: x64
+
+      - name: Install Toolchain
+        run: ./gradlew installRoborioToolchain
+
+      - name: Run sanitizers on unit tests
+        run: ${{ matrix.build-env }} ./gradlew runSysidTestReleaseGoogleTestExe ${{ matrix.build-options }}
+      - name: Run sanitizers on analysis integration tests
+        run: ${{ matrix.build-env }} ./gradlew runAnalysisIntegrationTests -PwithIntegration ${{ matrix.build-options }}
+
+      - name: Run sanitizers on generation integration tests
+        run: ${{ matrix.build-env }} ./gradlew runGenerationIntegrationTests -PwithIntegration ${{ matrix.build-options }}
