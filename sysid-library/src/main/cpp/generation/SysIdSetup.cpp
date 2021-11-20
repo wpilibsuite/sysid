@@ -53,10 +53,13 @@ void AddMotorController(
   if (controller == "TalonSRX" || controller == "VictorSPX" ||
       controller == "TalonFX") {
     if (controller == "TalonSRX") {
+      fmt::print("Setup TalonSRX");
       //   controllers->push_back(std::make_unique<WPI_TalonSRX>(port));
     } else if (controller == "TalonFX") {
+      fmt::print("Setup TalonFX");
       //   controllers->emplace_back(std::make_unique<WPI_TalonFX>(port));
     } else {
+      fmt::print("Setup VictorSPX");
       //   controllers->emplace_back(std::make_unique<WPI_VictorSPX>(port));
     }
 
@@ -68,9 +71,11 @@ void AddMotorController(
   } else if (controller == "SPARK MAX (Brushless)" ||
              controller == "SPARK MAX (Brushed)") {
     if (controller == "SPARK MAX (Brushless)") {
+      fmt::print("Setup SPARK MAX (Brushless)");
       //     controllers->emplace_back(std::make_unique<rev::CANSparkMax>(
       //         port, rev::CANSparkMax::MotorType::kBrushless));
     } else {
+      fmt::print("Setup SPARK MAX (Brushed)");
       //     controllers->emplace_back(std::make_unique<rev::CANSparkMax>(
       //         port, rev::CANSparkMax::MotorType::kBrushed));
     }
@@ -81,6 +86,7 @@ void AddMotorController(
     //   sparkMax->SetInverted(inverted);
     //   sparkMax->SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
   } else if (controller == "Venom") {
+    fmt::print("Setup Venom");
     //   controllers->emplace_back(std::make_unique<frc::CANVenom>(port));
 
     //   auto* venom = static_cast<frc::CANVenom*>(controllers->back().get());
@@ -88,6 +94,7 @@ void AddMotorController(
     //   venom->SetInverted(inverted);
     //   venom->SetBrakeCoastMode(frc::CANVenom::BrakeCoastMode::kBrake);
   } else {
+    fmt::print("Setup PWM");
     controllers->emplace_back(std::make_unique<frc::Spark>(port));
     auto* spark = static_cast<frc::Spark*>(controllers->back().get());
     spark->SetInverted(inverted);
@@ -145,14 +152,17 @@ void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
   if (encoderType == "Built-in") {
     if (wpi::starts_with(controllerName, "Talon")) {
       // FeedbackDevice feedbackDevice;
-      // if (controllerName == "TalonSRX") {
-      //   feedbackDevice = FeedbackDevice::QuadEncoder;
-      // } else {
-      //   feedbackDevice = FeedbackDevice::IntegratedSensor;
-      // }
+      if (controllerName == "TalonSRX") {
+        fmt::print("Setup Built-in+TalonSRX");
+        //   feedbackDevice = FeedbackDevice::QuadEncoder;
+      } else {
+        fmt::print("Setup Built-in+TalonFX");
+        //   feedbackDevice = FeedbackDevice::IntegratedSensor;
+      }
       // SetupCTREEncoder(controller, feedbackDevice, period, cpr, numSamples,
       //                  encoderInverted, position, rate);
     } else {  // Venom
+      fmt::print("Setup Built-in+Venom");
       //   auto* venom = static_cast<frc::CANVenom*>(controller);
       //   position = [=] { return venom->GetPosition(); };
       //   rate = [=] {
@@ -161,6 +171,7 @@ void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
       //   };
     }
   } else if (encoderType == "Encoder Port") {
+    fmt::print("Setup SPARK MAX Encoder Port");
     //   auto* sparkMax = static_cast<rev::CANSparkMax*>(controller);
     if (controllerName != "SPARK MAX (Brushless)") {
       //     sparkMax->GetEncoder(rev::CANEncoder::EncoderType::kQuadrature,
@@ -173,6 +184,7 @@ void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
     //   position = [=] { return sparkMax->GetEncoder().GetPosition(); };
     //   rate = [=] { return sparkMax->GetEncoder().GetVelocity() / 60; };
   } else if (encoderType == "Data Port") {
+    fmt::print("Setup SPARK MAX Data Port");
     //   auto* sparkMax = static_cast<rev::CANSparkMax*>(controller);
 
     //   sparkMax
@@ -202,9 +214,11 @@ void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
     //            60;
     //   };
   } else if (encoderType == "Tachometer") {
+    fmt::print("Setup Tachometer");
     // SetupCTREEncoder(controller, FeedbackDevice::Tachometer, period, cpr,
     //                  numSamples, encoderInverted, position, rate);
   } else if (encoderType == "CANCoder") {
+    fmt::print("Setup CANCoder");
     // cancoder = std::make_unique<CANCoder>(encoderPorts[0]);
     // cancoder->ConfigSensorDirection(encoderInverted);
 
@@ -217,6 +231,7 @@ void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
     // position = [&] { return cancoder->GetPosition() / cpr; };
     // rate = [&] { return cancoder->GetVelocity() / cpr; };
   } else {
+    fmt::print("Setup roboRIO quadrature");
     if (isEncoding) {
       encoder = std::make_unique<frc::Encoder>(
           encoderPorts[0], encoderPorts[1], encoderInverted,
