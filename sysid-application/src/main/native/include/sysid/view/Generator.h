@@ -43,7 +43,7 @@ struct DisplayNameStorage {
   const int size{S};
 
   explicit constexpr DisplayNameStorage(std::array<HardwareType, S> devices)
-      : names() {
+      : names{} {
     for (int i = 0; i < S; i++) {
       names[i] = devices[i].displayName;
     }
@@ -54,18 +54,18 @@ struct DisplayNameStorage {
 static constexpr auto kMotorControllerNames =
     DisplayNameStorage(sysid::motorcontroller::kMotorControllers);
 
-static constexpr std::array<const char*, 2> kGeneralEncoders = {
+static constexpr std::array<const char*, 2> kGeneralEncoders{
     sysid::encoder::kRoboRIO.displayName,
     sysid::encoder::kCANCoder.displayName};
 
-static constexpr std::array<const char*, 2> kTalonSRXEncoders = {
+static constexpr std::array<const char*, 2> kTalonSRXEncoders{
     sysid::encoder::kBuiltInSetting.displayName,
     sysid::encoder::kCTRETachometer.displayName};
 
-static constexpr std::array<const char*, 1> kBuiltInEncoders = {
+static constexpr std::array<const char*, 1> kBuiltInEncoders{
     sysid::encoder::kBuiltInSetting.displayName};
 
-static constexpr std::array<const char*, 2> kSparkMaxEncoders = {
+static constexpr std::array<const char*, 2> kSparkMaxEncoders{
     sysid::encoder::kSMaxDataPort.displayName,
     sysid::encoder::kSMaxEncoderPort.displayName};
 
@@ -149,8 +149,8 @@ class Generator : public glass::View {
 
   // Indices for combo boxes.
   int m_analysisIdx = 0;
-  int m_encoderIdx = 2;
-  int m_gyroIdx = 2;
+  int m_encoderIdx = 0;
+  int m_gyroIdx = 0;
   int m_unitsIdx = 0;
   int m_periodIdx = 6;
 
