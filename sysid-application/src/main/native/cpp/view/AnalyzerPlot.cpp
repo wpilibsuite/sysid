@@ -10,6 +10,7 @@
 #include <thread>
 #include <vector>
 
+#include <fmt/format.h>
 #include <imgui.h>
 #include <implot.h>
 #include <units/math.h>
@@ -81,23 +82,7 @@ AnalyzerPlot::AnalyzerPlot(wpi::Logger& logger) : m_logger(logger) {
   }
 }
 
-void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
-                           const std::string& unit,
-                           const std::vector<double>& ffGains,
-                           const std::array<units::second_t, 4>& startTimes,
-                           AnalysisType type, std::atomic<bool>& abort) {
-  auto& [slow, fast] = filteredData;
-  auto& [rawSlow, rawFast] = rawData;
-  const auto& Ks = ffGains[0];
-  const auto& Kv = ffGains[1];
-  const auto& Ka = ffGains[2];
-
-  auto abbreviation = GetAbbreviation(unit);
-  m_velocityLabel = "Velocity (" + abbreviation + " / s)";
-  m_accelerationLabel = "Acceleration (" + abbreviation + " / s^2)";
-
-  std::scoped_lock lock(m_mutex);
-
+void AnalyzerPlot::ResetData() {
   // Clear all data vectors.
   for (auto it = m_filteredData.begin(); it != m_filteredData.end(); ++it) {
     it->second.clear();
@@ -108,16 +93,87 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
   }
 
   m_dtMeanLine.clear();
+  m_quasistaticSim.clear();
+  m_dynamicSim.clear();
   simSquaredErrorSum = 0;
   timeSeriesPoints = 0;
+
+  // Reset Lines of Best Fit
+  m_KvFit[0] = ImPlotPoint(0, 0);
+  m_KvFit[1] = ImPlotPoint(0, 0);
+  m_KaFit[0] = ImPlotPoint(0, 0);
+  m_KaFit[1] = ImPlotPoint(0, 0);
+
+  // Fit Plots
+  FitPlots();
+}
+
+void AnalyzerPlot::SetRawTimeData(const std::vector<PreparedData>& rawSlow,
+                                  const std::vector<PreparedData>& rawFast,
+                                  std::atomic<bool>& abort) {
+  auto rawSlowStep = std::ceil(rawSlow.size() * 1.0 / kMaxSize * 4);
+  auto rawFastStep = std::ceil(rawFast.size() * 1.0 / kMaxSize * 4);
+  // Populate Raw Slow Time Series Data
+  for (size_t i = 0; i < rawSlow.size(); i += rawSlowStep) {
+    if (abort) {
+      return;
+    }
+    m_rawData[kChartTitles[2]].emplace_back((rawSlow[i].timestamp).value(),
+                                            rawSlow[i].velocity);
+    m_rawData[kChartTitles[3]].emplace_back((rawSlow[i].timestamp).value(),
+                                            rawSlow[i].acceleration);
+  }
+
+  // Populate Raw fast Time Series Data
+  for (size_t i = 0; i < rawFast.size(); i += rawFastStep) {
+    if (abort) {
+      return;
+    }
+    m_rawData[kChartTitles[4]].emplace_back((rawFast[i].timestamp).value(),
+                                            rawFast[i].velocity);
+    m_rawData[kChartTitles[5]].emplace_back((rawFast[i].timestamp).value(),
+                                            rawFast[i].acceleration);
+  }
+}
+
+void AnalyzerPlot::SetGraphLabels(std::string_view unit) {
+  auto abbreviation = GetAbbreviation(unit);
+  m_velocityLabel = fmt::format("Velocity ({} / s)", abbreviation);
+  m_accelerationLabel = fmt::format("Acceleration ({} / s^2)", abbreviation);
+}
+
+void AnalyzerPlot::SetRawData(const Storage& rawData, std::string_view unit,
+                              std::atomic<bool>& abort) {
+  auto& [rawSlow, rawFast] = rawData;
+  SetGraphLabels(unit);
+
+  std::scoped_lock lock(m_mutex);
+
+  ResetData();
+  SetRawTimeData(rawSlow, rawFast, abort);
+}
+
+void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
+                           std::string_view unit,
+                           const std::vector<double>& ffGains,
+                           const std::array<units::second_t, 4>& startTimes,
+                           AnalysisType type, std::atomic<bool>& abort) {
+  auto& [slow, fast] = filteredData;
+  auto& [rawSlow, rawFast] = rawData;
+  const auto& Ks = ffGains[0];
+  const auto& Kv = ffGains[1];
+  const auto& Ka = ffGains[2];
+
+  SetGraphLabels(unit);
+
+  std::scoped_lock lock(m_mutex);
+
+  ResetData();
 
   // Calculate step sizes to ensure that we only use the memory that we
   // allocated.
   auto slowStep = std::ceil(slow.size() * 1.0 / kMaxSize * 4);
   auto fastStep = std::ceil(fast.size() * 1.0 / kMaxSize * 4);
-
-  auto rawSlowStep = std::ceil(rawSlow.size() * 1.0 / kMaxSize * 4);
-  auto rawFastStep = std::ceil(rawFast.size() * 1.0 / kMaxSize * 4);
 
   // Calculate min and max velocities and accelerations of the slow and fast
   // datasets respectively.
@@ -244,21 +300,7 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
   m_dtMeanLine.emplace_back(maxTime.value(),
                             units::millisecond_t{dtMean}.value());
 
-  // Populate Raw Slow Time Series Data
-  for (size_t i = 0; i < rawSlow.size(); i += rawSlowStep) {
-    m_rawData[kChartTitles[2]].emplace_back((rawSlow[i].timestamp).value(),
-                                            rawSlow[i].velocity);
-    m_rawData[kChartTitles[3]].emplace_back((rawSlow[i].timestamp).value(),
-                                            rawSlow[i].acceleration);
-  }
-
-  // Populate Raw fast Time Series Data
-  for (size_t i = 0; i < rawFast.size(); i += rawFastStep) {
-    m_rawData[kChartTitles[4]].emplace_back((rawFast[i].timestamp).value(),
-                                            rawFast[i].velocity);
-    m_rawData[kChartTitles[5]].emplace_back((rawFast[i].timestamp).value(),
-                                            rawFast[i].acceleration);
-  }
+  SetRawTimeData(rawSlow, rawFast, abort);
 
   // Populate Simulated Time Series Data.
   if (type == analysis::kElevator) {

@@ -106,6 +106,16 @@ class Analyzer : public glass::View {
    */
   bool LoadPlots();
 
+  /**
+   * Handles errors when they pop up.
+   */
+  void HandleGeneralError(const std::exception& e);
+
+  /**
+   * Handles json errors when they pop up.
+   */
+  void HandleJSONError(const wpi::json::exception& e);
+
   // This is true when the analysis is allowed to occur.
   bool m_enabled = true;
 

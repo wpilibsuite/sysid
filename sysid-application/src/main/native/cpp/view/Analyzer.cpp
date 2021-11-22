@@ -82,7 +82,9 @@ void Analyzer::Display() {
       try {
         m_manager = std::make_unique<AnalysisManager>(*m_location, m_settings,
                                                       m_logger);
+        PrepareData();
         m_type = m_manager->GetAnalysisType();
+        m_unit = m_manager->GetUnit();
 
         Calculate();
         PrepareData();
@@ -463,9 +465,7 @@ void Analyzer::Display() {
   try {
     SelectFile();
   } catch (const std::exception& e) {
-    m_exception = e.what();
-    ResetManagerState();
-    m_errorPopup = true;
+    HandleGeneralError(e);
   }
 
   if (m_errorPopup) {
@@ -505,11 +505,7 @@ void Analyzer::SelectFile() {
       RefreshInformation();
       ConfigParamsOnFileSelect();
     } catch (const wpi::json::exception& e) {
-      m_exception =
-          "The provided JSON was invalid! You may need to rerun the logger.\n" +
-          std::string(e.what());
-      ResetManagerState();
-      m_errorPopup = true;
+      HandleJSONError(e);
     }
   }
 }
@@ -523,15 +519,9 @@ void Analyzer::PrepareData() {
   try {
     m_manager->PrepareData();
   } catch (const wpi::json::exception& e) {
-    m_exception =
-        "The provided JSON was invalid! You may need to rerun the logger.\n" +
-        std::string(e.what());
-    ResetManagerState();
-    m_errorPopup = true;
+    HandleJSONError(e);
   } catch (const std::exception& e) {
-    m_exception = e.what();
-    ResetManagerState();
-    m_errorPopup = true;
+    HandleGeneralError(e);
   }
 }
 
@@ -548,12 +538,9 @@ void Analyzer::Calculate() {
     m_Kp = fb.Kp;
     m_Kd = fb.Kd;
     m_trackWidth = trackWidth;
-    m_unit = m_manager->GetUnit();
     m_factor = m_manager->GetFactor();
   } catch (const std::exception& e) {
-    m_exception = e.what();
-    ResetManagerState();
-    m_errorPopup = true;
+    HandleGeneralError(e);
   }
 }
 
@@ -568,7 +555,16 @@ void Analyzer::AbortDataPrep() {
 void Analyzer::PrepareGraphs() {
   WPI_DEBUG(m_logger, "{}", "Graphing Data.");
   if (!m_enabled) {
-    WPI_DEBUG(m_logger, "{}", "Returning early for graphing.");
+    WPI_DEBUG(m_logger, "{}", "Attempting to graph only raw time series.");
+    try {
+      AbortDataPrep();
+      m_dataThread = std::thread([&] {
+        m_plot.SetRawData(m_manager->GetOriginalData(), m_manager->GetUnit(),
+                          m_abortDataPrep);
+      });
+    } catch (const std::exception& e) {
+      HandleGeneralError(e);
+    }
     return;
   }
   try {
@@ -579,9 +575,7 @@ void Analyzer::PrepareGraphs() {
                      m_type, m_abortDataPrep);
     });
   } catch (const std::exception& e) {
-    m_exception = e.what();
-    ResetManagerState();
-    m_errorPopup = true;
+    HandleGeneralError(e);
   }
 }
 
@@ -593,6 +587,21 @@ void Analyzer::RefreshInformation() {
 
 void Analyzer::ResetManagerState() {
   m_enabled = false;
+}
+
+void Analyzer::HandleGeneralError(const std::exception& e) {
+  m_exception = e.what();
+  ResetManagerState();
+  m_errorPopup = true;
+}
+
+void Analyzer::HandleJSONError(const wpi::json::exception& e) {
+  m_exception = fmt::format(
+      "The provided JSON was invalid! You may need to rerun the logger.\nError "
+      "message:{}",
+      std::string(e.what()));
+  ResetManagerState();
+  m_errorPopup = true;
 }
 
 void Analyzer::DisplayFeedforwardGains(bool combined) {

@@ -7,6 +7,7 @@
 #include <array>
 #include <atomic>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <imgui.h>
@@ -47,10 +48,11 @@ class AnalyzerPlot {
   explicit AnalyzerPlot(wpi::Logger& logger);
 
   /**
-   * Sets the raw data to be displayed on the plots.
+   * Sets the data to be displayed on the plots.
    *
    * @param rawData      Raw data storage.
    * @param filteredData Filtered data storage.
+   * @param unit         Unit of the dataset
    * @param ffGains      List of feedforward gains (Ks, Kv, Ka, and optionally
    *                     either Kg or Kcos).
    * @param startTimes   Array of dataset start times.
@@ -59,10 +61,43 @@ class AnalyzerPlot {
    *                     thread.
    */
   void SetData(const Storage& rawData, const Storage& filteredData,
-               const std::string& unit, const std::vector<double>& ff,
+               std::string_view unit, const std::vector<double>& ff,
                const std::array<units::second_t, 4>& startTimes,
                AnalysisType type, std::atomic<bool>& abort);
 
+  /**
+   * Utility method to plot the raw time series data
+   *
+   * @param rawSlow The raw slow (quasistatic) test data
+   * @param rawFast The raw fast (dynamic) test data
+   * @param abort   Aborts analysis early if set to true from another thread
+   */
+  void SetRawTimeData(const std::vector<PreparedData>& rawSlow,
+                      const std::vector<PreparedData>& rawFast,
+                      std::atomic<bool>& abort);
+
+  /**
+   * Utility method to reset everything before generating the points to plot.
+   */
+  void ResetData();
+
+  /**
+   * Utility method to get set the graph labels based off of the units
+   *
+   * @param unit Unit of the dataset
+   */
+  void SetGraphLabels(std::string_view unit);
+
+  /**
+   * Sets up only the raw time series data to be plotted. This is mainly
+   * intended to be used if the filtered data has issues with it.
+   *
+   * @param rawData Raw data storage.
+   * @param unit    Unit of the dataset.
+   * @param abort   Aborts analysis early if set to true from another thread.
+   */
+  void SetRawData(const Storage& rawData, std::string_view unit,
+                  std::atomic<bool>& abort);
   /**
    * Displays voltage-domain plots.
    *

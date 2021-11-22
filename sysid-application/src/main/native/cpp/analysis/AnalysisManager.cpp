@@ -16,6 +16,7 @@
 #include <fmt/format.h>
 #include <units/angle.h>
 #include <units/math.h>
+#include <wpi/StringExtras.h>
 #include <wpi/StringMap.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
@@ -100,8 +101,9 @@ static void CopyRawData(
     auto key = it.first();
     auto& dataset = it.getValue();
 
-    if (key.find("raw") == std::string_view::npos) {
+    if (!wpi::contains(key, "raw")) {
       data[fmt::format("raw-{}", key)] = dataset;
+      data[fmt::format("original-raw-{}", key)] = dataset;
     }
   }
 }
@@ -164,6 +166,7 @@ static void PrepareGeneralData(
     const wpi::json& json, AnalysisManager::Settings& settings, double factor,
     std::string_view unit, wpi::StringMap<Storage>& rawDatasets,
     wpi::StringMap<Storage>& filteredDatasets,
+    wpi::StringMap<Storage>& originalDatasets,
     std::array<units::second_t, 4>& startTimes, units::second_t& minStepTime,
     units::second_t& maxStepTime, wpi::Logger& logger) {
   using Data = std::array<double, 4>;
@@ -204,6 +207,12 @@ static void PrepareGeneralData(
         ConvertToPrepared<4, kTimeCol, kVoltageCol, kPosCol, kVelCol>(
             data[key]);
   }
+
+  // Store the original datasets
+  StoreDatasets(&originalDatasets, preparedData["original-raw-slow-forward"],
+                preparedData["original-raw-slow-backward"],
+                preparedData["original-raw-fast-forward"],
+                preparedData["original-raw-fast-backward"]);
 
   WPI_DEBUG(logger, "{}", "Initial trimming and filtering.");
   sysid::InitialTrimAndFilter(&preparedData, settings, minStepTime, maxStepTime,
@@ -258,6 +267,7 @@ static void PrepareAngularDrivetrainData(
     const wpi::json& json, AnalysisManager::Settings& settings, double factor,
     std::optional<double>& trackWidth, wpi::StringMap<Storage>& rawDatasets,
     wpi::StringMap<Storage>& filteredDatasets,
+    wpi::StringMap<Storage>& originalDatasets,
     std::array<units::second_t, 4>& startTimes, units::second_t& minStepTime,
     units::second_t& maxStepTime, wpi::Logger& logger) {
   using Data = std::array<double, 9>;
@@ -305,6 +315,13 @@ static void PrepareAngularDrivetrainData(
     preparedData[key] = ConvertToPrepared<9, kTimeCol, kLVoltageCol, kAngleCol,
                                           kAngularRateCol>(data[key]);
   }
+
+  // Create the distinct datasets and store them in our StringMap (do note the
+  // units will be off as they haven't been properly converted yet).
+  StoreDatasets(&originalDatasets, preparedData["original-raw-slow-forward"],
+                preparedData["original-raw-slow-backward"],
+                preparedData["original-raw-fast-forward"],
+                preparedData["original-raw-fast-backward"]);
 
   WPI_DEBUG(logger, "{}", "Applying trimming and filtering.");
   sysid::InitialTrimAndFilter(&preparedData, settings, minStepTime,
@@ -382,6 +399,7 @@ static void PrepareLinearDrivetrainData(
     const wpi::json& json, AnalysisManager::Settings& settings, double factor,
     wpi::StringMap<Storage>& rawDatasets,
     wpi::StringMap<Storage>& filteredDatasets,
+    wpi::StringMap<Storage>& originalDatasets,
     std::array<units::second_t, 4>& startTimes, units::second_t& minStepTime,
     units::second_t& maxStepTime, wpi::Logger& logger) {
   using Data = std::array<double, 9>;
@@ -432,6 +450,41 @@ static void PrepareLinearDrivetrainData(
         ConvertToPrepared<9, kTimeCol, kRVoltageCol, kRPosCol, kRVelCol>(
             data[key]);
   }
+
+  // Store original data data as variables
+  auto originalSlowForwardLeft = preparedData["left-original-raw-slow-forward"];
+  auto originalSlowForwardRight =
+      preparedData["right-original-raw-slow-forward"];
+  auto originalSlowBackwardLeft =
+      preparedData["left-original-raw-slow-backward"];
+  auto originalSlowBackwardRight =
+      preparedData["right-original-raw-slow-backward"];
+  auto originalFastForwardLeft = preparedData["left-original-raw-fast-forward"];
+  auto originalFastForwardRight =
+      preparedData["right-original-raw-fast-forward"];
+  auto originalFastBackwardLeft =
+      preparedData["left-original-raw-fast-backward"];
+  auto originalFastBackwardRight =
+      preparedData["right-original-raw-fast-backward"];
+
+  // Create the distinct raw datasets and store them in our StringMap.
+  auto originalSlowForward =
+      DataConcat(originalSlowForwardLeft, originalSlowForwardRight);
+  auto originalSlowBackward =
+      DataConcat(originalSlowBackwardLeft, originalSlowBackwardRight);
+  auto originalFastForward =
+      DataConcat(originalFastForwardLeft, originalFastForwardRight);
+  auto originalFastBackward =
+      DataConcat(originalFastBackwardLeft, originalFastBackwardRight);
+
+  StoreDatasets(&originalDatasets, originalSlowForward, originalSlowBackward,
+                originalFastForward, originalFastBackward);
+  StoreDatasets(&originalDatasets, originalSlowForwardLeft,
+                originalSlowBackwardLeft, originalFastForwardLeft,
+                originalFastBackwardLeft, "Left");
+  StoreDatasets(&originalDatasets, originalSlowForwardRight,
+                originalSlowBackwardRight, originalFastForwardRight,
+                originalFastBackwardRight, "Right");
 
   WPI_DEBUG(logger, "{}", "Applying trimming and filtering.");
   sysid::InitialTrimAndFilter(&preparedData, settings, minStepTime,
@@ -522,9 +575,6 @@ AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,
     // Reset settings for Dynamic Test Limits
     m_settings.stepTestDuration = units::second_t{0.0};
     m_minDuration = units::second_t{100000};
-
-    // Prepare data.
-    PrepareData();
   }
 }
 
@@ -532,17 +582,18 @@ void AnalysisManager::PrepareData() {
   WPI_DEBUG(m_logger, "Preparing {} data", m_type.name);
   if (m_type == analysis::kDrivetrain) {
     PrepareLinearDrivetrainData(m_json, m_settings, m_factor, m_rawDatasets,
-                                m_filteredDatasets, m_startTimes, m_minDuration,
-                                m_maxDuration, m_logger);
+                                m_filteredDatasets, m_originalDatasets,
+                                m_startTimes, m_minDuration, m_maxDuration,
+                                m_logger);
   } else if (m_type == analysis::kDrivetrainAngular) {
     PrepareAngularDrivetrainData(m_json, m_settings, m_factor, m_trackWidth,
                                  m_rawDatasets, m_filteredDatasets,
-                                 m_startTimes, m_minDuration, m_maxDuration,
-                                 m_logger);
+                                 m_originalDatasets, m_startTimes,
+                                 m_minDuration, m_maxDuration, m_logger);
   } else {
     PrepareGeneralData(m_json, m_settings, m_factor, m_unit, m_rawDatasets,
-                       m_filteredDatasets, m_startTimes, m_minDuration,
-                       m_maxDuration, m_logger);
+                       m_filteredDatasets, m_originalDatasets, m_startTimes,
+                       m_minDuration, m_maxDuration, m_logger);
   }
   WPI_DEBUG(m_logger, "{}", "Finished Preparing Data");
 }

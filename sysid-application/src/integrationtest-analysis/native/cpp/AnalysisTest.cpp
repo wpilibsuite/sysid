@@ -89,6 +89,8 @@ class AnalysisTest : public ::testing::Test {
       }
       sysid::AnalysisManager analyzer{path, analyzerSettings, m_logger};
 
+      analyzer.PrepareData();
+
       const auto& [ff, fb, trackWidth] = analyzer.Calculate();
       const auto& ffGains = std::get<0>(ff);
 
