@@ -133,7 +133,7 @@ class AnalysisManager {
    *
    * @return The units of analysis.
    */
-  const std::string& GetUnit() const { return m_unit; }
+  std::string_view GetUnit() const { return m_unit; }
 
   /**
    * Returns the factor (a.k.a. units per rotation) for analysis.

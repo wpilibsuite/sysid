@@ -82,7 +82,7 @@ AnalyzerPlot::AnalyzerPlot(wpi::Logger& logger) : m_logger(logger) {
 }
 
 void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
-                           const std::string& unit,
+                           std::string_view unit,
                            const std::vector<double>& ffGains,
                            const std::array<units::second_t, 4>& startTimes,
                            AnalysisType type, std::atomic<bool>& abort) {

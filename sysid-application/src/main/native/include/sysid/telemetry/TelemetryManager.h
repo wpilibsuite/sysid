@@ -84,8 +84,7 @@ class TelemetryManager {
    * Registers a callback that's called by the TelemetryManager when there is a
    * message to display to the user.
    */
-  void RegisterDisplayCallback(
-      std::function<void(const std::string&)> callback) {
+  void RegisterDisplayCallback(std::function<void(std::string_view)> callback) {
     m_callbacks.emplace_back(std::move(callback));
   }
 
@@ -169,7 +168,7 @@ class TelemetryManager {
   wpi::json m_data;
 
   // Display callbacks.
-  wpi::SmallVector<std::function<void(const std::string&)>, 1> m_callbacks;
+  wpi::SmallVector<std::function<void(std::string_view)>, 1> m_callbacks;
 
   // NetworkTables instance and entries.
   NT_Inst m_inst;
