@@ -4,6 +4,8 @@
 
 #include <cstdlib>
 #include <exception>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -13,6 +15,7 @@
 #include <ntcore_cpp.h>
 #include <wpi/Logger.h>
 #include <wpi/SmallVector.h>
+#include <wpi/StringExtras.h>
 #include <wpi/StringMap.h>
 #include <wpi/fs.h>
 #include <wpi/timestamp.h>
@@ -80,7 +83,60 @@ class GenerationTest : public ::testing::Test {
     std::this_thread::sleep_for(2s);
   }
 
+  std::string ReadFile(std::string_view filename) {
+    std::ifstream file{filename.data()};
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+  }
+
+  void FindInLog(std::string_view str) {
+    auto searchString = fmt::format("Setup {}", str);
+    fmt::print(stderr, "Searching for: {}\n", searchString);
+    bool found = wpi::contains(m_logContent, searchString);
+    EXPECT_TRUE(found);
+
+    // Prints out stored output to help with debugging
+    if (!found) {
+      fmt::print(stderr, "{}\n", m_logContent);
+    }
+  }
+
+  void TestHardwareConfig(std::string_view motorController,
+                          std::string_view encoder) {
+    FindInLog(motorController);
+
+    // FIXME: Add in motor controller specific items once CTRE and REV
+    // simulations work
+    std::string encoderString;
+    if (encoder == sysid::encoder::kBuiltInSetting.name) {
+      encoderString = fmt::format("{}+{}", motorController, encoder);
+    } else if (wpi::starts_with(motorController, "SPARK MAX") &&
+               (encoder == sysid::encoder::kSMaxDataPort.name ||
+                encoder == sysid::encoder::kSMaxEncoderPort.name)) {
+      encoderString = fmt::format("SPARK MAX {}", encoder);
+    } else {
+      encoderString = encoder;
+    }
+
+    FindInLog(encoder);
+  }
+
+  void TestHardwareConfig(std::string_view motorController,
+                          std::string_view encoder, std::string_view gyro,
+                          std::string_view gyroCtor) {
+    TestHardwareConfig(motorController, encoder);
+
+    // FIXME: Add in gyro specific conditions once CTRE and REV simulations work
+    if (gyro == sysid::gyro::kNoGyroOption.name) {
+      FindInLog(gyro);
+    } else {
+      FindInLog(fmt::format("{}, Port:{}", gyro, gyroCtor));
+    }
+  }
+
   void Run() {
+    ::testing::internal::CaptureStdout();
     LaunchSim(m_directory);
 
     Connect(m_nt, m_kill);
@@ -97,6 +153,10 @@ class GenerationTest : public ::testing::Test {
     std::this_thread::sleep_for(1s);
 
     KillNT(m_nt, m_kill);
+
+    // Wait for program output to be generated and then store it
+    std::this_thread::sleep_for(1s);
+    m_logContent = ::testing::internal::GetCapturedStdout();
   }
 
   void LaunchAndConnect() {
@@ -140,7 +200,9 @@ class GenerationTest : public ::testing::Test {
   }
 
   std::string m_directory;
+  std::string m_logContent;
   fs::path m_jsonPath;
+  fs::path m_logPath;
 
   sysid::ConfigSettings m_settings;
   sysid::ConfigManager m_manager{m_settings, m_logger};
@@ -166,7 +228,6 @@ TEST_F(GenerationTest, GeneralMechanism) {
       m_settings.encoderType = encoder;
       fmt::print(stderr, "Testing: {} and {}\n", motorController.name,
                  encoder.name);
-
       auto json = m_manager.Generate(size);
       sysid::SaveFile(json.dump(), m_jsonPath);
 
@@ -175,6 +236,8 @@ TEST_F(GenerationTest, GeneralMechanism) {
         TearDown();
         return;
       }
+
+      TestHardwareConfig(motorController.name, encoder.name);
     }
   }
 }
@@ -201,7 +264,6 @@ TEST_F(GenerationTest, Drivetrain) {
     for (auto&& gyroCtor : gyroCtorMap[gyro.name]) {
       m_settings.gyroCtor = gyroCtor;
       fmt::print(stderr, "Testing: {} using {}\n", gyro.name, gyroCtor);
-
       auto json = m_manager.Generate(size);
       sysid::SaveFile(json.dump(), m_jsonPath);
 
@@ -210,6 +272,8 @@ TEST_F(GenerationTest, Drivetrain) {
         TearDown();
         return;
       }
+      TestHardwareConfig(m_settings.motorControllers[0].name,
+                         m_settings.encoderType.name, gyro.name, gyroCtor);
     }
   }
 
