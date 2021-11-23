@@ -59,7 +59,7 @@ class AnalyzerPlot {
    *                     thread.
    */
   void SetData(const Storage& rawData, const Storage& filteredData,
-               const std::string& unit, const std::vector<double>& ff,
+               std::string_view unit, const std::vector<double>& ff,
                const std::array<units::second_t, 4>& startTimes,
                AnalysisType type, std::atomic<bool>& abort);
 
