@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <string>
 #include <string_view>
 
 #include <ntcore_c.h>
@@ -36,8 +37,10 @@ void Connect(NT_Inst nt, NT_Entry kill);
  * the robot code. This assumes that the simulated code uses a NT kill entry to
  * end the simulation.
  *
- * @param nt the Network Tables Intstance
+ * @param nt the Network Tables Instance
  * @param kill the Network Tables Entry responsible for killing the simulated
- * code.
+ *             code.
+ *
+ * @return captured console output during the robot simulation.
  */
-void KillNT(NT_Inst nt, NT_Entry kill);
+std::string KillNT(NT_Inst nt, NT_Entry kill);

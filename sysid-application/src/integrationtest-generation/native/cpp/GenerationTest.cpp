@@ -4,8 +4,6 @@
 
 #include <cstdlib>
 #include <exception>
-#include <fstream>
-#include <sstream>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -83,13 +81,6 @@ class GenerationTest : public ::testing::Test {
     std::this_thread::sleep_for(2s);
   }
 
-  std::string ReadFile(std::string_view filename) {
-    std::ifstream file{filename.data()};
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
-  }
-
   void FindInLog(std::string_view str) {
     auto searchString = fmt::format("Setup {}", str);
     fmt::print(stderr, "Searching for: {}\n", searchString);
@@ -136,7 +127,6 @@ class GenerationTest : public ::testing::Test {
   }
 
   void Run() {
-    ::testing::internal::CaptureStdout();
     LaunchSim(m_directory);
 
     Connect(m_nt, m_kill);
@@ -148,15 +138,11 @@ class GenerationTest : public ::testing::Test {
     std::this_thread::sleep_for(250ms);
     ASSERT_TRUE(nt::IsConnected(m_nt));
 
-    fmt::print(stderr, "Post test sleep (1s)\n");
+    // Wait longer for output to be flushed
+    fmt::print(stderr, "Post test sleep (2s)\n");
+    std::this_thread::sleep_for(2s);
 
-    std::this_thread::sleep_for(1s);
-
-    KillNT(m_nt, m_kill);
-
-    // Wait for program output to be generated and then store it
-    std::this_thread::sleep_for(1s);
-    m_logContent = ::testing::internal::GetCapturedStdout();
+    m_logContent = KillNT(m_nt, m_kill);
   }
 
   void LaunchAndConnect() {
@@ -202,7 +188,6 @@ class GenerationTest : public ::testing::Test {
   std::string m_directory;
   std::string m_logContent;
   fs::path m_jsonPath;
-  fs::path m_logPath;
 
   sysid::ConfigSettings m_settings;
   sysid::ConfigManager m_manager{m_settings, m_logger};

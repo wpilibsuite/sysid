@@ -4,6 +4,7 @@
 
 #include "IntegrationUtils.h"
 
+#include <stdexcept>
 #include <string>
 
 #include <fmt/core.h>
@@ -33,6 +34,10 @@ void LaunchSim(std::string_view projectDirectory) {
                   projectDirectory, DETACHED_SUFFIX);
   fmt::print(stderr, "Executing: {}\n", runCmd);
 
+  // Start capturing console output before gradle command to capture program
+  // data
+  ::testing::internal::CaptureStdout();
+
   result = std::system(runCmd.c_str());
 
   // Exit the test if we could not run the robot program.
@@ -58,7 +63,10 @@ void Connect(NT_Inst nt, NT_Entry kill) {
   }
 }
 
-void KillNT(NT_Inst nt, NT_Entry kill) {
+std::string KillNT(NT_Inst nt, NT_Entry kill) {
+  // Before killing sim, store any captured console output.
+  auto capturedStdout = ::testing::internal::GetCapturedStdout();
+
   fmt::print(stderr, "Killing program\n");
   auto time = wpi::Now();
 
@@ -67,8 +75,8 @@ void KillNT(NT_Inst nt, NT_Entry kill) {
     nt::SetEntryValue(kill, nt::Value::MakeBoolean(true));
     nt::Flush(nt);
     if (wpi::Now() - time > 3E7) {
-      FAIL();
-      break;
+      EXPECT_TRUE(false);
+      return capturedStdout;
     }
   }
 
@@ -78,4 +86,6 @@ void KillNT(NT_Inst nt, NT_Entry kill) {
   nt::SetEntryValue(kill, nt::Value::MakeBoolean(false));
   // Stop NT Client.
   nt::StopClient(nt);
+
+  return capturedStdout;
 }
