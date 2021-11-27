@@ -67,7 +67,7 @@ void Application(std::string_view saveDir) {
   gui::AddIcon(sysid::GetResource_sysid_256_png());
   gui::AddIcon(sysid::GetResource_sysid_512_png());
 
-  // Set storage directory
+  glass::SetStorageName("sysid");
   glass::SetStorageDir(saveDir.empty() ? gui::GetPlatformSaveFileDir()
                                        : saveDir);
 
