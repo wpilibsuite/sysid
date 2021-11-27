@@ -144,8 +144,8 @@ class Generator : public glass::View {
   ConfigSettings m_settings;
 
   // Persistent storage pointers for project generation.
-  double* m_pUnitsPerRotation;
-  std::string* m_pAnalysisType;
+  double& m_pUnitsPerRotation;
+  std::string& m_pAnalysisType;
 
   // Indices for combo boxes.
   int m_analysisIdx = 0;
@@ -176,7 +176,7 @@ class Generator : public glass::View {
   // The team number for the deploy process -- can also be a hostname or IP
   // address of a RoboRIO. This points to the same location in memory as the
   // "team" field in the Logger GUI.
-  std::string* m_pTeam;
+  std::string& m_pTeam;
 
   // Create a separate logger for the deploy process. We can display all output
   // messages in the modal popup during the deploy.

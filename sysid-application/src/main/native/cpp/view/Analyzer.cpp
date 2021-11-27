@@ -30,7 +30,9 @@ using namespace sysid;
 
 static double kBadDataGain = -9999.0;
 
-Analyzer::Analyzer(wpi::Logger& logger) : m_logger(logger) {
+Analyzer::Analyzer(wpi::Logger& logger)
+    : m_location{glass::GetStorage().GetString("AnalyzerJSONLocation")},
+      m_logger(logger) {
   // Fill the StringMap with preset values.
   m_presets["Default"] = presets::kDefault;
   m_presets["WPILib (2020-)"] = presets::kWPILibNew;
@@ -40,9 +42,6 @@ Analyzer::Analyzer(wpi::Logger& logger) : m_logger(logger) {
   m_presets["REV (Brushless)"] = presets::kREVBrushless;
   m_presets["REV (Brushed)"] = presets::kREVBrushed;
   m_presets["Venom"] = presets::kVenom;
-
-  // Load the last file location from storage if it exists.
-  m_location = &glass::GetStorage().GetString("AnalyzerJSONLocation");
 }
 
 void Analyzer::DisplayGain(const char* text, double* data) {
@@ -78,11 +77,11 @@ void Analyzer::Display() {
   // If this is the first call to Display() and there's a valid m_location, load
   // it.
   if (first) {
-    if (!m_location->empty() && fs::exists(*m_location)) {
-      WPI_DEBUG(m_logger, "Previous file location exists: {}", *m_location);
+    if (!m_location.empty() && fs::exists(m_location)) {
+      WPI_DEBUG(m_logger, "Previous file location exists: {}", m_location);
       try {
-        m_manager = std::make_unique<AnalysisManager>(*m_location, m_settings,
-                                                      m_logger);
+        m_manager =
+            std::make_unique<AnalysisManager>(m_location, m_settings, m_logger);
         PrepareData();
         m_type = m_manager->GetAnalysisType();
         m_unit = m_manager->GetUnit();
@@ -106,7 +105,7 @@ void Analyzer::Display() {
             "An error occurred when attempting to load the previous JSON.");
       }
     } else {
-      *m_location = "";
+      m_location = "";
     }
     first = false;
   }
@@ -119,7 +118,7 @@ void Analyzer::Display() {
   }
   ImGui::SameLine();
   ImGui::SetNextItemWidth(width - ImGui::CalcTextSize("Select").x);
-  ImGui::InputText("##location", m_location, ImGuiInputTextFlags_ReadOnly);
+  ImGui::InputText("##location", &m_location, ImGuiInputTextFlags_ReadOnly);
 
   // Allow the user to select which data set they want analyzed and add a reset
   // button. Also show the units and the units per rotation.
@@ -134,7 +133,7 @@ void Analyzer::Display() {
     ImGui::SameLine(width - ImGui::CalcTextSize("Reset").x);
     if (ImGui::Button("Reset")) {
       m_manager.reset();
-      *m_location = "";
+      m_location = "";
       m_enabled = true;
     }
     ImGui::Spacing();
@@ -493,7 +492,7 @@ void Analyzer::SelectFile() {
   if (m_selector && m_selector->ready() && !m_selector->result().empty()) {
     // Store the location of the file and reset the selector.
     WPI_DEBUG(m_logger, "Opening File: {}", m_selector->result()[0]);
-    *m_location = m_selector->result()[0];
+    m_location = m_selector->result()[0];
     m_selector.reset();
     m_enabled = true;
     WPI_DEBUG(m_logger, "{}", "Opened File");
@@ -501,7 +500,7 @@ void Analyzer::SelectFile() {
     // Create the analysis manager.
     try {
       m_manager =
-          std::make_unique<AnalysisManager>(*m_location, m_settings, m_logger);
+          std::make_unique<AnalysisManager>(m_location, m_settings, m_logger);
       m_type = m_manager->GetAnalysisType();
       RefreshInformation();
       ConfigParamsOnFileSelect();
