@@ -162,6 +162,10 @@ class AnalysisManager {
     return m_filteredDatasets[kDatasets[m_settings.dataset]];
   }
 
+  Storage& GetOriginalData() {
+    return m_originalDatasets[kDatasets[m_settings.dataset]];
+  }
+
   /**
    * Returns the minimum duration of the Step Voltage Test of the currently
    * stored data.
@@ -186,6 +190,7 @@ class AnalysisManager {
   // Backward, etc.)
   wpi::json m_json;
   wpi::StringMap<Storage> m_rawDatasets;
+  wpi::StringMap<Storage> m_originalDatasets;
   wpi::StringMap<Storage> m_filteredDatasets;
 
   // Stores the various start times of the different tests.

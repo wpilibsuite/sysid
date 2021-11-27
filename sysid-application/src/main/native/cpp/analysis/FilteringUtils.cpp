@@ -12,6 +12,7 @@
 #include <frc/filter/LinearFilter.h>
 #include <frc/filter/MedianFilter.h>
 #include <units/math.h>
+#include <wpi/StringExtras.h>
 #include <wpi/numbers>
 
 using namespace sysid;
@@ -29,6 +30,28 @@ static void CheckSize(const std::vector<PreparedData>& data, int window) {
         "The data collected is too small! This can be caused by too high of a "
         "motion threshold or bad data collection.");
   }
+}
+
+/**
+ * Helper function that determines if a certain key is storing raw data.
+ *
+ * @param key The key of the dataset
+ *
+ * @return True, if the key corresponds to a raw dataset.
+ */
+static bool IsRaw(std::string_view key) {
+  return wpi::contains(key, "raw") && !wpi::contains(key, "original");
+}
+
+/**
+ * Helper function that determines if a certain key is storing filtered data.
+ *
+ * @param key The key of the dataset
+ *
+ * @return True, if the key corresponds to a filtered dataset.
+ */
+static bool IsFiltered(std::string_view key) {
+  return !wpi::contains(key, "raw") && !wpi::contains(key, "original");
 }
 
 /**
@@ -223,7 +246,7 @@ static units::second_t GetMaxTime(
     auto key = it.first();
     auto& dataset = it.getValue();
 
-    if (key.find("raw-fast") != std::string_view::npos) {
+    if (IsRaw(key) && wpi::contains(key, "fast")) {
       auto duration = dataset.back().timestamp - dataset.front().timestamp;
       if (duration > maxDuration) {
         maxDuration = duration;
@@ -248,7 +271,7 @@ void sysid::InitialTrimAndFilter(
 
     // Trim quasistatic test data to remove all points where voltage is zero or
     // velocity < motion threshold.
-    if (key.find("slow") != std::string_view::npos) {
+    if (wpi::contains(key, "slow")) {
       dataset.erase(std::remove_if(dataset.begin(), dataset.end(),
                                    [&](const auto& pt) {
                                      return std::abs(pt.voltage) <= 0 ||
@@ -264,16 +287,15 @@ void sysid::InitialTrimAndFilter(
     }
 
     // Apply Median filter
-    if (key.find("raw") == std::string_view::npos) {
+    if (IsFiltered(key)) {
       ApplyMedianFilter(&dataset, settings.windowSize);
     }
 
     // Recalculate Accel and Cosine
     PrepareMechData(&dataset, unit);
 
-    // Trims filtered Dynamic Test Data and lines up the Raw Data to facilitate
-    // plotting
-    if (key.find("raw-fast") != std::string_view::npos) {
+    // Trims filtered Dynamic Test Data
+    if (IsFiltered(key) && wpi::contains(key, "fast")) {
       // Get the filtered dataset name
       auto filteredKey = RemoveStr(key, "raw-");
 
