@@ -106,7 +106,7 @@ void Application(std::string_view saveDir) {
   gWindowManager->GlobalInit();
 
   gLoggerWindow = gWindowManager->AddWindow(
-      "Logger", std::make_unique<sysid::Logger>(gLogger));
+      "Logger", std::make_unique<sysid::Logger>(storage, gLogger));
 
   gAnalyzerWindow = gWindowManager->AddWindow(
       "Analyzer", std::make_unique<sysid::Analyzer>(storage, gLogger));

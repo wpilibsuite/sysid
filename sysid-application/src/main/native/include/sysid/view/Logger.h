@@ -15,6 +15,10 @@
 
 #include "sysid/telemetry/TelemetryManager.h"
 
+namespace glass {
+class Storage;
+}  // namespace glass
+
 namespace sysid {
 /**
  * The logger GUI takes care of running the system idenfitication tests over
@@ -23,7 +27,7 @@ namespace sysid {
  */
 class Logger : public glass::View {
  public:
-  explicit Logger(wpi::Logger& logger);
+  Logger(glass::Storage& storage, wpi::Logger& logger);
   void Display() override;
 
   static constexpr const char* kTypes[] = {"Drivetrain", "Drivetrain (Angular)",
