@@ -300,7 +300,3 @@ compile_commands.json
 
 # Generation Config
 config.json
-
-# ImGUI JSONs
-imgui-window.json
-imgui.json
