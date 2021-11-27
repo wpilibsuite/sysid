@@ -22,6 +22,10 @@
 #include "sysid/generation/ConfigManager.h"
 #include "sysid/generation/HardwareType.h"
 
+namespace glass {
+class Storage;
+}  // namespace glass
+
 namespace sysid {
 /**
  * Constexpr way of storing a const char* array of HardwareType names to be used
@@ -85,7 +89,7 @@ static constexpr const char* kCTREPeriods[] = {"1",  "2",  "5",  "10",
  */
 class Generator : public glass::View {
  public:
-  explicit Generator(wpi::Logger& logger);
+  Generator(glass::Storage& storage, wpi::Logger& logger);
   void Display() override;
 
   static constexpr const char* kAnalysisTypes[] = {"General Mechanism",
@@ -144,8 +148,8 @@ class Generator : public glass::View {
   ConfigSettings m_settings;
 
   // Persistent storage pointers for project generation.
-  double& m_pUnitsPerRotation;
-  std::string& m_pAnalysisType;
+  double& m_unitsPerRotation;
+  std::string& m_analysisType;
 
   // Indices for combo boxes.
   int m_analysisIdx = 0;
@@ -176,7 +180,7 @@ class Generator : public glass::View {
   // The team number for the deploy process -- can also be a hostname or IP
   // address of a RoboRIO. This points to the same location in memory as the
   // "team" field in the Logger GUI.
-  std::string& m_pTeam;
+  std::string& m_team;
 
   // Create a separate logger for the deploy process. We can display all output
   // messages in the modal popup during the deploy.

@@ -30,9 +30,8 @@ using namespace sysid;
 
 static double kBadDataGain = -9999.0;
 
-Analyzer::Analyzer(wpi::Logger& logger)
-    : m_location{glass::GetStorage().GetString("AnalyzerJSONLocation")},
-      m_logger(logger) {
+Analyzer::Analyzer(glass::Storage& storage, wpi::Logger& logger)
+    : m_location{storage.GetString("AnalyzerJSONLocation")}, m_logger(logger) {
   // Fill the StringMap with preset values.
   m_presets["Default"] = presets::kDefault;
   m_presets["WPILib (2020-)"] = presets::kWPILibNew;

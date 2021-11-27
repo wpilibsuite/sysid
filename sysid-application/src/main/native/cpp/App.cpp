@@ -53,7 +53,7 @@ std::string_view GetResource_sysid_256_png();
 std::string_view GetResource_sysid_512_png();
 }  // namespace sysid
 
-void Application() {
+void Application(std::string_view saveDir) {
   // Create the wpigui (along with Dear ImGui) and Glass contexts.
   gui::CreateContext();
   glass::CreateContext();
@@ -66,6 +66,10 @@ void Application() {
   gui::AddIcon(sysid::GetResource_sysid_128_png());
   gui::AddIcon(sysid::GetResource_sysid_256_png());
   gui::AddIcon(sysid::GetResource_sysid_512_png());
+
+  // Set storage directory
+  glass::SetStorageDir(saveDir.empty() ? gui::GetPlatformSaveFileDir()
+                                       : saveDir);
 
   // Add messages from the global sysid logger into the Log window.
   gLogger.SetLogger([](unsigned int level, const char* file, unsigned int line,
@@ -97,21 +101,21 @@ void Application() {
   ssh_init();
 
   // Initialize window manager and add views.
-  gWindowManager = std::make_unique<glass::WindowManager>(
-      glass::GetStorage().GetChild("SysId"));
+  auto& storage = glass::GetStorageRoot().GetChild("SysId");
+  gWindowManager = std::make_unique<glass::WindowManager>(storage);
   gWindowManager->GlobalInit();
 
   gLoggerWindow = gWindowManager->AddWindow(
       "Logger", std::make_unique<sysid::Logger>(gLogger));
 
   gAnalyzerWindow = gWindowManager->AddWindow(
-      "Analyzer", std::make_unique<sysid::Analyzer>(gLogger));
+      "Analyzer", std::make_unique<sysid::Analyzer>(storage, gLogger));
 
   gProgramLogWindow = gWindowManager->AddWindow(
       "Program Log", std::make_unique<glass::LogView>(&gLog));
 
   gGeneratorWindow = gWindowManager->AddWindow(
-      "Generator", std::make_unique<sysid::Generator>(gLogger));
+      "Generator", std::make_unique<sysid::Generator>(storage, gLogger));
 
   // Set default positions and sizes for windows.
   gGeneratorWindow->SetDefaultPos(5, 25);

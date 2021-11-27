@@ -23,14 +23,12 @@
 
 using namespace sysid;
 
-Generator::Generator(wpi::Logger& logger)
-    : m_pUnitsPerRotation{glass::GetStorage().GetDouble("Units Per Rotation",
-                                                        1.0)},
-      m_pAnalysisType{glass::GetStorage().GetString("Analysis Type", "Simple")},
+Generator::Generator(glass::Storage& storage, wpi::Logger& logger)
+    : m_unitsPerRotation{storage.GetDouble("Units Per Rotation", 1.0)},
+      m_analysisType{storage.GetString("Analysis Type", "Simple")},
       m_logger{logger},
-      m_pTeam{glass::GetStorage()
-                  .GetChild("NetworkTables Settings")
-                  .GetString("serverTeam")} {
+      m_team{
+          storage.GetChild("NetworkTables Settings").GetString("serverTeam")} {
   // Create configuration manager to generate JSONs.
   m_manager = std::make_unique<ConfigManager>(m_settings, m_logger);
 
@@ -221,7 +219,7 @@ void Generator::Display() {
   const auto& gyroNames = kGyroNames.names;
   // Add team / IP selection.
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
-  ImGui::InputText("Team/IP", &m_pTeam);
+  ImGui::InputText("Team/IP", &m_team);
 
   // Add Config Reading Button
   if (ImGui::Button("Load Config")) {
@@ -238,7 +236,7 @@ void Generator::Display() {
   if (ImGui::Button("Deploy")) {
     // Create the deploy session,
     m_deploySession = std::make_unique<DeploySession>(
-        m_pTeam, m_analysisIdx == 1, m_manager->Generate(m_occupied),
+        m_team, m_analysisIdx == 1, m_manager->Generate(m_occupied),
         m_deployLogger);
 
     // Execute the deploy.
@@ -252,11 +250,11 @@ void Generator::Display() {
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
   ImGui::Combo("Analysis Type", &m_analysisIdx, kAnalysisTypes,
                IM_ARRAYSIZE(kAnalysisTypes));
-  m_pAnalysisType = kAnalysisTypes[m_analysisIdx];
+  m_analysisType = kAnalysisTypes[m_analysisIdx];
 
   // If we are a Romi project, we can end here because there is no generation to
   // be done.
-  if (m_pAnalysisType == "Romi") {
+  if (m_analysisType == "Romi") {
     return;
   }
 
@@ -278,7 +276,7 @@ void Generator::Display() {
   }
 
   // Add motor port selection.
-  bool drive = m_pAnalysisType == "Drivetrain";
+  bool drive = m_analysisType == "Drivetrain";
 
   // Iterate through the number of ports we have available (from m_occupied) and
   // add UI elements.
