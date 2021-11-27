@@ -7,6 +7,7 @@
 #include <exception>
 
 #include <glass/Context.h>
+#include <glass/Storage.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
@@ -20,7 +21,8 @@
 
 using namespace sysid;
 
-Logger::Logger(wpi::Logger& logger) : m_logger(logger) {
+Logger::Logger(glass::Storage& storage, wpi::Logger& logger)
+    : m_logger{logger}, m_ntSettings{storage} {
   // Add an NT connection listener to update the GUI's state.
   auto instance = nt::GetDefaultInstance();
   auto poller = nt::CreateConnectionListenerPoller(instance);

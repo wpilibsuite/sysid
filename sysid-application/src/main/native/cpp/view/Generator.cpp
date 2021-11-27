@@ -12,6 +12,7 @@
 
 #include <fmt/format.h>
 #include <glass/Context.h>
+#include <glass/Storage.h>
 #include <imgui_stdlib.h>
 #include <wpi/Logger.h>
 #include <wpi/StringExtras.h>
@@ -22,14 +23,14 @@
 
 using namespace sysid;
 
-Generator::Generator(wpi::Logger& logger) : m_logger{logger} {
+Generator::Generator(glass::Storage& storage, wpi::Logger& logger)
+    : m_unitsPerRotation{storage.GetDouble("Units Per Rotation", 1.0)},
+      m_analysisType{storage.GetString("Analysis Type", "Simple")},
+      m_logger{logger},
+      m_team{
+          storage.GetChild("NetworkTables Settings").GetString("serverTeam")} {
   // Create configuration manager to generate JSONs.
   m_manager = std::make_unique<ConfigManager>(m_settings, m_logger);
-
-  // Initialize persistent storage and assign pointers.
-  auto& storage = glass::GetStorage();
-  m_pUnitsPerRotation = storage.GetDoubleRef("Units Per Rotation", 1.0);
-  m_pAnalysisType = storage.GetStringRef("Analysis Type", "Simple");
 
   // Initialize the deploy logger. First set the min log level so that debug
   // messages are not swallowed.
@@ -42,10 +43,6 @@ Generator::Generator(wpi::Logger& logger) : m_logger{logger} {
     std::scoped_lock lock{m_deployMutex};
     m_deployLog.push_back({msg, level});
   });
-
-  // Initialize team number / IP field.
-  m_pTeam =
-      glass::GetStorage("NetworkTables Settings").GetStringRef("serverTeam");
 }
 
 /**
@@ -222,7 +219,7 @@ void Generator::Display() {
   const auto& gyroNames = kGyroNames.names;
   // Add team / IP selection.
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
-  ImGui::InputText("Team/IP", m_pTeam);
+  ImGui::InputText("Team/IP", &m_team);
 
   // Add Config Reading Button
   if (ImGui::Button("Load Config")) {
@@ -239,7 +236,7 @@ void Generator::Display() {
   if (ImGui::Button("Deploy")) {
     // Create the deploy session,
     m_deploySession = std::make_unique<DeploySession>(
-        *m_pTeam, m_analysisIdx == 1, m_manager->Generate(m_occupied),
+        m_team, m_analysisIdx == 1, m_manager->Generate(m_occupied),
         m_deployLogger);
 
     // Execute the deploy.
@@ -253,11 +250,11 @@ void Generator::Display() {
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
   ImGui::Combo("Analysis Type", &m_analysisIdx, kAnalysisTypes,
                IM_ARRAYSIZE(kAnalysisTypes));
-  *m_pAnalysisType = kAnalysisTypes[m_analysisIdx];
+  m_analysisType = kAnalysisTypes[m_analysisIdx];
 
   // If we are a Romi project, we can end here because there is no generation to
   // be done.
-  if (*m_pAnalysisType == "Romi") {
+  if (m_analysisType == "Romi") {
     return;
   }
 
@@ -279,7 +276,7 @@ void Generator::Display() {
   }
 
   // Add motor port selection.
-  bool drive = *m_pAnalysisType == "Drivetrain";
+  bool drive = m_analysisType == "Drivetrain";
 
   // Iterate through the number of ports we have available (from m_occupied) and
   // add UI elements.

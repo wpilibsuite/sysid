@@ -27,6 +27,10 @@
 
 struct ImPlotPoint;
 
+namespace glass {
+class Storage;
+}  // namespace glass
+
 namespace sysid {
 class Analyzer : public glass::View {
  public:
@@ -36,7 +40,7 @@ class Analyzer : public glass::View {
 
   static constexpr const char* kLoopTypes[] = {"Position", "Velocity"};
 
-  explicit Analyzer(wpi::Logger& logger);
+  Analyzer(glass::Storage& storage, wpi::Logger& logger);
 
   void Display() override;
   ~Analyzer() override { AbortDataPrep(); };
@@ -157,7 +161,7 @@ class Analyzer : public glass::View {
 
   // File manipulation
   std::unique_ptr<pfd::open_file> m_selector;
-  std::string* m_location;
+  std::string& m_location;
 
   // Logger
   wpi::Logger& m_logger;
