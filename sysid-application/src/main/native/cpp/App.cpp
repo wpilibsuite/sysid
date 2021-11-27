@@ -11,6 +11,7 @@
 
 #include <fmt/format.h>
 #include <glass/Context.h>
+#include <glass/Storage.h>
 #include <glass/Window.h>
 #include <glass/WindowManager.h>
 #include <glass/other/Log.h>
@@ -96,7 +97,8 @@ void Application() {
   ssh_init();
 
   // Initialize window manager and add views.
-  gWindowManager = std::make_unique<glass::WindowManager>("SysId");
+  gWindowManager = std::make_unique<glass::WindowManager>(
+      glass::GetStorage().GetChild("SysId"));
   gWindowManager->GlobalInit();
 
   gLoggerWindow = gWindowManager->AddWindow(

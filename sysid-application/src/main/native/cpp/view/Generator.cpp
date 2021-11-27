@@ -12,6 +12,7 @@
 
 #include <fmt/format.h>
 #include <glass/Context.h>
+#include <glass/Storage.h>
 #include <imgui_stdlib.h>
 #include <wpi/Logger.h>
 #include <wpi/StringExtras.h>
@@ -28,8 +29,8 @@ Generator::Generator(wpi::Logger& logger) : m_logger{logger} {
 
   // Initialize persistent storage and assign pointers.
   auto& storage = glass::GetStorage();
-  m_pUnitsPerRotation = storage.GetDoubleRef("Units Per Rotation", 1.0);
-  m_pAnalysisType = storage.GetStringRef("Analysis Type", "Simple");
+  m_pUnitsPerRotation = &storage.GetDouble("Units Per Rotation", 1.0);
+  m_pAnalysisType = &storage.GetString("Analysis Type", "Simple");
 
   // Initialize the deploy logger. First set the min log level so that debug
   // messages are not swallowed.
@@ -44,8 +45,9 @@ Generator::Generator(wpi::Logger& logger) : m_logger{logger} {
   });
 
   // Initialize team number / IP field.
-  m_pTeam =
-      glass::GetStorage("NetworkTables Settings").GetStringRef("serverTeam");
+  m_pTeam = &glass::GetStorage()
+                 .GetChild("NetworkTables Settings")
+                 .GetString("serverTeam");
 }
 
 /**

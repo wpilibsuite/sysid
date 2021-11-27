@@ -10,6 +10,7 @@
 
 #include <fmt/core.h>
 #include <glass/Context.h>
+#include <glass/Storage.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
@@ -41,7 +42,7 @@ Analyzer::Analyzer(wpi::Logger& logger) : m_logger(logger) {
   m_presets["Venom"] = presets::kVenom;
 
   // Load the last file location from storage if it exists.
-  m_location = glass::GetStorage().GetStringRef("AnalyzerJSONLocation");
+  m_location = &glass::GetStorage().GetString("AnalyzerJSONLocation");
 }
 
 void Analyzer::DisplayGain(const char* text, double* data) {
