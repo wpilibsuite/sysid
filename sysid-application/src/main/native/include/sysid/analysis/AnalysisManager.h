@@ -189,8 +189,9 @@ class AnalysisManager {
   // This is used to store the various datasets (i.e. Combined, Forward,
   // Backward, etc.)
   wpi::json m_json;
-  wpi::StringMap<Storage> m_rawDatasets;
+
   wpi::StringMap<Storage> m_originalDatasets;
+  wpi::StringMap<Storage> m_rawDatasets;
   wpi::StringMap<Storage> m_filteredDatasets;
 
   // Stores the various start times of the different tests.
