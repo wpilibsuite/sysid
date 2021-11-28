@@ -78,11 +78,13 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
                          numSamples, controllerNames[0],
                          m_leftControllers.at(0).get(), leftEncoderInverted,
                          leftEncoderPorts,  // m_leftCancoder,
-                         m_leftEncoder, m_leftPosition, m_leftRate);
+                         m_leftRevEncoderPort, m_leftRevDataPort, m_leftEncoder,
+                         m_leftPosition, m_leftRate);
     sysid::SetupEncoders(encoderType, isEncoding, period, cpr * gearing,
                          numSamples, controllerNames[0],
                          m_rightControllers.at(0).get(), rightEncoderInverted,
                          rightEncoderPorts,  // m_rightCancoder,
+                         m_rightRevEncoderPort, m_rightRevDataPort,
                          m_rightEncoder, m_rightPosition, m_rightRate);
 
     fmt::print("Setup gyro\n");

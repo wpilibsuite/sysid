@@ -14,7 +14,7 @@
 #include <frc/TimedRobot.h>
 #include <frc/interfaces/Gyro.h>
 #include <frc/motorcontrol/MotorController.h>
-// #include <rev/CANEncoder.h>
+#include <rev/CANSparkMax.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
 
@@ -48,6 +48,10 @@ class Robot : public frc::TimedRobot {
   // std::unique_ptr<CANCoder> m_leftCancoder;
   // std::unique_ptr<rev::CANEncoder> m_leftCANEncoder;
   // std::unique_ptr<rev::CANEncoder> m_rightCANEncoder;
+  std::unique_ptr<rev::SparkMaxRelativeEncoder> m_leftRevEncoderPort;
+  std::unique_ptr<rev::SparkMaxAlternateEncoder> m_leftRevDataPort;
+  std::unique_ptr<rev::SparkMaxRelativeEncoder> m_rightRevEncoderPort;
+  std::unique_ptr<rev::SparkMaxAlternateEncoder> m_rightRevDataPort;
   std::unique_ptr<frc::Encoder> m_leftEncoder;
   // std::unique_ptr<CANCoder> m_rightCancoder;
   std::unique_ptr<frc::Encoder> m_rightEncoder;

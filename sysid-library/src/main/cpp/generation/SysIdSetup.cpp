@@ -11,7 +11,6 @@
 #include <frc/Filesystem.h>
 #include <frc/TimedRobot.h>
 #include <frc/motorcontrol/Spark.h>
-// #include <rev/CANSparkMax.h>
 #include <wpi/SmallString.h>
 #include <wpi/StringExtras.h>
 #include <wpi/fs.h>
@@ -72,19 +71,18 @@ void AddMotorController(
              controller == "SPARK MAX (Brushed)") {
     if (controller == "SPARK MAX (Brushless)") {
       fmt::print("Setup SPARK MAX (Brushless)");
-      //     controllers->emplace_back(std::make_unique<rev::CANSparkMax>(
-      //         port, rev::CANSparkMax::MotorType::kBrushless));
+      controllers->emplace_back(std::make_unique<rev::CANSparkMax>(
+          port, rev::CANSparkMax::MotorType::kBrushless));
     } else {
       fmt::print("Setup SPARK MAX (Brushed)");
-      //     controllers->emplace_back(std::make_unique<rev::CANSparkMax>(
-      //         port, rev::CANSparkMax::MotorType::kBrushed));
+      controllers->emplace_back(std::make_unique<rev::CANSparkMax>(
+          port, rev::CANSparkMax::MotorType::kBrushed));
     }
 
-    //   auto* sparkMax =
-    //   static_cast<rev::CANSparkMax*>(controllers->back().get());
-    //   sparkMax->RestoreFactoryDefaults();
-    //   sparkMax->SetInverted(inverted);
-    //   sparkMax->SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
+    auto* sparkMax = static_cast<rev::CANSparkMax*>(controllers->back().get());
+    sparkMax->RestoreFactoryDefaults();
+    sparkMax->SetInverted(inverted);
+    sparkMax->SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
   } else if (controller == "Venom") {
     fmt::print("Setup Venom");
     //   controllers->emplace_back(std::make_unique<frc::CANVenom>(port));
@@ -141,14 +139,16 @@ void AddMotorController(
 //   };
 // }
 
-void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
-                   double cpr, int numSamples, std::string_view controllerName,
-                   frc::MotorController* controller, bool encoderInverted,
-                   const std::vector<int>& encoderPorts,
-                   // std::unique_ptr<CANCoder>& cancoder,
-                   std::unique_ptr<frc::Encoder>& encoder,
-                   std::function<double()>& position,
-                   std::function<double()>& rate) {
+void SetupEncoders(
+    std::string_view encoderType, bool isEncoding, int period, double cpr,
+    int numSamples, std::string_view controllerName,
+    frc::MotorController* controller, bool encoderInverted,
+    const std::vector<int>& encoderPorts,
+    // std::unique_ptr<CANCoder>& cancoder,
+    std::unique_ptr<rev::SparkMaxRelativeEncoder>& revEncoderPort,
+    std::unique_ptr<rev::SparkMaxAlternateEncoder>& revDataPort,
+    std::unique_ptr<frc::Encoder>& encoder, std::function<double()>& position,
+    std::function<double()>& rate) {
   if (encoderType == "Built-in") {
     if (wpi::starts_with(controllerName, "Talon")) {
       // FeedbackDevice feedbackDevice;
@@ -171,48 +171,36 @@ void SetupEncoders(std::string_view encoderType, bool isEncoding, int period,
       //   };
     }
   } else if (encoderType == "Encoder Port") {
-    fmt::print("Setup SPARK MAX Encoder Port");
-    //   auto* sparkMax = static_cast<rev::CANSparkMax*>(controller);
+    auto* sparkMax = static_cast<rev::CANSparkMax*>(controller);
     if (controllerName != "SPARK MAX (Brushless)") {
-      //     sparkMax->GetEncoder(rev::CANEncoder::EncoderType::kQuadrature,
-      //     cpr); sparkMax->GetEncoder().SetInverted(encoderInverted);
+      fmt::print("Setup SPARK MAX (Brushed) Encoder Port");
+      revEncoderPort =
+          std::make_unique<rev::SparkMaxRelativeEncoder>(sparkMax->GetEncoder(
+              rev::SparkMaxRelativeEncoder::Type::kQuadrature, cpr));
+      revEncoderPort->SetInverted(encoderInverted);
+    } else {
+      fmt::print("Setup SPARK MAX (Brushless) Encoder Port");
+      revEncoderPort =
+          std::make_unique<rev::SparkMaxRelativeEncoder>(sparkMax->GetEncoder(
+              rev::SparkMaxRelativeEncoder::Type::kHallSensor));
     }
 
-    //   sparkMax->GetEncoder().SetMeasurementPeriod(period);
-    //   sparkMax->GetEncoder().SetAverageDepth(numSamples);
+    revEncoderPort->SetMeasurementPeriod(period);
+    revEncoderPort->SetAverageDepth(numSamples);
 
-    //   position = [=] { return sparkMax->GetEncoder().GetPosition(); };
-    //   rate = [=] { return sparkMax->GetEncoder().GetVelocity() / 60; };
+    position = [&] { return revEncoderPort->GetPosition(); };
+    rate = [&] { return revEncoderPort->GetVelocity() / 60; };
   } else if (encoderType == "Data Port") {
     fmt::print("Setup SPARK MAX Data Port");
-    //   auto* sparkMax = static_cast<rev::CANSparkMax*>(controller);
-
-    //   sparkMax
-    //       ->GetAlternateEncoder(
-    //           rev::CANEncoder::AlternateEncoderType::kQuadrature, cpr)
-    //       .SetInverted(encoderInverted);
-    //   sparkMax
-    //       ->GetAlternateEncoder(
-    //           rev::CANEncoder::AlternateEncoderType::kQuadrature, cpr)
-    //       .SetMeasurementPeriod(period);
-    //   sparkMax
-    //       ->GetAlternateEncoder(
-    //           rev::CANEncoder::AlternateEncoderType::kQuadrature, cpr)
-    //       .SetAverageDepth(numSamples);
-    //   position = [=] {
-    //     return sparkMax
-    //         ->GetAlternateEncoder(
-    //             rev::CANEncoder::AlternateEncoderType::kQuadrature, cpr)
-    //         .GetPosition();
-    //   };
-    //   rate = [=] {
-    //     return sparkMax
-    //                ->GetAlternateEncoder(
-    //                    rev::CANEncoder::AlternateEncoderType::kQuadrature,
-    //                    cpr)
-    //                .GetVelocity() /
-    //            60;
-    //   };
+    auto* sparkMax = static_cast<rev::CANSparkMax*>(controller);
+    revDataPort = std::make_unique<rev::SparkMaxAlternateEncoder>(
+        sparkMax->GetAlternateEncoder(
+            rev::SparkMaxAlternateEncoder::Type::kQuadrature, cpr));
+    revDataPort->SetInverted(encoderInverted);
+    revDataPort->SetMeasurementPeriod(period);
+    revDataPort->SetAverageDepth(numSamples);
+    position = [&] { return revDataPort->GetPosition(); };
+    rate = [&] { return revDataPort->GetVelocity() / 60; };
   } else if (encoderType == "Tachometer") {
     fmt::print("Setup Tachometer");
     // SetupCTREEncoder(controller, FeedbackDevice::Tachometer, period, cpr,
