@@ -46,7 +46,8 @@ struct ConfigSettings {
 
   // Constants for converting between encoder units and real-world units.
   double cpr = 1.0;
-  double gearing = 1.0;
+  double gearingNumerator = 1.0;
+  double gearingDenominator = 1.0;
 
   // Gyro type and constructor.
   HardwareType gyro = sysid::gyro::kAnalogGyro;
@@ -73,6 +74,7 @@ const ConfigSettings kRomiConfig{{0},
                                  false,
                                  false,
                                  1440.0,
+                                 1.0,
                                  1.0,
                                  sysid::gyro::kRomiGyro,
                                  ""};

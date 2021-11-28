@@ -52,7 +52,9 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
     bool rightEncoderInverted =
         m_json.at("secondary encoder inverted").get<bool>();
     double cpr = m_json.at("counts per rotation").get<double>();
-    double gearing = m_json.at("gearing").get<double>();
+    double gearingNumerator = m_json.at("gearing numerator").get<double>();
+    double gearingDenominator = m_json.at("gearing denominator").get<double>();
+    double gearing = gearingNumerator / gearingDenominator;
 
     std::string gyroType = m_json.at("gyro").get<std::string>();
     std::string gyroCtor = m_json.at("gyro ctor").get<std::string>();

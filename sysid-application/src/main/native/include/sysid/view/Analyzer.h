@@ -157,6 +157,9 @@ class Analyzer : public glass::View {
   double m_threshold = 0.2;
   float m_stepTestDuration = 0.0;
 
+  double m_gearingNumerator = 1.0;
+  double m_gearingDenominator = 1.0;
+
   bool combinedGraphFit = false;
 
   // File manipulation

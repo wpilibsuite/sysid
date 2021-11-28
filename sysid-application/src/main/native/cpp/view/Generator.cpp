@@ -516,7 +516,25 @@ void Generator::Display() {
       "Encoders (REV already handles this value): 1");
 
   // Add gearing
-  ImGui::InputDouble("Gearing", &m_settings.gearing, 0.0, 0.0, "%.2f");
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+  ImGui::InputDouble("##1", &m_settings.gearingNumerator, 0.0, 0.0, "%.2f");
+  ImGui::SameLine();
+  ImGui::Text(":");
+  ImGui::SameLine();
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+  ImGui::InputDouble("##2", &m_settings.gearingDenominator, 0.0, 0.0, "%.2f");
+  ImGui::SameLine();
+  ImGui::Text("Gearing");
+
+  // Ensure no division by zero or weird gearing behaviour
+  if (m_settings.gearingNumerator <= 0) {
+    m_settings.gearingNumerator = 1.0;
+  }
+
+  if (m_settings.gearingDenominator <= 0) {
+    m_settings.gearingDenominator = 1.0;
+  }
+
   sysid::CreateTooltip(
       "This is the gearing between the encoder and the output shaft. For "
       "example, if the encoder is mounted to the magnetic shaft on the kit "
