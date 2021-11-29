@@ -25,6 +25,11 @@ class SshSession {
    */
   class SshException : public std::runtime_error {
    public:
+    /**
+     * Creates an SshException
+     *
+     * @param msg The error message
+     */
     explicit SshException(const char* msg) : runtime_error(msg) {}
   };
 

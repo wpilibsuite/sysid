@@ -46,6 +46,11 @@ struct DisplayNameStorage {
    */
   const int size{S};
 
+  /**
+   * Constructs a constexpr DisplayNameStorage object
+   *
+   * @param devices The array of hardware devices to store display names for.
+   */
   explicit constexpr DisplayNameStorage(std::array<HardwareType, S> devices)
       : names{} {
     for (int i = 0; i < S; i++) {
@@ -89,9 +94,22 @@ static constexpr const char* kCTREPeriods[] = {"1",  "2",  "5",  "10",
  */
 class Generator : public glass::View {
  public:
+  /**
+   * Creates a Generator Widget
+   *
+   * @param storage Glass Storage
+   * @param logger The program logger
+   */
   Generator(glass::Storage& storage, wpi::Logger& logger);
+
+  /**
+   * Displays the generator widget.
+   */
   void Display() override;
 
+  /**
+   * The supported project types.
+   */
   static constexpr const char* kAnalysisTypes[] = {"General Mechanism",
                                                    "Drivetrain", "Romi"};
 

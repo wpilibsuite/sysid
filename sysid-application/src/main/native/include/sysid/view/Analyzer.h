@@ -32,16 +32,36 @@ class Storage;
 }  // namespace glass
 
 namespace sysid {
+/**
+ * The Analyzer GUI takes care of providing the user with a user interface to
+ * load their data, visualize the data, adjust certain variables, and then view
+ * the calculated gains.
+ */
 class Analyzer : public glass::View {
  public:
+  /**
+   * The different motor controlle rtiming presets that can be used
+   */
   static constexpr const char* kPresetNames[] = {
       "Default",    "WPILib (2020-)",  "WPILib (Pre-2020)", "CTRE (New)",
       "CTRE (Old)", "REV (Brushless)", "REV (Brushed)",     "Venom"};
 
+  /**
+   * The different control loops that can be used.
+   */
   static constexpr const char* kLoopTypes[] = {"Position", "Velocity"};
 
+  /**
+   * Creates the Analyzer widget
+   *
+   * @param storage Glass Storage
+   * @param logger The program logger
+   */
   Analyzer(glass::Storage& storage, wpi::Logger& logger);
 
+  /**
+   * Displays the analyzer widget
+   */
   void Display() override;
   ~Analyzer() override { AbortDataPrep(); };
 
@@ -106,7 +126,7 @@ class Analyzer : public glass::View {
    * Loads the diagnostic plots.
    *
    * @return returns true if the plots have already been loaded, false if they
-   * have just finished loading.
+   *         have just finished loading.
    */
   bool LoadPlots();
 

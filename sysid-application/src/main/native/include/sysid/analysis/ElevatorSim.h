@@ -9,7 +9,10 @@
 #include <units/voltage.h>
 
 namespace sysid {
-
+/**
+ * Simulation of an Elevator mechanism based off of a model from SysId
+ * Feedforward gains.
+ */
 class ElevatorSim {
  public:
   /**
@@ -34,21 +37,31 @@ class ElevatorSim {
 
   /**
    * Returns the position.
+   *
+   * @return The current position
    */
   double GetPosition() const;
 
   /**
    * Returns the velocity.
+   *
+   * @return The current velocity
    */
   double GetVelocity() const;
 
   /**
    * Returns the acceleration for the current state and given input.
+   *
+   * @param voltage The voltage that is being applied to the mechanism / input
+   * @return The acceleration given the state and input
    */
   double GetAcceleration(units::volt_t voltage) const;
 
   /**
    * Resets model position and velocity.
+   *
+   * @param position The position the mechanism should be reset to
+   * @param velocity The velocity the mechanism should be reset to
    */
   void Reset(double position = 0.0, double velocity = 0.0);
 

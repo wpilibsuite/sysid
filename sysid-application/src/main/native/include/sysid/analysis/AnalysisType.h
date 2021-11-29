@@ -9,6 +9,9 @@
 
 namespace sysid {
 
+/**
+ * Stores the type of Analysis and relevant information about the analysis.
+ */
 struct AnalysisType {
   /** The number of independent variables for feedforward analysis */
   size_t independentVariables;
@@ -19,14 +22,22 @@ struct AnalysisType {
   /** Display name for the analysis type. */
   const char* name;
 
-  /** Compares equality of two AnalysisType structs. */
+  /** Compares equality of two AnalysisType structs.
+   *
+   * @param rhs Another AnalysisType
+   * @return True if the two analysis types are equal
+   */
   constexpr bool operator==(const AnalysisType& rhs) const {
     return std::string_view{name} == rhs.name &&
            independentVariables == rhs.independentVariables &&
            rawDataSize == rhs.rawDataSize;
   }
 
-  /** Compares inequality of two AnalysisType structs. */
+  /** Compares inequality of two AnalysisType structs.
+   *
+   * @param rhs Another AnalysisType
+   * @return True if the two analysis types are not equal
+   */
   constexpr bool operator!=(const AnalysisType& rhs) const {
     return !operator==(rhs);
   }

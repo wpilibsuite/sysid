@@ -31,7 +31,11 @@ struct FeedbackControllerPreset {
   /** The measurement delay in the encoder measurements. */
   units::second_t measurementDelay;
 
-  /** Checks equality between two feedback controller presets. */
+  /** Checks equality between two feedback controller presets.
+   *
+   * @param rhs Another FeedbackControllerPreset
+   * @return If the two presets are equal
+   */
   constexpr bool operator==(const FeedbackControllerPreset& rhs) const {
     return outputConversionFactor == rhs.outputConversionFactor &&
            outputVelocityTimeFactor == rhs.outputVelocityTimeFactor &&
@@ -39,7 +43,11 @@ struct FeedbackControllerPreset {
            measurementDelay == rhs.measurementDelay;
   }
 
-  /** Checks inequality between two feedback controller presets. */
+  /** Checks inequality between two feedback controller presets.
+   *
+   * @param rhs Another FeedbackControllerPreset
+   * @return If the two presets are not equal
+   */
   constexpr bool operator!=(const FeedbackControllerPreset& rhs) const {
     return !operator==(rhs);
   }

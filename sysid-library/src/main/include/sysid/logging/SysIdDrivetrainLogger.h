@@ -10,17 +10,24 @@
 
 namespace sysid {
 
-// TODO Set to proper number after telemetry data refactor
+/**
+ * Serves to provide methods for robot projects seeking to send and receive data
+ * in occurdence to the SysId drivetrain protocols.
+ */
 class SysIdDrivetrainLogger : public SysIdLogger {
  public:
   /**
    * The users should their left motors to what this returns AFTER calling log.
+   *
+   * @returns The voltage that the left motor(s) should be set to.
    */
   units::volt_t GetLeftMotorVoltage() const;
 
   /**
    * The users should set their right motors to what this returns AFTER calling
    * log.
+   *
+   * @returns The voltage that the right motor(s) should be set to.
    */
   units::volt_t GetRightMotorVoltage() const;
 
@@ -37,7 +44,7 @@ class SysIdDrivetrainLogger : public SysIdLogger {
    * @param rightVelocity the recorded rotations per second or the right shaft
    * @param measuredAngle the recorded angle of they gyro
    * @param angularRate the recorded angular rate of the gyro in radians per
-   * second
+   *                    second
    */
   void Log(double leftPosition, double rightPosition, double leftVelocity,
            double rightVelocity, double measuredAngle, double angularRate);

@@ -19,10 +19,11 @@ class AngularDriveSim {
    * @param Ks              Static friction gain in linear units.
    * @param Kv              Velocity gain in linear units.
    * @param Ka              Acceleration gain in linear units.
+   * @param trackwidth      Trackwidth of the drivetrain.
    * @param initialPosition Initial angle in radians.
    * @param initialVelocity Initial angular velocity in radians per second.
    */
-  AngularDriveSim(double kS, double kV, double kA, double trackwidth,
+  AngularDriveSim(double Ks, double Kv, double Ka, double trackwidth,
                   double initialPosition = 0.0, double initialVelocity = 0.0);
 
   /**
@@ -35,23 +36,32 @@ class AngularDriveSim {
   void Update(units::volt_t voltage, units::second_t dt);
 
   /**
-   * Returns the position in the units of the trackwidth.
+   * Returns the position.
+   *
+   * @return The current position
    */
   double GetPosition() const;
 
   /**
-   * Returns the velocity in the units of the trackwidth.
+   * Returns the velocity.
+   *
+   * @return The current velocity
    */
   double GetVelocity() const;
 
   /**
-   * Returns the acceleration for the current state and given input in the units
-   * of the trackwidth.
+   * Returns the acceleration for the current state and given input.
+   *
+   * @param voltage The voltage that is being applied to the mechanism / input
+   * @return The acceleration given the state and input
    */
   double GetAcceleration(units::volt_t voltage) const;
 
   /**
    * Resets model position and velocity.
+   *
+   * @param position The position the mechanism should be reset to
+   * @param velocity The velocity the mechanism should be reset to
    */
   void Reset(double position = 0.0, double velocity = 0.0);
 

@@ -34,14 +34,41 @@ class TelemetryManager {
    * step voltage for fast tests, and the mechanism type for characterization.
    */
   struct Settings {
+    /**
+     * The rate at which the voltage should increase during the quasistatic test
+     * (V/s).
+     */
     double quasistaticRampRate = 0.25;
+
+    /**
+     * The voltage that the dynamic test should run at (V).
+     */
     double stepVoltage = 7.0;
+
+    /**
+     * The units the mechanism moves per recorded rotation. The sysid project
+     * will be recording things in rotations of the shaft so the
+     * unitsPerRotation is to convert those measurements to the units the user
+     * wants to use.
+     */
     double unitsPerRotation = 1.0;
+
+    /**
+     * The name of the units used.
+     * Valid units:  "Meters", "Feet", "Inches", "Radians", "Degrees",
+     * "Rotations"
+     */
     std::string units = "Meters";
+
+    /**
+     * The type of mechanism that will be analyzed.
+     * Supported mechanisms: Drivetrain, Angular Drivetrain, Elevator, Arm,
+     * Simple motor.
+     */
     AnalysisType mechanism = analysis::kDrivetrain;
   };
 
-  // Default NT Listener Flags.
+  /** Default NT Listener Flags.*/
   static constexpr int kNTFlags =
       NT_NOTIFY_LOCAL | NT_NOTIFY_NEW | NT_NOTIFY_UPDATE | NT_NOTIFY_IMMEDIATE;
 
@@ -83,6 +110,8 @@ class TelemetryManager {
   /**
    * Registers a callback that's called by the TelemetryManager when there is a
    * message to display to the user.
+   *
+   * @param callback Callback function that runs based off of the message
    */
   void RegisterDisplayCallback(std::function<void(std::string_view)> callback) {
     m_callbacks.emplace_back(std::move(callback));
@@ -93,7 +122,6 @@ class TelemetryManager {
    *
    * @param location The location to save the JSON at (this is the folder that
    *                 should contain the saved JSON).
-   *
    * @return The full file path of the saved JSON.
    */
   std::string SaveJSON(std::string_view location);
@@ -116,6 +144,11 @@ class TelemetryManager {
     return std::find(m_tests.cbegin(), m_tests.cend(), name) != m_tests.end();
   }
 
+  /**
+   * Gets the size of the stored data.
+   *
+   * @return The size of the stored data
+   */
   size_t GetCurrentDataSize() const { return m_params.data.size(); }
 
  private:

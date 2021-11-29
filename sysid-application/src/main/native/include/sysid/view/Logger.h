@@ -27,12 +27,28 @@ namespace sysid {
  */
 class Logger : public glass::View {
  public:
+  /**
+   * Makes a logger widget.
+   *
+   * @param storage The glass storage object
+   * @param logger A logger object that keeps track of the program's logs
+   */
   Logger(glass::Storage& storage, wpi::Logger& logger);
+
+  /**
+   * Displays the logger widget.
+   */
   void Display() override;
 
+  /**
+   * The different mechanism / analysis types that are supported.
+   */
   static constexpr const char* kTypes[] = {"Drivetrain", "Drivetrain (Angular)",
                                            "Arm", "Elevator", "Simple"};
 
+  /**
+   * The different units that are supported.
+   */
   static constexpr const char* kUnits[] = {"Meters",  "Feet",      "Inches",
                                            "Radians", "Rotations", "Degrees"};
 

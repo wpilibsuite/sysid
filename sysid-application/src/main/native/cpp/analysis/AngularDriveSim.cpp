@@ -10,13 +10,13 @@
 
 using namespace sysid;
 
-AngularDriveSim::AngularDriveSim(double kS, double kV, double kA,
+AngularDriveSim::AngularDriveSim(double Ks, double Kv, double Ka,
                                  double trackwidth, double initialPosition,
                                  double initialVelocity)
     // To convert to an angular version, ω = v / r
-    : m_A{{0.0, 2.0 / trackwidth}, {0.0, -kV / kA}},
+    : m_A{{0.0, 2.0 / trackwidth}, {0.0, -Kv / Ka}},
       m_B{0.0, 2.0 / trackwidth / kA},
-      m_c{0.0, -2.0 / trackwidth * kS / kA},
+      m_c{0.0, -2.0 / trackwidth * Ks / Ka},
       m_trackwidth{trackwidth} {
   Reset(initialPosition, initialVelocity);
 }

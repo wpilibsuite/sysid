@@ -27,7 +27,14 @@ struct LQRParameters {
  * Stores feedback controller gains.
  */
 struct FeedbackGains {
+  /**
+   * The calculated Proportional gain
+   */
   double Kp;
+
+  /**
+   * The calculated Derivative gain
+   */
   double Kd;
 };
 

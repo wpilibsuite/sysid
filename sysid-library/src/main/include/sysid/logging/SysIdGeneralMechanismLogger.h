@@ -10,11 +10,16 @@
 
 namespace sysid {
 
-// TODO Set to proper number after telemetry data refactor
+/**
+ * Serves to provide methods for robot projects seeking to send and receive data
+ * in occurdence to the SysId general mechanism protocols.
+ */
 class SysIdGeneralMechanismLogger : public SysIdLogger {
  public:
   /**
    * The users should set their motors to what this returns AFTER calling log.
+   *
+   * @returns The voltage that the mechanism motor(s) should be set to.
    */
   units::volt_t GetMotorVoltage() const;
 
@@ -25,7 +30,7 @@ class SysIdGeneralMechanismLogger : public SysIdLogger {
    * position, velocity.
    *
    * @param measuredPosition the recorded rotations of the shaft
-   * @param measureVelocity the recorded rotations per second of the shaft
+   * @param measuredVelocity the recorded rotations per second of the shaft
    */
   void Log(double measuredPosition, double measuredVelocity);
 
