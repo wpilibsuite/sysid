@@ -11,6 +11,7 @@
 
 #include <fmt/format.h>
 #include <glass/Context.h>
+#include <glass/MainMenuBar.h>
 #include <glass/Storage.h>
 #include <glass/Window.h>
 #include <glass/WindowManager.h>
@@ -35,6 +36,7 @@ glass::Window* gLoggerWindow;
 glass::Window* gAnalyzerWindow;
 glass::Window* gGeneratorWindow;
 glass::Window* gProgramLogWindow;
+static glass::MainMenuBar gMainMenu;
 
 std::unique_ptr<sysid::JSONConverter> gJSONConverter;
 
@@ -139,6 +141,7 @@ void Application(std::string_view saveDir) {
   // Add menu bar.
   gui::AddLateExecute([] {
     ImGui::BeginMainMenuBar();
+    gMainMenu.WorkspaceMenu();
     gui::EmitViewMenu();
 
     if (ImGui::BeginMenu("Widgets")) {
@@ -203,6 +206,8 @@ void Application(std::string_view saveDir) {
       ImGui::Text("SysId: System Identification for Robot Mechanisms");
       ImGui::Separator();
       ImGui::Text("v%s", GetWPILibVersion());
+      ImGui::Separator();
+      ImGui::Text("Save location: %s", glass::GetStorageDir().c_str());
       if (ImGui::Button("Close")) {
         ImGui::CloseCurrentPopup();
       }
