@@ -150,6 +150,8 @@ static void StoreDatasets(wpi::StringMap<Storage>* dataset,
  * @param factor   The units per rotation to multiply positions and velocities
  *                 by.
  * @param unit The name of the unit being used
+ * @param originalDatasets A reference to the String Map storing the original
+ *                         datasets (won't be touched in the filtering process)
  * @param rawDatasets A reference to the String Map storing the raw datasets
  * @param filteredDatasets A reference to the String Map storing the filtered
  *                         datasets
@@ -164,9 +166,9 @@ static void StoreDatasets(wpi::StringMap<Storage>* dataset,
  */
 static void PrepareGeneralData(
     const wpi::json& json, AnalysisManager::Settings& settings, double factor,
-    std::string_view unit, wpi::StringMap<Storage>& rawDatasets,
+    std::string_view unit, wpi::StringMap<Storage>& originalDatasets,
+    wpi::StringMap<Storage>& rawDatasets,
     wpi::StringMap<Storage>& filteredDatasets,
-    wpi::StringMap<Storage>& originalDatasets,
     std::array<units::second_t, 4>& startTimes, units::second_t& minStepTime,
     units::second_t& maxStepTime, wpi::Logger& logger) {
   using Data = std::array<double, 4>;
@@ -251,6 +253,8 @@ static void PrepareGeneralData(
  *                   by.
  * @param trackWidth A reference to the std::optional where the track width will
  *                   be stored.
+ * @param originalDatasets A reference to the String Map storing the original
+ *                         datasets (won't be touched in the filtering process)
  * @param rawDatasets A reference to the String Map storing the raw datasets
  * @param filteredDatasets A reference to the String Map storing the filtered
  *                         datasets
@@ -265,9 +269,10 @@ static void PrepareGeneralData(
  */
 static void PrepareAngularDrivetrainData(
     const wpi::json& json, AnalysisManager::Settings& settings, double factor,
-    std::optional<double>& trackWidth, wpi::StringMap<Storage>& rawDatasets,
-    wpi::StringMap<Storage>& filteredDatasets,
+    std::optional<double>& trackWidth,
     wpi::StringMap<Storage>& originalDatasets,
+    wpi::StringMap<Storage>& rawDatasets,
+    wpi::StringMap<Storage>& filteredDatasets,
     std::array<units::second_t, 4>& startTimes, units::second_t& minStepTime,
     units::second_t& maxStepTime, wpi::Logger& logger) {
   using Data = std::array<double, 9>;
@@ -383,6 +388,8 @@ static void PrepareAngularDrivetrainData(
  *                 manager instance.
  * @param factor   The units per rotation to multiply positions and velocities
  *                 by.
+ * @param originalDatasets A reference to the String Map storing the original
+ *                         datasets (won't be touched in the filtering process)
  * @param rawDatasets A reference to the String Map storing the raw datasets
  * @param filteredDatasets A reference to the String Map storing the filtered
  *                         datasets
@@ -397,9 +404,9 @@ static void PrepareAngularDrivetrainData(
  */
 static void PrepareLinearDrivetrainData(
     const wpi::json& json, AnalysisManager::Settings& settings, double factor,
+    wpi::StringMap<Storage>& originalDatasets,
     wpi::StringMap<Storage>& rawDatasets,
     wpi::StringMap<Storage>& filteredDatasets,
-    wpi::StringMap<Storage>& originalDatasets,
     std::array<units::second_t, 4>& startTimes, units::second_t& minStepTime,
     units::second_t& maxStepTime, wpi::Logger& logger) {
   using Data = std::array<double, 9>;
@@ -581,18 +588,18 @@ AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,
 void AnalysisManager::PrepareData() {
   WPI_DEBUG(m_logger, "Preparing {} data", m_type.name);
   if (m_type == analysis::kDrivetrain) {
-    PrepareLinearDrivetrainData(m_json, m_settings, m_factor, m_rawDatasets,
-                                m_filteredDatasets, m_originalDatasets,
-                                m_startTimes, m_minDuration, m_maxDuration,
-                                m_logger);
+    PrepareLinearDrivetrainData(m_json, m_settings, m_factor,
+                                m_originalDatasets, m_rawDatasets,
+                                m_filteredDatasets, m_startTimes, m_minDuration,
+                                m_maxDuration, m_logger);
   } else if (m_type == analysis::kDrivetrainAngular) {
     PrepareAngularDrivetrainData(m_json, m_settings, m_factor, m_trackWidth,
-                                 m_rawDatasets, m_filteredDatasets,
-                                 m_originalDatasets, m_startTimes,
+                                 m_originalDatasets, m_rawDatasets,
+                                 m_filteredDatasets, m_startTimes,
                                  m_minDuration, m_maxDuration, m_logger);
   } else {
-    PrepareGeneralData(m_json, m_settings, m_factor, m_unit, m_rawDatasets,
-                       m_filteredDatasets, m_originalDatasets, m_startTimes,
+    PrepareGeneralData(m_json, m_settings, m_factor, m_unit, m_originalDatasets,
+                       m_rawDatasets, m_filteredDatasets, m_startTimes,
                        m_minDuration, m_maxDuration, m_logger);
   }
   WPI_DEBUG(m_logger, "{}", "Finished Preparing Data");
