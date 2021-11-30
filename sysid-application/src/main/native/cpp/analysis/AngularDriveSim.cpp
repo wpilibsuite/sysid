@@ -15,7 +15,7 @@ AngularDriveSim::AngularDriveSim(double Ks, double Kv, double Ka,
                                  double initialVelocity)
     // To convert to an angular version, ω = v / r
     : m_A{{0.0, 2.0 / trackwidth}, {0.0, -Kv / Ka}},
-      m_B{0.0, 2.0 / trackwidth / kA},
+      m_B{0.0, 2.0 / trackwidth / Ka},
       m_c{0.0, -2.0 / trackwidth * Ks / Ka},
       m_trackwidth{trackwidth} {
   Reset(initialPosition, initialVelocity);
