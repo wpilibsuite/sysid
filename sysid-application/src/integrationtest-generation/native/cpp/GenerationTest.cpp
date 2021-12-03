@@ -89,7 +89,8 @@ class GenerationTest : public ::testing::Test {
 
     // Prints out stored output to help with debugging
     if (!found) {
-      fmt::print(stderr, "{}\n", m_logContent);
+      fmt::print(stderr, "******\nOutput Searched Through:\n{}\n******\n",
+                 m_logContent);
     }
   }
 
