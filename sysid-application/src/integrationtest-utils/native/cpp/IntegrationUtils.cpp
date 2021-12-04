@@ -58,6 +58,10 @@ void Connect(NT_Inst nt, NT_Entry kill) {
   while (!nt::IsConnected(nt)) {
     if (wpi::Now() - time > 1.5E7) {
       fmt::print(stderr, "The robot program crashed\n");
+      auto capturedStdout = ::testing::internal::GetCapturedStdout();
+      fmt::print(stderr,
+                 "\n******\nRobot Program Captured Output:\n{}\n******\n",
+                 capturedStdout);
       std::exit(1);
     }
   }
