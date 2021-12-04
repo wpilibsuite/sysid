@@ -350,13 +350,14 @@ bool AnalyzerPlot::DisplayVoltageDomainPlots(ImVec2 plotSize) {
 
   // Quasistatic Velocity vs. Velocity Portion Voltage.
   if (m_fitNextPlot[0]) {
-    ImPlot::FitNextPlotAxes();
+    ImPlot::SetNextAxesToFit();
   }
 
-  if (ImPlot::BeginPlot(kChartTitles[0], "Velocity-Portion Voltage",
-                        "Quasistatic Velocity", plotSize, ImPlotFlags_None,
-                        ImPlotAxisFlags_NoGridLines,
-                        ImPlotAxisFlags_NoGridLines)) {
+  if (ImPlot::BeginPlot(kChartTitles[0], plotSize, ImPlotFlags_None)) {
+    ImPlot::SetupAxis(ImAxis_X1, "Velocity-Portion Voltage",
+                      ImPlotAxisFlags_NoGridLines);
+    ImPlot::SetupAxis(ImAxis_Y1, "Quasistatic Velocity",
+                      ImPlotAxisFlags_NoGridLines);
     // Get a reference to the data that we are plotting.
     auto& data = m_filteredData[kChartTitles[0]];
 
@@ -374,16 +375,18 @@ bool AnalyzerPlot::DisplayVoltageDomainPlots(ImVec2 plotSize) {
   }
 
   if (m_fitNextPlot[1]) {
-    ImPlot::FitNextPlotAxes();
+    ImPlot::SetNextAxesToFit();
   }
 
   if (forPicture) {
     ImGui::SameLine();
   }
 
-  if (ImPlot::BeginPlot(kChartTitles[1], "Acceleration-Portion Voltage",
-                        "Dynamic Acceleration", plotSize, ImPlotFlags_None,
-                        ImPlotAxisFlags_NoGridLines)) {
+  if (ImPlot::BeginPlot(kChartTitles[1], plotSize, ImPlotFlags_None)) {
+    ImPlot::SetupAxis(ImAxis_X1, "Acceleration-Portion Voltage",
+                      ImPlotAxisFlags_NoGridLines);
+    ImPlot::SetupAxis(ImAxis_Y1, "Dynamic Acceleration",
+                      ImPlotAxisFlags_NoGridLines);
     // Get a reference to the data we are plotting.
     auto& data = m_filteredData[kChartTitles[1]];
 
@@ -443,17 +446,18 @@ bool AnalyzerPlot::DisplayTimeDomainPlots(ImVec2 plotSize) {
 
     // Generate Sim vs Filtered Plot
     if (m_fitNextPlot[i]) {
-      ImPlot::FitNextPlotAxes();
+      ImPlot::SetNextAxesToFit();
     }
 
     if (forPicture && i % 4 != 0) {
       ImGui::SameLine();
     }
-    if (ImPlot::BeginPlot(kChartTitles[i], x, y, plotSize, ImPlotFlags_None,
-                          ImPlotAxisFlags_NoGridLines)) {
+
+    if (ImPlot::BeginPlot(kChartTitles[i], plotSize, ImPlotFlags_None)) {
+      ImPlot::SetupAxis(ImAxis_X1, x, ImPlotAxisFlags_NoGridLines);
+      ImPlot::SetupAxis(ImAxis_Y1, y, ImPlotAxisFlags_NoGridLines);
       // Set Legend Location:
-      ImPlot::SetLegendLocation(ImPlotLocation_NorthEast,
-                                ImPlotOrientation_Vertical, false);
+      ImPlot::SetupLegend(ImPlotLocation_NorthEast);
 
       // Plot Raw and Filtered Data
       PlotRawAndFiltered(rawData, filteredData);
@@ -476,13 +480,15 @@ bool AnalyzerPlot::DisplayTimeDomainPlots(ImVec2 plotSize) {
     ImGui::SameLine();
   }
 
-  ImPlot::SetNextPlotLimitsY(0, 50);
   if (m_fitNextPlot[6]) {
-    ImPlot::FitNextPlotAxes(true, false, false, false);
+    ImPlot::SetNextAxisToFit(ImAxis_X1);
   }
-  if (ImPlot::BeginPlot(kChartTitles[6], "Time (s)", "Change in Time (ms)",
-                        plotSize, ImPlotFlags_None,
-                        ImPlotAxisFlags_NoGridLines)) {
+
+  if (ImPlot::BeginPlot(kChartTitles[6], plotSize, ImPlotFlags_None)) {
+    ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 50);
+    ImPlot::SetupAxis(ImAxis_X1, "Time (s)", ImPlotAxisFlags_NoGridLines);
+    ImPlot::SetupAxis(ImAxis_Y1, "Change in Time (ms)",
+                      ImPlotAxisFlags_NoGridLines);
     // Get a reference to the data we are plotting.
     auto& data = m_filteredData[kChartTitles[6]];
 
