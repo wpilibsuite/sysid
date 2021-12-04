@@ -35,6 +35,16 @@ jobs:
           java-version: 11
           architecture: ${{ matrix.architecture }}
 
+      - name: Upgrade to GCC 10 (Linux)
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt install -y gcc-10 g++-10
+          sudo update-alternatives \
+            --install /usr/bin/gcc gcc /usr/bin/gcc-10 10 \
+            --slave /usr/bin/g++ g++ /usr/bin/g++-10
+          sudo update-alternatives --set gcc /usr/bin/gcc-10
+        if: startsWith(matrix.artifact-name, 'Linux')
+
       - name: Install Toolchain
         run: ./gradlew installRoborioToolchain
 
