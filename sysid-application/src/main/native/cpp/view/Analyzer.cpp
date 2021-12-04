@@ -381,9 +381,19 @@ void Analyzer::Display() {
 
       if (m_settings.convertGainsToEncTicks) {
         ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
-        if (ImGui::InputDouble("Gearing", &m_settings.gearing, 0.0, 0.0,
+        if (ImGui::InputDouble("##Numerator", &m_gearingNumerator, 0.0, 0.0,
                                "%.4f") &&
-            m_settings.gearing > 0) {
+            m_gearingNumerator > 0) {
+          m_settings.gearing = m_gearingNumerator / m_gearingDenominator;
+          m_enabled = true;
+          Calculate();
+        }
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
+        if (ImGui::InputDouble("##Denominator", &m_gearingDenominator, 0.0, 0.0,
+                               "%.4f") &&
+            m_gearingDenominator > 0) {
+          m_settings.gearing = m_gearingNumerator / m_gearingDenominator;
           m_enabled = true;
           Calculate();
         }

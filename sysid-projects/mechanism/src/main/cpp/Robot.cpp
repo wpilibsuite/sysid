@@ -34,7 +34,9 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
     bool encoderInverted = m_json.at("primary encoder inverted").get<bool>();
 
     double cpr = m_json.at("counts per rotation").get<double>();
-    double gearing = m_json.at("gearing").get<double>();
+    double gearingNumerator = m_json.at("gearing numerator").get<double>();
+    double gearingDenominator = m_json.at("gearing denominator").get<double>();
+    double gearing = gearingNumerator / gearingDenominator;
 
     bool isEncoding = m_json.at("encoding").get<bool>();
 

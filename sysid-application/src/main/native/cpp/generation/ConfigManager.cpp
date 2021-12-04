@@ -57,7 +57,8 @@ wpi::json ConfigManager::Generate(size_t occupied) {
 
   // Add encoder units -> real world units conversion constant.
   json["counts per rotation"] = m_config.cpr;
-  json["gearing"] = m_config.gearing;
+  json["gearing numerator"] = m_config.gearingNumerator;
+  json["gearing denominator"] = m_config.gearingDenominator;
 
   // Add gyro type and constructor.
   json["gyro"] = m_config.gyro.name;
@@ -86,10 +87,10 @@ void ConfigManager::ReadJSON(std::string_view path) {
                                        "primary encoder inverted",
                                        "secondary encoder inverted",
                                        "counts per rotation",
-                                       "gearing",
+                                       "gearing numerator",
+                                       "gearing denominator",
                                        "gyro",
                                        "gyro ctor",
-                                       "gearing",
                                        "encoding",
                                        "number of samples per average",
                                        "velocity measurement period"};
@@ -146,7 +147,9 @@ void ConfigManager::ReadJSON(std::string_view path) {
       json_file.at("secondary encoder inverted").get<bool>();
 
   m_config.cpr = json_file.at("counts per rotation").get<double>();
-  m_config.gearing = json_file.at("gearing").get<double>();
+  m_config.gearingNumerator = json_file.at("gearing numerator").get<double>();
+  m_config.gearingDenominator =
+      json_file.at("gearing denominator").get<double>();
 
   m_config.gyro =
       sysid::gyro::FromGyroName(json_file.at("gyro").get<std::string>());
