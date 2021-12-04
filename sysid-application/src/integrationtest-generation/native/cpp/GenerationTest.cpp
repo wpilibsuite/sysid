@@ -41,16 +41,16 @@ const wpi::SmallVector<sysid::HardwareType, 2> kGeneralEncs{
 wpi::StringMap<wpi::SmallVector<sysid::HardwareType, 2>>
     motorControllerEncoderMap = {
         {std::string{sysid::motorcontroller::kPWM.name}, kGeneralEncs},
-        //  {std::string{sysid::motorcontroller::kVictorSPX}, kGeneralEncs},
-        //  {std::string{sysid::motorcontroller::kTalonSRX}, kTalonEncs},
-        //  {std::string{sysid::motorcontroller::kTalonFX}, kBuiltInEncs},
+        {std::string{sysid::motorcontroller::kVictorSPX.name}, kGeneralEncs},
+        {std::string{sysid::motorcontroller::kTalonSRX.name}, kTalonEncs},
+        {std::string{sysid::motorcontroller::kTalonFX.name}, kBuiltInEncs},
         {std::string{sysid::motorcontroller::kSPARKMAXBrushless.name},
          kSMaxEncs},
         {std::string{sysid::motorcontroller::kSPARKMAXBrushed.name}, kSMaxEncs},
-        // {std::string{sysid::motorcontroller::kVenom}, kBuiltInEncs}
-};
+        {std::string{sysid::motorcontroller::kVenom.name}, kBuiltInEncs}};
 
-const wpi::SmallVector<std::string_view, 4> kPigeonCtors{"0", "WPI_TalonSRX-1"};
+const wpi::SmallVector<std::string_view, 4> kPigeonCtors{
+    "0", "WPI_TalonSRX-1", "WPI_TalonSRX-2", "WPI_TalonSRX-10"};
 const wpi::SmallVector<std::string_view, 4> kAnalogCtors{"0"};
 const wpi::SmallVector<std::string_view, 4> kNavXCtors{
     "SerialPort.kUSB", "I2C", "SerialPort.kMXP", "SPI.kMXP"};
@@ -58,10 +58,9 @@ const wpi::SmallVector<std::string_view, 4> kADXRS450Ctors{"SPI.kMXP",
                                                            "kOnboardCS0"};
 wpi::StringMap<wpi::SmallVector<std::string_view, 4>> gyroCtorMap = {
     {std::string{sysid::gyro::kAnalogGyro.name}, kAnalogCtors},
-    // {std::string{sysid::gyro::kPigeon.name}, kPigeonCtors},
-    // {std::string{sysid::gyro::kADXRS450.name}, kADXRS450Ctors},
-    // FIXME: Waiting on Linux and macOS builds for navX AHRS
-    // {std::string{sysid::gyro::kNavX.name}, kNavXCtors},
+    {std::string{sysid::gyro::kPigeon.name}, kPigeonCtors},
+    {std::string{sysid::gyro::kADXRS450.name}, kADXRS450Ctors},
+    {std::string{sysid::gyro::kNavX.name}, kNavXCtors},
     {std::string{sysid::gyro::kNoGyroOption.name}, kAnalogCtors}};
 
 class GenerationTest : public ::testing::Test {
@@ -101,7 +100,7 @@ class GenerationTest : public ::testing::Test {
 
     std::string encoderString;
     if (encoder == sysid::encoder::kBuiltInSetting.name) {
-      encoderString = fmt::format("{}+{}", motorController, encoder);
+      encoderString = fmt::format("{}+{}", encoder, motorController);
     } else if (wpi::starts_with(motorController, "SPARK MAX") &&
                (encoder == sysid::encoder::kSMaxDataPort.name ||
                 encoder == sysid::encoder::kSMaxEncoderPort.name)) {
@@ -125,8 +124,29 @@ class GenerationTest : public ::testing::Test {
     // FIXME: Add in gyro specific conditions once CTRE and REV simulations work
     if (gyro == sysid::gyro::kNoGyroOption.name) {
       FindInLog(gyro);
+    } else if (gyro == sysid::gyro::kPigeon.name) {
+      std::string pigeonPortStr;
+      if (wpi::starts_with(gyroCtor, "WPI_TalonSRX")) {
+        auto [ctorString, portStr] = wpi::split(gyroCtor, "-");
+        if (portStr == "10") {
+          // If the motor controller pigeon plugged into hasn't been declared
+          pigeonPortStr =
+              fmt::format("{} (plugged to other motorcontroller)", portStr);
+
+        } else {
+          // If the motor controller is plugged into an already declared pigeon
+          pigeonPortStr =
+              fmt::format("{} (plugged to drive motorcontroller)", portStr);
+        }
+      } else {
+        // Pigeon is plugged into CAN
+        pigeonPortStr = fmt::format("{} (CAN)", gyroCtor);
+      }
+      FindInLog(fmt::format("Pigeon, Port: {}", pigeonPortStr));
+    } else if (gyro == sysid::gyro::kRomiGyro.name) {
+      FindInLog("Romi");
     } else {
-      FindInLog(fmt::format("{}, Port:{}", gyro, gyroCtor));
+      FindInLog(fmt::format("{}, Port: {}", gyro, gyroCtor));
     }
   }
 
@@ -235,13 +255,10 @@ TEST_F(GenerationTest, Drivetrain) {
   SetUp("sysid-projects:drive");
   constexpr size_t size = 2;
 
-  // FIXME: Switch back to talon + built-in setup once CTRE is fixed
-  // Talons were chosen due to the pigeon having a case where it plugs into one
-  // (Temporarily ignored)
   m_settings.motorControllers = wpi::SmallVector<sysid::HardwareType, 3>(
-      size, sysid::motorcontroller::kPWM);
+      size, sysid::motorcontroller::kTalonSRX);
 
-  m_settings.encoderType = sysid::encoder::kRoboRIO;
+  m_settings.encoderType = sysid::encoder::kBuiltInSetting;
 
   // Encoders + Motor controllers already tested, now just need to test the
   // gyros

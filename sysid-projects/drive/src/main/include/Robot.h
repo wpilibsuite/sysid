@@ -4,7 +4,9 @@
 
 #pragma once
 
-// #include <ctre/Phoenix.h>
+#ifdef __FRC_ROBORIO__
+#include <ctre/Phoenix.h>
+#endif
 
 #include <functional>
 #include <memory>
@@ -45,18 +47,19 @@ class Robot : public frc::TimedRobot {
   std::function<double()> m_gyroPosition;
   std::function<double()> m_gyroRate;
   wpi::json m_json;
-  // std::unique_ptr<CANCoder> m_leftCancoder;
-  // std::unique_ptr<rev::CANEncoder> m_leftCANEncoder;
-  // std::unique_ptr<rev::CANEncoder> m_rightCANEncoder;
   std::unique_ptr<rev::SparkMaxRelativeEncoder> m_leftRevEncoderPort;
   std::unique_ptr<rev::SparkMaxAlternateEncoder> m_leftRevDataPort;
   std::unique_ptr<rev::SparkMaxRelativeEncoder> m_rightRevEncoderPort;
   std::unique_ptr<rev::SparkMaxAlternateEncoder> m_rightRevDataPort;
   std::unique_ptr<frc::Encoder> m_leftEncoder;
-  // std::unique_ptr<CANCoder> m_rightCancoder;
   std::unique_ptr<frc::Encoder> m_rightEncoder;
   std::unique_ptr<frc::Gyro> m_gyro;
-  // std::unique_ptr<PigeonIMU> m_pigeon;
+
+#ifdef __FRC_ROBORIO__
+  std::unique_ptr<CANCoder> m_leftCancoder;
+  std::unique_ptr<CANCoder> m_rightCancoder;
+  std::unique_ptr<PigeonIMU> m_pigeon;
+#endif
 
   sysid::SysIdDrivetrainLogger m_logger;
 };

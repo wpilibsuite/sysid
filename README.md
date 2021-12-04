@@ -10,6 +10,7 @@ This is a list of the vendors that are currently supported by SysId for 2022:
 ### Vendors
 
 - REV
+- CTRE (No Integration Tests)
 
 ### Hardware Supported by WPILib
 
@@ -20,7 +21,6 @@ This is a list of the vendors that are currently supported by SysId for 2022:
 ### Hardware to be supported
 
 This is hardware that is NOT currently supported but will be once dependencies are resolved or when certain parts of the code is updated:
-- CTRE
 - NavX
 - Playing With Fusion Venom
 - ADIS Gyro

@@ -17,8 +17,6 @@
 // #include <frc/romi/RomiGyro.h>
 #include <frc/simulation/DriverStationSim.h>
 #include <frc/smartdashboard/SmartDashboard.h>
-#include <units/angle.h>
-#include <units/angular_velocity.h>
 #include <wpi/StringExtras.h>
 
 // #include "AHRS.h"
@@ -77,137 +75,29 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
     sysid::SetupEncoders(encoderType, isEncoding, period, cpr * gearing,
                          numSamples, controllerNames[0],
                          m_leftControllers.at(0).get(), leftEncoderInverted,
-                         leftEncoderPorts,  // m_leftCancoder,
+                         leftEncoderPorts,
+#ifdef __FRC_ROBORIO__
+                         m_leftCancoder,
+#endif
                          m_leftRevEncoderPort, m_leftRevDataPort, m_leftEncoder,
                          m_leftPosition, m_leftRate);
     sysid::SetupEncoders(encoderType, isEncoding, period, cpr * gearing,
                          numSamples, controllerNames[0],
                          m_rightControllers.at(0).get(), rightEncoderInverted,
-                         rightEncoderPorts,  // m_rightCancoder,
+                         rightEncoderPorts,
+#ifdef __FRC_ROBORIO__
+                         m_rightCancoder,
+#endif
                          m_rightRevEncoderPort, m_rightRevDataPort,
                          m_rightEncoder, m_rightPosition, m_rightRate);
 
     fmt::print("Setup gyro\n");
-    if (gyroType == "Pigeon") {
-      std::string portStr;
-      if (wpi::contains(gyroCtor, "WPI_TalonSRX")) {
-        portStr = gyroCtor[gyroCtor.find("-") + 1];
-      } else {
-        portStr = gyroCtor;
-      }
-
-      // converts gyroCtor into port #
-      int srxPort = std::stoi(portStr);
-      if (wpi::contains(gyroCtor, "WPI_TalonSRX")) {
-        bool talonDeclared = false;
-        //   // Check if there is a Talon Port in Left Ports
-        auto findPort = std::find(leftPorts.begin(), leftPorts.end(), srxPort);
-
-        // Check Right Ports if not found
-        if (findPort == leftPorts.end()) {
-          //     findPort = std::find(rightPorts.begin(), rightPorts.end(),
-          //     srxPort);
-          if (findPort != rightPorts.end() &&
-              controllerNames[findPort - rightPorts.begin()] == "TalonSRX") {
-            //       m_pigeon =
-            //       std::make_unique<PigeonIMU>(dynamic_cast<WPI_TalonSRX*>(
-            //           m_rightControllers.at(findPort -
-            //           rightPorts.begin()).get()));
-            //       talonDeclared = true;
-          }
-        } else if (controllerNames[findPort - leftPorts.begin()] ==
-                   "TalonSRX") {
-          //     m_pigeon =
-          //     std::make_unique<PigeonIMU>(dynamic_cast<WPI_TalonSRX*>(
-          //         m_leftControllers.at(findPort - leftPorts.begin()).get()));
-          //     talonDeclared = true;
-        }
-
-        //   // If it isn't tied to an existing Talon, create a new object
-        if (!talonDeclared) {
-          //     m_pigeon = std::make_unique<PigeonIMU>(new
-          //     WPI_TalonSRX(srxPort));
-          portStr =
-              fmt::format("{} (plugged to other motorcontroller)", portStr);
-        } else {
-          portStr =
-              fmt::format("{} (plugged to drive motorcontroller)", portStr);
-        }
-      } else {
-        //   m_pigeon = std::make_unique<PigeonIMU>(srxPort);
-        portStr = fmt::format("{} (CAN)", portStr);
-      }
-
-      // // setup functions
-      // m_gyroPosition = [&, this] {
-      //   double xyz[3];
-      //   m_pigeon->GetAccumGyro(xyz);
-      //   return xyz[2];
-      // };
-
-      // m_gyroRate = [&, this] {
-      //   double xyz_dps[3];
-      //   m_pigeon->GetRawGyro(xyz_dps);
-      //   units::degrees_per_second_t rate{xyz_dps[2]};
-      //   return units::radians_per_second_t{rate}.value();
-      // };
-      fmt::print("Setup Pigeon, Port: {}", portStr);
-    } else if (gyroType != "None") {
-      bool isAnalogGyro = false;
-      if (gyroType == "ADXRS450") {
-        if (gyroCtor == "SPI.kMXP") {
-          //       m_gyro =
-          //       std::make_unique<frc::ADXRS450_Gyro>(frc::SPI::Port::kMXP);
-        } else {
-          //       m_gyro =
-          //           std::make_unique<frc::ADXRS450_Gyro>(frc::SPI::Port::kOnboardCS0);
-        }
-        //     // FIXME: waiting on Linux and macOS builds for navX AHRS
-      } else if (gyroType == "NavX") {
-        if (gyroCtor == "SerialPort.kUSB") {
-          //     //     m_gyro =
-          //     std::make_unique<AHRS>(frc::SerialPort::Port::kUSB);
-        } else if (gyroCtor == "I2C") {
-          //     //     m_gyro = std::make_unique<AHRS>(frc::I2C::Port::kMXP);
-        } else if (gyroCtor == "SerialPort.kMXP") {
-          //     //     m_gyro =
-          //     std::make_unique<AHRS>(frc::SerialPort::Port::kMXP);
-        } else {
-          //     //     m_gyro = std::make_unique<AHRS>(frc::SPI::Port::kMXP);
-        }
-        //     // FIXME: Update Romi Gyro once vendordep is out
-      } else if (gyroType == "Romi") {
-        //     //   m_gyro = std::make_unique<frc::RomiGyro>();
-      } else {
-        isAnalogGyro = true;
-        try {
-          fmt::print("Setup Analog Gyro, Port:{}", gyroCtor);
-          m_gyro = std::make_unique<frc::AnalogGyro>(std::stoi(gyroCtor));
-        } catch (std::invalid_argument& e) {
-          fmt::print("Setup Analog Gyro, Port:0");
-          m_gyro = std::make_unique<frc::AnalogGyro>(0);
-        }
-      }
-      if (!isAnalogGyro) {
-        fmt::print("Setup {}, Ctor: {}", gyroType, gyroCtor);
-      }
-      m_gyroPosition = [&, this] {
-        return units::radian_t(units::degree_t{m_gyro->GetAngle()}).value();
-      };
-
-      m_gyroRate = [&, this] {
-        return units::radians_per_second_t(
-                   units::degrees_per_second_t{m_gyro->GetAngle()})
-            .value();
-      };
-      // Default behaviour is to make the gyro functions return zero
-    } else {
-      fmt::print("Setup None");
-      m_gyroPosition = [&] { return 0.0; };
-      m_gyroRate = [&] { return 0.0; };
-    }
-
-    // }
+    sysid::SetupGyro(gyroType, gyroCtor, leftPorts, rightPorts, controllerNames,
+                     m_leftControllers, m_rightControllers, m_gyro,
+#ifdef __FRC_ROBORIO__
+                     m_pigeon,
+#endif
+                     m_gyroPosition, m_gyroRate);
   } catch (std::exception& e) {
     fmt::print("Project failed: {}\n", e.what());
     std::exit(-1);
