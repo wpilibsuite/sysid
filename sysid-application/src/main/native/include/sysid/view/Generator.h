@@ -84,6 +84,9 @@ static constexpr const char* kNavXCtors[] = {"SerialPort.kUSB", "I2C",
 
 static constexpr const char* kADXRS450Ctors[] = {"SPI.kMXP", "kOnboardCS0"};
 
+static constexpr const char* kADISCtors[] = {
+    "SPI.kMXP", "kOnboardCS0", "kOnboardCS1", "kOnboardCS2", "kOnboardCS3"};
+
 static constexpr const char* kCTREPeriods[] = {"1",  "2",  "5",  "10",
                                                "25", "50", "100"};
 

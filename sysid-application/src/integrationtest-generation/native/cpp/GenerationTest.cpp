@@ -56,11 +56,15 @@ const wpi::SmallVector<std::string_view, 4> kNavXCtors{
     "SerialPort.kUSB", "I2C", "SerialPort.kMXP", "SPI.kMXP"};
 const wpi::SmallVector<std::string_view, 4> kADXRS450Ctors{"SPI.kMXP",
                                                            "kOnboardCS0"};
+const wpi::SmallVector<std::string_view, 4> kADISCtors{
+    "SPI.kMXP", "kOnboardCS0", "kOnboardCS1", "kOnboardCS2", "kOnboardCS3"};
 wpi::StringMap<wpi::SmallVector<std::string_view, 4>> gyroCtorMap = {
     {std::string{sysid::gyro::kAnalogGyro.name}, kAnalogCtors},
     {std::string{sysid::gyro::kPigeon.name}, kPigeonCtors},
     {std::string{sysid::gyro::kADXRS450.name}, kADXRS450Ctors},
     {std::string{sysid::gyro::kNavX.name}, kNavXCtors},
+    {std::string{sysid::gyro::kADIS16470.name}, kADISCtors},
+    {std::string{sysid::gyro::kADIS16448.name}, kADXRS450Ctors},
     {std::string{sysid::gyro::kNoGyroOption.name}, kAnalogCtors}};
 
 class GenerationTest : public ::testing::Test {
@@ -127,7 +131,7 @@ class GenerationTest : public ::testing::Test {
     } else if (gyro == sysid::gyro::kPigeon.name) {
       std::string pigeonPortStr;
       if (wpi::starts_with(gyroCtor, "WPI_TalonSRX")) {
-        auto [ctorString, portStr] = wpi::split(gyroCtor, "-");
+        auto portStr = wpi::split(gyroCtor, "-").second;
         if (portStr == "10") {
           // If the motor controller pigeon plugged into hasn't been declared
           pigeonPortStr =
@@ -143,6 +147,11 @@ class GenerationTest : public ::testing::Test {
         pigeonPortStr = fmt::format("{} (CAN)", gyroCtor);
       }
       FindInLog(fmt::format("Pigeon, Port: {}", pigeonPortStr));
+    } else if (gyro == sysid::gyro::kADIS16470.name ||
+               gyro == sysid::gyro::kADIS16448.name ||
+               gyro == sysid::gyro::kADXRS450.name) {
+      FindInLog(gyro);
+      FindInLog(fmt::format("SPI {}", gyroCtor));
     } else if (gyro == sysid::gyro::kRomiGyro.name) {
       FindInLog("Romi");
     } else {

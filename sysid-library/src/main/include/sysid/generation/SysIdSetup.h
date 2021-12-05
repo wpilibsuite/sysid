@@ -12,6 +12,8 @@
 #include <string_view>
 #include <vector>
 
+#include <frc/ADIS16448_IMU.h>
+#include <frc/ADIS16470_IMU.h>
 #include <frc/Encoder.h>
 #include <frc/interfaces/Gyro.h>
 #include <frc/motorcontrol/MotorController.h>
@@ -131,7 +133,10 @@ void SetupGyro(
     const std::vector<std::string>& controllerNames,
     const std::vector<std::unique_ptr<frc::MotorController>>& leftControllers,
     const std::vector<std::unique_ptr<frc::MotorController>>& rightControllers,
-    std::unique_ptr<frc::Gyro>& gyro, std::unique_ptr<PigeonIMU>& pigeon,
+    std::unique_ptr<frc::Gyro>& gyro,
+    std::unique_ptr<frc::ADIS16448_IMU>& ADIS16448Gyro,
+    std::unique_ptr<frc::ADIS16470_IMU>& ADIS16470Gyro,
+    std::unique_ptr<PigeonIMU>& pigeon,
     std::unique_ptr<WPI_TalonSRX>& tempTalon,
     std::function<double()>& gyroPosition, std::function<double()>& gyroRate);
 

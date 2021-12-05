@@ -205,6 +205,9 @@ void Generator::UpdateFromConfig() {
     m_gyroParam = GetNewIdx(sysid::kADXRS450Ctors, m_settings.gyroCtor);
   } else if (m_settings.gyro == sysid::gyro::kNavX) {
     m_gyroParam = GetNewIdx(sysid::kNavXCtors, m_settings.gyroCtor);
+  } else if (m_settings.gyro == sysid::gyro::kADIS16470 ||
+             m_settings.gyro == sysid::gyro::kADIS16448) {
+    m_gyroParam = GetNewIdx(sysid::kADISCtors, m_settings.gyroCtor);
   } else {
     m_gyroPort = std::stoi(m_settings.gyroCtor);
   }
@@ -492,6 +495,9 @@ void Generator::Display() {
       ImGui::Combo("Gyro Parameter", &m_gyroParam, kNavXCtors,
                    IM_ARRAYSIZE(kNavXCtors));
       m_settings.gyroCtor = std::string(kNavXCtors[m_gyroParam]);
+    } else if (m_settings.gyro == sysid::gyro::kADIS16470 ||
+               m_settings.gyro == sysid::gyro::kADIS16448) {
+      m_settings.gyroCtor = std::string(kADISCtors[m_gyroParam]);
     } else {
       ImGui::InputInt("Gyro Parameter", &m_gyroPort, 0, 0);
 

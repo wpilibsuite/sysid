@@ -10,6 +10,8 @@
 #include <memory>
 #include <vector>
 
+#include <frc/ADIS16448_IMU.h>
+#include <frc/ADIS16470_IMU.h>
 #include <frc/Encoder.h>
 #include <frc/TimedRobot.h>
 #include <frc/interfaces/Gyro.h>
@@ -52,6 +54,8 @@ class Robot : public frc::TimedRobot {
   std::unique_ptr<frc::Encoder> m_leftEncoder;
   std::unique_ptr<frc::Encoder> m_rightEncoder;
   std::unique_ptr<frc::Gyro> m_gyro;
+  std::unique_ptr<frc::ADIS16448_IMU> m_ADIS16448Gyro;
+  std::unique_ptr<frc::ADIS16470_IMU> m_ADIS16470Gyro;
 
   std::unique_ptr<CANCoder> m_leftCancoder;
   std::unique_ptr<CANCoder> m_rightCancoder;

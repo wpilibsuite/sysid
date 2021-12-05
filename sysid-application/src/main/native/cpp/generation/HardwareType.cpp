@@ -74,6 +74,14 @@ HardwareType sysid::gyro::FromGyroName(std::string_view name) {
     return sysid::gyro::kPigeon;
   }
 
+  if (name == "ADIS16470") {
+    return sysid::gyro::kADIS16470;
+  }
+
+  if (name == "ADIS16448") {
+    return sysid::gyro::kADIS16448;
+  }
+
   if (name == "Romi") {
     return sysid::gyro::kRomiGyro;
   }
