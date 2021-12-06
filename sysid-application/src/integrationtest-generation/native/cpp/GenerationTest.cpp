@@ -44,8 +44,9 @@ wpi::StringMap<wpi::SmallVector<sysid::HardwareType, 2>>
         //  {std::string{sysid::motorcontroller::kVictorSPX}, kGeneralEncs},
         //  {std::string{sysid::motorcontroller::kTalonSRX}, kTalonEncs},
         //  {std::string{sysid::motorcontroller::kTalonFX}, kBuiltInEncs},
-        // {std::string{sysid::motorcontroller::kSPARKMAXBrushless}, kSMaxEncs},
-        // {std::string{sysid::motorcontroller::kSPARKMAXBrushed}, kSMaxEncs},
+        {std::string{sysid::motorcontroller::kSPARKMAXBrushless.name},
+         kSMaxEncs},
+        {std::string{sysid::motorcontroller::kSPARKMAXBrushed.name}, kSMaxEncs},
         // {std::string{sysid::motorcontroller::kVenom}, kBuiltInEncs}
 };
 
@@ -98,20 +99,22 @@ class GenerationTest : public ::testing::Test {
                           std::string_view encoder) {
     FindInLog(motorController);
 
-    // FIXME: Add in motor controller specific items once CTRE and REV
-    // simulations work
     std::string encoderString;
     if (encoder == sysid::encoder::kBuiltInSetting.name) {
       encoderString = fmt::format("{}+{}", motorController, encoder);
     } else if (wpi::starts_with(motorController, "SPARK MAX") &&
                (encoder == sysid::encoder::kSMaxDataPort.name ||
                 encoder == sysid::encoder::kSMaxEncoderPort.name)) {
-      encoderString = fmt::format("SPARK MAX {}", encoder);
+      if (encoder == sysid::encoder::kSMaxEncoderPort.name) {
+        encoderString = fmt::format("{} {}", motorController, encoder);
+      } else {
+        encoderString = fmt::format("SPARK MAX {}", encoder);
+      }
     } else {
       encoderString = encoder;
     }
 
-    FindInLog(encoder);
+    FindInLog(encoderString);
   }
 
   void TestHardwareConfig(std::string_view motorController,
