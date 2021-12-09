@@ -12,7 +12,6 @@
 #include <fmt/format.h>
 #include <frc/simulation/DriverStationSim.h>
 #include <frc/smartdashboard/SmartDashboard.h>
-// #include <rev/CANEncoder.h>
 #include <units/voltage.h>
 
 #include "sysid/generation/SysIdSetup.h"
@@ -55,7 +54,9 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
         encoderType, isEncoding, period, cpr * gearing, numSamples,
         controllerNames[0], m_controllers.front().get(), encoderInverted,
         encoderPorts,
-        // m_cancoder,
+#ifdef __FRC_ROBORIO__
+        m_cancoder,
+#endif
         m_revEncoderPort, m_revDataPort, m_encoder, m_position, m_rate);
   } catch (std::exception& e) {
     fmt::print("Project failed: {}\n", e.what());

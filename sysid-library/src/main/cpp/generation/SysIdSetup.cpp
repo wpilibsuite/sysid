@@ -8,9 +8,13 @@
 
 // #include <CANVenom.h>
 #include <fmt/core.h>
+#include <frc/ADXRS450_Gyro.h>
+#include <frc/AnalogGyro.h>
 #include <frc/Filesystem.h>
 #include <frc/TimedRobot.h>
 #include <frc/motorcontrol/Spark.h>
+#include <units/angle.h>
+#include <units/angular_velocity.h>
 #include <wpi/SmallString.h>
 #include <wpi/StringExtras.h>
 #include <wpi/fs.h>
@@ -53,20 +57,34 @@ void AddMotorController(
       controller == "TalonFX") {
     if (controller == "TalonSRX") {
       fmt::print("Setup TalonSRX");
-      //   controllers->push_back(std::make_unique<WPI_TalonSRX>(port));
+#ifdef __FRC_ROBORIO__
+      controllers->push_back(std::make_unique<WPI_TalonSRX>(port));
+#else
+      controllers->emplace_back(std::make_unique<frc::Spark>(port));
+#endif
     } else if (controller == "TalonFX") {
       fmt::print("Setup TalonFX");
-      //   controllers->emplace_back(std::make_unique<WPI_TalonFX>(port));
+#ifdef __FRC_ROBORIO__
+      controllers->emplace_back(std::make_unique<WPI_TalonFX>(port));
+#else
+      controllers->emplace_back(std::make_unique<frc::Spark>(port));
+#endif
     } else {
       fmt::print("Setup VictorSPX");
-      //   controllers->emplace_back(std::make_unique<WPI_VictorSPX>(port));
+#ifdef __FRC_ROBORIO__
+      controllers->emplace_back(std::make_unique<WPI_VictorSPX>(port));
+#else
+      controllers->emplace_back(std::make_unique<frc::Spark>(port));
+#endif
     }
 
-    // auto* ctreController =
-    //     dynamic_cast<WPI_BaseMotorController*>(controllers->back().get());
-    // ctreController->ConfigFactoryDefault();
-    // ctreController->SetInverted(inverted);
-    // ctreController->SetNeutralMode(motorcontrol::NeutralMode::Brake);
+#ifdef __FRC_ROBORIO__
+    auto* ctreController =
+        dynamic_cast<WPI_BaseMotorController*>(controllers->back().get());
+    ctreController->ConfigFactoryDefault();
+    ctreController->SetInverted(inverted);
+    ctreController->SetNeutralMode(motorcontrol::NeutralMode::Brake);
+#endif
   } else if (controller == "SPARK MAX (Brushless)" ||
              controller == "SPARK MAX (Brushed)") {
     if (controller == "SPARK MAX (Brushless)") {
@@ -85,12 +103,16 @@ void AddMotorController(
     sparkMax->SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
   } else if (controller == "Venom") {
     fmt::print("Setup Venom");
+#ifdef __FRC_ROBORIO__
     //   controllers->emplace_back(std::make_unique<frc::CANVenom>(port));
 
     //   auto* venom = static_cast<frc::CANVenom*>(controllers->back().get());
 
     //   venom->SetInverted(inverted);
     //   venom->SetBrakeCoastMode(frc::CANVenom::BrakeCoastMode::kBrake);
+#else
+    controllers->emplace_back(std::make_unique<frc::Spark>(port));
+#endif
   } else {
     fmt::print("Setup PWM");
     controllers->emplace_back(std::make_unique<frc::Spark>(port));
@@ -99,68 +121,91 @@ void AddMotorController(
   }
 }
 
-// static sensors::SensorVelocityMeasPeriod getCTREVelocityPeriod(int period) {
-//   switch (period) {
-//     case 1:
-//       return sensors::SensorVelocityMeasPeriod::Period_1Ms;
-//     case 2:
-//       return sensors::SensorVelocityMeasPeriod::Period_2Ms;
-//     case 5:
-//       return sensors::SensorVelocityMeasPeriod::Period_5Ms;
-//     case 10:
-//       return sensors::SensorVelocityMeasPeriod::Period_10Ms;
-//     case 25:
-//       return sensors::SensorVelocityMeasPeriod::Period_25Ms;
-//     case 50:
-//       return sensors::SensorVelocityMeasPeriod::Period_50Ms;
-//     default:
-//       return sensors::SensorVelocityMeasPeriod::Period_100Ms;
-//   }
-// }
+#ifdef __FRC_ROBORIO__
+static sensors::SensorVelocityMeasPeriod getCTREVelocityPeriod(int period) {
+  switch (period) {
+    case 1:
+      return sensors::SensorVelocityMeasPeriod::Period_1Ms;
+    case 2:
+      return sensors::SensorVelocityMeasPeriod::Period_2Ms;
+    case 5:
+      return sensors::SensorVelocityMeasPeriod::Period_5Ms;
+    case 10:
+      return sensors::SensorVelocityMeasPeriod::Period_10Ms;
+    case 25:
+      return sensors::SensorVelocityMeasPeriod::Period_25Ms;
+    case 50:
+      return sensors::SensorVelocityMeasPeriod::Period_50Ms;
+    default:
+      return sensors::SensorVelocityMeasPeriod::Period_100Ms;
+  }
+}
 
-// static void SetupCTREEncoder(frc::MotorController* controller,
-//                              FeedbackDevice feedbackDevice, int period,
-//                              double cpr, int numSamples, bool
-//                              encoderInverted, std::function<double()>&
-//                              position, std::function<double()>& rate) {
-//   auto* talonController = dynamic_cast<WPI_BaseMotorController*>(controller);
-//   talonController->ConfigSelectedFeedbackSensor(feedbackDevice);
-//   talonController->SetSensorPhase(encoderInverted);
-//   talonController->ConfigVelocityMeasurementWindow(numSamples);
+static void SetupCTREEncoder(frc::MotorController* controller,
+                             FeedbackDevice feedbackDevice, int period,
+                             double cpr, int numSamples, bool encoderInverted,
+                             std::function<double()>& position,
+                             std::function<double()>& rate) {
+  auto* talonController = dynamic_cast<WPI_BaseMotorController*>(controller);
+  talonController->ConfigSelectedFeedbackSensor(feedbackDevice);
+  talonController->SetSensorPhase(encoderInverted);
+  talonController->ConfigVelocityMeasurementWindow(numSamples);
 
-//   // Determine velocity measurement period
-//   auto talonPeriod = getCTREVelocityPeriod(period);
+  // Determine velocity measurement period
+  auto talonPeriod = getCTREVelocityPeriod(period);
 
-//   talonController->ConfigVelocityMeasurementPeriod(talonPeriod);
-//   position = [=] { return talonController->GetSelectedSensorPosition() / cpr;
-//   }; rate = [=] {
-//     return talonController->GetSelectedSensorVelocity() / cpr /
-//            0.1;  // Conversion factor from 100 ms to seconds
-//   };
-// }
+  talonController->ConfigVelocityMeasurementPeriod(talonPeriod);
+  position = [=] { return talonController->GetSelectedSensorPosition() / cpr; };
+  rate = [=] {
+    return talonController->GetSelectedSensorVelocity() / cpr /
+           0.1;  // Conversion factor from 100 ms to seconds
+  };
+}
+#endif
+
+void SetDefaultDataCollection(std::function<double()>& position,
+                              std::function<double()>& rate) {
+  fmt::print("Setting default");
+  position = [&] { return 0.0; };
+  rate = [&] { return 0.0; };
+}
 
 void SetupEncoders(
     std::string_view encoderType, bool isEncoding, int period, double cpr,
     int numSamples, std::string_view controllerName,
     frc::MotorController* controller, bool encoderInverted,
     const std::vector<int>& encoderPorts,
-    // std::unique_ptr<CANCoder>& cancoder,
+#ifdef __FRC_ROBORIO__
+    std::unique_ptr<CANCoder>& cancoder,
+#endif
     std::unique_ptr<rev::SparkMaxRelativeEncoder>& revEncoderPort,
     std::unique_ptr<rev::SparkMaxAlternateEncoder>& revDataPort,
     std::unique_ptr<frc::Encoder>& encoder, std::function<double()>& position,
     std::function<double()>& rate) {
+#ifndef __FRC_ROBORIO__
+  fmt::print("Setting default rates");
+  SetDefaultDataCollection(position, rate);
+#endif
   if (encoderType == "Built-in") {
     if (wpi::starts_with(controllerName, "Talon")) {
-      // FeedbackDevice feedbackDevice;
+#ifdef __FRC_ROBORIO__
+      FeedbackDevice feedbackDevice;
+#endif
       if (controllerName == "TalonSRX") {
         fmt::print("Setup Built-in+TalonSRX");
-        //   feedbackDevice = FeedbackDevice::QuadEncoder;
+#ifdef __FRC_ROBORIO__
+        feedbackDevice = FeedbackDevice::QuadEncoder;
+#endif
       } else {
         fmt::print("Setup Built-in+TalonFX");
-        //   feedbackDevice = FeedbackDevice::IntegratedSensor;
+#ifdef __FRC_ROBORIO__
+        feedbackDevice = FeedbackDevice::IntegratedSensor;
+#endif
       }
-      // SetupCTREEncoder(controller, feedbackDevice, period, cpr, numSamples,
-      //                  encoderInverted, position, rate);
+#ifdef __FRC_ROBORIO__
+      SetupCTREEncoder(controller, feedbackDevice, period, cpr, numSamples,
+                       encoderInverted, position, rate);
+#endif
     } else {  // Venom
       fmt::print("Setup Built-in+Venom");
       //   auto* venom = static_cast<frc::CANVenom*>(controller);
@@ -203,21 +248,25 @@ void SetupEncoders(
     rate = [&] { return revDataPort->GetVelocity() / 60; };
   } else if (encoderType == "Tachometer") {
     fmt::print("Setup Tachometer");
-    // SetupCTREEncoder(controller, FeedbackDevice::Tachometer, period, cpr,
-    //                  numSamples, encoderInverted, position, rate);
+#ifdef __FRC_ROBORIO__
+    SetupCTREEncoder(controller, FeedbackDevice::Tachometer, period, cpr,
+                     numSamples, encoderInverted, position, rate);
+#endif
   } else if (encoderType == "CANCoder") {
     fmt::print("Setup CANCoder");
-    // cancoder = std::make_unique<CANCoder>(encoderPorts[0]);
-    // cancoder->ConfigSensorDirection(encoderInverted);
+#ifdef __FRC_ROBORIO__
+    cancoder = std::make_unique<CANCoder>(encoderPorts[0]);
+    cancoder->ConfigSensorDirection(encoderInverted);
 
-    // sensors::SensorVelocityMeasPeriod cancoderPeriod =
-    //     getCTREVelocityPeriod(period);
+    sensors::SensorVelocityMeasPeriod cancoderPeriod =
+        getCTREVelocityPeriod(period);
 
-    // cancoder->ConfigVelocityMeasurementPeriod(cancoderPeriod);
-    // cancoder->ConfigVelocityMeasurementWindow(numSamples);
+    cancoder->ConfigVelocityMeasurementPeriod(cancoderPeriod);
+    cancoder->ConfigVelocityMeasurementWindow(numSamples);
 
-    // position = [&] { return cancoder->GetPosition() / cpr; };
-    // rate = [&] { return cancoder->GetVelocity() / cpr; };
+    position = [&] { return cancoder->GetPosition() / cpr; };
+    rate = [&] { return cancoder->GetVelocity() / cpr; };
+#endif
   } else {
     fmt::print("Setup roboRIO quadrature");
     if (isEncoding) {
@@ -236,6 +285,159 @@ void SetupEncoders(
     rate = [&] { return encoder->GetRate(); };
   }
 }
+
+void SetupGyro(
+    std::string_view gyroType, std::string_view gyroCtor,
+    const std::vector<int>& leftPorts, const std::vector<int>& rightPorts,
+    const std::vector<std::string>& controllerNames,
+    const std::vector<std::unique_ptr<frc::MotorController>>& leftControllers,
+    const std::vector<std::unique_ptr<frc::MotorController>>& rightControllers,
+    std::unique_ptr<frc::Gyro>& gyro,
+#ifdef __FRC_ROBORIO__
+    std::unique_ptr<PigeonIMU>& pigeon,
+#endif
+    std::function<double()>& gyroPosition, std::function<double()>& gyroRate) {
+#ifndef __FRC_ROBORIO__
+  sysid::SetDefaultDataCollection(gyroPosition, gyroRate);
+#endif
+  if (gyroType == "Pigeon") {
+    std::string portStr;
+    if (wpi::contains(gyroCtor, "WPI_TalonSRX")) {
+      portStr = wpi::split(gyroCtor, "-").second;
+    } else {
+      portStr = gyroCtor;
+    }
+
+    // converts gyroCtor into port #
+    int srxPort = std::stoi(portStr);
+    if (wpi::contains(gyroCtor, "WPI_TalonSRX")) {
+      bool talonDeclared = false;
+      // Check if there is a Talon Port in Left Ports
+      auto findPort = std::find(leftPorts.begin(), leftPorts.end(), srxPort);
+
+      // Check Right Ports if not found
+      if (findPort == leftPorts.end()) {
+        findPort = std::find(rightPorts.begin(), rightPorts.end(), srxPort);
+        if (findPort != rightPorts.end() &&
+            controllerNames[findPort - rightPorts.begin()] == "TalonSRX") {
+#ifdef __FRC_ROBORIO__
+          pigeon = std::make_unique<PigeonIMU>(dynamic_cast<WPI_TalonSRX*>(
+              rightControllers.at(findPort - rightPorts.begin()).get()));
+#endif
+          talonDeclared = true;
+        }
+      } else if (controllerNames[findPort - leftPorts.begin()] == "TalonSRX") {
+#ifdef __FRC_ROBORIO__
+        pigeon = std::make_unique<PigeonIMU>(dynamic_cast<WPI_TalonSRX*>(
+            leftControllers.at(findPort - leftPorts.begin()).get()));
+#endif
+        talonDeclared = true;
+      }
+
+      // If it isn't tied to an existing Talon, create a new object
+      if (!talonDeclared) {
+#ifdef __FRC_ROBORIO__
+        pigeon = std::make_unique<PigeonIMU>(
+            std::make_unique<WPI_TalonSRX>(srxPort).get());
+#endif
+        portStr = fmt::format("{} (plugged to other motorcontroller)", portStr);
+      } else {
+        portStr = fmt::format("{} (plugged to drive motorcontroller)", portStr);
+      }
+    } else {
+#ifdef __FRC_ROBORIO__
+      pigeon = std::make_unique<PigeonIMU>(srxPort);
+#endif
+      portStr = fmt::format("{} (CAN)", portStr);
+    }
+
+// setup functions
+#ifdef __FRC_ROBORIO__
+    gyroPosition = [&] {
+      double xyz[3];
+      pigeon->GetAccumGyro(xyz);
+      return xyz[2];
+    };
+
+    gyroRate = [&] {
+      double xyz_dps[3];
+      pigeon->GetRawGyro(xyz_dps);
+      units::degrees_per_second_t rate{xyz_dps[2]};
+      return units::radians_per_second_t{rate}.value();
+    };
+#endif
+    fmt::print("Setup Pigeon, Port: {}", portStr);
+  } else if (gyroType != "None") {
+    if (gyroType == "ADXRS450") {
+      if (gyroCtor == "SPI.kMXP") {
+        fmt::print("Setup ADXRS450, Port: SPI.kMXP");
+#ifdef __FRC_ROBORIO__
+        gyro = std::make_unique<frc::ADXRS450_Gyro>(frc::SPI::Port::kMXP);
+#endif
+      } else {
+        fmt::print("Setup ADXRS450, Port: kOnboardCS0");
+#ifdef __FRC_ROBORIO__
+        gyro =
+            std::make_unique<frc::ADXRS450_Gyro>(frc::SPI::Port::kOnboardCS0);
+#endif
+      }
+      //     // FIXME: waiting on Linux and macOS builds for navX AHRS
+    } else if (gyroType == "NavX") {
+      if (gyroCtor == "SerialPort.kUSB") {
+        fmt::print("Setup NavX, Port: SerialPort.kUSB");
+        // #ifdef __FRC_ROBORIO__
+        //         gyro =
+        //     std::make_unique<AHRS>(frc::SerialPort::Port::kUSB);
+        //     #endif
+      } else if (gyroCtor == "I2C") {
+        fmt::print("Setup NavX, Port: I2C");
+        // #ifdef __FRC_ROBORIO__
+        //         gyro = std::make_unique<AHRS>(frc::I2C::Port::kMXP);
+        //         #endif
+      } else if (gyroCtor == "SerialPort.kMXP") {
+        fmt::print("Setup NavX, Port: SerialPort.kMXP");
+        // #ifdef __FRC_ROBORIO__
+        //         gyro =
+        //     std::make_unique<AHRS>(frc::SerialPort::Port::kMXP);
+        //     #endif
+      } else {
+        fmt::print("Setup NavX, Port: SPI.kMXP");
+        // #ifdef __FRC_ROBORIO__
+        //         gyro = std::make_unique<AHRS>(frc::SPI::Port::kMXP);
+        //         #endif
+      }
+      //     // FIXME: Update Romi Gyro once vendordep is out
+    } else if (gyroType == "Romi") {
+      fmt::print("Setup Romi");
+      // gyro = std::make_unique<frc::RomiGyro>();
+    } else {
+      try {
+        fmt::print("Setup Analog Gyro, Port: {}", gyroCtor);
+        gyro =
+            std::make_unique<frc::AnalogGyro>(std::stoi(std::string{gyroCtor}));
+      } catch (std::invalid_argument& e) {
+        fmt::print("Setup Analog Gyro, Port: 0");
+        gyro = std::make_unique<frc::AnalogGyro>(0);
+      }
+    }
+#ifdef __FRC_ROBORIO__
+    gyroPosition = [&] {
+      return units::radian_t(units::degree_t{gyro->GetAngle()}).value();
+    };
+
+    gyroRate = [&] {
+      return units::radians_per_second_t(
+                 units::degrees_per_second_t{gyro->GetAngle()})
+          .value();
+    };
+#endif
+    // Default behaviour is to make the gyro functions return zero
+  } else {
+    fmt::print("Setup None");
+    SetDefaultDataCollection(gyroPosition, gyroRate);
+  }
+}
+
 void SetMotorControllers(
     units::volt_t motorVoltage,
     const std::vector<std::unique_ptr<frc::MotorController>>& controllers) {

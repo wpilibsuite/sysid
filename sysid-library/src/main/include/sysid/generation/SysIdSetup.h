@@ -4,14 +4,18 @@
 
 #pragma once
 
-// #include <ctre/Phoenix.h>
+#ifdef __FRC_ROBORIO__
+#include <ctre/Phoenix.h>
+#endif
 
 #include <functional>
 #include <memory>
+#include <string>
 #include <string_view>
 #include <vector>
 
 #include <frc/Encoder.h>
+#include <frc/interfaces/Gyro.h>
 #include <frc/motorcontrol/MotorController.h>
 #include <rev/CANSparkMax.h>
 #include <units/voltage.h>
@@ -86,10 +90,63 @@ void SetupEncoders(
     int numSamples, std::string_view controllerName,
     frc::MotorController* controller, bool encoderInverted,
     const std::vector<int>& encoderPorts,
-    // std::unique_ptr<CANCoder>& cancoder,
+#ifdef __FRC_ROBORIO__
+    std::unique_ptr<CANCoder>& cancoder,
+#endif
     std::unique_ptr<rev::SparkMaxRelativeEncoder>& revEncoderPort,
     std::unique_ptr<rev::SparkMaxAlternateEncoder>& revDataPort,
     std::unique_ptr<frc::Encoder>& encoder, std::function<double()>& position,
     std::function<double()>& rate);
 
+/**
+ * Sets up an encoder for data collection by settings a position and rate
+ * function to report the right encoder values.
+ *
+ * @param[in] gyroType The type of gyro to configure. Options include: "Analog
+ *                     Gyro", "ADXRS450", "NavX", "Pigeon", "Romi", "None"
+ * @param[in] gyroCtor The type of constructor to use with the gyro. This varies
+ *                     based on the gyro.
+ * @param[in] leftPorts All of the specified ports on the left side of the
+ *                      drivetrain. Intended to be used when there's a Pigeon
+ *                      IMU plugged into a drive motor controller.
+ * @param[in] rightPorts All of the specified ports on the right side of the
+ *                       drivetrain. Intended to be used when there's a Pigeon
+ *                       IMU plugged into a drive motor controller.
+ * @param[in] controllerNames The motor controllers being used in the setup.
+ * @param[in] leftControllers A vector of stored motor controller objects for
+ *                            the left side of the drivetrain. Intended to be
+ *                            used when there's a Pigeon IMU plugged into a
+ *                            drive motor controller.
+ * @param[in] rightControllers A vector of stored motor controller objects for
+ *                             the right side of the drivetrain. Intended to be
+ *                             used when there's a Pigeon IMU plugged into a
+ *                             drive motor controller.
+ * @param[in, out] gyro A pointer to a WPILib Gyro Object.
+ * @param[in, out] pigeon A pointer to a Pigeon IMU Object
+ * @param[out] position A reference to a function that is supposed to return the
+ *                      gyro position
+ * @param[out] rate A reference to a function that is supposed to return the
+ *                  gyro rate
+ */
+void SetupGyro(
+    std::string_view gyroType, std::string_view gyroCtor,
+    const std::vector<int>& leftPorts, const std::vector<int>& rightPorts,
+    const std::vector<std::string>& controllerNames,
+    const std::vector<std::unique_ptr<frc::MotorController>>& leftControllers,
+    const std::vector<std::unique_ptr<frc::MotorController>>& rightControllers,
+    std::unique_ptr<frc::Gyro>& gyro,
+#ifdef __FRC_ROBORIO__
+    std::unique_ptr<PigeonIMU>& pigeon,
+#endif
+    std::function<double()>& gyroPosition, std::function<double()>& gyroRate);
+
+/**
+ * Sets specified data collection functions to return zero. This is to avoid
+ * runtime crashes for when the functions aren't defined.
+ *
+ * @param[out] position The position data collection function
+ * @param[out] rate The rate data collection function
+ */
+void SetDefaultDataCollection(std::function<double()>& position,
+                              std::function<double()>& rate);
 }  // namespace sysid
