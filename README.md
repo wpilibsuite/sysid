@@ -3,6 +3,29 @@
 
 This is the C++ version of [frc-characterization](https://github.com/wpilibsuite/frc-characterization). It uses the [wpimath](https://github.com/wpilibsuite/allwpilib/tree/main/wpimath) backend for generating feedforward and feedback gains.
 
+## Supported Vendor Hardware
+
+This is a list of the vendors that are currently supported by SysId for 2022:
+
+### Vendors
+
+- REV
+
+### Hardware Supported by WPILib
+
+- Analog Gyro
+- PWM Motor Controllers
+- Encoders plugged into the roboRIO
+
+### Hardware to be supported
+
+This is hardware that is NOT currently supported but will be once dependencies are resolved or when certain parts of the code is updated:
+- CTRE
+- NavX
+- Playing With Fusion Venom
+- ADIS Gyro
+- ADXRS450 Gyro
+
 ## Downloading and Running Development Versions of SysId (Analysis Only)
 
 The SysId GitHub repository uses GitHub Actions to build and test each commit.
