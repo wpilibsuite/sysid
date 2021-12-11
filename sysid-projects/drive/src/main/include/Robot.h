@@ -4,9 +4,9 @@
 
 #pragma once
 
-#ifdef __FRC_ROBORIO__
-#include <ctre/Phoenix.h>
-#endif
+// #ifdef __FRC_ROBORIO__
+// #include <ctre/Phoenix.h>
+// #endif
 
 #include <functional>
 #include <memory>
@@ -55,11 +55,11 @@ class Robot : public frc::TimedRobot {
   std::unique_ptr<frc::Encoder> m_rightEncoder;
   std::unique_ptr<frc::Gyro> m_gyro;
 
-#ifdef __FRC_ROBORIO__
-  std::unique_ptr<CANCoder> m_leftCancoder;
-  std::unique_ptr<CANCoder> m_rightCancoder;
-  std::unique_ptr<PigeonIMU> m_pigeon;
-#endif
+  // #ifdef __FRC_ROBORIO__
+  //   std::unique_ptr<CANCoder> m_leftCancoder;
+  //   std::unique_ptr<CANCoder> m_rightCancoder;
+  //   std::unique_ptr<PigeonIMU> m_pigeon;
+  // #endif
 
   sysid::SysIdDrivetrainLogger m_logger;
 };

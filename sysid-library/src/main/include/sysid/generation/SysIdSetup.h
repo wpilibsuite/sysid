@@ -4,9 +4,9 @@
 
 #pragma once
 
-#ifdef __FRC_ROBORIO__
-#include <ctre/Phoenix.h>
-#endif
+// #ifdef __FRC_ROBORIO__
+// #include <ctre/Phoenix.h>
+// #endif
 
 #include <functional>
 #include <memory>
@@ -90,9 +90,9 @@ void SetupEncoders(
     int numSamples, std::string_view controllerName,
     frc::MotorController* controller, bool encoderInverted,
     const std::vector<int>& encoderPorts,
-#ifdef __FRC_ROBORIO__
-    std::unique_ptr<CANCoder>& cancoder,
-#endif
+    // #ifdef __FRC_ROBORIO__
+    //     std::unique_ptr<CANCoder>& cancoder,
+    // #endif
     std::unique_ptr<rev::SparkMaxRelativeEncoder>& revEncoderPort,
     std::unique_ptr<rev::SparkMaxAlternateEncoder>& revDataPort,
     std::unique_ptr<frc::Encoder>& encoder, std::function<double()>& position,
@@ -135,9 +135,9 @@ void SetupGyro(
     const std::vector<std::unique_ptr<frc::MotorController>>& leftControllers,
     const std::vector<std::unique_ptr<frc::MotorController>>& rightControllers,
     std::unique_ptr<frc::Gyro>& gyro,
-#ifdef __FRC_ROBORIO__
-    std::unique_ptr<PigeonIMU>& pigeon,
-#endif
+    // #ifdef __FRC_ROBORIO__
+    //     std::unique_ptr<PigeonIMU>& pigeon,
+    // #endif
     std::function<double()>& gyroPosition, std::function<double()>& gyroRate);
 
 /**
