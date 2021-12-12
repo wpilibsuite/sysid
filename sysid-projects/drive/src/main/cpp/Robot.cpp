@@ -72,7 +72,7 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
     }
 
     fmt::print("Setup encoders\n");
-    sysid::SetupEncoders(encoderType, isEncoding, period, cpr * gearing,
+    sysid::SetupEncoders(encoderType, isEncoding, period, cpr, gearing,
                          numSamples, controllerNames[0],
                          m_leftControllers.at(0).get(), leftEncoderInverted,
                          leftEncoderPorts,
@@ -81,7 +81,7 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 #endif
                          m_leftRevEncoderPort, m_leftRevDataPort, m_leftEncoder,
                          m_leftPosition, m_leftRate);
-    sysid::SetupEncoders(encoderType, isEncoding, period, cpr * gearing,
+    sysid::SetupEncoders(encoderType, isEncoding, period, cpr, gearing,
                          numSamples, controllerNames[0],
                          m_rightControllers.at(0).get(), rightEncoderInverted,
                          rightEncoderPorts,

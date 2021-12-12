@@ -172,7 +172,7 @@ void SetDefaultDataCollection(std::function<double()>& position,
 
 void SetupEncoders(
     std::string_view encoderType, bool isEncoding, int period, double cpr,
-    int numSamples, std::string_view controllerName,
+    double gearing, int numSamples, std::string_view controllerName,
     frc::MotorController* controller, bool encoderInverted,
     const std::vector<int>& encoderPorts,
 #ifdef __FRC_ROBORIO__
@@ -182,6 +182,7 @@ void SetupEncoders(
     std::unique_ptr<rev::SparkMaxAlternateEncoder>& revDataPort,
     std::unique_ptr<frc::Encoder>& encoder, std::function<double()>& position,
     std::function<double()>& rate) {
+  double combinedCPR = cpr * gearing;
 #ifndef __FRC_ROBORIO__
   fmt::print("Setting default rates");
   SetDefaultDataCollection(position, rate);
@@ -233,8 +234,12 @@ void SetupEncoders(
     revEncoderPort->SetMeasurementPeriod(period);
     revEncoderPort->SetAverageDepth(numSamples);
 
-    position = [&] { return revEncoderPort->GetPosition(); };
-    rate = [&] { return revEncoderPort->GetVelocity() / 60; };
+    position = [=, &revEncoderPort] {
+      return revEncoderPort->GetPosition() / gearing;
+    };
+    rate = [=, &revEncoderPort] {
+      return revEncoderPort->GetVelocity() / gearing / 60;
+    };
   } else if (encoderType == "Data Port") {
     fmt::print("Setup SPARK MAX Data Port");
     auto* sparkMax = static_cast<rev::CANSparkMax*>(controller);
@@ -244,8 +249,12 @@ void SetupEncoders(
     revDataPort->SetInverted(encoderInverted);
     revDataPort->SetMeasurementPeriod(period);
     revDataPort->SetAverageDepth(numSamples);
-    position = [&] { return revDataPort->GetPosition(); };
-    rate = [&] { return revDataPort->GetVelocity() / 60; };
+    position = [=, &revDataPort] {
+      return revDataPort->GetPosition() / gearing;
+    };
+    rate = [=, &revDataPort] {
+      return revDataPort->GetVelocity() / gearing / 60;
+    };
   } else if (encoderType == "Tachometer") {
     fmt::print("Setup Tachometer");
 #ifdef __FRC_ROBORIO__
@@ -278,7 +287,7 @@ void SetupEncoders(
                                                encoderInverted);
     }
 
-    encoder->SetDistancePerPulse(1 / cpr);
+    encoder->SetDistancePerPulse(1 / combinedCPR);
     encoder->SetReverseDirection(encoderInverted);
     encoder->SetSamplesToAverage(numSamples);
     position = [&] { return encoder->GetDistance(); };
