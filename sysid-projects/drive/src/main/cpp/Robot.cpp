@@ -127,7 +127,7 @@ void Robot::RobotPeriodic() {
     frc::SmartDashboard::PutNumber("Left Position", m_leftPosition());
     frc::SmartDashboard::PutNumber("Right Position", m_rightPosition());
     frc::SmartDashboard::PutNumber("Left Velocity", m_leftRate());
-    frc::SmartDashboard::PutNumber("Right Position", m_rightRate());
+    frc::SmartDashboard::PutNumber("Right Velocity", m_rightRate());
 
     frc::SmartDashboard::PutNumber("Gyro Reading", m_gyroPosition());
     frc::SmartDashboard::PutNumber("Gyro Rate", m_gyroRate());
