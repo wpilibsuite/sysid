@@ -87,14 +87,8 @@ model {
 
         wpi.cpp.vendor.cpp(it)
 
-        // We must build statically for roboRIO; however, we have to build shared for desktop
-        // in order for simulation modules to work correctly.
-        // TODO: Remove project name check once GR and NU are updated.
-        if (it.targetPlatform.name == wpi.platforms.roborio && project.name != "analysis-test")
-          wpi.cpp.deps.wpilibStatic(it)
-        else
-          wpi.cpp.deps.wpilib(it)
-
+        // In order for vendors to work correctly, we must always build with shared wpilib
+        wpi.cpp.deps.wpilib(it)
       }
     }
   }
@@ -108,15 +102,24 @@ model {
               bin.tasks.install.runScriptFile.get().asFile.toString())
         }
 
-      // Create a task that installs and copies the roboRIO executable with static linking.
+      // Create a task that installs and copies the roboRIO executable and libraries.
       if (project.name != "analysis-test" && bin.targetPlatform.name == wpi.platforms.roborio &&
           bin.name.toLowerCase().contains("release")) {
         Task copy = project.tasks.create("installRioExe", Copy) {
           from(bin.tasks.install.executableFile)
-          into("$rootDir/sysid-application/src/main/native/resources")
-
-          rename { _ -> "frcUserProgram${project.name.capitalize()}.out" }
+          into("$rootDir/sysid-application/src/main/native/resources/${project.name}")
           dependsOn bin.tasks.install
+        }
+        // Only copy the libs once, from the drive mechanism
+        if (project.name == 'drive') {
+          Task copyLibs = project.tasks.create("installRioLibs", Copy) {
+            from(bin.tasks.install.libs) {
+              exclude '**/*.so.debug'
+            }
+            into("$rootDir/sysid-application/src/main/native/resources/libraries")
+            dependsOn bin.tasks.install
+          }
+          project.build.dependsOn copyLibs
         }
         project.build.dependsOn copy
       }

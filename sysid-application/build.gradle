@@ -69,6 +69,7 @@ def generateTask = createGenerateResourcesTask('main', 'SYSID', 'sysid', project
 // Before we generate resources, we need to make sure that the RIO executables are built and copied.
 generateTask.dependsOn ":sysid-projects:installRioExe"
 generateTask.dependsOn ":sysid-projects:drive:installRioExe"
+generateTask.dependsOn ":sysid-projects:drive:installRioLibs"
 generateTask.dependsOn ":sysid-projects:mechanism:installRioExe"
 
 tasks.withType(CppCompile) {
