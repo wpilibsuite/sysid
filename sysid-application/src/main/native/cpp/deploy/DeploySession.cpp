@@ -16,6 +16,7 @@
 #include <wpi/uv/Work.h>
 #include <wpi/uv/util.h>
 
+#include "sysid/DeployLibraries.h"
 #include "sysid/deploy/SshSession.h"
 
 using namespace sysid;
@@ -135,6 +136,16 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
             session.Execute(
                 "chmod -R 777 /home/lvuser/deploy || true; chown -R admin:ni "
                 "/home/lvuser/deploy");
+
+            // Deploy libraries
+            auto libraries = sysid::GetLibrariesToDeploy();
+            wpi::SmallString<64> deployFolder;
+            for (auto&& library : libraries) {
+              deployFolder.clear();
+              deployFolder.append("/usr/local/frc/thirdparty/lib/");
+              deployFolder.append(library.first);
+              session.Put(deployFolder.str(), library.second);
+            }
 
             // Deploy
             session.Put("/home/lvuser/frcUserProgram",
