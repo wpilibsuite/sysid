@@ -142,7 +142,7 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
             wpi::SmallString<64> deployFolder;
             for (auto&& library : libraries) {
               deployFolder.clear();
-              deployFolder.append("/usr/local/frc/thirdparty/lib/");
+              deployFolder.append("/usr/local/frc/third-party/lib/");
               deployFolder.append(library.first);
               session.Put(deployFolder.str(), library.second);
             }
