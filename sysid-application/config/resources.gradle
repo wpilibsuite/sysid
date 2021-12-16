@@ -17,7 +17,7 @@ ext.createGenerateResourcesTask = { name, prefix, namespace, project ->
                     return
                 }
                 def relativePath = inputDir.toPath().relativize(inputFile.toPath()).toString()
-                if (relativePath.startsWith('.')) { 
+                if (relativePath.startsWith('.')) {
                     return
                 }
                 def realtivePathRaw = relativePath;
@@ -59,7 +59,6 @@ const unsigned char* ${prefix}${funcName}(size_t* len) {
             }
 
             // Make libraries
-            
             def libraryOutputFile = file("$generatedOutputDir/libstodeploy.cpp")
             libraryOutputFile.withWriter { out ->
                 out.println '''#include <string_view>
