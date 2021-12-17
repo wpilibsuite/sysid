@@ -114,9 +114,10 @@ void SshSession::Put(std::string_view path, std::string_view contents) {
     throw SshException(ssh_get_error(m_session));
   }
 
+  std::string nullTerminatedPath = std::string{path};
   // Copy.
-  sftp_file file =
-      sftp_open(sftp, path.data(), O_WRONLY | O_CREAT | O_TRUNC, S_IFMT);
+  sftp_file file = sftp_open(sftp, nullTerminatedPath.c_str(),
+                             O_WRONLY | O_CREAT | O_TRUNC, S_IFMT);
   if (!file) {
     sftp_free(sftp);
     throw SshException(ssh_get_error(m_session));

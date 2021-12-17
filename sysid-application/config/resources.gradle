@@ -11,11 +11,24 @@ ext.createGenerateResourcesTask = { name, prefix, namespace, project ->
 
         doLast {
             generatedOutputDir.mkdirs()
-            inputDir.eachFile { inputFile ->
-                if (inputFile.name.startsWith('.')) return
-                    def fileBytes = inputFile.bytes
-                def outputFile = file("$generatedOutputDir/${inputFile.name}.cpp")
-                def funcName = "GetResource_" + inputFile.name.replaceAll('[^a-zA-Z0-9]', '_')
+            def libraries = [:]
+            inputDir.eachFileRecurse { inputFile ->
+                if (inputFile.isDirectory()) {
+                    return
+                }
+                def relativePath = inputDir.toPath().relativize(inputFile.toPath()).toString()
+                if (relativePath.startsWith('.')) {
+                    return
+                }
+                def realtivePathRaw = relativePath;
+                relativePath = relativePath.replaceAll('[^a-zA-Z0-9]', '_')
+                def fileBytes = inputFile.bytes
+                def outputFile = file("$generatedOutputDir/${realtivePathRaw}.cpp")
+                outputFile.parentFile.mkdirs()
+                def funcName = "GetResource_" + relativePath
+                if (relativePath.startsWith('libraries')) {
+                    libraries.put(inputFile.name, funcName);
+                }
                 outputFile.withWriter { out ->
                     def inputBytes = inputFile.bytes
                     out.print '''#include <stddef.h>
@@ -42,6 +55,31 @@ const unsigned char* ${prefix}${funcName}(size_t* len) {
                     if (!namespace.isEmpty()) {
                         out.println '}'
                     }
+                }
+            }
+
+            // Make libraries
+            def libraryOutputFile = file("$generatedOutputDir/libstodeploy.cpp")
+            libraryOutputFile.withWriter { out ->
+                out.println '''#include <string_view>
+#include <utility>
+#include <vector>'''
+                if (!namespace.isEmpty()) {
+                    out.println "namespace ${namespace} {"
+                }
+                libraries.each { library ->
+                    out.println "std::string_view ${library.value}();"
+                }
+                out.println ''
+                out.println '''std::vector<std::pair<const char*, std::string_view>> GetLibrariesToDeploy() {
+std::vector<std::pair<const char*, std::string_view>> libraries;'''
+                libraries.each { library ->
+                    out.println "libraries.emplace_back(std::make_pair(\"${library.key}\", ${library.value}()));"
+                }
+                out.println '''return libraries;
+}'''
+                if (!namespace.isEmpty()) {
+                    out.println '}'
                 }
             }
         }

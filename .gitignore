@@ -295,6 +295,10 @@ jsons/
 # Output executables
 *.out
 
+**/resources/drive/**
+**/resources/libraries/**
+**/resources/mechanism/**
+
 # Compilation Database
 compile_commands.json
 
