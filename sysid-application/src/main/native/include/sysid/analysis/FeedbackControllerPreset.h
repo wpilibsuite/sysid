@@ -55,26 +55,80 @@ constexpr FeedbackControllerPreset kWPILibNew{kDefault};
 constexpr FeedbackControllerPreset kWPILibOld{1.0 / 12.0, 1.0, 50_ms, false,
                                               0_s};
 
-// https://phoenix-documentation.readthedocs.io/en/latest/ch14_MCSensor.html#changing-velocity-measurement-parameters
-// 100 ms sampling period + a moving average window size of 64 (i.e. a 64-tap
-// FIR) = 100 / 2 ms + (64 - 1) / 2 ms = 81.5 ms.
+// Measurement delay from a moving average filter:
+//
+// A moving average filter with a window size of N is an FIR filter with N taps.
+// The average delay (in taps) of an arbitrary FIR filter with N taps is
+// (N - 1) / 2.
+//
+// Proof:
+// N taps with delays of 0 .. (N - 1) T
+//
+// average delay = (sum 0 .. N - 1) / N T
+// = (sum 1 .. N - 1) / N T
+//
+// note: sum 1 .. n = n(n + 1) / 2
+//
+// = (N - 1)((N - 1) + 1) / (2N) T
+// = (N - 1)N / (2N) T
+// = (N - 1)/2 T
+
+// Measurement delay from a backward finite difference:
+//
+// Velocities calculated via a backward finite difference with a period of T
+// look like:
+//
+// velocity = (position at timestep k - position at timestep k-1) / T
+//
+// The average delay is T / 2.
+//
+// Proof:
+// average delay = (0 ms + T) / 2
+//               = T / 2
+
+/**
+ * https://phoenix-documentation.readthedocs.io/en/latest/ch14_MCSensor.html#changing-velocity-measurement-parameters
+ *
+ * Backward finite difference delay = 100 ms / 2 = 50 ms.
+ *
+ * 64-tap moving average delay = (64 - 1) / 2 * 1 ms = 31.5 ms.
+ *
+ * Total delay = 50 ms + 31.5 ms = 81.5 ms.
+ */
 constexpr FeedbackControllerPreset kCTRENew{1.0 / 12.0, 0.1, 1_ms, true,
                                             81.5_ms};
 constexpr FeedbackControllerPreset kCTREOld{1023.0 / 12.0, 0.1, 1_ms, false,
                                             81.5_ms};
 
-// According to a Rev employee on the FRC Discord the window size is 40 so delay
-// = (40-1)/2 ms = 19.5 ms.
+/**
+ * https://www.revrobotics.com/content/sw/max/sw-docs/cpp/classrev_1_1_c_a_n_encoder.html#a7e6ce792bc0c0558fb944771df572e6a
+ *
+ * According to a REV employee on the FRC Discord, the sample period for the
+ * backward finite difference is 40 ms.
+ *
+ * Backward finite difference delay = 40 ms / 2 = 20 ms.
+ *
+ * 64-tap moving average delay = (64 - 1) / 2 * 1 ms = 31.5 ms.
+ *
+ * Total delay = 20 ms + 31.5 ms = 51.5 ms.
+ */
 constexpr FeedbackControllerPreset kREVBrushless{1.0 / 12.0, 60.0, 1_ms, false,
-                                                 19.5_ms};
+                                                 51.5_ms};
 
-// https://www.revrobotics.com/content/sw/max/sw-docs/cpp/classrev_1_1_c_a_n_encoder.html#a7e6ce792bc0c0558fb944771df572e6a
-// 64-tap FIR = (64 - 1) / 2 ms = 31.5 ms delay.
+/**
+ * Brushed motors don't have a built-in encoder, so there's no backward finite
+ * difference.
+ *
+ * 64-tap moving average delay = (64 - 1) / 2 * 1 ms = 31.5 ms.
+ */
 constexpr FeedbackControllerPreset kREVBrushed{1.0 / 12.0, 60.0, 1_ms, false,
                                                31.5_ms};
 
-// https://github.com/wpilibsuite/sysid/pull/138#issuecomment-841734229
-// (10 - 0) / 2 = 5ms velocity measurement delay
+/**
+ * https://github.com/wpilibsuite/sysid/pull/138#issuecomment-841734229
+ *
+ * Backward finite difference delay = 10 ms / 2 = 5 ms.
+ */
 constexpr FeedbackControllerPreset kVenom{4096.0 / 12.0, 60.0, 1_ms, false,
                                           5_ms};
 }  // namespace presets
