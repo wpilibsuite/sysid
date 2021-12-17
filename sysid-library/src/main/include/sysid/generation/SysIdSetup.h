@@ -87,7 +87,7 @@ void SetMotorControllers(
  */
 void SetupEncoders(
     std::string_view encoderType, bool isEncoding, int period, double cpr,
-    int numSamples, std::string_view controllerName,
+    double gearing, int numSamples, std::string_view controllerName,
     frc::MotorController* controller, bool encoderInverted,
     const std::vector<int>& encoderPorts,
 #ifdef __FRC_ROBORIO__

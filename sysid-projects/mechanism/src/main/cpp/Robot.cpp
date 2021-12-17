@@ -51,7 +51,7 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 
     fmt::print("Initializing encoder\n");
     sysid::SetupEncoders(
-        encoderType, isEncoding, period, cpr * gearing, numSamples,
+        encoderType, isEncoding, period, cpr, gearing, numSamples,
         controllerNames[0], m_controllers.front().get(), encoderInverted,
         encoderPorts,
 #ifdef __FRC_ROBORIO__
