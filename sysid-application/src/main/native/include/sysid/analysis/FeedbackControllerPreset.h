@@ -103,26 +103,16 @@ constexpr FeedbackControllerPreset kCTREOld{1023.0 / 12.0, 0.1, 1_ms, false,
 /**
  * https://www.revrobotics.com/content/sw/max/sw-docs/cpp/classrev_1_1_c_a_n_encoder.html#a7e6ce792bc0c0558fb944771df572e6a
  *
- * According to a REV employee on the FRC Discord, the sample period for the
- * backward finite difference is 40 ms.
- *
- * Backward finite difference delay = 40 ms / 2 = 20 ms.
+ * Backward finite difference delay = 100 ms / 2 = 50 ms.
  *
  * 64-tap moving average delay = (64 - 1) / 2 * 1 ms = 31.5 ms.
  *
- * Total delay = 20 ms + 31.5 ms = 51.5 ms.
+ * Total delay = 50 ms + 31.5 ms = 81.5 ms.
  */
 constexpr FeedbackControllerPreset kREVBrushless{1.0 / 12.0, 60.0, 1_ms, false,
-                                                 51.5_ms};
-
-/**
- * Brushed motors don't have a built-in encoder, so there's no backward finite
- * difference.
- *
- * 64-tap moving average delay = (64 - 1) / 2 * 1 ms = 31.5 ms.
- */
+                                                 81.5_ms};
 constexpr FeedbackControllerPreset kREVBrushed{1.0 / 12.0, 60.0, 1_ms, false,
-                                               31.5_ms};
+                                               81.5_ms};
 
 /**
  * https://github.com/wpilibsuite/sysid/pull/138#issuecomment-841734229
