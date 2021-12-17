@@ -71,31 +71,21 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
     }
 
     fmt::print("Setup encoders\n");
-    sysid::SetupEncoders(encoderType, isEncoding, period, cpr, gearing,
-                         numSamples, controllerNames[0],
-                         m_leftControllers.at(0).get(), leftEncoderInverted,
-                         leftEncoderPorts,
-#ifdef __FRC_ROBORIO__
-                         m_leftCancoder,
-#endif
-                         m_leftRevEncoderPort, m_leftRevDataPort, m_leftEncoder,
-                         m_leftPosition, m_leftRate);
+    sysid::SetupEncoders(
+        encoderType, isEncoding, period, cpr, gearing, numSamples,
+        controllerNames[0], m_leftControllers.at(0).get(), leftEncoderInverted,
+        leftEncoderPorts, m_leftCancoder, m_leftRevEncoderPort,
+        m_leftRevDataPort, m_leftEncoder, m_leftPosition, m_leftRate);
     sysid::SetupEncoders(encoderType, isEncoding, period, cpr, gearing,
                          numSamples, controllerNames[0],
                          m_rightControllers.at(0).get(), rightEncoderInverted,
-                         rightEncoderPorts,
-#ifdef __FRC_ROBORIO__
-                         m_rightCancoder,
-#endif
+                         rightEncoderPorts, m_rightCancoder,
                          m_rightRevEncoderPort, m_rightRevDataPort,
                          m_rightEncoder, m_rightPosition, m_rightRate);
 
     fmt::print("Setup gyro\n");
     sysid::SetupGyro(gyroType, gyroCtor, leftPorts, rightPorts, controllerNames,
-                     m_leftControllers, m_rightControllers, m_gyro,
-#ifdef __FRC_ROBORIO__
-                     m_pigeon,
-#endif
+                     m_leftControllers, m_rightControllers, m_gyro, m_pigeon,
                      m_gyroPosition, m_gyroRate);
   } catch (std::exception& e) {
     fmt::print("Project failed: {}\n", e.what());

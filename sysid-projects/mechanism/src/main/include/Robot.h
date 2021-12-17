@@ -4,9 +4,7 @@
 
 #pragma once
 
-#ifdef __FRC_ROBORIO__
 #include <ctre/Phoenix.h>
-#endif
 
 #include <functional>
 #include <memory>
@@ -45,9 +43,7 @@ class Robot : public frc::TimedRobot {
   wpi::json m_json;
   std::unique_ptr<rev::SparkMaxRelativeEncoder> m_revEncoderPort;
   std::unique_ptr<rev::SparkMaxAlternateEncoder> m_revDataPort;
-#ifdef __FRC_ROBORIO__
   std::unique_ptr<CANCoder> m_cancoder;
-#endif
   std::unique_ptr<frc::Encoder> m_encoder;
   sysid::SysIdGeneralMechanismLogger m_logger;
 };
