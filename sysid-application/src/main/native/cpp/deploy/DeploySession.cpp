@@ -158,6 +158,9 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
                 "chmod -R 777 /home/lvuser/deploy || true; chown -R lvuser:ni "
                 "/home/lvuser/deploy");
             session.Execute(
+                "chmod -R 777 /usr/local/frc/third-party/lib || true; chown -R "
+                "lvuser:ni /usr/local/frc/third-party/lib");
+            session.Execute(
                 "echo ' \"/home/lvuser/frcUserProgram\" ' > "
                 "/home/lvuser/robotCommand");
             session.Execute(
