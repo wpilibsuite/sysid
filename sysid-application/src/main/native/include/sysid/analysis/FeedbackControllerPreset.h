@@ -58,8 +58,8 @@ constexpr FeedbackControllerPreset kWPILibOld{1.0 / 12.0, 1.0, 50_ms, false,
 // Measurement delay from a moving average filter:
 //
 // A moving average filter with a window size of N is an FIR filter with N taps.
-// The average delay (in taps) of an arbitrary FIR filter with N taps is
-// (N - 1) / 2.
+// The average delay of a moving average filter with N taps and a period between
+// samples of T is (N - 1)/2 T.
 //
 // Proof:
 // N taps with delays of 0 .. (N - 1) T
