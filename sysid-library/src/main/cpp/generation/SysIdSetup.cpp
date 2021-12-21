@@ -275,6 +275,7 @@ void SetupGyro(
     const std::vector<std::unique_ptr<frc::MotorController>>& leftControllers,
     const std::vector<std::unique_ptr<frc::MotorController>>& rightControllers,
     std::unique_ptr<frc::Gyro>& gyro, std::unique_ptr<PigeonIMU>& pigeon,
+    std::unique_ptr<WPI_TalonSRX>& tempTalon,
     std::function<double()>& gyroPosition, std::function<double()>& gyroRate) {
 #ifndef __FRC_ROBORIO__
   sysid::SetDefaultDataCollection(gyroPosition, gyroRate);
@@ -311,8 +312,8 @@ void SetupGyro(
 
       // If it isn't tied to an existing Talon, create a new object
       if (!talonDeclared) {
-        pigeon = std::make_unique<PigeonIMU>(
-            std::make_unique<WPI_TalonSRX>(srxPort).get());
+        tempTalon = std::make_unique<WPI_TalonSRX>(srxPort);
+        pigeon = std::make_unique<PigeonIMU>(tempTalon.get());
         portStr = fmt::format("{} (plugged to other motorcontroller)", portStr);
       } else {
         portStr = fmt::format("{} (plugged to drive motorcontroller)", portStr);
