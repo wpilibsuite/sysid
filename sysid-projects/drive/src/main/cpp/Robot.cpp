@@ -87,7 +87,7 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
     fmt::print("Setup gyro\n");
     sysid::SetupGyro(gyroType, gyroCtor, leftPorts, rightPorts, controllerNames,
                      m_leftControllers, m_rightControllers, m_gyro, m_pigeon,
-                     m_gyroPosition, m_gyroRate);
+                     m_tempTalon, m_gyroPosition, m_gyroRate);
   } catch (std::exception& e) {
     fmt::print("Project failed: {}\n", e.what());
     std::exit(-1);
