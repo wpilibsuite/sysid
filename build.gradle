@@ -71,3 +71,7 @@ ext.addTaskToCopyAllOutputs = { task ->
   copyAllOutputs.inputs.file task.archivePath
   copyAllOutputs.from task.archivePath
 }
+
+wrapper {
+    gradleVersion = '7.3.3'
+}

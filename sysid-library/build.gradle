@@ -32,7 +32,7 @@ model {
       }
 
       wpi.cpp.vendor.cpp(it)
-      wpi.cpp.deps.wpilib(it)
+      wpi.cpp.deps.useLibrary(it, 'wpilib_executable_shared')
     }
   }
 }
