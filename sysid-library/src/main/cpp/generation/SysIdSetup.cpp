@@ -438,7 +438,7 @@ void SetupGyro(
 
     gyroRate = [&] {
       return units::radians_per_second_t(
-                 units::degrees_per_second_t{gyro->GetAngle()})
+                 units::degrees_per_second_t{gyro->GetRate()})
           .value();
     };
 #endif
