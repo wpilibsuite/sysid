@@ -19,7 +19,6 @@
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <wpi/StringExtras.h>
 
-// #include "AHRS.h"
 #include "sysid/generation/SysIdSetup.h"
 
 Robot::Robot() : frc::TimedRobot(5_ms) {

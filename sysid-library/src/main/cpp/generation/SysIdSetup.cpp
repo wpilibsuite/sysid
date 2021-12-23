@@ -19,6 +19,10 @@
 #include <wpi/StringExtras.h>
 #include <wpi/fs.h>
 
+#ifdef __FRC_ROBORIO__
+#include "AHRS.h"
+#endif
+
 // Based on https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html
 #define EXPAND_STRINGIZE(s) STRINGIZE(s)
 #define STRINGIZE(s) #s
@@ -394,26 +398,24 @@ void SetupGyro(
     } else if (gyroType == "NavX") {
       if (gyroCtor == "SerialPort.kUSB") {
         fmt::print("Setup NavX, Port: SerialPort.kUSB");
-        // #ifdef __FRC_ROBORIO__
-        //         gyro =
-        //     std::make_unique<AHRS>(frc::SerialPort::Port::kUSB);
-        //     #endif
+#ifdef __FRC_ROBORIO__
+        gyro = std::make_unique<AHRS>(frc::SerialPort::Port::kUSB);
+#endif
       } else if (gyroCtor == "I2C") {
         fmt::print("Setup NavX, Port: I2C");
-        // #ifdef __FRC_ROBORIO__
-        //         gyro = std::make_unique<AHRS>(frc::I2C::Port::kMXP);
-        //         #endif
+#ifdef __FRC_ROBORIO__
+        gyro = std::make_unique<AHRS>(frc::I2C::Port::kMXP);
+#endif
       } else if (gyroCtor == "SerialPort.kMXP") {
         fmt::print("Setup NavX, Port: SerialPort.kMXP");
-        // #ifdef __FRC_ROBORIO__
-        //         gyro =
-        //     std::make_unique<AHRS>(frc::SerialPort::Port::kMXP);
-        //     #endif
+#ifdef __FRC_ROBORIO__
+        gyro = std::make_unique<AHRS>(frc::SerialPort::Port::kMXP);
+#endif
       } else {
         fmt::print("Setup NavX, Port: SPI.kMXP");
-        // #ifdef __FRC_ROBORIO__
-        //         gyro = std::make_unique<AHRS>(frc::SPI::Port::kMXP);
-        //         #endif
+#ifdef __FRC_ROBORIO__
+        gyro = std::make_unique<AHRS>(frc::SPI::Port::kMXP);
+#endif
       }
       //     // FIXME: Update Romi Gyro once vendordep is out
     } else if (gyroType == "Romi") {
