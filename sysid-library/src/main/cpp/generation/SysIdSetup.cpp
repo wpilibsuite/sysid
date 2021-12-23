@@ -341,15 +341,11 @@ void SetupGyro(
     if (gyroType == "ADXRS450") {
       if (gyroCtor == "SPI.kMXP") {
         fmt::print("Setup ADXRS450, Port: SPI.kMXP");
-#ifdef __FRC_ROBORIO__
         gyro = std::make_unique<frc::ADXRS450_Gyro>(frc::SPI::Port::kMXP);
-#endif
       } else {
         fmt::print("Setup ADXRS450, Port: kOnboardCS0");
-#ifdef __FRC_ROBORIO__
         gyro =
             std::make_unique<frc::ADXRS450_Gyro>(frc::SPI::Port::kOnboardCS0);
-#endif
       }
       //     // FIXME: waiting on Linux and macOS builds for navX AHRS
     } else if (gyroType == "NavX") {
