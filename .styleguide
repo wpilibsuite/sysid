@@ -12,6 +12,7 @@ generatedFileExclude {
   sysid-application/src/main/native/resources
   sysid-application/src/main/native/win/sysid.ico
   sysid-application/src/main/native/mac/sysid.icns
+  gradlew
 }
 
 repoRootNameOverride {
