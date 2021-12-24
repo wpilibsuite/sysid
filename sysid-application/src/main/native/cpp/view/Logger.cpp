@@ -131,8 +131,8 @@ void Logger::Display() {
   CreateVoltageParameters("Quasistatic Ramp Rate (V/s)",
                           &m_settings.quasistaticRampRate, 0.10f, 0.60f);
   sysid::CreateTooltip(
-      "This is the rate at which the voltage will increase "
-      "during the quasistatic and track width tests.");
+      "This is the rate at which the voltage will increase during the "
+      "quasistatic test.");
 
   CreateVoltageParameters("Dynamic Step Voltage (V)", &m_settings.stepVoltage,
                           2.0f, 10.0f);
