@@ -511,7 +511,7 @@ bool AnalyzerPlot::DisplayTimeDomainPlots(ImVec2 plotSize) {
 
 bool AnalyzerPlot::LoadPlots() {
   // See if the plots are loaded
-  return DisplayVoltageDomainPlots() && DisplayTimeDomainPlots();
+  return DisplayTimeDomainPlots() && DisplayVoltageDomainPlots();
 }
 
 void AnalyzerPlot::DisplayCombinedPlots() {
