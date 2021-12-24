@@ -28,7 +28,9 @@ namespace sysid {
  */
 class AnalyzerPlot {
  public:
-  // The chart titles of the plots that we wil create.
+  /**
+   * The chart titles of the plots that we wil create.
+   */
   static constexpr const char* kChartTitles[] = {
       "Quasistatic Velocity vs. Velocity-Portion Voltage",
       "Dynamic Acceleration vs. Acceleration-Portion Voltage",
@@ -38,12 +40,16 @@ class AnalyzerPlot {
       "Dynamic Acceleration vs. Time",
       "Timesteps vs. Time"};
 
-  // Size of plots when screenshotting
+  /**
+   * Size of plots when put in combined mode (for screenshotting).
+   */
   static constexpr int kCombinedPlotSize = 300;
 
   /**
    * Constructs an instance of the analyzer plot helper and allocates memory for
    * all data vectors.
+   *
+   * @param logger The program logger
    */
   explicit AnalyzerPlot(wpi::Logger& logger);
 
@@ -53,7 +59,7 @@ class AnalyzerPlot {
    * @param rawData      Raw data storage.
    * @param filteredData Filtered data storage.
    * @param unit         Unit of the dataset
-   * @param ffGains      List of feedforward gains (Ks, Kv, Ka, and optionally
+   * @param ff           List of feedforward gains (Ks, Kv, Ka, and optionally
    *                     either Kg or Kcos).
    * @param startTimes   Array of dataset start times.
    * @param type         Type of analysis.
@@ -102,7 +108,6 @@ class AnalyzerPlot {
    * Displays voltage-domain plots.
    *
    * @param plotSize The size of the ImGui Plots
-   *
    * @return Returns true if plots aren't in the loading state
    */
   bool DisplayVoltageDomainPlots(ImVec2 plotSize = ImVec2(-1, 0));
@@ -110,8 +115,7 @@ class AnalyzerPlot {
   /**
    * Displays time-domain plots.
    *
-   * @param The size of the ImGui Plots
-   *
+   * @param plotSize The size of the ImGui Plots
    * @return Returns true if plots aren't in the loading state
    */
   bool DisplayTimeDomainPlots(ImVec2 plotSize = ImVec2(-1, 0));

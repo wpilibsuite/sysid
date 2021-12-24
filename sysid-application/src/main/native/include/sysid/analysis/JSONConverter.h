@@ -16,7 +16,6 @@ namespace sysid {
  *
  * @param path   The path to the old JSON.
  * @param logger The logger instance for log messages.
- *
  * @return The full file path of the newly saved JSON.
  */
 std::string ConvertJSON(std::string_view path, wpi::Logger& logger);

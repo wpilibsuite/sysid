@@ -50,7 +50,6 @@ void CreateTooltip(const char* text);
  * Returns the abbreviation for the unit.
  *
  * @param unit The unit to return the abbreviation for.
- *
  * @return The abbreviation for the unit.
  */
 std::string GetAbbreviation(std::string_view unit);

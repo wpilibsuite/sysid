@@ -26,7 +26,6 @@ namespace sysid {
  *
  * @param data the prepared data vector containing acceleration data
  * @param window the size of the window for the moving average
- *
  * @return The expected acceleration noise
  */
 double GetAccelNoiseFloor(const std::vector<PreparedData>& data, int window);
@@ -36,9 +35,8 @@ double GetAccelNoiseFloor(const std::vector<PreparedData>& data, int window);
  *
  * @tparam S The size of the raw data array
  * @tparam Velocity The index of the velocity entry in the raw data.
- *
  * @param data the vector of arrays representing sysid data (must contain
- * velocity data)
+ *             velocity data)
  * @param window the size of the window of the median filter (must be odd)
  */
 void ApplyMedianFilter(std::vector<PreparedData>* data, int window);
@@ -53,9 +51,9 @@ void ApplyMedianFilter(std::vector<PreparedData>* data, int window);
  * @param data A pointer to the step voltage data.
  * @param settings A pointer to the settings of an analysis manager object.
  * @param minStepTime The current minimum step test duration as one of the
- * trimming procedures will remove this amount from the start of the test.
+ *                    trimming procedures will remove this amount from the start
+ *                    of the test.
  * @param maxStepTime The maximum step test duration.
- *
  * @return The updated minimum step test duration.
  */
 units::second_t TrimStepVoltageData(std::vector<PreparedData>* data,
@@ -67,7 +65,6 @@ units::second_t TrimStepVoltageData(std::vector<PreparedData>* data,
  * Compute the mean time delta of the given data.
  *
  * @param data A reference to all of the collected PreparedData
- *
  * @return The mean time delta for all the data points
  */
 units::second_t GetMeanTimeDelta(const std::vector<PreparedData>& data);
@@ -76,7 +73,6 @@ units::second_t GetMeanTimeDelta(const std::vector<PreparedData>& data);
  * Compute the mean time delta of the given data.
  *
  * @param data A reference to all of the collected PreparedData
- *
  * @return The mean time delta for all the data points
  */
 units::second_t GetMeanTimeDelta(const Storage& data);

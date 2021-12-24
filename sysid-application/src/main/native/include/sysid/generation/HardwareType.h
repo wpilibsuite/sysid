@@ -8,6 +8,10 @@
 #include <string_view>
 
 namespace sysid {
+/**
+ * Stores information of a specific hardware device that sysid supports so that
+ * it can be easily identified, used, and displayed.
+ */
 struct HardwareType {
   /**
    * The name of the hardware device to facillitate comparisons
@@ -19,12 +23,30 @@ struct HardwareType {
    */
   const char* displayName;
 
+  /**
+   * Creates a HardwareType object from a device name.
+   *
+   * @param deviceName The name of the hardware device.
+   */
   constexpr explicit HardwareType(std::string_view deviceName)
       : name{deviceName}, displayName{name.data()} {}
 
+  /**
+   * Equality operator between HardwareTypes
+   *
+   * @param rhs Another HardwareType
+   * @returns True if they are equal
+   */
   constexpr bool operator==(const HardwareType& rhs) const {
     return name == rhs.name;
   }
+
+  /**
+   * Inequality operator between HardwareTypes
+   *
+   * @param rhs Another HardwareType
+   * @returns True if they are not equal
+   */
   constexpr bool operator!=(const HardwareType& rhs) const {
     return !operator==(rhs);
   }
@@ -50,7 +72,6 @@ constexpr std::array<HardwareType, 7> kMotorControllers = {
  * if the passed name doesn't exist.
  *
  * @param name The name of the motor controller.
- *
  * @return The motor controller HardwareType associated with the inputted name.
  */
 HardwareType FromMotorControllerName(std::string_view name);
@@ -73,7 +94,6 @@ constexpr std::array<HardwareType, 6> kEncoders = {
  * passed name doesn't exist.
  *
  * @param name The name of the encoder.
- *
  * @return The encoder HardwareType associated with the inputted name.
  */
 HardwareType FromEncoderName(std::string_view name);
@@ -95,7 +115,6 @@ constexpr std::array<HardwareType, 6> kGyros = {
  * passed name doesn't exist.
  *
  * @param name The name of the gyro.
- *
  * @return The gyro HardwareType associated with the inputted name.
  */
 HardwareType FromGyroName(std::string_view name);

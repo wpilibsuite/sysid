@@ -51,6 +51,8 @@ class DeploySession {
 
   /**
    * Returns the state of the deploy session.
+   *
+   * @return the deploy session state as a Status
    */
   Status GetStatus() const;
 
@@ -59,13 +61,14 @@ class DeploySession {
    * roboRIO.
    *
    * @param team The team number.
-   *
    * @return A vector of hostnames/addresses to try during discovery.
    */
   static std::vector<std::string> GetAddressesToTry(int team);
 
   /**
    * Returns the stored JSON object
+   *
+   * @return The stored JSON object
    */
   const wpi::json& GetJSON() const { return m_config; }
 

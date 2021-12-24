@@ -3,6 +3,7 @@ plugins {
   id "edu.wpi.first.GradleVsCode" version "1.1.0"
   id "edu.wpi.first.wpilib.versioning.WPILibVersioningPlugin" version "4.1.0"
   id "edu.wpi.first.wpilib.repositories.WPILibRepositoriesPlugin" version "2020.2"
+  id "org.ysb33r.doxygen" version "0.7.0"
 }
 
 // Configure versioning for this project.
@@ -34,6 +35,30 @@ if (project.hasProperty("skipDesktopRobots")) {
 // Configure output files.
 def outputsFolder = file("$buildDir/allOutputs")
 def versionFile = file("$outputsFolder/version.txt")
+
+doxygen {
+    executables {
+        doxygen version : '1.9.2',
+        baseURI : 'https://frcmaven.wpi.edu/artifactory/generic-release-mirror/doxygen'
+    }
+}
+
+doxygen {
+    generate_html true
+    generate_latex false
+    html_extra_stylesheet 'themes.css'
+    source 'sysid-application/src/integrationtest-utils', 'sysid-application/src/main/native/cpp', 'sysid-application/src/main/native/include', 'sysid-library/src', 'sysid-projects/src'
+    html_timestamp true
+    quiet true
+    project_name 'SysId'
+    use_mathjax true
+    warnings false
+    warn_if_incomplete_doc true
+    warn_if_undocumented true
+    warn_no_paramdoc true
+    outputDir 'build/docs/'
+    warn_as_error 'FAIL_ON_WARNINGS'
+}
 
 task outputVersions() {
   outputs.files(versionFile)

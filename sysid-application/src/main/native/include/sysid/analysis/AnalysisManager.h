@@ -38,46 +38,88 @@ class AnalysisManager {
    * dataset.
    */
   struct Settings {
-    /** The feedback controller preset used to calculate gains. */
+    /**
+     * The feedback controller preset used to calculate gains.
+     */
     FeedbackControllerPreset preset = presets::kDefault;
 
-    /** The feedback controller loop type (position or velocity). */
+    /**
+     * The feedback controller loop type (position or velocity).
+     */
     FeedbackControllerLoopType type = FeedbackControllerLoopType::kVelocity;
 
-    /** LQR parameters used for feedback gain calculation. */
+    /**
+     * LQR parameters used for feedback gain calculation.
+     */
     LQRParameters lqr{1, 1.5, 7};
 
-    /** The motion threshold (units/s) for trimming quasistatic test data */
+    /**
+     * The motion threshold (units/s) for trimming quasistatic test data.
+     */
     double motionThreshold = 0.2;
 
-    /** The window size for computing acceleration */
+    /**
+     * The window size for computing acceleration.
+     */
     int windowSize = 9;
 
-    /** The dataset that is being analyzed. */
+    /**
+     * The dataset that is being analyzed.
+     */
     int dataset = 0;
 
-    // 0 s indicates it hasn't been set yet
+    /**
+     * The duration of the dynamic test that should be considered. A value of
+     * zero indicates it needs to be set to the default.
+     */
     units::second_t stepTestDuration = 0_s;
 
-    /** The conversion factors. These contain values to convert feedback gains
-     * by gearing and cpr. */
+    /**
+     * The conversion factor of counts per revolution.
+     */
     int cpr = 1440;
+
+    /**
+     * The conversion factor of gearing.
+     */
     double gearing = 1;
+
+    /**
+     * Whether or not the gains should be in the encoder's units (mainly for use
+     * in a smart motor controller).
+     */
     bool convertGainsToEncTicks = false;
   };
 
-  /** Stores feedforward and feedback gains */
+  /**
+   * Stores feedforward and feedback gains.
+   */
   struct Gains {
+    /**
+     * Stores the Feedforward gains.
+     */
     std::tuple<std::vector<double>, double> ffGains;
+
+    /**
+     * Stores the Feedback gains.
+     */
     FeedbackGains fbGains;
+
+    /**
+     * Stores the trackwidth for angular drivetrain tests.
+     */
     std::optional<double> trackWidth;
   };
 
-  /** The keys (which contain sysid data) that are in the JSON to analyze. */
+  /**
+   * The keys (which contain sysid data) that are in the JSON to analyze.
+   */
   static constexpr const char* kJsonDataKeys[] = {
       "slow-forward", "slow-backward", "fast-forward", "fast-backward"};
 
-  /** The names of the various datasets to analyze. */
+  /**
+   * The names of the various datasets to analyze.
+   */
   static constexpr const char* kDatasets[] = {
       "Combined",      "Forward",        "Backward",
       "Left Forward",  "Left Backward",  "Left Combined",
@@ -162,6 +204,11 @@ class AnalysisManager {
     return m_filteredDatasets[kDatasets[m_settings.dataset]];
   }
 
+  /**
+   * Returns the original dataset.
+   *
+   * @return The original (untouched) dataset
+   */
   Storage& GetOriginalData() {
     return m_originalDatasets[kDatasets[m_settings.dataset]];
   }
@@ -169,17 +216,23 @@ class AnalysisManager {
   /**
    * Returns the minimum duration of the Step Voltage Test of the currently
    * stored data.
+   *
+   * @return The minimum step test duration.
    */
   double GetMinDuration() const { return m_minDuration.value(); }
 
   /**
    * Returns the maximum duration of the Step Voltage Test of the currently
    * stored data.
+   *
+   * @return  Maximum step test duration
    */
   double GetMaxDuration() const { return m_maxDuration.value(); }
 
   /**
    * Returns the different start times of the recorded tests.
+   *
+   * @return The start times for each test
    */
   const std::array<units::second_t, 4> GetStartTimes() { return m_startTimes; }
 

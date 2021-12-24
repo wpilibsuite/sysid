@@ -10,8 +10,16 @@
 
 namespace sysid {
 
+/**
+ * Base class that serves to provide methods for robot projects seeking to send
+ * and receive data in occurdence to the SysId application's protocols.
+ */
 class SysIdLogger {
  public:
+  /**
+   * Code that should be run to initialize the logging routine. Should be called
+   * in `AutonomousInit()`.
+   */
   void InitLogging();
 
   /**
@@ -28,18 +36,55 @@ class SysIdLogger {
   static void UpdateThreadPriority();
 
  protected:
-  // 20 seconds of test data * 200 samples/second * 9 doubles/sample (320kB of
-  // reserved data) provides a large initial vector size to avoid reallocating
-  // during a test
+  /**
+   * The initial size of the data collection vectors, set to be large enough so
+   * that we avoid resizing the vector during data collection. Determined by: 20
+   * seconds of test data * 200 samples/second * 9 doubles/sample(320kB of
+   * reserved data).
+   */
   static constexpr size_t kDataVectorSize = 36000;
 
+  /**
+   * The commanded motor voltage. Either as a rate (V/s) for the quasistatic
+   * test or as a voltage (V) for the dynamic test.
+   */
   double m_voltageCommand = 0.0;
+
+  /**
+   * The voltage that the motors should be set to.
+   */
   double m_motorVoltage = 0.0;
+
+  /**
+   * Keeps track of the current timestamp for data collection purposes.
+   */
   double m_timestamp = 0.0;
+
+  /**
+   * The timestamp of when the test starts. Mainly used to keep track of the
+   * test running for too long.
+   */
   double m_startTime = 0.0;
+
+  /**
+   * Determines for Drivetrain tests if the robot should be spinning (value sent
+   * via NT).
+   */
   bool m_rotate = false;
+
+  /**
+   * The test that is running (e.g. Quasistatic or Dynamic).
+   */
   std::string m_testType;
+
+  /**
+   * The mechanism that is being characterized (sent via NT).
+   */
   std::string m_mechanism;
+
+  /**
+   * Stores all of the collected data.
+   */
   std::vector<double> m_data;
 
   /**
@@ -59,7 +104,10 @@ class SysIdLogger {
   virtual void Reset();
 
   /**
-   * Returns true if the logger is characterizing an unsupported mechanism type.
+   * Determines if the logger is collecting data for an unsupported mechanism.
+   *
+   * @returns True if the logger is characterizing an unsupported mechanism
+   *          type.
    */
   virtual bool IsWrongMechanism() const = 0;
 

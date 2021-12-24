@@ -9,7 +9,10 @@
 #include <units/voltage.h>
 
 namespace sysid {
-
+/**
+ * Simulation of an Arm mechanism based off of a model from SysId Feedforward
+ * gains.
+ */
 class ArmSim {
  public:
   /**
@@ -24,31 +27,41 @@ class ArmSim {
          double initialPosition = 0.0, double initialVelocity = 0.0);
 
   /**
-   * Simulates affine state-space system dx/dt = Ax + Bu + c sgn(x) + d forward
-   * dt seconds.
+   * Simulates affine state-space system:
+   * dx/dt = Ax + Bu + c sgn(x) + d cos(theta)
+   * forward dt seconds.
    *
    * @param voltage Voltage to apply over the timestep.
    * @param dt      Sammple period.
    */
   void Update(units::volt_t voltage, units::second_t dt);
-
   /**
    * Returns the position.
+   *
+   * @return The current position
    */
   double GetPosition() const;
 
   /**
    * Returns the velocity.
+   *
+   * @return The current velocity
    */
   double GetVelocity() const;
 
   /**
    * Returns the acceleration for the current state and given input.
+   *
+   * @param voltage The voltage that is being applied to the mechanism / input
+   * @return The acceleration given the state and input
    */
   double GetAcceleration(units::volt_t voltage) const;
 
   /**
    * Resets model position and velocity.
+   *
+   * @param position The position the mechanism should be reset to
+   * @param velocity The velocity the mechanism should be reset to
    */
   void Reset(double position = 0.0, double velocity = 0.0);
 

@@ -14,9 +14,20 @@
 #include <wpi/Logger.h>
 
 namespace sysid {
+/**
+ * Helps with converting different JSONs into different formats. Primarily
+ * enables users to convert an old 2020 FRC-Characterization JSON into a SysId
+ * JSON or a SysId JSON into a CSV file.
+ */
 class JSONConverter {
  public:
+  /**
+   * Creates a JSONConverter widget
+   *
+   * @param logger The program logger
+   */
   explicit JSONConverter(wpi::Logger& logger) : m_logger(logger) {}
+
   /**
    * Function to display the FRC Characterization to SysId JSON converter
    */
