@@ -54,7 +54,9 @@ struct ConfigSettings {
    */
   wpi::SmallVector<bool, 3> secondaryMotorsInverted = {false, false};
 
-  /** The type of encoder that's used. */
+  /**
+   * The type of encoder that's used.
+   */
   HardwareType encoderType = sysid::encoder::kRoboRIO;
 
   /**
@@ -83,19 +85,29 @@ struct ConfigSettings {
    */
   bool secondaryEncoderInverted = false;
 
-  /** The counts per revolution of the encoder. */
+  /**
+   * The counts per revolution of the encoder.
+   */
   double cpr = 1.0;
 
-  /** The numerator for the gear ratio*/
+  /**
+   * The numerator for the gear ratio.
+   */
   double gearingNumerator = 1.0;
 
-  /** The denominator for the gear ratio*/
+  /**
+   * The denominator for the gear ratio
+   */
   double gearingDenominator = 1.0;
 
-  /** The type of gyro to configure */
+  /**
+   * The type of gyro to configure.
+   */
   HardwareType gyro = sysid::gyro::kAnalogGyro;
 
-  /** The gyro constructor to use */
+  /**
+   * The gyro constructor to use.
+   */
   std::string gyroCtor = "0";
 
   /**
@@ -109,10 +121,14 @@ struct ConfigSettings {
    */
   int numSamples = 1;
 
-  /** The period of time in which the velocity is calculated.*/
+  /**
+   * The period of time in which the velocity is calculated.
+   */
   int period = 5;
 
-  /** If the configuration is for a drivetrain. */
+  /**
+   * If the configuration is for a drivetrain.
+   */
   bool isDrive = false;
 };
 

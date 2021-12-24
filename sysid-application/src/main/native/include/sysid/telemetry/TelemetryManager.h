@@ -68,7 +68,9 @@ class TelemetryManager {
     AnalysisType mechanism = analysis::kDrivetrain;
   };
 
-  /** Default NT Listener Flags.*/
+  /**
+   * Default NT Listener Flags.
+   */
   static constexpr int kNTFlags =
       NT_NOTIFY_LOCAL | NT_NOTIFY_NEW | NT_NOTIFY_UPDATE | NT_NOTIFY_IMMEDIATE;
 

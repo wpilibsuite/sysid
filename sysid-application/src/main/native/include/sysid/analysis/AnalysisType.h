@@ -13,16 +13,23 @@ namespace sysid {
  * Stores the type of Analysis and relevant information about the analysis.
  */
 struct AnalysisType {
-  /** The number of independent variables for feedforward analysis */
+  /**
+   * The number of independent variables for feedforward analysis.
+   */
   size_t independentVariables;
 
-  /** The number of fields in the raw data within the mechanism's JSON */
+  /**
+   * The number of fields in the raw data within the mechanism's JSON.
+   */
   size_t rawDataSize;
 
-  /** Display name for the analysis type. */
+  /**
+   * Display name for the analysis type.
+   */
   const char* name;
 
-  /** Compares equality of two AnalysisType structs.
+  /**
+   * Compares equality of two AnalysisType structs.
    *
    * @param rhs Another AnalysisType
    * @return True if the two analysis types are equal
@@ -33,7 +40,8 @@ struct AnalysisType {
            rawDataSize == rhs.rawDataSize;
   }
 
-  /** Compares inequality of two AnalysisType structs.
+  /**
+   * Compares inequality of two AnalysisType structs.
    *
    * @param rhs Another AnalysisType
    * @return True if the two analysis types are not equal

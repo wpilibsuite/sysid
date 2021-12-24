@@ -40,7 +40,7 @@ class SysIdLogger {
    * The initial size of the data collection vectors, set to be large enough so
    * that we avoid resizing the vector during data collection. Determined by: 20
    * seconds of test data * 200 samples/second * 9 doubles/sample(320kB of
-   * reserved data)
+   * reserved data).
    */
   static constexpr size_t kDataVectorSize = 36000;
 
@@ -65,13 +65,15 @@ class SysIdLogger {
    * test running for too long.
    */
   double m_startTime = 0.0;
+
   /**
    * Determines for Drivetrain tests if the robot should be spinning (value sent
-   * via NT)
+   * via NT).
    */
   bool m_rotate = false;
+
   /**
-   * The test that is running (e.g. Quasistatic or Dynamic)
+   * The test that is running (e.g. Quasistatic or Dynamic).
    */
   std::string m_testType;
 

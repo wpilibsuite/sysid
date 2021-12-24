@@ -40,7 +40,7 @@ namespace sysid {
 class Analyzer : public glass::View {
  public:
   /**
-   * The different motor controlle rtiming presets that can be used
+   * The different motor controlle rtiming presets that can be used.
    */
   static constexpr const char* kPresetNames[] = {
       "Default",    "WPILib (2020-)",  "WPILib (Pre-2020)", "CTRE (New)",
@@ -63,6 +63,7 @@ class Analyzer : public glass::View {
    * Displays the analyzer widget
    */
   void Display() override;
+
   ~Analyzer() override { AbortDataPrep(); };
 
  private:

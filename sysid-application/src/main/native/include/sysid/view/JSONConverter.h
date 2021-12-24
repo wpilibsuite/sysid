@@ -27,6 +27,7 @@ class JSONConverter {
    * @param logger The program logger
    */
   explicit JSONConverter(wpi::Logger& logger) : m_logger(logger) {}
+
   /**
    * Function to display the FRC Characterization to SysId JSON converter
    */

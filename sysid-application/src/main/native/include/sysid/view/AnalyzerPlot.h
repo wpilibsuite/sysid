@@ -28,7 +28,9 @@ namespace sysid {
  */
 class AnalyzerPlot {
  public:
-  /** The chart titles of the plots that we wil create. */
+  /**
+   * The chart titles of the plots that we wil create.
+   */
   static constexpr const char* kChartTitles[] = {
       "Quasistatic Velocity vs. Velocity-Portion Voltage",
       "Dynamic Acceleration vs. Acceleration-Portion Voltage",
@@ -39,7 +41,7 @@ class AnalyzerPlot {
       "Timesteps vs. Time"};
 
   /**
-   * Size of plots when put in combined mode (for screenshotting)
+   * Size of plots when put in combined mode (for screenshotting).
    */
   static constexpr int kCombinedPlotSize = 300;
 
