@@ -1,0 +1,36 @@
+ext.createLibDeployTask = { libGenerateTask ->
+    def libCreateTask = project.tasks.create('createLibDeployResources') {
+        dependsOn libGenerateTask
+        inputs.dir libGenerateTask.outputDirectory
+        outputs.file project.file('build/generated/libdeploy/libstodeploy.cpp')
+        doLast {
+            def outputFile = project.file('build/generated/libdeploy/libstodeploy.cpp')
+            outputFile.parentFile.mkdirs()
+            outputFile.withWriter { out ->
+            out.println '''#include <string_view>
+        #include <utility>
+        #include <vector>
+        namespace sysid {'''
+            def files = libGenerateTask.outputDirectory.asFileTree.files
+            files.each {
+                def baseFuncName = it.name.substring(0, it.name.length() - 4)
+                def funcName = "GetResource_libraries_${baseFuncName}"
+                out.println "std::string_view ${funcName}();"
+            }
+            out.println ''
+            out.println '''std::vector<std::pair<const char*, std::string_view>> GetLibrariesToDeploy() {
+        std::vector<std::pair<const char*, std::string_view>> libraries;'''
+            files.each {
+                def baseFuncName = it.name.substring(0, it.name.length() - 4)
+                def nameWithoutSo = baseFuncName.substring(0, baseFuncName.length() - 3)
+                def funcName = "GetResource_libraries_${baseFuncName}"
+                out.println "  libraries.emplace_back(std::make_pair(\"${nameWithoutSo}.so\", ${funcName}()));"
+            }
+            out.println '  return libraries;'
+            out.println '}'
+            out.println '}  // namespace sysid'
+            }
+        }
+    }
+    return libCreateTask
+}

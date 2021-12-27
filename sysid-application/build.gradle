@@ -4,7 +4,7 @@ plugins {
   id "cpp"
   id "google-test-test-suite"
   id "maven-publish"
-  id "edu.wpi.first.NativeUtils" version "2022.7.1"
+  id "edu.wpi.first.NativeUtils"
 }
 
 // Support RC files on Windows.
@@ -21,7 +21,7 @@ apply from: "config/native.gradle"
 
 // Generate the version number on each build.
 def wpilibVersionFileInput = file("src/generate/WPILibVersion.cpp.in")
-def wpilibVersionFileOutput = file("$buildDir/generated/main/cpp/WPILibVersion.cpp")
+def wpilibVersionFileOutput = file("$buildDir/generated/version/WPILibVersion.cpp")
 
 task generateCppVersion() {
   description = 'Generates the wpilib version class'
@@ -63,14 +63,11 @@ tasks.withType(CppCompile) {
 }
 
 // Generate resources.
-apply from: "config/resources.gradle"
-def generateTask = createGenerateResourcesTask('main', 'SYSID', 'sysid', project)
 
-// Before we generate resources, we need to make sure that the RIO executables are built and copied.
-generateTask.dependsOn ":sysid-projects:installRioExe"
-generateTask.dependsOn ":sysid-projects:drive:installRioExe"
-generateTask.dependsOn ":sysid-projects:drive:installRioLibs"
-generateTask.dependsOn ":sysid-projects:mechanism:installRioExe"
+def generateTask = nativeUtils.generateResources('generateResources').get()
+generateTask.outputDirectory = project.file('build/generated/png')
+generateTask.namespace = 'sysid'
+generateTask.source.from("$projectDir/src/main/native/resources")
 
 tasks.withType(CppCompile) {
   dependsOn generateTask
@@ -82,10 +79,14 @@ model {
     sysid(NativeExecutableSpec) {
       sources.cpp {
         source {
-          srcDirs "src/main/native/cpp", "$buildDir/generated/main/cpp"
+          srcDirs "src/main/native/cpp", "$buildDir/generated/png", "$buildDir/generated/version"
           include "**/*.cpp"
         }
         exportedHeaders.srcDirs "src/main/native/include"
+      }
+      binaries.all {
+        lib project: ":sysid-projects:drive", library: "embeddedBinary", linkage: "static"
+        lib project: ":sysid-projects:mechanism", library: "embeddedBinary", linkage: "static"
       }
       if (OperatingSystem.current().isWindows()) {
         sources.rc {
@@ -150,6 +151,8 @@ model {
   }
   binaries {
     withType(NativeBinarySpec).all {
+      lib project: ":sysid-projects:drive", library: "embeddedBinary", linkage: "static"
+      lib project: ":sysid-projects:mechanism", library: "embeddedBinary", linkage: "static"
       nativeUtils.useRequiredLibrary(it, "gui")
       nativeUtils.useRequiredLibrary(it, "ssh")
 
