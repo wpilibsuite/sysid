@@ -131,6 +131,7 @@ void Analyzer::Display() {
     }
     ImGui::SameLine(width - ImGui::CalcTextSize("Reset").x);
     if (ImGui::Button("Reset")) {
+      m_plot.ResetData();
       m_manager.reset();
       m_location = "";
       m_enabled = true;
