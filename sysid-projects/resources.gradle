@@ -2,7 +2,7 @@ ext.createLibDeployTask = { libGenerateTask ->
     def libCreateTask = project.tasks.create('createLibDeployResources') {
         dependsOn libGenerateTask
         inputs.dir libGenerateTask.outputDirectory
-        outputs.file project.file('build/generated/libstodeploy.cpp')
+        outputs.file project.file('build/generated/libdeploy/libstodeploy.cpp')
         doLast {
             def outputFile = project.file('build/generated/libdeploy/libstodeploy.cpp')
             outputFile.parentFile.mkdirs()

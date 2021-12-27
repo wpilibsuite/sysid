@@ -151,6 +151,8 @@ model {
   }
   binaries {
     withType(NativeBinarySpec).all {
+      lib project: ":sysid-projects:drive", library: "embeddedBinary", linkage: "static"
+      lib project: ":sysid-projects:mechanism", library: "embeddedBinary", linkage: "static"
       nativeUtils.useRequiredLibrary(it, "gui")
       nativeUtils.useRequiredLibrary(it, "ssh")
 
