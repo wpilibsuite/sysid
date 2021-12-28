@@ -396,9 +396,10 @@ void Generator::Display() {
                  sysid::motorcontroller::kSPARKMAXBrushless) {
     GetEncoder(ArrayConcat(kSparkMaxEncoders, kGeneralEncoders));
     if (m_encoderIdx <= 1) {
-      if (m_encoderIdx == 1 ||
-          mainMotorController == sysid::motorcontroller::kSPARKMAXBrushed) {
-        // You're not allowed to invert the NEO encoder
+      if (!(m_encoderIdx == 1 &&
+            mainMotorController ==
+                sysid::motorcontroller::kSPARKMAXBrushless)) {
+        // You're not allowed to invert the NEO Built-in encoder
         RegularEncoderSetup(drive);
       }
     } else if (m_encoderIdx == 2) {
@@ -424,9 +425,11 @@ void Generator::Display() {
     }
   }
 
-  // Venom built-in encoders can't change sampling or measurement period.
-  if (!(mainMotorController == sysid::motorcontroller::kVenom &&
-        m_settings.encoderType == sysid::encoder::kBuiltInSetting)) {
+  // Venom or NEO built-in encoders can't change sampling or measurement period.
+  if (!((mainMotorController == sysid::motorcontroller::kVenom &&
+         m_settings.encoderType == sysid::encoder::kBuiltInSetting) ||
+        (mainMotorController == sysid::motorcontroller::kSPARKMAXBrushless &&
+         m_settings.encoderType == sysid::encoder::kSMaxEncoderPort))) {
     // Samples Per Average Setting
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
     ImGui::InputInt("Samples Per Average", &m_settings.numSamples, 0, 0);
