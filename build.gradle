@@ -45,20 +45,31 @@ doxygen {
 }
 
 doxygen {
+    case_sense_names false
+    extension_mapping 'inc=C++', 'no_extension=C++'
+    extract_all true
+    extract_static true
+    file_patterns '*'
+    full_path_names true
     generate_html true
     generate_latex false
-    html_extra_stylesheet 'themes.css'
-    source 'sysid-application/src/integrationtest-utils', 'sysid-application/src/main/native/cpp', 'sysid-application/src/main/native/include', 'sysid-library/src', 'sysid-projects/src'
+    generate_treeview true
+    html_extra_stylesheet 'theme.css'
     html_timestamp true
-    quiet true
+    outputDir 'build/docs/'
     project_name 'SysId'
+    project_logo 'sysid-application/src/main/native/resources/sysid-128.png'
+    project_number wpilibVersioning.version.get()
+    source 'sysid-application/src/integrationtest-utils', 'sysid-application/src/main/native/cpp', 'sysid-application/src/main/native/include', 'sysid-library/src', 'sysid-projects/src'
+    quiet true
+    recursive true
+    strip_code_comments false
     use_mathjax true
-    warnings false
-    warn_if_incomplete_doc true
+    warn_as_error 'FAIL_ON_WARNINGS'
+    warn_if_doc_error true
     warn_if_undocumented true
     warn_no_paramdoc true
-    outputDir 'build/docs/'
-    warn_as_error 'FAIL_ON_WARNINGS'
+    warnings true
 }
 
 task outputVersions() {

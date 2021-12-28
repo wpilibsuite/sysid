@@ -66,7 +66,7 @@ std::string GetAbbreviation(std::string_view unit);
  * Saves a file with the provided contents to a specified location.
  *
  * @param contents The file contents.
- * @param location The file location.
+ * @param path The file location.
  */
 void SaveFile(std::string_view contents, const fs::path& path);
 

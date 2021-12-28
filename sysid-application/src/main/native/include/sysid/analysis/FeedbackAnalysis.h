@@ -53,7 +53,6 @@ struct FeedbackGains {
  *                         gains.
  * @param Kv               Velocity feedforward gain.
  * @param Ka               Acceleration feedforward gain.
- * @param feedforwardGains The feedforward gains for the system.
  * @param encFactor        The factor to convert the gains from output units to
  *                         encoder units. This is usually encoder EPR * gearing
  *                         * units per rotation.
