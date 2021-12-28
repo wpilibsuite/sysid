@@ -381,15 +381,22 @@ void Generator::Display() {
       mainMotorController == sysid::motorcontroller::kTalonFX) {
     if (mainMotorController == sysid::motorcontroller::kTalonFX) {
       GetEncoder(ArrayConcat(kBuiltInEncoders, kGeneralEncoders));
+      if (m_encoderIdx < 1) {
+        RegularEncoderSetup(drive);
+      } else if (m_encoderIdx == 1) {
+        CANCoderSetup(drive);
+      } else {
+        RoboRIOEncoderSetup(drive);
+      }
     } else {
       GetEncoder(ArrayConcat(kTalonSRXEncoders, kGeneralEncoders));
-    }
-    if (m_encoderIdx <= 1) {
-      RegularEncoderSetup(drive);
-    } else if (m_encoderIdx == 2) {
-      CANCoderSetup(drive);
-    } else {
-      RoboRIOEncoderSetup(drive);
+      if (m_encoderIdx <= 1) {
+        RegularEncoderSetup(drive);
+      } else if (m_encoderIdx == 2) {
+        CANCoderSetup(drive);
+      } else {
+        RoboRIOEncoderSetup(drive);
+      }
     }
   } else if (mainMotorController == sysid::motorcontroller::kSPARKMAXBrushed ||
              mainMotorController ==
