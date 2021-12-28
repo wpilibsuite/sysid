@@ -26,7 +26,9 @@ static constexpr unsigned int kLogSuccess = 31;
  */
 class DeploySession {
  public:
-  /** Represents the status of the deploy session. */
+  /**
+   * Represents the status of the deploy session.
+   */
   enum class Status { kInProgress, kDiscoveryFailure, kDone };
 
   /**

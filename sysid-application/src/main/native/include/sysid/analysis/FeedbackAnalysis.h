@@ -13,13 +13,19 @@ struct FeedbackControllerPreset;
  * linear-quadratic regulator (LQR).
  */
 struct LQRParameters {
-  /** The maximum allowable deviation in position. */
+  /**
+   * The maximum allowable deviation in position.
+   */
   double qp;
 
-  /** The maximum allowable deviation in velocity. */
+  /**
+   * The maximum allowable deviation in velocity.
+   */
   double qv;
 
-  /** The maximum allowable control effort */
+  /**
+   * The maximum allowable control effort.
+   */
   double r;
 };
 

@@ -14,24 +14,35 @@ namespace sysid {
  * onboard filtering.
  */
 struct FeedbackControllerPreset {
-  /** The conversion factor between volts and the final controller output. */
+  /**
+   * The conversion factor between volts and the final controller output.
+   */
   double outputConversionFactor;
 
-  /** The conversion factor for using controller output for velocity gains. This
+  /**
+   * The conversion factor for using controller output for velocity gains. This
    * is necessary as some controllers do velocity controls with different time
-   * units.*/
+   * units.
+   */
   double outputVelocityTimeFactor;
 
-  /** The period at which the controller runs. */
+  /**
+   * The period at which the controller runs.
+   */
   units::second_t period;
 
-  /** Whether the controller gains are time-normalized. */
+  /**
+   * Whether the controller gains are time-normalized.
+   */
   bool normalized;
 
-  /** The measurement delay in the encoder measurements. */
+  /**
+   * The measurement delay in the encoder measurements.
+   */
   units::second_t measurementDelay;
 
-  /** Checks equality between two feedback controller presets.
+  /**
+   * Checks equality between two feedback controller presets.
    *
    * @param rhs Another FeedbackControllerPreset
    * @return If the two presets are equal
@@ -43,7 +54,8 @@ struct FeedbackControllerPreset {
            measurementDelay == rhs.measurementDelay;
   }
 
-  /** Checks inequality between two feedback controller presets.
+  /**
+   * Checks inequality between two feedback controller presets.
    *
    * @param rhs Another FeedbackControllerPreset
    * @return If the two presets are not equal
@@ -53,7 +65,9 @@ struct FeedbackControllerPreset {
   }
 };
 
-/** The loop type for the feedback controller */
+/**
+ * The loop type for the feedback controller.
+ */
 enum class FeedbackControllerLoopType { kPosition, kVelocity };
 
 namespace presets {
