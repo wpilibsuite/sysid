@@ -54,9 +54,9 @@ TEST(FeedbackAnalysisTest, VelocityCTRE) {
   sysid::LQRParameters params{1, 1.5, 7};
 
   auto [Kp, Kd] = sysid::CalculateVelocityFeedbackGains(
-      sysid::presets::kCTRENew, params, Kv, Ka);
+      sysid::presets::kCTRECANCoder, params, Kv, Ka);
 
-  EXPECT_NEAR(Kp, 0.25, 0.05);
+  EXPECT_NEAR(Kp, 0.000417, 0.00005);
   EXPECT_NEAR(Kd, 0.00, 0.05);
 }
 
@@ -67,11 +67,11 @@ TEST(FeedbackAnalysisTest, VelocityCTREConversion) {
   sysid::LQRParameters params{1, 1.5, 7};
 
   auto [Kp, Kd] = sysid::CalculateVelocityFeedbackGains(
-      sysid::presets::kCTRENew, params, Kv, Ka, 3.0);
+      sysid::presets::kCTRECANCoder, params, Kv, Ka, 3.0);
 
   // This should have the same Kp as the test above, but scaled by a factor
   // of 3.
-  EXPECT_NEAR(Kp, 0.25 / 3, 0.05);
+  EXPECT_NEAR(Kp, 0.000417 / 3, 0.00005);
   EXPECT_NEAR(Kd, 0.00, 0.05);
 }
 

@@ -103,10 +103,10 @@ constexpr FeedbackControllerPreset kWPILibOld{1.0 / 12.0, 1.0, 50_ms, false,
  *
  * Total delay = 50 ms + 31.5 ms = 81.5 ms.
  */
-constexpr FeedbackControllerPreset kCTRENew{1.0 / 12.0, 0.1, 1_ms, true,
-                                            81.5_ms};
-constexpr FeedbackControllerPreset kCTREOld{1023.0 / 12.0, 0.1, 1_ms, false,
-                                            81.5_ms};
+constexpr FeedbackControllerPreset kCTRECANCoder{1.0 / 12.0, 60.0, 1_ms, true,
+                                                 81.5_ms};
+constexpr FeedbackControllerPreset kCTREDefault{1023.0 / 12.0, 0.1, 1_ms, false,
+                                                81.5_ms};
 
 /**
  * https://www.revrobotics.com/content/sw/max/sw-docs/cpp/classrev_1_1_c_a_n_encoder.html#a7e6ce792bc0c0558fb944771df572e6a
