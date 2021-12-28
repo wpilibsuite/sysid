@@ -560,11 +560,23 @@ void Generator::Display() {
 
   if (m_loadConfigSelector && m_loadConfigSelector->ready() &&
       !m_loadConfigSelector->result().empty()) {
-    auto path = m_loadConfigSelector->result()[0];
-    m_manager->ReadJSON(path);
-    UpdateFromConfig();
-    m_loadConfigSelector.reset();
+    try {
+      auto path = m_loadConfigSelector->result()[0];
+      m_manager->ReadJSON(path);
+      UpdateFromConfig();
+      m_loadConfigSelector.reset();
+    } catch (const std::exception& e) {
+      m_errorPopup = true;
+      m_errorMessage = std::string{e.what()};
+      WPI_ERROR(m_logger, "{}",
+                "An error occurred when attempting to load the previous config "
+                "JSON.");
+      m_loadConfigSelector.reset();
+    }
   }
+
+  // Error Popup
+  CreateErrorPopup(m_errorPopup, m_errorMessage);
 
   // Define the deploy popup (and set default size).
   auto size = ImGui::GetIO().DisplaySize;

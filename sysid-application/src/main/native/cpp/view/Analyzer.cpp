@@ -477,24 +477,7 @@ void Analyzer::Display() {
   } catch (const std::exception& e) {
     HandleGeneralError(e);
   }
-
-  if (m_errorPopup) {
-    ImGui::OpenPopup("Exception Caught!");
-  }
-
-  // Handle exceptions.
-  ImGui::SetNextWindowSize(ImVec2(480.f, 0.0f));
-  if (ImGui::BeginPopupModal("Exception Caught!")) {
-    ImGui::PushTextWrapPos(0.0f);
-    ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s",
-                       m_exception.c_str());
-    ImGui::PopTextWrapPos();
-    if (ImGui::Button("Close")) {
-      ImGui::CloseCurrentPopup();
-      m_errorPopup = false;
-    }
-    ImGui::EndPopup();
-  }
+  CreateErrorPopup(m_errorPopup, m_exception);
 }
 
 void Analyzer::SelectFile() {

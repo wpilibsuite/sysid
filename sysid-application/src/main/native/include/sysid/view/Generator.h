@@ -189,6 +189,10 @@ class Generator : public glass::View {
   // Whether the user is running Spark MAX in Brushed Mode.
   bool m_isSparkMaxBrushed = false;
 
+  // Error Popup
+  bool m_errorPopup = false;
+  std::string m_errorMessage = "";
+
   // Selectors for files
   std::unique_ptr<pfd::save_file> m_saveConfigSelector;
   std::unique_ptr<pfd::open_file> m_loadConfigSelector;
