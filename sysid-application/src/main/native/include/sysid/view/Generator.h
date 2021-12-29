@@ -64,8 +64,8 @@ static constexpr auto kMotorControllerNames =
     DisplayNameStorage(sysid::motorcontroller::kMotorControllers);
 
 static constexpr std::array<const char*, 2> kGeneralEncoders{
-    sysid::encoder::kRoboRIO.displayName,
-    sysid::encoder::kCANCoder.displayName};
+    sysid::encoder::kCANCoder.displayName,
+    sysid::encoder::kRoboRIO.displayName};
 
 static constexpr std::array<const char*, 2> kTalonSRXEncoders{
     sysid::encoder::kBuiltInSetting.displayName,
