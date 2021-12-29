@@ -95,6 +95,8 @@ void Analyzer::Display() {
         if (!m_enabled) {
           throw std::runtime_error(m_exception);
         }
+      } catch (const wpi::json::exception& e) {
+        HandleJSONError(e);
       } catch (const std::exception& e) {
         // If we run into an error here, let's just ignore it and make the user
         // explicitly select their file.
@@ -565,17 +567,22 @@ void Analyzer::AbortDataPrep() {
 void Analyzer::PrepareGraphs() {
   WPI_DEBUG(m_logger, "{}", "Graphing Data.");
   if (!m_enabled) {
-    WPI_DEBUG(m_logger, "{}", "Attempting to graph only raw time series.");
-    try {
-      AbortDataPrep();
-      m_dataThread = std::thread([&] {
-        m_plot.SetRawData(m_manager->GetOriginalData(), m_manager->GetUnit(),
-                          m_abortDataPrep);
-      });
-    } catch (const std::exception& e) {
-      HandleGeneralError(e);
+    // Try to display raw data if manager didn't get reset due to a JSON error
+    if (m_manager) {
+      WPI_DEBUG(m_logger, "{}", "Attempting to graph only raw time series.");
+      try {
+        AbortDataPrep();
+        m_dataThread = std::thread([&] {
+          m_plot.SetRawData(m_manager->GetOriginalData(), m_manager->GetUnit(),
+                            m_abortDataPrep);
+        });
+      } catch (const std::exception& e) {
+        HandleGeneralError(e);
+      }
+      return;
+    } else {
+      return;
     }
-    return;
   }
   try {
     AbortDataPrep();
@@ -611,6 +618,9 @@ void Analyzer::HandleJSONError(const wpi::json::exception& e) {
       "message:{}",
       std::string(e.what()));
   ResetManagerState();
+  // Invalid JSONS should not be stored or used as data
+  m_manager.reset();
+  m_location = "";
   m_errorPopup = true;
 }
 
