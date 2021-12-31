@@ -47,6 +47,14 @@ static constexpr const char* kUnits[] = {"Meters",  "Feet",      "Inches",
 void CreateTooltip(const char* text);
 
 /**
+ * Utility function to launch an error popup if an exception is detected.
+ *
+ * @param isError True if an exception is detected
+ * @param errorMessage The error message associated with the exception
+ */
+void CreateErrorPopup(bool& isError, std::string_view errorMessage);
+
+/**
  * Returns the abbreviation for the unit.
  *
  * @param unit The unit to return the abbreviation for.
