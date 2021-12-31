@@ -310,6 +310,24 @@ static void PrepareAngularDrivetrainData(
     }
   }
 
+  WPI_DEBUG(logger, "{}", "Calculating trackwidth");
+  // Aggregating all the deltas from all the tests
+  double leftDelta = 0.0;
+  double rightDelta = 0.0;
+  double angleDelta = 0.0;
+  for (const auto& it : data) {
+    auto key = it.first();
+    auto& trackWidthData = data[key];
+    leftDelta += std::abs(trackWidthData.back()[kLPosCol] -
+                          trackWidthData.front()[kLPosCol]);
+    rightDelta += std::abs(trackWidthData.back()[kRPosCol] -
+                           trackWidthData.front()[kRPosCol]);
+    angleDelta += std::abs(trackWidthData.back()[kAngleCol] -
+                           trackWidthData.front()[kAngleCol]);
+  }
+  trackWidth = sysid::CalculateTrackWidth(leftDelta, rightDelta,
+                                          units::radian_t{angleDelta});
+
   WPI_DEBUG(logger, "{}", "Copying raw data.");
   CopyRawData(&data);
 
@@ -320,32 +338,6 @@ static void PrepareAngularDrivetrainData(
     preparedData[key] = ConvertToPrepared<9, kTimeCol, kLVoltageCol, kAngleCol,
                                           kAngularRateCol>(data[key]);
   }
-
-  // Create the distinct datasets and store them in our StringMap (do note the
-  // units will be off as they haven't been properly converted yet).
-  StoreDatasets(&originalDatasets, preparedData["original-raw-slow-forward"],
-                preparedData["original-raw-slow-backward"],
-                preparedData["original-raw-fast-forward"],
-                preparedData["original-raw-fast-backward"]);
-
-  WPI_DEBUG(logger, "{}", "Applying trimming and filtering.");
-  sysid::InitialTrimAndFilter(&preparedData, settings, minStepTime,
-                              maxStepTime);
-
-  WPI_DEBUG(logger, "{}", "Acceleration filtering.");
-  sysid::AccelFilter(&preparedData);
-
-  WPI_DEBUG(logger, "{}", "Calculating trackwidth");
-  // Calculate track width from the slow-forward raw data.
-  auto& trackWidthData = data["slow-forward"];
-  double leftDelta =
-      trackWidthData.back()[kLPosCol] - trackWidthData.front()[kLPosCol];
-  double rightDelta =
-      trackWidthData.back()[kRPosCol] - trackWidthData.front()[kRPosCol];
-  double angleDelta =
-      trackWidthData.back()[kAngleCol] - trackWidthData.front()[kAngleCol];
-  trackWidth = sysid::CalculateTrackWidth(leftDelta, rightDelta,
-                                          units::radian_t{angleDelta});
 
   // To convert the angular rates into translational velocities (to work with
   // the model + OLS), v = ωr => v = ω * trackwidth / 2
@@ -361,6 +353,19 @@ static void PrepareAngularDrivetrainData(
       pt.acceleration *= translationalFactor;
     }
   }
+
+  // Create the distinct datasets and store them in our StringMap
+  StoreDatasets(&originalDatasets, preparedData["original-raw-slow-forward"],
+                preparedData["original-raw-slow-backward"],
+                preparedData["original-raw-fast-forward"],
+                preparedData["original-raw-fast-backward"]);
+
+  WPI_DEBUG(logger, "{}", "Applying trimming and filtering.");
+  sysid::InitialTrimAndFilter(&preparedData, settings, minStepTime,
+                              maxStepTime);
+
+  WPI_DEBUG(logger, "{}", "Acceleration filtering.");
+  sysid::AccelFilter(&preparedData);
 
   WPI_DEBUG(logger, "{}", "Storing datasets.");
   // Create the distinct datasets and store them in our StringMap.
