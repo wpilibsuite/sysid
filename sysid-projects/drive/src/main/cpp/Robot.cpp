@@ -14,7 +14,6 @@
 #include <fmt/format.h>
 #include <frc/ADXRS450_Gyro.h>
 #include <frc/AnalogGyro.h>
-// #include <frc/romi/RomiGyro.h>
 #include <frc/simulation/DriverStationSim.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <wpi/StringExtras.h>

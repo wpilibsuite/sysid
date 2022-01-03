@@ -292,10 +292,18 @@ TEST_F(GenerationTest, Drivetrain) {
     }
   }
 
-  // m_settings = sysid::kRomiConfig;
-  // m_manager.SaveJSON(m_jsonPath, 1, true);
-  // fmt::print(stderr, "Testing: Romi Config\n");
-  // Run();
+  m_settings = sysid::kRomiConfig;
+  auto json = m_manager.Generate(size);
+  sysid::SaveFile(json.dump(), m_jsonPath);
+  fmt::print(stderr, "Testing: Romi Config\n");
+  Run();
+  if (HasFatalFailure()) {
+    TearDown();
+    return;
+  }
+  TestHardwareConfig(m_settings.motorControllers[0].name,
+                     m_settings.encoderType.name, m_settings.gyro.name,
+                     m_settings.gyroCtor);
 }
 
 TEST_F(GenerationTest, WrongMechDrivetrain) {

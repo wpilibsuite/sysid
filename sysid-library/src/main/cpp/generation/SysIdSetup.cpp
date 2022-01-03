@@ -13,6 +13,7 @@
 #include <frc/Filesystem.h>
 #include <frc/TimedRobot.h>
 #include <frc/motorcontrol/Spark.h>
+#include <frc/romi/RomiGyro.h>
 #include <units/angle.h>
 #include <units/angular_velocity.h>
 #include <wpi/SmallString.h>
@@ -426,7 +427,9 @@ void SetupGyro(
       //     // FIXME: Update Romi Gyro once vendordep is out
     } else if (gyroType == "Romi") {
       fmt::print("Setup Romi");
-      // gyro = std::make_unique<frc::RomiGyro>();
+#ifndef __FRC_ROBORIO__
+      gyro = std::make_unique<frc::RomiGyro>();
+#endif
     } else {
       try {
         fmt::print("Setup Analog Gyro, Port: {}", gyroCtor);
