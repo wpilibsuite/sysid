@@ -264,13 +264,38 @@ void SetupEncoders(
   }
 }
 
+static frc::SPI::Port GetSPIPort(std::string_view name) {
+  if (name == "kOnboardCS0") {
+    fmt::print("Setup SPI kOnboardCS0");
+    return frc::SPI::Port::kOnboardCS0;
+  } else if (name == "kOnboardCS1") {
+    fmt::print("Setup SPI kOnboardCS1");
+    return frc::SPI::Port::kOnboardCS1;
+  } else if (name == "kOnboardCS2") {
+    fmt::print("Setup SPI kOnboardCS2");
+    return frc::SPI::Port::kOnboardCS2;
+  } else if (name == "kOnboardCS3") {
+    fmt::print("Setup SPI kOnboardCS3");
+    return frc::SPI::Port::kOnboardCS3;
+  } else if (name == "SPI.kMXP") {
+    fmt::print("Setup SPI SPI.kMXP");
+    return frc::SPI::Port::kMXP;
+  } else {
+    throw std::runtime_error(
+        fmt::format("{} is not a supported SPI Port\n", name));
+  }
+}
+
 void SetupGyro(
     std::string_view gyroType, std::string_view gyroCtor,
     const std::vector<int>& leftPorts, const std::vector<int>& rightPorts,
     const std::vector<std::string>& controllerNames,
     const std::vector<std::unique_ptr<frc::MotorController>>& leftControllers,
     const std::vector<std::unique_ptr<frc::MotorController>>& rightControllers,
-    std::unique_ptr<frc::Gyro>& gyro, std::unique_ptr<PigeonIMU>& pigeon,
+    std::unique_ptr<frc::Gyro>& gyro,
+    std::unique_ptr<frc::ADIS16448_IMU>& ADIS16448Gyro,
+    std::unique_ptr<frc::ADIS16470_IMU>& ADIS16470Gyro,
+    std::unique_ptr<PigeonIMU>& pigeon,
     std::unique_ptr<WPI_TalonSRX>& tempTalon,
     std::function<double()>& gyroPosition, std::function<double()>& gyroRate) {
 #ifndef __FRC_ROBORIO__
@@ -333,17 +358,49 @@ void SetupGyro(
       return units::radians_per_second_t{rate}.value();
     };
     fmt::print("Setup Pigeon, Port: {}", portStr);
+  } else if (wpi::starts_with(gyroType, "ADIS")) {
+    auto port = GetSPIPort(gyroCtor);
+    if (gyroType == "ADIS16470") {
+      fmt::print("Setup ADIS16470");
+      // Calibration time of 8 seconds:
+      // https://github.com/juchong/ADIS16470-RoboRIO-Driver-Examples/blob/master/c%2B%2B/src/main/cpp/Robot.cpp#L52
+      ADIS16470Gyro = std::make_unique<frc::ADIS16470_IMU>(
+          frc::ADIS16470_IMU::IMUAxis::kZ, port,
+          frc::ADIS16470_IMU::CalibrationTime::_8s);
+      gyroPosition = [&] {
+        return units::radian_t(units::degree_t{ADIS16470Gyro->GetAngle()})
+            .value();
+      };
+
+      gyroRate = [&] {
+        return units::radians_per_second_t(
+                   units::degrees_per_second_t{ADIS16470Gyro->GetRate()})
+            .value();
+      };
+    } else {
+      fmt::print("Setup ADIS16448");
+      // Calibration time of 8 seconds:
+      // https://github.com/juchong/ADIS16448-RoboRIO-Driver-Examples/blob/master/c%2B%2B/src/main/cpp/Robot.cpp#L48
+      ADIS16448Gyro = std::make_unique<frc::ADIS16448_IMU>(
+          frc::ADIS16448_IMU::IMUAxis::kZ, port, 8);
+      gyroPosition = [&] {
+        return units::radian_t(units::degree_t{ADIS16448Gyro->GetAngle()})
+            .value();
+      };
+
+      gyroRate = [&] {
+        return units::radians_per_second_t(
+                   units::degrees_per_second_t{ADIS16448Gyro->GetRate()})
+            .value();
+      };
+    }
+
   } else if (gyroType != "None") {
     if (gyroType == "ADXRS450") {
-      if (gyroCtor == "SPI.kMXP") {
-        fmt::print("Setup ADXRS450, Port: SPI.kMXP");
-        gyro = std::make_unique<frc::ADXRS450_Gyro>(frc::SPI::Port::kMXP);
-      } else {
-        fmt::print("Setup ADXRS450, Port: kOnboardCS0");
-        gyro =
-            std::make_unique<frc::ADXRS450_Gyro>(frc::SPI::Port::kOnboardCS0);
-      }
-      //     // FIXME: waiting on Linux and macOS builds for navX AHRS
+      auto port = GetSPIPort(gyroCtor);
+      fmt::print("Setup ADXRS450");
+      gyro = std::make_unique<frc::ADXRS450_Gyro>(port);
+
     } else if (gyroType == "NavX") {
       if (gyroCtor == "SerialPort.kUSB") {
         fmt::print("Setup NavX, Port: SerialPort.kUSB");
