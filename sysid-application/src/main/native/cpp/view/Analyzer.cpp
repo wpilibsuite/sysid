@@ -36,8 +36,8 @@ Analyzer::Analyzer(glass::Storage& storage, wpi::Logger& logger)
   m_presets["Default"] = presets::kDefault;
   m_presets["WPILib (2020-)"] = presets::kWPILibNew;
   m_presets["WPILib (Pre-2020)"] = presets::kWPILibOld;
-  m_presets["CTRE (New)"] = presets::kCTRENew;
-  m_presets["CTRE (Old)"] = presets::kCTREOld;
+  m_presets["CANCoder"] = presets::kCTRECANCoder;
+  m_presets["CTRE"] = presets::kCTREDefault;
   m_presets["REV (Brushless)"] = presets::kREVBrushless;
   m_presets["REV (Brushed)"] = presets::kREVBrushed;
   m_presets["Venom"] = presets::kVenom;

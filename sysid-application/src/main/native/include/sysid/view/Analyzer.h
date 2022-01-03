@@ -43,8 +43,8 @@ class Analyzer : public glass::View {
    * The different motor controlle rtiming presets that can be used.
    */
   static constexpr const char* kPresetNames[] = {
-      "Default",    "WPILib (2020-)",  "WPILib (Pre-2020)", "CTRE (New)",
-      "CTRE (Old)", "REV (Brushless)", "REV (Brushed)",     "Venom"};
+      "Default", "WPILib (2020-)",  "WPILib (Pre-2020)", "CANCoder",
+      "CTRE",    "REV (Brushless)", "REV (Brushed)",     "Venom"};
 
   /**
    * The different control loops that can be used.
