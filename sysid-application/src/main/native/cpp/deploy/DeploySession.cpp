@@ -128,6 +128,8 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
 
             // Pre-Deploy
             session.Execute(
+                "sed -i -e 's/\"exec /\"/' /usr/local/frc/bin/frcRunRobot.sh");
+            session.Execute(
                 ". /etc/profile.d/natinst-path.sh; "
                 "/usr/local/frc/bin/frcKillRobot.sh "
                 "-t 2> /dev/null");
