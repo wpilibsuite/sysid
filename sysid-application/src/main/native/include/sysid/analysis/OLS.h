@@ -15,7 +15,7 @@ namespace sysid {
  * determination) of the fit.
  *
  * @param data                 The data to perform the regression on. The data
- *                             must be formatted as y, x0, x1, x2, ..., y, ...
+ *                             must be formatted as y, x₀, x₁, x₂, ..., y, ...
  *                             in the vector.
  * @param independentVariables The number of independent variables (x values).
  */

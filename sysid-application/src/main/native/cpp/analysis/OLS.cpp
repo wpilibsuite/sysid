@@ -22,8 +22,8 @@ std::tuple<std::vector<double>, double> sysid::OLS(
   // of independent variables, β is a vector of coefficients, and u is a
   // vector of residuals.
 
-  // We want to minimize u^2 = u'u = (y - Xβ)'(y - Xβ).
-  // β = (X'X)^-1 (X'y)
+  // We want to minimize u² = uᵀu = (y - Xβ)ᵀ(y - Xβ).
+  // β = (XᵀX)⁻¹Xᵀy
 
   // Get the number of elements.
   size_t n = data.size() / (independentVariables + 1);
@@ -40,10 +40,10 @@ std::tuple<std::vector<double>, double> sysid::OLS(
   Eigen::Map<const Eigen::MatrixXd, 0, Eigen::Stride<1, Eigen::Dynamic>> X(
       data.data() + 1, rows, cols, Eigen::Stride<1, Eigen::Dynamic>(1, strd));
 
-  // Calculate b = β that minimizes u'u.
+  // Calculate b = β that minimizes uᵀu.
   Eigen::MatrixXd b = (X.transpose() * X).llt().solve(X.transpose() * y);
 
-  // We will now calculate r^2 or the coefficient of determination, which
+  // We will now calculate R² or the coefficient of determination, which
   // tells us how much of the total variation (variation in y) can be
   // explained by the regression model.
 
