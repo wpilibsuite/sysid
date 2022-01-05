@@ -559,35 +559,49 @@ static void PrepareLinearDrivetrainData(
 AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,
                                  wpi::Logger& logger)
     : m_settings(settings), m_logger(logger) {
-  // Read JSON from the specified path.
-  std::error_code ec;
-  wpi::raw_fd_istream is{path, ec};
+  {
+    // Read JSON from the specified path
+    std::error_code ec;
+    wpi::raw_fd_istream is{path, ec};
 
-  if (ec) {
-    throw std::runtime_error(fmt::format("Unable to read: {}", path));
+    if (ec) {
+      throw std::runtime_error(fmt::format("Unable to read: {}", path));
+    }
+
+    is >> m_json;
+
+    WPI_INFO(m_logger, "Read {}", path);
   }
 
-  is >> m_json;
-  WPI_INFO(m_logger, "Read {}", path);
-
-  // Check that we have a sysid json.
+  // Check that we have a sysid JSON
   if (m_json.find("sysid") == m_json.end()) {
-    throw std::runtime_error(
-        "Incorrect JSON format detected. Please use the JSON Converter "
-        "to convert a frc-char JSON to a sysid JSON.");
-  } else {
-    WPI_INFO(m_logger, "Parsing initial data of {}", path);
-    // Get the analysis type from the JSON.
-    m_type = sysid::analysis::FromName(m_json.at("test").get<std::string>());
+    // If it's not a sysid JSON, try converting it from frc-char format
+    std::string newPath = sysid::ConvertJSON(path, logger);
 
-    // Get the rotation -> output units factor from the JSON.
-    m_unit = m_json.at("units").get<std::string>();
-    m_factor = m_json.at("unitsPerRotation").get<double>();
+    // Read JSON from the specified path
+    std::error_code ec;
+    wpi::raw_fd_istream is{newPath, ec};
 
-    // Reset settings for Dynamic Test Limits
-    m_settings.stepTestDuration = units::second_t{0.0};
-    m_minDuration = units::second_t{100000};
+    if (ec) {
+      throw std::runtime_error(fmt::format("Unable to read: {}", newPath));
+    }
+
+    is >> m_json;
+
+    WPI_INFO(m_logger, "Read {}", newPath);
   }
+
+  WPI_INFO(m_logger, "Parsing initial data of {}", path);
+  // Get the analysis type from the JSON.
+  m_type = sysid::analysis::FromName(m_json.at("test").get<std::string>());
+
+  // Get the rotation -> output units factor from the JSON.
+  m_unit = m_json.at("units").get<std::string>();
+  m_factor = m_json.at("unitsPerRotation").get<double>();
+
+  // Reset settings for Dynamic Test Limits
+  m_settings.stepTestDuration = units::second_t{0.0};
+  m_minDuration = units::second_t{100000};
 }
 
 void AnalysisManager::PrepareData() {

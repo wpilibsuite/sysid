@@ -29,11 +29,6 @@ class JSONConverter {
   explicit JSONConverter(wpi::Logger& logger) : m_logger(logger) {}
 
   /**
-   * Function to display the FRC Characterization to SysId JSON converter
-   */
-  void DisplayFRCCharConvert();
-
-  /**
    * Function to display the SysId JSON to CSV converter.
    */
   void DisplayCSVConvert();
