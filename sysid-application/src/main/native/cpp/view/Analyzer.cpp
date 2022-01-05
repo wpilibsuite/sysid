@@ -77,7 +77,7 @@ void Analyzer::Display() {
   // it.
   if (first) {
     if (!m_location.empty() && fs::exists(m_location)) {
-      WPI_DEBUG(m_logger, "Previous file location exists: {}", m_location);
+      WPI_INFO(m_logger, "Previous file location exists: {}", m_location);
       try {
         m_manager =
             std::make_unique<AnalysisManager>(m_location, m_settings, m_logger);
@@ -486,11 +486,11 @@ void Analyzer::SelectFile() {
   // If the selector exists and is ready with a result, we can store it.
   if (m_selector && m_selector->ready() && !m_selector->result().empty()) {
     // Store the location of the file and reset the selector.
-    WPI_DEBUG(m_logger, "Opening File: {}", m_selector->result()[0]);
+    WPI_INFO(m_logger, "Opening File: {}", m_selector->result()[0]);
     m_location = m_selector->result()[0];
     m_selector.reset();
     m_enabled = true;
-    WPI_DEBUG(m_logger, "{}", "Opened File");
+    WPI_INFO(m_logger, "{}", "Opened File");
 
     // Create the analysis manager.
     try {
@@ -506,9 +506,9 @@ void Analyzer::SelectFile() {
 }
 
 void Analyzer::PrepareData() {
-  WPI_DEBUG(m_logger, "{}", "Preparing Data.");
+  WPI_INFO(m_logger, "{}", "Preparing Data.");
   if (!m_enabled) {
-    WPI_DEBUG(m_logger, "{}", "Returning early for data preparation.");
+    WPI_INFO(m_logger, "{}", "Returning early for data preparation.");
     return;
   }
   try {
@@ -521,9 +521,9 @@ void Analyzer::PrepareData() {
 }
 
 void Analyzer::Calculate() {
-  WPI_DEBUG(m_logger, "{}", "Calculating Gains.");
+  WPI_INFO(m_logger, "{}", "Calculating Gains.");
   if (!m_enabled) {
-    WPI_DEBUG(m_logger, "{}", "Returning early for gain calculation.");
+    WPI_INFO(m_logger, "{}", "Returning early for gain calculation.");
     return;
   }
   try {
@@ -548,11 +548,11 @@ void Analyzer::AbortDataPrep() {
 }
 
 void Analyzer::PrepareGraphs() {
-  WPI_DEBUG(m_logger, "{}", "Graphing Data.");
+  WPI_INFO(m_logger, "{}", "Graphing Data.");
   if (!m_enabled) {
     // Try to display raw data if manager didn't get reset due to a JSON error
     if (m_manager) {
-      WPI_DEBUG(m_logger, "{}", "Attempting to graph only raw time series.");
+      WPI_INFO(m_logger, "{}", "Attempting to graph only raw time series.");
       try {
         AbortDataPrep();
         m_dataThread = std::thread([&] {
