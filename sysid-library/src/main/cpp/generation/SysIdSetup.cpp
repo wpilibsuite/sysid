@@ -369,11 +369,12 @@ void SetupGyro(
           frc::ADIS16470_IMU::IMUAxis::kZ, port,
           frc::ADIS16470_IMU::CalibrationTime::_8s);
       gyroPosition = [&] {
-        return units::radian_t(units::degree_t{ADIS16470Gyro->GetAngle()})
-            .value();
+        return units::radian_t{ADIS16470Gyro->GetAngle()}.value();
       };
 
-      gyroRate = [&] { return 0.0; };
+      gyroRate = [&] {
+        return units::radians_per_second_t{ADIS16470Gyro->GetRate()}.value();
+      };
     } else {
       fmt::print("Setup ADIS16448");
       // Calibration time of 8 seconds:
@@ -382,11 +383,12 @@ void SetupGyro(
           frc::ADIS16448_IMU::IMUAxis::kZ, port,
           frc::ADIS16448_IMU::CalibrationTime::_8s);
       gyroPosition = [&] {
-        return units::radian_t(units::degree_t{ADIS16448Gyro->GetAngle()})
-            .value();
+        return units::radian_t{ADIS16448Gyro->GetAngle()}.value();
       };
 
-      gyroRate = [&] { return 0.0; };
+      gyroRate = [&] {
+        return units::radians_per_second_t{ADIS16448Gyro->GetRate()}.value();
+      };
     }
 
   } else if (gyroType != "None") {
