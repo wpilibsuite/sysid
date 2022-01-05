@@ -179,8 +179,8 @@ void SetupEncoders(
         fmt::print("Setup Built-in+TalonFX");
         feedbackDevice = FeedbackDevice::IntegratedSensor;
       }
-      SetupCTREEncoder(controller, feedbackDevice, period, cpr, numSamples,
-                       encoderInverted, position, rate);
+      SetupCTREEncoder(controller, feedbackDevice, period, combinedCPR,
+                       numSamples, encoderInverted, position, rate);
     } else {  // Venom
       fmt::print("Setup Built-in+Venom");
       auto* venom = static_cast<frc::CANVenom*>(controller);
@@ -231,8 +231,8 @@ void SetupEncoders(
     };
   } else if (encoderType == "Tachometer") {
     fmt::print("Setup Tachometer");
-    SetupCTREEncoder(controller, FeedbackDevice::Tachometer, period, cpr,
-                     numSamples, encoderInverted, position, rate);
+    SetupCTREEncoder(controller, FeedbackDevice::Tachometer, period,
+                     combinedCPR, numSamples, encoderInverted, position, rate);
   } else if (encoderType == "CANCoder") {
     fmt::print("Setup CANCoder");
     cancoder = std::make_unique<CANCoder>(encoderPorts[0]);
@@ -244,8 +244,8 @@ void SetupEncoders(
     cancoder->ConfigVelocityMeasurementPeriod(cancoderPeriod);
     cancoder->ConfigVelocityMeasurementWindow(numSamples);
 
-    position = [&] { return cancoder->GetPosition() / cpr; };
-    rate = [&] { return cancoder->GetVelocity() / cpr; };
+    position = [&] { return cancoder->GetPosition() / combinedCPR; };
+    rate = [&] { return cancoder->GetVelocity() / combinedCPR; };
   } else {
     fmt::print("Setup roboRIO quadrature");
     if (isEncoding) {
