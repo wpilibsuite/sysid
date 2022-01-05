@@ -23,8 +23,7 @@ using namespace sysid;
 
 // Macros to make logging easier.
 #define INFO(fmt, ...) WPI_INFO(m_logger, fmt, __VA_ARGS__)
-#define DEBUG(fmt, ...) WPI_DEBUG(m_logger, fmt, __VA_ARGS__)
-#define ERROR(fmt, ...) WPI_DEBUG(m_logger, fmt, __VA_ARGS__)
+#define ERROR(fmt, ...) WPI_INFO(m_logger, fmt, __VA_ARGS__)
 #define SUCCESS(fmt, ...) WPI_LOG(m_logger, kLogSuccess, fmt, __VA_ARGS__)
 
 // roboRIO SSH constants.
@@ -62,7 +61,7 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
   // addresses. For every successful resolution, we will attempt a connection.
   // The first address to connect wins and the deploy will execute.
   for (auto&& host : m_addresses) {
-    DEBUG("Attempting to resolve {} hostname.", host);
+    INFO("Attempting to resolve {} hostname.", host);
 
     // Create a request object for the call.
     auto req = std::make_shared<wpi::uv::GetAddrInfoReq>();
@@ -71,7 +70,7 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
     req->error = [this, &host, &lp](wpi::uv::Error e) {
       m_visited.fetch_add(1);
       lp.error(e);
-      DEBUG("Could not resolve {}: {}.", host, e.str());
+      INFO("Could not resolve {}: {}.", host, e.str());
     };
 
     // Set the address-resolved handler for the request.
@@ -80,7 +79,7 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
       wpi::SmallString<16> ip;
       wpi::uv::AddrToName(reinterpret_cast<sockaddr_in*>(i.ai_addr)->sin_addr,
                           &ip);
-      DEBUG("Resolved {} to {}.", host, ip);
+      INFO("Resolved {} to {}.", host, ip);
 
       // Attempt an SSH connection in a separate worker thread. If the
       // connection is successful, continue the deploy from there.
@@ -94,7 +93,7 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
       // We capture ip by value because the ref might be gone when the
       // callback is invoked.
       wreq->work.connect([this, &host, ip] {
-        DEBUG("Trying to establish SSH connection to {}.", host);
+        INFO("Trying to establish SSH connection to {}.", host);
         try {
           // Check if a connection has already been established. If it
           // has, then we don't want to waste time and resources trying
@@ -106,7 +105,7 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
           // Try to start a connection.
           SshSession session{ip.str(), kPort, kUsername, kPassword, m_logger};
           session.Open();
-          DEBUG("SSH connection to {} was successful.", host);
+          INFO("SSH connection to {} was successful.", host);
 
           // If we were successful, continue with the deploy (after
           // making sure that no other thread also reached this location
@@ -184,7 +183,7 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
             ERROR("An exception occurred: {}", e.what());
           }
         } catch (const SshSession::SshException& e) {
-          DEBUG("SSH connection to {} failed.", host);
+          INFO("SSH connection to {} failed.", host);
         }
       });
 

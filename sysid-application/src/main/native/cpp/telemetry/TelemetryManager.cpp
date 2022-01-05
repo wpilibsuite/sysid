@@ -102,7 +102,7 @@ void TelemetryManager::BeginTest(std::string_view name) {
         "ensure it does not hit anything!");
   }
 
-  WPI_DEBUG(m_logger, "Started {} test.", m_tests.back());
+  WPI_INFO(m_logger, "Started {} test.", m_tests.back());
 }
 
 void TelemetryManager::EndTest() {
@@ -217,7 +217,7 @@ void TelemetryManager::Update() {
     if (m_params.enabled) {
       m_params.enableStart = wpi::Now() * 1E-6;
       m_params.state = State::RunningTest;
-      WPI_DEBUG(m_logger, "{}", "Transitioned to running test state.");
+      WPI_INFO(m_logger, "{}", "Transitioned to running test state.");
     }
   }
 

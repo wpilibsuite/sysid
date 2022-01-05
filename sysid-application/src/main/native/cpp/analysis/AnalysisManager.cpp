@@ -181,13 +181,13 @@ static void PrepareGeneralData(
   static constexpr size_t kPosCol = 2;
   static constexpr size_t kVelCol = 3;
 
-  WPI_DEBUG(logger, "{}", "Reading JSON data.");
+  WPI_INFO(logger, "{}", "Reading JSON data.");
   // Get the major components from the JSON and store them inside a StringMap.
   for (auto&& key : AnalysisManager::kJsonDataKeys) {
     data[key] = json.at(key).get<std::vector<Data>>();
   }
 
-  WPI_DEBUG(logger, "{}", "Preprocessing raw data.");
+  WPI_INFO(logger, "{}", "Preprocessing raw data.");
   // Ensure that voltage and velocity have the same sign. Also multiply
   // positions and velocities by the factor.
   for (auto it = data.begin(); it != data.end(); ++it) {
@@ -198,10 +198,10 @@ static void PrepareGeneralData(
     }
   }
 
-  WPI_DEBUG(logger, "{}", "Copying raw data.");
+  WPI_INFO(logger, "{}", "Copying raw data.");
   CopyRawData(&data);
 
-  WPI_DEBUG(logger, "{}", "Converting raw data to PreparedData struct.");
+  WPI_INFO(logger, "{}", "Converting raw data to PreparedData struct.");
   // Convert data to PreparedData structs
   for (auto& it : data) {
     auto key = it.first();
@@ -216,14 +216,14 @@ static void PrepareGeneralData(
                 preparedData["original-raw-fast-forward"],
                 preparedData["original-raw-fast-backward"]);
 
-  WPI_DEBUG(logger, "{}", "Initial trimming and filtering.");
+  WPI_INFO(logger, "{}", "Initial trimming and filtering.");
   sysid::InitialTrimAndFilter(&preparedData, settings, minStepTime, maxStepTime,
                               unit);
 
-  WPI_DEBUG(logger, "{}", "Acceleration filtering.");
+  WPI_INFO(logger, "{}", "Acceleration filtering.");
   sysid::AccelFilter(&preparedData);
 
-  WPI_DEBUG(logger, "{}", "Storing datasets.");
+  WPI_INFO(logger, "{}", "Storing datasets.");
   // Store the raw datasets
   StoreDatasets(&rawDatasets, preparedData["raw-slow-forward"],
                 preparedData["raw-slow-backward"],
@@ -288,13 +288,13 @@ static void PrepareAngularDrivetrainData(
   static constexpr size_t kAngleCol = 7;
   static constexpr size_t kAngularRateCol = 8;
 
-  WPI_DEBUG(logger, "{}", "Reading JSON data.");
+  WPI_INFO(logger, "{}", "Reading JSON data.");
   // Get the major components from the JSON and store them inside a StringMap.
   for (auto&& key : AnalysisManager::kJsonDataKeys) {
     data[key] = json.at(key).get<std::vector<Data>>();
   }
 
-  WPI_DEBUG(logger, "{}", "Preprocessing raw data.");
+  WPI_INFO(logger, "{}", "Preprocessing raw data.");
   // Ensure that voltage and velocity have the same sign. Also multiply
   // positions and velocities by the factor.
   for (auto it = data.begin(); it != data.end(); ++it) {
@@ -310,7 +310,7 @@ static void PrepareAngularDrivetrainData(
     }
   }
 
-  WPI_DEBUG(logger, "{}", "Calculating trackwidth");
+  WPI_INFO(logger, "{}", "Calculating trackwidth");
   // Aggregating all the deltas from all the tests
   double leftDelta = 0.0;
   double rightDelta = 0.0;
@@ -328,10 +328,10 @@ static void PrepareAngularDrivetrainData(
   trackWidth = sysid::CalculateTrackWidth(leftDelta, rightDelta,
                                           units::radian_t{angleDelta});
 
-  WPI_DEBUG(logger, "{}", "Copying raw data.");
+  WPI_INFO(logger, "{}", "Copying raw data.");
   CopyRawData(&data);
 
-  WPI_DEBUG(logger, "{}", "Converting to PreparedData struct.");
+  WPI_INFO(logger, "{}", "Converting to PreparedData struct.");
   // Convert raw data to prepared data
   for (const auto& it : data) {
     auto key = it.first();
@@ -360,14 +360,14 @@ static void PrepareAngularDrivetrainData(
                 preparedData["original-raw-fast-forward"],
                 preparedData["original-raw-fast-backward"]);
 
-  WPI_DEBUG(logger, "{}", "Applying trimming and filtering.");
+  WPI_INFO(logger, "{}", "Applying trimming and filtering.");
   sysid::InitialTrimAndFilter(&preparedData, settings, minStepTime,
                               maxStepTime);
 
-  WPI_DEBUG(logger, "{}", "Acceleration filtering.");
+  WPI_INFO(logger, "{}", "Acceleration filtering.");
   sysid::AccelFilter(&preparedData);
 
-  WPI_DEBUG(logger, "{}", "Storing datasets.");
+  WPI_INFO(logger, "{}", "Storing datasets.");
   // Create the distinct datasets and store them in our StringMap.
   StoreDatasets(&rawDatasets, preparedData["raw-slow-forward"],
                 preparedData["raw-slow-backward"],
@@ -428,14 +428,14 @@ static void PrepareLinearDrivetrainData(
   static constexpr size_t kRVelCol = 6;
 
   // Get the major components from the JSON and store them inside a StringMap.
-  WPI_DEBUG(logger, "{}", "Reading JSON data.");
+  WPI_INFO(logger, "{}", "Reading JSON data.");
   for (auto&& key : AnalysisManager::kJsonDataKeys) {
     data[key] = json.at(key).get<std::vector<Data>>();
   }
 
   // Ensure that voltage and velocity have the same sign. Also multiply
   // positions and velocities by the factor.
-  WPI_DEBUG(logger, "{}", "Preprocessing raw data.");
+  WPI_INFO(logger, "{}", "Preprocessing raw data.");
   for (auto it = data.begin(); it != data.end(); ++it) {
     for (auto&& pt : it->second) {
       pt[kLVoltageCol] = std::copysign(pt[kLVoltageCol], pt[kLVelCol]);
@@ -447,11 +447,11 @@ static void PrepareLinearDrivetrainData(
     }
   }
 
-  WPI_DEBUG(logger, "{}", "Copying raw data.");
+  WPI_INFO(logger, "{}", "Copying raw data.");
   CopyRawData(&data);
 
   // Convert data to PreparedData
-  WPI_DEBUG(logger, "{}", "Converting to PreparedData struct.");
+  WPI_INFO(logger, "{}", "Converting to PreparedData struct.");
   for (auto& it : data) {
     auto key = it.first();
 
@@ -498,7 +498,7 @@ static void PrepareLinearDrivetrainData(
                 originalSlowBackwardRight, originalFastForwardRight,
                 originalFastBackwardRight, "Right");
 
-  WPI_DEBUG(logger, "{}", "Applying trimming and filtering.");
+  WPI_INFO(logger, "{}", "Applying trimming and filtering.");
   sysid::InitialTrimAndFilter(&preparedData, settings, minStepTime,
                               maxStepTime);
   // Store filtered data
@@ -516,10 +516,10 @@ static void PrepareLinearDrivetrainData(
   auto fastForward = DataConcat(fastForwardLeft, fastForwardRight);
   auto fastBackward = DataConcat(fastBackwardLeft, fastBackwardRight);
 
-  WPI_DEBUG(logger, "{}", "Acceleration filtering.");
+  WPI_INFO(logger, "{}", "Acceleration filtering.");
   sysid::AccelFilter(&preparedData);
 
-  WPI_DEBUG(logger, "{}", "Storing datasets.");
+  WPI_INFO(logger, "{}", "Storing datasets.");
   // Store raw data as variables
   auto rawSlowForwardLeft = preparedData["left-raw-slow-forward"];
   auto rawSlowForwardRight = preparedData["right-raw-slow-forward"];
@@ -576,7 +576,7 @@ AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,
         "Incorrect JSON format detected. Please use the JSON Converter "
         "to convert a frc-char JSON to a sysid JSON.");
   } else {
-    WPI_DEBUG(m_logger, "Parsing initial data of {}", path);
+    WPI_INFO(m_logger, "Parsing initial data of {}", path);
     // Get the analysis type from the JSON.
     m_type = sysid::analysis::FromName(m_json.at("test").get<std::string>());
 
@@ -591,7 +591,7 @@ AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,
 }
 
 void AnalysisManager::PrepareData() {
-  WPI_DEBUG(m_logger, "Preparing {} data", m_type.name);
+  WPI_INFO(m_logger, "Preparing {} data", m_type.name);
   if (m_type == analysis::kDrivetrain) {
     PrepareLinearDrivetrainData(m_json, m_settings, m_factor,
                                 m_originalDatasets, m_rawDatasets,
@@ -607,11 +607,11 @@ void AnalysisManager::PrepareData() {
                        m_rawDatasets, m_filteredDatasets, m_startTimes,
                        m_minDuration, m_maxDuration, m_logger);
   }
-  WPI_DEBUG(m_logger, "{}", "Finished Preparing Data");
+  WPI_INFO(m_logger, "{}", "Finished Preparing Data");
 }
 
 AnalysisManager::Gains AnalysisManager::Calculate() {
-  WPI_DEBUG(m_logger, "{}", "Calculating Gains");
+  WPI_INFO(m_logger, "{}", "Calculating Gains");
   // Calculate feedforward gains from the data.
   auto ffGains = sysid::CalculateFeedforwardGains(
       m_filteredDatasets[kDatasets[m_settings.dataset]], m_type);
