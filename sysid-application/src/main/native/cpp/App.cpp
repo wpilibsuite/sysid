@@ -157,12 +157,8 @@ void Application(std::string_view saveDir) {
       ImGui::EndMenu();
     }
 
-    bool frcCharConvert = false;
     bool toCSV = false;
     if (ImGui::BeginMenu("JSON Converters")) {
-      if (ImGui::MenuItem("FRC-Char Converter")) {
-        frcCharConvert = true;
-      }
       if (ImGui::MenuItem("JSON to CSV Converter")) {
         toCSV = true;
       }
@@ -172,22 +168,9 @@ void Application(std::string_view saveDir) {
 
     ImGui::EndMainMenuBar();
 
-    if (frcCharConvert) {
-      ImGui::OpenPopup("FRC-Char Converter");
-      frcCharConvert = false;
-    }
-
     if (toCSV) {
       ImGui::OpenPopup("SysId JSON to CSV Converter");
       toCSV = false;
-    }
-
-    if (ImGui::BeginPopupModal("FRC-Char Converter")) {
-      gJSONConverter->DisplayFRCCharConvert();
-      if (ImGui::Button("Close")) {
-        ImGui::CloseCurrentPopup();
-      }
-      ImGui::EndPopup();
     }
 
     if (ImGui::BeginPopupModal("SysId JSON to CSV Converter")) {

@@ -59,10 +59,6 @@ void JSONConverter::DisplayConverter(
   }
 }
 
-void JSONConverter::DisplayFRCCharConvert() {
-  DisplayConverter("Select FRC-Char JSON", sysid::ConvertJSON);
-}
-
 void JSONConverter::DisplayCSVConvert() {
   DisplayConverter("Select SysId JSON", sysid::ToCSV);
 }
