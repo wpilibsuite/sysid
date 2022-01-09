@@ -164,7 +164,6 @@ class TelemetryManager {
    * collected data.
    */
   struct TestParameters {
-    bool fast = false;
     bool forward = false;
     bool rotate = false;
 
@@ -182,8 +181,8 @@ class TelemetryManager {
     bool mechError = false;
 
     TestParameters() = default;
-    TestParameters(bool fast, bool forward, bool rotate, State state)
-        : fast{fast}, forward{forward}, rotate{rotate}, state{state} {}
+    TestParameters(bool forward, bool rotate, State state)
+        : forward{forward}, rotate{rotate}, state{state} {}
   };
 
   // Settings for this instance.

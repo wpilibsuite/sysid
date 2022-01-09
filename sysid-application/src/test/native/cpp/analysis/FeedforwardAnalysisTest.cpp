@@ -24,59 +24,57 @@
  */
 template <typename Model>
 sysid::Storage CollectData(Model& model) {
-  constexpr auto kUstep = 0.25_V / 1_s;
+  constexpr auto kUstep = 0.25_V;
   constexpr units::volt_t kUmax = 7_V;
   constexpr units::second_t T = 5_ms;
   constexpr units::second_t kTestDuration = 5_s;
 
   sysid::Storage storage;
-  auto& [slowForward, slowBackward, fastForward, fastBackward] = storage;
+  auto& [forward, backward] = storage;
 
   // Slow forward test
-  auto voltage = 0_V;
+  auto voltage = kUstep;
+  bool steadyState = false;
+  units::second_t steadyStateTimestamp = 0_s;
   for (int i = 0; i < (kTestDuration / T).value(); ++i) {
-    slowForward.emplace_back(sysid::PreparedData{
+    auto accel = model.GetAcceleration(voltage);
+    forward.emplace_back(sysid::PreparedData{
         i * T, voltage.value(), model.GetPosition(), model.GetVelocity(), T,
-        model.GetAcceleration(voltage), std::cos(model.GetPosition())});
+        accel, std::cos(model.GetPosition())});
 
     model.Update(voltage, T);
-    voltage += kUstep * T;
+    if (accel <= 0.5 && !steadyState) {
+      steadyState = true;
+      steadyStateTimestamp = i * T;
+    } else if (steadyState) {
+      if ((i * T - steadyStateTimestamp) >= 0.5_s) {
+        voltage += kUstep;
+        steadyState = false;
+      }
+    }
   }
 
   // Slow backward test
   model.Reset();
-  voltage = 0_V;
+  voltage = -kUstep;
+  steadyState = false;
+  steadyStateTimestamp = 0_s;
   for (int i = 0; i < (kTestDuration / T).value(); ++i) {
-    slowBackward.emplace_back(sysid::PreparedData{
+    auto accel = model.GetAcceleration(voltage);
+    backward.emplace_back(sysid::PreparedData{
         i * T, voltage.value(), model.GetPosition(), model.GetVelocity(), T,
-        model.GetAcceleration(voltage), std::cos(model.GetPosition())});
+        accel, std::cos(model.GetPosition())});
 
     model.Update(voltage, T);
-    voltage -= kUstep * T;
-  }
-
-  // Fast forward test
-  model.Reset();
-  voltage = 0_V;
-  for (int i = 0; i < (kTestDuration / T).value(); ++i) {
-    fastForward.emplace_back(sysid::PreparedData{
-        i * T, voltage.value(), model.GetPosition(), model.GetVelocity(), T,
-        model.GetAcceleration(voltage), std::cos(model.GetPosition())});
-
-    model.Update(voltage, T);
-    voltage = kUmax;
-  }
-
-  // Fast backward test
-  model.Reset();
-  voltage = 0_V;
-  for (int i = 0; i < (kTestDuration / T).value(); ++i) {
-    fastBackward.emplace_back(sysid::PreparedData{
-        i * T, voltage.value(), model.GetPosition(), model.GetVelocity(), T,
-        model.GetAcceleration(voltage), std::cos(model.GetPosition())});
-
-    model.Update(voltage, T);
-    voltage = -kUmax;
+    if (accel <= 0.5 && !steadyState) {
+      steadyState = true;
+      steadyStateTimestamp = i * T;
+    } else if (steadyState) {
+      if (i * T - steadyStateTimestamp >= 1_s) {
+        voltage -= kUstep;
+        steadyState = false;
+      }
+    }
   }
 
   return storage;

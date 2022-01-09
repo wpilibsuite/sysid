@@ -64,4 +64,5 @@ void Drivetrain::SimulationPeriodic() {
 void Drivetrain::Periodic() {
   UpdateOdometry();
   m_fieldSim.SetRobotPose(m_odometry.GetPose());
+  frc::SmartDashboard::PutNumber("Left Drive Speed", m_leftEncoder.GetRate());
 }

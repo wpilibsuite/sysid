@@ -4,6 +4,7 @@
 
 #include "sysid/logging/SysIdLogger.h"
 
+#include <cmath>
 #include <cstddef>
 #include <sstream>
 #include <stdexcept>
@@ -30,6 +31,10 @@ void SysIdLogger::InitLogging() {
   m_voltageCommand = frc::SmartDashboard::GetNumber("SysIdVoltageCommand", 0.0);
   m_startTime = frc::Timer::GetFPGATimestamp().value();
   m_data.clear();
+  m_voltageStepState = IDLE;
+  m_meanAccelFilter.Reset();
+  m_prevTimestamp = m_startTime;
+  m_prevVelocity = 0.0;
 }
 
 void SysIdLogger::SendData() {
@@ -73,20 +78,73 @@ SysIdLogger::SysIdLogger() {
 }
 
 void SysIdLogger::UpdateData() {
-  m_timestamp = frc::Timer::GetFPGATimestamp().value();
+  // General data updates
+  auto timestamp = frc::Timer::GetFPGATimestamp();
+  m_timestamp = timestamp.value();
+  double accel = m_meanAccelFilter.Calculate((m_velocity - m_prevVelocity) /
+                                             (m_timestamp - m_prevTimestamp));
+  m_prevVelocity = m_velocity;
+  m_prevTimestamp = m_timestamp;
+
+  frc::SmartDashboard::PutNumber("ACCEL", accel);
+  frc::SmartDashboard::PutNumber("STATE", m_voltageStepState);
+  frc::SmartDashboard::PutNumber("VOLTAGE", m_motorVoltage);
 
   // Don't let robot move if it's characterizing the wrong mechanism
   if (!IsWrongMechanism()) {
-    if (m_testType == "Quasistatic") {
-      m_motorVoltage = m_voltageCommand * (m_timestamp - m_startTime);
-    } else if (m_testType == "Dynamic") {
-      m_motorVoltage = m_voltageCommand;
-    } else {
-      m_motorVoltage = 0.0;
-    }
+    VoltageStateMachine(accel, timestamp);
   } else {
     m_motorVoltage = 0.0;
   }
+}
+
+void SysIdLogger::UpdateAccelStddev(double accel) {
+  // auto currentMeanDelta = accel - m_prevMeanAccel;
+  // auto newMeanAcceleration = m_meanFilter.Calculate(accel);
+  // auto newMeanDelta = accel - newMeanAcceleration;
+  // m_prevMeanAccel = newMeanAcceleration;
+  // if (m_squaredDifferencesBuffer.size() == kWindowSize) {
+  //   m_squareDifferences -= m_squaredDifferencesBuffer.pop_back();
+  // }
+  // auto additiveValue = currentMeanDelta * newMeanDelta;
+  // m_squaredDifferencesBuffer.push_front(additiveValue);
+  // m_squareDifferences += additiveValue;
+  // m_accelStddev = std::sqrt(m_squareDifferences /
+  // m_squaredDifferencesBuffer.size());
+}
+
+void SysIdLogger::VoltageStateMachine(double accel, units::second_t timestamp) {
+  switch (m_voltageStepState) {
+    case IDLE:
+      m_motorVoltage = m_voltageCommand;
+      m_voltageStepState = INCREMENTINGVOLTAGE;
+      break;
+    case INCREMENTINGVOLTAGE:
+      if (std::abs(accel) > m_accelThreshold) {
+        m_voltageStepState = ACCELERATING;
+      }
+      break;
+    case ACCELERATING:
+      if (std::abs(accel) <= m_accelThreshold) {
+        m_voltageStepState = STEADYSTATE;
+        m_crossedThresholdTimestamp = timestamp;
+      }
+      break;
+    case STEADYSTATE:
+      if (timestamp - m_crossedThresholdTimestamp > 1_s) {
+        m_motorVoltage += m_voltageCommand;
+        m_voltageStepState = INCREMENTINGVOLTAGE;
+      }
+      break;
+  }
+}
+
+void SysIdLogger::UpdateVelocity(double velocity) {
+  m_velocity = velocity;
+}
+
+void SysIdLogger::SetVelocity(double velocity) {
+  m_velocity = velocity;
 }
 
 void SysIdLogger::Reset() {

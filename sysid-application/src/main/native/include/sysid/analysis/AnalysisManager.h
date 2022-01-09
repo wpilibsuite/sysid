@@ -128,8 +128,7 @@ class AnalysisManager {
   /**
    * The keys (which contain sysid data) that are in the JSON to analyze.
    */
-  static constexpr const char* kJsonDataKeys[] = {
-      "slow-forward", "slow-backward", "fast-forward", "fast-backward"};
+  static constexpr const char* kJsonDataKeys[] = {"forward", "backward"};
 
   /**
    * Concatenates a list of vectors. The contents of the source vectors are

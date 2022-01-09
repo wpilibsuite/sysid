@@ -56,25 +56,19 @@ TelemetryManager::~TelemetryManager() {
 
 void TelemetryManager::BeginTest(std::string_view name) {
   // Create a new test params instance for this test.
-  m_params = TestParameters{
-      wpi::starts_with(name, "fast"), wpi::ends_with(name, "forward"),
-      m_settings.mechanism == analysis::kDrivetrainAngular,
-      State::WaitingForEnable};
+  m_params =
+      TestParameters{wpi::ends_with(name, "forward"),
+                     m_settings.mechanism == analysis::kDrivetrainAngular,
+                     State::WaitingForEnable};
 
   // Add this test to the list of running tests and set the running flag.
   m_tests.push_back(std::string{name});
   m_isRunningTest = true;
 
   // Set the Voltage Command Entry
-  nt::SetEntryValue(
-      m_voltageCommand,
-      nt::Value::MakeDouble((m_params.fast ? m_settings.stepVoltage
-                                           : m_settings.quasistaticRampRate) *
-                            (m_params.forward ? 1 : -1)));
-
-  // Set the test type
-  nt::SetEntryValue(m_testType, nt::Value::MakeString(
-                                    m_params.fast ? "Dynamic" : "Quasistatic"));
+  nt::SetEntryValue(m_voltageCommand,
+                    nt::Value::MakeDouble(m_settings.quasistaticRampRate *
+                                          (m_params.forward ? 1 : -1)));
 
   // Set the rotate entry
   nt::SetEntryValue(m_rotate, nt::Value::MakeBoolean(m_params.rotate));

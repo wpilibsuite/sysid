@@ -42,8 +42,7 @@ constexpr double kG = .002;
 // mechanisms.
 class AnalysisTest : public ::testing::Test {
  public:
-  static constexpr const char* kTests[] = {"slow-forward", "slow-backward",
-                                           "fast-forward", "fast-backward"};
+  static constexpr const char* kTests[] = {"forward", "backward"};
 
   static void SetUpTestSuite() {
     m_nt = nt::GetDefaultInstance();
@@ -188,7 +187,7 @@ class AnalysisTest : public ::testing::Test {
   }
 
   void RunFullTests() {
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 2; i++) {
       auto test = kTests[i];
 
       // Run each test for 3 seconds

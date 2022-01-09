@@ -57,10 +57,9 @@ sysid::CalculateFeedforwardGains(const Storage& data,
   std::vector<double> olsData;
 
   // Iterate through the data and add it to our raw vector.
-  const auto& [slowForward, slowBackward, fastForward, fastBackward] = data;
+  const auto& [forward, backward] = data;
 
-  const auto size = slowForward.size() + slowBackward.size() +
-                    fastForward.size() + fastBackward.size();
+  const auto size = forward.size() + backward.size();
 
   // 1 dependent variable, n independent variables in each observation
   // Observations are stored serially
@@ -69,10 +68,8 @@ sysid::CalculateFeedforwardGains(const Storage& data,
   // Perform OLS with accel = alpha*vel + beta*voltage + gamma*signum(vel)
   // OLS performs best with the noisiest variable as the dependent var,
   // so we regress accel in terms of the other variables.
-  PopulateOLSVector(slowForward, type, olsData);
-  PopulateOLSVector(slowBackward, type, olsData);
-  PopulateOLSVector(fastForward, type, olsData);
-  PopulateOLSVector(fastBackward, type, olsData);
+  PopulateOLSVector(forward, type, olsData);
+  PopulateOLSVector(backward, type, olsData);
 
   auto ols = sysid::OLS(olsData, type.independentVariables);
   double alpha = std::get<0>(ols)[0];  // -kv/ka

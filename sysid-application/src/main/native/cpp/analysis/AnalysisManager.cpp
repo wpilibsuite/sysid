@@ -87,11 +87,9 @@ static void CopyRawData(
  * @param fastForward The fast forward dataset
  * @param fastBackward The fast backward dataset
  */
-static Storage CombineDatasets(const std::vector<PreparedData>& slowForward,
-                               const std::vector<PreparedData>& slowBackward,
-                               const std::vector<PreparedData>& fastForward,
-                               const std::vector<PreparedData>& fastBackward) {
-  return Storage{slowForward, slowBackward, fastForward, fastBackward};
+static Storage CombineDatasets(const std::vector<PreparedData>& forward,
+                               const std::vector<PreparedData>& backward) {
+  return Storage{forward, backward};
 }
 
 /**
@@ -167,10 +165,8 @@ static void PrepareGeneralData(
   // Store the original datasets
   originalDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
-      CombineDatasets(preparedData["original-raw-slow-forward"],
-                      preparedData["original-raw-slow-backward"],
-                      preparedData["original-raw-fast-forward"],
-                      preparedData["original-raw-fast-backward"]);
+      CombineDatasets(preparedData["original-raw-forward"],
+                      preparedData["original-raw-backward"]);
 
   WPI_INFO(logger, "{}", "Initial trimming and filtering.");
   sysid::InitialTrimAndFilter(&preparedData, &settings, minStepTime,
@@ -183,21 +179,16 @@ static void PrepareGeneralData(
   // Store the raw datasets
   rawDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
-      CombineDatasets(
-          preparedData["raw-slow-forward"], preparedData["raw-slow-backward"],
-          preparedData["raw-fast-forward"], preparedData["raw-fast-backward"]);
+      CombineDatasets(preparedData["raw-forward"],
+                      preparedData["raw-backward"]);
 
   // Store the filtered datasets
   filteredDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
-      CombineDatasets(
-          preparedData["slow-forward"], preparedData["slow-backward"],
-          preparedData["fast-forward"], preparedData["fast-backward"]);
+      CombineDatasets(preparedData["forward"], preparedData["backward"]);
 
-  startTimes = {preparedData["raw-slow-forward"][0].timestamp,
-                preparedData["raw-slow-backward"][0].timestamp,
-                preparedData["raw-fast-forward"][0].timestamp,
-                preparedData["raw-fast-backward"][0].timestamp};
+  startTimes = {preparedData["raw-forward"][0].timestamp,
+                preparedData["raw-backward"][0].timestamp};
 }
 
 /**
@@ -313,10 +304,8 @@ static void PrepareAngularDrivetrainData(
   // Create the distinct datasets and store them
   originalDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
-      CombineDatasets(preparedData["original-raw-slow-forward"],
-                      preparedData["original-raw-slow-backward"],
-                      preparedData["original-raw-fast-forward"],
-                      preparedData["original-raw-fast-backward"]);
+      CombineDatasets(preparedData["original-raw-forward"],
+                      preparedData["original-raw-backward"]);
 
   WPI_INFO(logger, "{}", "Applying trimming and filtering.");
   sysid::InitialTrimAndFilter(&preparedData, &settings, minStepTime,
@@ -329,19 +318,14 @@ static void PrepareAngularDrivetrainData(
   // Create the distinct datasets and store them
   rawDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
-      CombineDatasets(
-          preparedData["raw-slow-forward"], preparedData["raw-slow-backward"],
-          preparedData["raw-fast-forward"], preparedData["raw-fast-backward"]);
+      CombineDatasets(preparedData["raw-forward"],
+                      preparedData["raw-backward"]);
   filteredDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
-      CombineDatasets(
-          preparedData["slow-forward"], preparedData["slow-backward"],
-          preparedData["fast-forward"], preparedData["fast-backward"]);
+      CombineDatasets(preparedData["forward"], preparedData["backward"]);
 
-  startTimes = {preparedData["slow-forward"][0].timestamp,
-                preparedData["slow-backward"][0].timestamp,
-                preparedData["fast-forward"][0].timestamp,
-                preparedData["fast-backward"][0].timestamp};
+  startTimes = {preparedData["forward"][0].timestamp,
+                preparedData["backward"][0].timestamp};
 }
 
 /**
@@ -424,47 +408,32 @@ static void PrepareLinearDrivetrainData(
   }
 
   // Create the distinct raw datasets and store them
-  auto originalSlowForward = AnalysisManager::DataConcat(
-      preparedData["left-original-raw-slow-forward"],
-      preparedData["right-original-raw-slow-forward"]);
-  auto originalSlowBackward = AnalysisManager::DataConcat(
-      preparedData["left-original-raw-slow-backward"],
-      preparedData["right-original-raw-slow-backward"]);
-  auto originalFastForward = AnalysisManager::DataConcat(
-      preparedData["left-original-raw-fast-forward"],
-      preparedData["right-original-raw-fast-forward"]);
-  auto originalFastBackward = AnalysisManager::DataConcat(
-      preparedData["left-original-raw-fast-backward"],
-      preparedData["right-original-raw-fast-backward"]);
+  auto originalForward =
+      AnalysisManager::DataConcat(preparedData["left-original-raw-forward"],
+                                  preparedData["right-original-raw-forward"]);
+  auto originalBackward =
+      AnalysisManager::DataConcat(preparedData["left-original-raw-backward"],
+                                  preparedData["right-original-raw-backward"]);
   originalDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
-      CombineDatasets(originalSlowForward, originalSlowBackward,
-                      originalFastForward, originalFastBackward);
+      CombineDatasets(originalForward, originalBackward);
   originalDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kLeft)] =
-      CombineDatasets(preparedData["left-original-raw-slow-forward"],
-                      preparedData["left-original-raw-slow-backward"],
-                      preparedData["left-original-raw-fast-forward"],
-                      preparedData["left-original-raw-fast-backward"]);
+      CombineDatasets(preparedData["left-original-raw-forward"],
+                      preparedData["left-original-raw-backward"]);
   originalDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kRight)] =
-      CombineDatasets(preparedData["right-original-raw-slow-forward"],
-                      preparedData["right-original-raw-slow-backward"],
-                      preparedData["right-original-raw-fast-forward"],
-                      preparedData["right-original-raw-fast-backward"]);
+      CombineDatasets(preparedData["right-original-raw-forward"],
+                      preparedData["right-original-raw-backward"]);
 
   WPI_INFO(logger, "{}", "Applying trimming and filtering.");
   sysid::InitialTrimAndFilter(&preparedData, &settings, minStepTime,
                               maxStepTime);
 
-  auto slowForward = AnalysisManager::DataConcat(
-      preparedData["left-slow-forward"], preparedData["right-slow-forward"]);
-  auto slowBackward = AnalysisManager::DataConcat(
-      preparedData["left-slow-backward"], preparedData["right-slow-backward"]);
-  auto fastForward = AnalysisManager::DataConcat(
-      preparedData["left-fast-forward"], preparedData["right-fast-forward"]);
-  auto fastBackward = AnalysisManager::DataConcat(
-      preparedData["left-fast-backward"], preparedData["right-fast-backward"]);
+  auto forward = AnalysisManager::DataConcat(preparedData["left-forward"],
+                                             preparedData["right-forward"]);
+  auto backward = AnalysisManager::DataConcat(preparedData["left-backward"],
+                                              preparedData["right-backward"]);
 
   WPI_INFO(logger, "{}", "Acceleration filtering.");
   sysid::AccelFilter(&preparedData);
@@ -472,56 +441,37 @@ static void PrepareLinearDrivetrainData(
   WPI_INFO(logger, "{}", "Storing datasets.");
 
   // Create the distinct raw datasets and store them
-  auto rawSlowForward =
-      AnalysisManager::DataConcat(preparedData["left-raw-slow-forward"],
-                                  preparedData["right-raw-slow-forward"]);
-  auto rawSlowBackward =
-      AnalysisManager::DataConcat(preparedData["left-raw-slow-backward"],
-                                  preparedData["right-raw-slow-backward"]);
-  auto rawFastForward =
-      AnalysisManager::DataConcat(preparedData["left-raw-fast-forward"],
-                                  preparedData["right-raw-fast-forward"]);
-  auto rawFastBackward =
-      AnalysisManager::DataConcat(preparedData["left-raw-fast-backward"],
-                                  preparedData["right-raw-fast-backward"]);
+  auto rawForward = AnalysisManager::DataConcat(
+      preparedData["left-raw-forward"], preparedData["right-raw-forward"]);
+  auto rawBackward = AnalysisManager::DataConcat(
+      preparedData["left-raw-backward"], preparedData["right-raw-backward"]);
 
   rawDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
-      CombineDatasets(rawSlowForward, rawSlowBackward, rawFastForward,
-                      rawFastBackward);
+      CombineDatasets(rawForward, rawBackward);
   rawDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kLeft)] =
-      CombineDatasets(preparedData["left-raw-slow-forward"],
-                      preparedData["left-raw-slow-backward"],
-                      preparedData["left-raw-fast-forward"],
-                      preparedData["left-raw-fast-backward"]);
+      CombineDatasets(preparedData["left-raw-forward"],
+                      preparedData["left-raw-backward"]);
   rawDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kRight)] =
-      CombineDatasets(preparedData["right-raw-slow-forward"],
-                      preparedData["right-raw-slow-backward"],
-                      preparedData["right-raw-fast-forward"],
-                      preparedData["right-raw-fast-backward"]);
+      CombineDatasets(preparedData["right-raw-forward"],
+                      preparedData["right-raw-backward"]);
 
   // Create the distinct filtered datasets and store them
   filteredDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
-      CombineDatasets(slowForward, slowBackward, fastForward, fastBackward);
+      CombineDatasets(forward, backward);
   filteredDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kLeft)] =
-      CombineDatasets(preparedData["left-slow-forward"],
-                      preparedData["left-slow-backward"],
-                      preparedData["left-fast-forward"],
-                      preparedData["left-fast-backward"]);
+      CombineDatasets(preparedData["left-forward"],
+                      preparedData["left-backward"]);
   filteredDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kRight)] =
-      CombineDatasets(preparedData["right-slow-forward"],
-                      preparedData["right-slow-backward"],
-                      preparedData["right-fast-forward"],
-                      preparedData["right-fast-backward"]);
+      CombineDatasets(preparedData["right-forward"],
+                      preparedData["right-backward"]);
 
-  startTimes = {
-      rawSlowForward.front().timestamp, rawSlowBackward.front().timestamp,
-      rawFastForward.front().timestamp, rawFastBackward.front().timestamp};
+  startTimes = {rawForward.front().timestamp, rawBackward.front().timestamp};
 }
 
 AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,

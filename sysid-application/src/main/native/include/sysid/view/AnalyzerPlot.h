@@ -63,8 +63,7 @@ class AnalyzerPlot {
    * @param rawFast The raw fast (dynamic) test data
    * @param abort   Aborts analysis early if set to true from another thread
    */
-  void SetRawTimeData(const std::vector<PreparedData>& rawSlow,
-                      const std::vector<PreparedData>& rawFast,
+  void SetRawTimeData(const std::vector<PreparedData>& data,
                       std::atomic<bool>& abort);
 
   /**
@@ -192,8 +191,7 @@ class AnalyzerPlot {
   // Logger
   wpi::Logger& m_logger;
 
-  FilteredDataVsTimePlot m_quasistaticData;
-  FilteredDataVsTimePlot m_dynamicData;
+  FilteredDataVsTimePlot m_testData;
   DataWithFitLinePlot m_regressionData;
   DataWithFitLinePlot m_timestepData;
 

@@ -16,6 +16,7 @@ void SysIdGeneralMechanismLogger::Log(double measuredPosition,
                                       double measuredVelocity) {
   UpdateData();
   if (m_data.size() < kDataVectorSize) {
+    UpdateVelocity(measuredVelocity);
     std::array<double, 4> arr = {m_timestamp, m_primaryMotorVoltage.value(),
                                  measuredPosition, measuredVelocity};
     m_data.insert(m_data.end(), arr.cbegin(), arr.cend());

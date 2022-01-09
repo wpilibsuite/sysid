@@ -8,6 +8,10 @@
 #include <string>
 #include <vector>
 
+#include <frc/filter/LinearFilter.h>
+#include <units/time.h>
+#include <wpi/circular_buffer.h>
+
 namespace sysid {
 
 /**
@@ -16,6 +20,12 @@ namespace sysid {
  */
 class SysIdLogger {
  public:
+  enum VoltageStepState {
+    IDLE,
+    STEADYSTATE,
+    ACCELERATING,
+    INCREMENTINGVOLTAGE
+  };
   /**
    * Code that should be run to initialize the logging routine. Should be called
    * in `AutonomousInit()`.
@@ -87,6 +97,28 @@ class SysIdLogger {
    */
   std::vector<double> m_data;
 
+  bool m_underAccelThreshold = false;
+
+  double m_velocity = 0.0;
+  double m_prevVelocity = 0.0;
+  double m_prevTimestamp = 0.0;
+  static constexpr double m_accelThreshold = 0.2;
+
+  double m_accelStddev = 0.0;
+
+  units::second_t m_crossedThresholdTimestamp = 0.0_s;
+
+  VoltageStepState m_voltageStepState = IDLE;
+
+  frc::LinearFilter<double> m_meanAccelFilter =
+      frc::LinearFilter<double>::MovingAverage(kWindowSize);
+  wpi::circular_buffer<double> m_squaredDifferencesBuffer{kWindowSize};
+
+  void VoltageStateMachine(double accel, units::second_t timestamp);
+  void SetVelocity(double velocity);
+  void UpdateAccelStddev(double accel);
+  void UpdateVelocity(double velocity);
+
   /**
    * Creates the SysId logger, disables live view telemetry, sets up the
    * following NT Entries: "SysIdAutoSpeed", "SysIdRotate", "SysIdTelemetry"
@@ -114,6 +146,7 @@ class SysIdLogger {
  private:
   static constexpr int kThreadPriority = 15;
   static constexpr int kHALThreadPriority = 40;
+  static constexpr int kWindowSize = 20;
 };
 
 }  // namespace sysid

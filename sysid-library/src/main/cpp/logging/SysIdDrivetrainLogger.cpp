@@ -19,6 +19,7 @@ units::volt_t SysIdDrivetrainLogger::GetRightMotorVoltage() const {
 void SysIdDrivetrainLogger::Log(double leftPosition, double rightPosition,
                                 double leftVelocity, double rightVelocity,
                                 double measuredAngle, double angularRate) {
+  UpdateVelocity((leftVelocity + rightVelocity) / 2);
   UpdateData();
   if (m_data.size() < kDataVectorSize) {
     std::array<double, 9> arr = {m_timestamp,
