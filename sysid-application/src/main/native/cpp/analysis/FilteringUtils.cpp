@@ -63,7 +63,7 @@ static bool IsFiltered(std::string_view key) {
  */
 static void PrepareMechData(std::vector<PreparedData>* data,
                             std::string_view unit = "") {
-  constexpr size_t kOrder = 6;
+  constexpr size_t kOrder = 2;
   constexpr size_t kWindow = kOrder + 1;
 
   CheckSize(*data, kWindow);

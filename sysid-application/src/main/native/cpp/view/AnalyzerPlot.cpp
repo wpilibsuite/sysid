@@ -31,6 +31,7 @@ static ImPlotPoint Getter(void* data, int idx) {
 }
 
 static double simSquaredErrorSum = 0.0;
+static double squaredVariationSum = 0.0;
 static int timeSeriesPoints = 0;
 
 template <typename Model>
@@ -68,6 +69,7 @@ static std::vector<std::vector<ImPlotPoint>> PopulateTimeDomainSim(
     model.Update(units::volt_t{pre.voltage}, pre.dt);
     tmp.emplace_back((startTime + t).value(), model.GetVelocity());
     simSquaredErrorSum += std::pow(now.velocity - model.GetVelocity(), 2);
+    squaredVariationSum += std::pow(now.velocity, 2);
     timeSeriesPoints++;
   }
 
@@ -96,6 +98,7 @@ void AnalyzerPlot::ResetData() {
   m_quasistaticSim.clear();
   m_dynamicSim.clear();
   simSquaredErrorSum = 0;
+  squaredVariationSum = 0;
   timeSeriesPoints = 0;
 
   // Reset Lines of Best Fit
@@ -327,6 +330,7 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
   // represents the prediction at the timestep, and N represents the number of
   // points
   m_RMSE = std::sqrt(simSquaredErrorSum / timeSeriesPoints);
+  m_RSquared = 1 - m_RMSE / std::sqrt(squaredVariationSum / timeSeriesPoints);
   FitPlots();
 }
 
