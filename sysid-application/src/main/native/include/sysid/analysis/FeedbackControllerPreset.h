@@ -123,6 +123,16 @@ constexpr FeedbackControllerPreset kCTREDefault{1023.0 / 12.0, 0.1, 1_ms, false,
                                                 81.5_ms};
 
 /**
+ * https://github.com/wpilibsuite/sysid/issues/258#issuecomment-1010658237
+ *
+ * 8-sample moving average with 32 ms between samples.
+ *
+ * Total delay = 8-tap moving average delay = (8 - 1) / 2 * 32 ms = 112 ms.
+ */
+constexpr FeedbackControllerPreset kREVNEOBuiltIn{1.0 / 12.0, 60.0, 1_ms, false,
+                                                  112_ms};
+
+/**
  * https://www.revrobotics.com/content/sw/max/sw-docs/cpp/classrev_1_1_c_a_n_encoder.html#a7e6ce792bc0c0558fb944771df572e6a
  *
  * Backward finite difference delay = 100 ms / 2 = 50 ms.
@@ -131,10 +141,8 @@ constexpr FeedbackControllerPreset kCTREDefault{1023.0 / 12.0, 0.1, 1_ms, false,
  *
  * Total delay = 50 ms + 31.5 ms = 81.5 ms.
  */
-constexpr FeedbackControllerPreset kREVBrushless{1.0 / 12.0, 60.0, 1_ms, false,
-                                                 81.5_ms};
-constexpr FeedbackControllerPreset kREVBrushed{1.0 / 12.0, 60.0, 1_ms, false,
-                                               81.5_ms};
+constexpr FeedbackControllerPreset kREVNonNEO{1.0 / 12.0, 60.0, 1_ms, false,
+                                              81.5_ms};
 
 /**
  * https://github.com/wpilibsuite/sysid/pull/138#issuecomment-841734229

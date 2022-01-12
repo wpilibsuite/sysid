@@ -82,7 +82,7 @@ TEST(FeedbackAnalysisTest, VelocityREV) {
   sysid::LQRParameters params{1, 1.5, 7};
 
   auto [Kp, Kd] = sysid::CalculateVelocityFeedbackGains(
-      sysid::presets::kREVBrushless, params, Kv, Ka);
+      sysid::presets::kREVNEOBuiltIn, params, Kv, Ka);
 
   EXPECT_NEAR(Kp, 0.00241, 0.005);
   EXPECT_NEAR(Kd, 0.00, 0.05);
@@ -95,7 +95,7 @@ TEST(FeedbackAnalysisTest, VelocityREVConversion) {
   sysid::LQRParameters params{1, 1.5, 7};
 
   auto [Kp, Kd] = sysid::CalculateVelocityFeedbackGains(
-      sysid::presets::kREVBrushless, params, Kv, Ka, 3.0);
+      sysid::presets::kREVNEOBuiltIn, params, Kv, Ka, 3.0);
 
   // This should have the same Kp as the test above, but scaled by a factor
   // of 3.
