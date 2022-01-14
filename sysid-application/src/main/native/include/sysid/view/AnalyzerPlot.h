@@ -145,6 +145,13 @@ class AnalyzerPlot {
    */
   double* GetRMSE() { return &m_RMSE; }
 
+  /**
+   * Gets the pointer to the stored simulated velocity R-squared for display
+   *
+   * @return A pointer to the R-squared
+   */
+  double* GetSimRSquared() { return &m_RSquared; }
+
  private:
   // The maximum size of each vector (dataset to plot).
   static constexpr size_t kMaxSize = 2048;
@@ -165,6 +172,7 @@ class AnalyzerPlot {
   std::vector<std::vector<ImPlotPoint>> m_dynamicSim;
 
   double m_RMSE;
+  double m_RSquared;
 
   // Stores differences in time deltas
   std::vector<std::vector<ImPlotPoint>> m_dt;

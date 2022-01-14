@@ -628,16 +628,33 @@ void Analyzer::DisplayFeedforwardGains(bool combined) {
   }
 
   SetPosition(beginX, beginY, 0, 4);
-  DisplayGain("r-squared", &m_rSquared);
+  DisplayGain("Acceleration r-squared", &m_rSquared);
+
+  if (!combined) {
+    CreateTooltip(
+        "The coefficient of determination of the OLS fit of acceleration "
+        "versus velocity and voltage.  Acceleration is extremely noisy, "
+        "so this is generally quite small.");
+  }
 
   SetPosition(beginX, beginY, 0, 5);
+  DisplayGain("Sim velocity r-squared", m_plot.GetSimRSquared());
+
+  if (!combined) {
+    CreateTooltip(
+        "The coefficient of determination the simulated velocity. "
+        "Velocity is much less-noisy than acceleration, so this "
+        "is pretty close to 1 for a decent fit.");
+  }
+
+  SetPosition(beginX, beginY, 0, 6);
   DisplayGain("Sim RMSE", m_plot.GetRMSE());
 
   if (!combined) {
     CreateTooltip(
         "The Root Mean Squared Error (RMSE) of the simulation "
         "predictions compared to the recorded data. It is essentially the "
-        "error of the simulated model in the recorded units.");
+        "mean error of the simulated model in the recorded velocity units.");
   }
 
   double endY = ImGui::GetCursorPosY();
