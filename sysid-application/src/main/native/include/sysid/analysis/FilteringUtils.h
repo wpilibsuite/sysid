@@ -5,14 +5,15 @@
 #pragma once
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <exception>
 #include <string_view>
 #include <utility>
 #include <vector>
 
+#include <frc/filter/LinearFilter.h>
 #include <units/time.h>
+#include <wpi/array.h>
 
 #include "sysid/analysis/AnalysisManager.h"
 #include "sysid/analysis/Storage.h"
@@ -78,45 +79,37 @@ units::second_t GetMeanTimeDelta(const std::vector<PreparedData>& data);
 units::second_t GetMeanTimeDelta(const Storage& data);
 
 /**
- * Computes the first derivative of f(x_i) via central finite difference.
+ * Creates a central finite difference filter that computes the nth
+ * derivative of the input given the specified number of samples.
  *
- * @tparam order The order of accuracy. The window size is order + 1.
- * @param f      The function for which to compute the finite difference.
- * @param i      The point around which to compute the finite difference.
- * @param h      The grid spacing (e.g., x_{i+1} - x_i for all i).
+ * Since this requires data from the future, it should only be used in offline
+ * filtering scenarios.
+ *
+ * For example, a first derivative filter that uses two samples and a sample
+ * period of 20 ms would be
+ *
+ * <pre><code>
+ * CentralFiniteDifference<1, 2>(20_ms);
+ * </code></pre>
+ *
+ * @tparam Derivative The order of the derivative to compute.
+ * @tparam Samples    The number of samples to use to compute the given
+ *                    derivative. This must be odd and one more than the order
+ *                    of derivative or higher.
+ * @param period      The period in seconds between samples taken by the user.
  */
-template <size_t Order, typename F>
-constexpr double CentralFiniteDifference(F&& f, size_t i, double h) {
-  static_assert(Order % 2 == 0 && Order >= 2 && Order <= 8,
-                "Central finite difference order not supported");
+template <int Derivative, int Samples>
+frc::LinearFilter<double> CentralFiniteDifference(units::second_t period) {
+  static_assert(Samples % 2 != 0, "Number of samples must be odd.");
 
-  double result = 0.0;
-
-  // See the following link for coefficients:
-  // https://en.wikipedia.org/wiki/Finite_difference_coefficient#Central_finite_difference
-  if constexpr (Order == 2) {
-    constexpr std::array kA{0.5};
-    for (int j = 0; j < kA.size(); ++j) {
-      result += kA[j] * f(i + (j + 1)) - kA[j] * f(i - (j + 1));
-    }
-  } else if constexpr (Order == 4) {
-    constexpr std::array kA{2.0 / 3.0, -1.0 / 12.0};
-    for (int j = 0; j < kA.size(); ++j) {
-      result += kA[j] * f(i + (j + 1)) - kA[j] * f(i - (j + 1));
-    }
-  } else if constexpr (Order == 6) {
-    constexpr std::array kA{3.0 / 4.0, -3.0 / 20.0, 1.0 / 60.0};
-    for (int j = 0; j < kA.size(); ++j) {
-      result += kA[j] * f(i + (j + 1)) - kA[j] * f(i - (j + 1));
-    }
-  } else if constexpr (Order == 8) {
-    constexpr std::array kA{4.0 / 5.0, -1.0 / 5.0, 4.0 / 105.0, -1.0 / 280.0};
-    for (int j = 0; j < kA.size(); ++j) {
-      result += kA[j] * f(i + (j + 1)) - kA[j] * f(i - (j + 1));
-    }
+  // Generate stencil points from -(samples - 1)/2 to (samples - 1)/2
+  wpi::array<int, Samples> stencil{wpi::empty_array};
+  for (int i = 0; i < Samples; ++i) {
+    stencil[i] = -(Samples - 1) / 2 + i;
   }
 
-  return result / h;
+  return frc::LinearFilter<double>::FiniteDifference<Derivative, Samples>(
+      stencil, period);
 }
 
 /**
