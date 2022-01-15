@@ -61,6 +61,22 @@ class AnalysisTest : public ::testing::Test {
     Connect(m_nt, m_kill);
   }
 
+  void UploadJSON(std::string_view path) {
+    std::string jsonFolderPath =
+        fmt::format("{}/jsons/", EXPAND_STRINGIZE(PROJECT_ROOT_DIR));
+
+#ifdef _WIN32
+    std::string failCommand =
+        fmt::format("if not exist \"{}\" mkdir \"{}\" && copy \"{}\" \"{}\"",
+                    jsonFolderPath, jsonFolderPath, path, jsonFolderPath);
+#else
+    std::string failCommand = fmt::format("mkdir -p {} && cp -v {} {}",
+                                          jsonFolderPath, path, jsonFolderPath);
+#endif
+    fmt::print(stderr, "Running: {}\n", failCommand);
+    std::system(failCommand.c_str());
+  }
+
   void SetUp(sysid::AnalysisType mechanism) {
     // Make a new manager
     m_manager =
@@ -119,22 +135,11 @@ class AnalysisTest : public ::testing::Test {
 
       if (HasFailure()) {  // If it failed, write to jsons folder for artifact
                            // upload
-        std::string jsonFolderPath =
-            fmt::format("{}/jsons/", EXPAND_STRINGIZE(PROJECT_ROOT_DIR));
-
-#ifdef _WIN32
-        std::string failCommand = fmt::format(
-            "if not exist \"{}\" mkdir \"{}\" && copy \"{}\" \"{}\"",
-            jsonFolderPath, jsonFolderPath, path, jsonFolderPath);
-#else
-        std::string failCommand = fmt::format(
-            "mkdir -p {} && cp -v {} {}", jsonFolderPath, path, jsonFolderPath);
-#endif
-        fmt::print(stderr, "Running: {}\n", failCommand);
-        std::system(failCommand.c_str());
+        UploadJSON(path);
       }
     } catch (std::exception& e) {
       fmt::print(stderr, "Teardown Failed: {}\n", e.what());
+      UploadJSON(path);
       ADD_FAILURE();
     }
 
