@@ -153,7 +153,6 @@ class Analyzer : public glass::View {
   // This is true if the error popup needs to be displayed
   bool m_errorPopup = false;
 
-  bool first = true;
   std::string m_exception;
 
   // Everything related to feedback controller calculations.
@@ -191,7 +190,7 @@ class Analyzer : public glass::View {
 
   // File manipulation
   std::unique_ptr<pfd::open_file> m_selector;
-  std::string& m_location;
+  std::string m_location;
 
   // Logger
   wpi::Logger& m_logger;

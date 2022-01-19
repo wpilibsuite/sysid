@@ -598,6 +598,8 @@ AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,
   // Get the rotation -> output units factor from the JSON.
   m_unit = m_json.at("units").get<std::string>();
   m_factor = m_json.at("unitsPerRotation").get<double>();
+  WPI_DEBUG(m_logger, "Parsing units per rotation as {} {} per rotation",
+            m_factor, m_unit);
 
   // Reset settings for Dynamic Test Limits
   m_settings.stepTestDuration = units::second_t{0.0};

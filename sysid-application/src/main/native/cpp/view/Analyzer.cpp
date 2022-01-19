@@ -31,7 +31,7 @@ using namespace sysid;
 static double kBadDataGain = -9999.0;
 
 Analyzer::Analyzer(glass::Storage& storage, wpi::Logger& logger)
-    : m_location{storage.GetString("AnalyzerJSONLocation")}, m_logger(logger) {
+    : m_location(""), m_logger(logger) {
   // Fill the StringMap with preset values.
   m_presets["Default"] = presets::kDefault;
   m_presets["WPILib (2020-)"] = presets::kWPILibNew;
@@ -73,44 +73,6 @@ void Analyzer::Display() {
   // Get the current width of the window. This will be used to scale
   // our UI elements.
   float width = ImGui::GetContentRegionAvail().x;
-
-  // If this is the first call to Display() and there's a valid m_location, load
-  // it.
-  if (first) {
-    if (!m_location.empty() && fs::exists(m_location)) {
-      WPI_INFO(m_logger, "Previous file location exists: {}", m_location);
-      try {
-        m_manager =
-            std::make_unique<AnalysisManager>(m_location, m_settings, m_logger);
-        PrepareData();
-        m_type = m_manager->GetAnalysisType();
-        m_unit = m_manager->GetUnit();
-
-        Calculate();
-        PrepareData();
-        PrepareGraphs();
-        ConfigParamsOnFileSelect();
-
-        // Since the data preparation methods catch errors, the error needs to
-        // be rethrown so the logger can report it.
-        if (!m_enabled) {
-          throw std::runtime_error(m_exception);
-        }
-      } catch (const wpi::json::exception& e) {
-        HandleJSONError(e);
-      } catch (const std::exception& e) {
-        // If we run into an error here, let's just ignore it and make the user
-        // explicitly select their file.
-        ResetManagerState();
-        WPI_ERROR(
-            m_logger, "{}",
-            "An error occurred when attempting to load the previous JSON.");
-      }
-    } else {
-      m_location = "";
-    }
-    first = false;
-  }
 
   // Show the file location along with an option to choose.
   if (ImGui::Button("Select")) {
@@ -498,6 +460,8 @@ void Analyzer::SelectFile() {
       m_manager =
           std::make_unique<AnalysisManager>(m_location, m_settings, m_logger);
       m_type = m_manager->GetAnalysisType();
+      m_factor = m_manager->GetFactor();
+      m_unit = m_manager->GetUnit();
       RefreshInformation();
       ConfigParamsOnFileSelect();
     } catch (const wpi::json::exception& e) {
