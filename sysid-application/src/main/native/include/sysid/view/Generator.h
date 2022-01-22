@@ -79,13 +79,19 @@ static constexpr std::array<const char*, 2> kSparkMaxEncoders{
     sysid::encoder::kSMaxEncoderPort.displayName};
 
 static constexpr auto kGyroNames = DisplayNameStorage(sysid::gyro::kGyros);
-static constexpr const char* kNavXCtors[] = {"SerialPort.kUSB", "I2C",
-                                             "SerialPort.kMXP", "SPI.kMXP"};
+static constexpr const char* kNavXCtors[] = {"SerialPort (USB)", "I2C (MXP)",
+                                             "SerialPort (MXP)", "SPI (MXP)"};
 
-static constexpr const char* kADXRS450Ctors[] = {"SPI.kMXP", "kOnboardCS0"};
+static constexpr const char* kADXRS450Ctors[] = {"SPI (Onboard CS0)",
+                                                 "SPI (MXP)"};
 
-static constexpr const char* kADISCtors[] = {
-    "SPI.kMXP", "kOnboardCS0", "kOnboardCS1", "kOnboardCS2", "kOnboardCS3"};
+static constexpr const char* kADIS16448Ctors[] = {
+    "SPI (MXP)", "SPI (Onboard CS0)", "SPI (Onboard CS1)", "SPI (Onboard CS2)",
+    "SPI (Onboard CS3)"};
+
+static constexpr const char* kADIS16470Ctors[] = {
+    "SPI (Onboard CS0)", "SPI (Onboard CS1)", "SPI (Onboard CS2)",
+    "SPI (Onboard CS3)", "SPI (MXP)"};
 
 static constexpr const char* kCTREPeriods[] = {"1",  "2",  "5",  "10",
                                                "25", "50", "100"};
