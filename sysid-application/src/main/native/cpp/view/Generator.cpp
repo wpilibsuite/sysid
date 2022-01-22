@@ -555,9 +555,9 @@ void Generator::Display() {
       "This is the gearing between the encoder and the output shaft. For "
       "example, if the encoder is mounted to the magnetic shaft on the kit "
       "chassis, there is no gearing in between the encoder and the output "
-      "shaft hence the gearing is 1. However, if the encoder was an integrated "
-      "encoder on the motor in the kit chassis gearbox, the gearing would be "
-      "10.71.");
+      "shaft hence the gearing is 1:1. However, if the encoder was an "
+      "integrated encoder on the motor in the kit chassis gearbox, the gearing "
+      "would be 10.71:1.");
   // Have a save button at the bottom
   if (ImGui::Button("Save")) {
     // Open a file popup
