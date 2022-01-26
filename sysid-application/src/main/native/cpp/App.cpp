@@ -27,6 +27,7 @@
 #include "sysid/view/Generator.h"
 #include "sysid/view/JSONConverter.h"
 #include "sysid/view/Logger.h"
+#include "sysid/view/WindowLayout.h"
 
 namespace gui = wpi::gui;
 
@@ -120,17 +121,30 @@ void Application(std::string_view saveDir) {
       "Generator", std::make_unique<sysid::Generator>(storage, gLogger));
 
   // Set default positions and sizes for windows.
-  gGeneratorWindow->SetDefaultPos(5, 25);
-  gGeneratorWindow->SetDefaultSize(350, 255);
 
-  gLoggerWindow->SetDefaultPos(5, 285);
-  gLoggerWindow->SetDefaultSize(350, 400);
+  // Generator window position/size
+  gGeneratorWindow->SetDefaultPos(sysid::kGeneratorWindowPos.x,
+                                  sysid::kGeneratorWindowPos.y);
+  gGeneratorWindow->SetDefaultSize(sysid::kGeneratorWindowSize.x,
+                                   sysid::kGeneratorWindowSize.y);
 
-  gAnalyzerWindow->SetDefaultPos(360, 25);
-  gAnalyzerWindow->SetDefaultSize(530, 530);
+  // Logger window position/size
+  gLoggerWindow->SetDefaultPos(sysid::kLoggerWindowPos.x,
+                               sysid::kLoggerWindowPos.y);
+  gLoggerWindow->SetDefaultSize(sysid::kLoggerWindowSize.x,
+                                sysid::kLoggerWindowSize.y);
 
-  gProgramLogWindow->SetDefaultPos(360, 560);
-  gProgramLogWindow->SetDefaultSize(530, 125);
+  // Analyzer window position/size
+  gAnalyzerWindow->SetDefaultPos(sysid::kAnalyzerWindowPos.x,
+                                 sysid::kAnalyzerWindowPos.y);
+  gAnalyzerWindow->SetDefaultSize(sysid::kAnalyzerWindowSize.x,
+                                  sysid::kAnalyzerWindowSize.y);
+
+  // Program log window position/size
+  gProgramLogWindow->SetDefaultPos(sysid::kProgramLogWindowPos.x,
+                                   sysid::kProgramLogWindowPos.y);
+  gProgramLogWindow->SetDefaultSize(sysid::kProgramLogWindowSize.x,
+                                    sysid::kProgramLogWindowSize.y);
   gProgramLogWindow->DisableRenamePopup();
 
   gJSONConverter = std::make_unique<sysid::JSONConverter>(gLogger);
@@ -198,7 +212,8 @@ void Application(std::string_view saveDir) {
     }
   });
 
-  gui::Initialize("System Identification", 1280, 720);
+  gui::Initialize("System Identification", sysid::kAppWindowSize.x,
+                  sysid::kAppWindowSize.y);
   gui::Main();
 
   ssh_finalize();

@@ -25,6 +25,7 @@
 #include "sysid/analysis/ElevatorSim.h"
 #include "sysid/analysis/FeedbackControllerPreset.h"
 #include "sysid/analysis/SimpleMotorSim.h"
+#include "sysid/view/WindowLayout.h"
 
 using namespace sysid;
 
@@ -53,7 +54,8 @@ void Analyzer::DisplayGain(const char* text, double* data) {
                      ImGuiInputTextFlags_ReadOnly);
 }
 
-static void SetPosition(double beginX, double beginY, int xShift, int yShift) {
+static void SetPosition(double beginX, double beginY, double xShift,
+                        double yShift) {
   ImGui::SetCursorPos(ImVec2(beginX + xShift * 10 * ImGui::GetFontSize(),
                              beginY + yShift * 1.75 * ImGui::GetFontSize()));
 }
@@ -87,7 +89,7 @@ void Analyzer::Display() {
   // Allow the user to select which data set they want analyzed and add a reset
   // button. Also show the units and the units per rotation.
   if (m_manager) {
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 15);
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
     if (ImGui::Combo("Dataset", &m_settings.dataset, AnalysisManager::kDatasets,
                      m_type == analysis::kDrivetrain ? 9 : 3)) {
       m_enabled = true;
@@ -128,6 +130,7 @@ void Analyzer::Display() {
       ImGui::Combo("Units", &m_selectedOverrideUnit, kUnits,
                    IM_ARRAYSIZE(kUnits));
       m_unit = kUnits[m_selectedOverrideUnit];
+      m_abbrevUnit = GetAbbreviation(kUnits[m_selectedOverrideUnit]);
 
       if (m_unit == "Degrees") {
         m_factor = 360.0;
@@ -149,7 +152,7 @@ void Analyzer::Display() {
       if (ImGui::Button("Close")) {
         ImGui::CloseCurrentPopup();
         try {
-          m_manager->OverrideUnits(m_unit, m_factor);
+          m_manager->OverrideUnits(m_unit, m_abbrevUnit, m_factor);
           m_enabled = true;
           Calculate();
         } catch (const std::exception& e) {
@@ -177,6 +180,7 @@ void Analyzer::Display() {
   ImGui::Spacing();
 
   // Collapsing Headers are used for Feedforward and Feedback Analysis.
+  ImGui::SetNextItemOpen(true, ImGuiCond_Once);
   if (ImGui::CollapsingHeader("Feedforward Analysis")) {
     // Depending on whether a file has been selected or not, display a generic
     // warning message or show the feedforward gains.
@@ -184,255 +188,57 @@ void Analyzer::Display() {
       ImGui::Text("Please Select a JSON File");
     } else {
       DisplayFeedforwardGains();
-      ImGui::SetNextWindowSize(ImVec2(m_plot.kCombinedPlotSize * 4 + 50,
-                                      m_plot.kCombinedPlotSize * 2 + 25),
-                               ImGuiCond_Once);
-      // Show plots for screenshots
-      if (ImGui::BeginPopupModal("Combined Diagnostics")) {
-        // Only fit the plots when the popup first shows as they get messed up
-        // by being set to a different size
-        if (!combinedGraphFit) {
-          m_plot.FitPlots();
-          combinedGraphFit = true;
-        }
-        m_plot.DisplayCombinedPlots();
-        ImGui::SameLine();
-        DisplayFeedforwardGains(true);
-        // Button to close popup.
-        if (ImGui::Button("Close")) {
-          ImGui::CloseCurrentPopup();
-          combinedGraphFit = false;
-
-          // Fit plots afterwards so that the regular plot view isn't messed up
-          m_plot.FitPlots();
-        }
-        ImGui::EndPopup();
-      }
-      ImGui::Separator();
     }
   }
 
-  ImGui::SetNextWindowPos(ImVec2(895, 25), ImGuiCond_FirstUseEver);
-  ImGui::SetNextWindowSize(ImVec2(375, 660), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowPos(ImVec2{kDiagnosticPlotWindowPos},
+                          ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2{kDiagnosticPlotWindowSize},
+                           ImGuiCond_FirstUseEver);
   ImGui::Begin("Diagnostic Plots");
   // If the plots were already loaded, store the scroll position. Else go to
   // the last recorded scroll position if they have just been initialized
-  bool plotsLoaded = m_plot.LoadPlots();
+  bool plotsLoaded = m_plot.DisplayPlots();
   if (plotsLoaded) {
     if (m_prevPlotsLoaded) {
       m_graphScroll = ImGui::GetScrollY();
     } else {
       ImGui::SetScrollY(m_graphScroll);
     }
+
+    // If a JSON is selected
+    if (m_manager) {
+      DisplayGain("Acceleration R²", &m_rSquared);
+      CreateTooltip(
+          "The coefficient of determination of the OLS fit of acceleration "
+          "versus velocity and voltage.  Acceleration is extremely noisy, "
+          "so this is generally quite small.");
+
+      DisplayGain("Sim velocity R²", m_plot.GetSimRSquared());
+      CreateTooltip(
+          "The coefficient of determination the simulated velocity. "
+          "Velocity is much less-noisy than acceleration, so this "
+          "is pretty close to 1 for a decent fit.");
+
+      DisplayGain("Sim RMSE", m_plot.GetRMSE());
+      CreateTooltip(
+          "The Root Mean Squared Error (RMSE) of the simulation "
+          "predictions compared to the recorded data. It is essentially the "
+          "mean error of the simulated model in the recorded velocity units.");
+    }
   }
   m_prevPlotsLoaded = plotsLoaded;
+
   ImGui::End();
 
+  ImGui::SetNextItemOpen(true, ImGuiCond_Once);
   if (ImGui::CollapsingHeader("Feedback Analysis")) {
     // Depending on whether a file has been selected or not, display a generic
     // warning message or show the feedback gains.
     if (!m_manager) {
       ImGui::Text("Please Select a JSON File");
     } else {
-      // Allow the user to select a feedback controller preset.
-      ImGui::Spacing();
-      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
-      if (ImGui::Combo("Gain Preset", &m_selectedPreset, kPresetNames,
-                       IM_ARRAYSIZE(kPresetNames))) {
-        m_settings.preset = m_presets[kPresetNames[m_selectedPreset]];
-        m_settings.convertGainsToEncTicks = m_selectedPreset > 2;
-        m_enabled = true;
-        Calculate();
-      }
-      ImGui::SameLine();
-      sysid::CreateTooltip(
-          "Gain presets represent how feedback gains are calculated for your "
-          "specific feedback controller:\n\n"
-          "Default, WPILib (2020-): For use with the new WPILib PIDController "
-          "class.\n"
-          "WPILib (Pre-2020): For use with the old WPILib PIDController "
-          "class.\n"
-          "CTRE (New): For use with new CTRE units. Note that CTRE has not "
-          "released an update with these units.\n"
-          "CTRE (Old): For use with old CTRE units. These are the default "
-          "units that ship with CTRE motor controllers.\n"
-          "REV (Brushless): For use with NEO and NEO 550 motors on a SPARK "
-          "MAX.\n"
-          "REV (Brushed): For use with brushless motors connected to a SPARK "
-          "MAX.");
-
-      if (m_settings.preset != m_presets[kPresetNames[m_selectedPreset]]) {
-        ImGui::SameLine();
-        ImGui::TextDisabled("(modified)");
-      }
-
-      float beginY = ImGui::GetCursorPosY();
-      // Show our feedback controller preset values.
-      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-      double value = m_settings.preset.outputConversionFactor * 12;
-      if (ImGui::InputDouble("Max Controller Output", &value, 0.0, 0.0,
-                             "%.1f") &&
-          value > 0) {
-        m_settings.preset.outputConversionFactor = value / 12.0;
-        m_enabled = true;
-        Calculate();
-      }
-
-      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-      value = m_settings.preset.outputVelocityTimeFactor;
-      if (ImGui::InputDouble("Velocity Denominator Units (s)", &value, 0.0, 0.0,
-                             "%.1f") &&
-          value > 0) {
-        m_settings.preset.outputVelocityTimeFactor = value;
-        m_enabled = true;
-        Calculate();
-      }
-
-      sysid::CreateTooltip(
-          "This represents the denominator of the velocity unit used by the "
-          "feedback controller. For example, CTRE uses 100 ms = 0.1 s.");
-
-      auto ShowPresetValue = [this](const char* text, double* data,
-                                    float cursorX = 0.0f) {
-        if (cursorX > 0) {
-          ImGui::SetCursorPosX(cursorX);
-        }
-
-        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-        if (ImGui::InputDouble(text, data, 0.0, 0.0, "%.4f") && *data > 0) {
-          m_enabled = true;
-          Calculate();
-        }
-      };
-
-      // Show controller period.
-      ShowPresetValue("Controller Period (s)",
-                      reinterpret_cast<double*>(&m_settings.preset.period));
-
-      // Show whether the controller gains are time-normalized.
-      if (ImGui::Checkbox("Time-Normalized?", &m_settings.preset.normalized)) {
-        m_enabled = true;
-        Calculate();
-      }
-      float endY = ImGui::GetCursorPosY();
-
-      // Show position/velocity measurement delay.
-      ImGui::SetCursorPosY(beginY);
-      ShowPresetValue(
-          "Measurement Delay (s)",
-          reinterpret_cast<double*>(&m_settings.preset.measurementDelay),
-          ImGui::GetFontSize() * 23);
-
-      ImGui::SetCursorPosY(endY);
-
-      // Add CPR and Gearing for converting Feedback Gains
-      ImGui::Separator();
-      ImGui::Spacing();
-
-      if (ImGui::Checkbox("Convert Gains to Encoder Counts",
-                          &m_settings.convertGainsToEncTicks)) {
-        m_enabled = true;
-        Calculate();
-      }
-      sysid::CreateTooltip(
-          "Whether the feedback gains should be in terms of encoder counts or "
-          "output units. Because smart motor controllers usually don't have "
-          "direct access to the output units (i.e. m/s for a drivetrain), they "
-          "perform feedback on the encoder counts directly. If you are using a "
-          "PID Controller on the RoboRIO, you are probably performing feedback "
-          "on the output units directly.\n\nNote that if you have properly set "
-          "up position and velocity conversion factors with the SPARK MAX, you "
-          "can leave this box unchecked. The motor controller will perform "
-          "feedback on the output directly.");
-
-      if (m_settings.convertGainsToEncTicks) {
-        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
-        if (ImGui::InputDouble("##Numerator", &m_gearingNumerator, 0.0, 0.0,
-                               "%.4f") &&
-            m_gearingNumerator > 0) {
-          m_settings.gearing = m_gearingNumerator / m_gearingDenominator;
-          m_enabled = true;
-          Calculate();
-        }
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
-        if (ImGui::InputDouble("##Denominator", &m_gearingDenominator, 0.0, 0.0,
-                               "%.4f") &&
-            m_gearingDenominator > 0) {
-          m_settings.gearing = m_gearingNumerator / m_gearingDenominator;
-          m_enabled = true;
-          Calculate();
-        }
-        sysid::CreateTooltip(
-            "The gearing between the encoder and the output shaft (# of "
-            "encoder turns / # of output shaft turns).");
-
-        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
-        if (ImGui::InputInt("CPR", &m_settings.cpr, 0) && m_settings.cpr > 0) {
-          m_enabled = true;
-          Calculate();
-        }
-        sysid::CreateTooltip(
-            "The counts per rotation of your encoder. This is the number of "
-            "counts reported in user code when the encoder is rotated exactly "
-            "once. Some common values for various motors/encoders "
-            "are:\n\nFalcon "
-            "500: 2048\nNEO: 1\nCTRE Mag Encoder / CANCoder: 4096\nREV Through "
-            "Bore "
-            "Encoder: 8192\n");
-      }
-
-      ImGui::Separator();
-      ImGui::Spacing();
-
-      // Allow the user to select a loop type.
-      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
-      if (ImGui::Combo("Loop Type", &m_selectedLoopType, kLoopTypes,
-                       IM_ARRAYSIZE(kLoopTypes))) {
-        m_settings.type =
-            static_cast<FeedbackControllerLoopType>(m_selectedLoopType);
-        m_enabled = true;
-        Calculate();
-      }
-
-      ImGui::Spacing();
-
-      // Show Kp and Kd.
-      beginY = ImGui::GetCursorPosY();
-      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-      DisplayGain("Kp", &m_Kp);
-
-      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-      DisplayGain("Kd", &m_Kd);
-
-      // Come back to the starting y pos.
-      ImGui::SetCursorPosY(beginY);
-
-      auto ShowLQRParam = [this](const char* text, double* data, float min,
-                                 float max, bool power = true) {
-        float val = *data;
-        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
-        ImGui::SetCursorPosX(ImGui::GetFontSize() * 17);
-
-        if (ImGui::SliderFloat(
-                text, &val, min, max, "%.1f",
-                ImGuiSliderFlags_None |
-                    (power ? ImGuiSliderFlags_Logarithmic : 0))) {
-          *data = static_cast<double>(val);
-          m_enabled = true;
-          Calculate();
-        }
-      };
-
-      if (m_selectedLoopType == 0) {
-        ShowLQRParam("Max Position Error (units)", &m_settings.lqr.qp, 0.05f,
-                     40.0f);
-      }
-
-      ShowLQRParam("Max Velocity Error (units/s)", &m_settings.lqr.qv, 0.05f,
-                   40.0f);
-      ShowLQRParam("Max Control Effort (V)", &m_settings.lqr.r, 0.1f, 12.0f,
-                   false);
+      DisplayFeedbackGains();
     }
   }
 
@@ -462,6 +268,7 @@ void Analyzer::SelectFile() {
       m_type = m_manager->GetAnalysisType();
       m_factor = m_manager->GetFactor();
       m_unit = m_manager->GetUnit();
+      m_abbrevUnit = m_manager->GetAbbreviatedUnit();
       RefreshInformation();
       ConfigParamsOnFileSelect();
     } catch (const wpi::json::exception& e) {
@@ -573,7 +380,7 @@ void Analyzer::HandleJSONError(const wpi::json::exception& e) {
   m_errorPopup = true;
 }
 
-void Analyzer::DisplayFeedforwardGains(bool combined) {
+void Analyzer::DisplayFeedforwardGains() {
   float beginX = ImGui::GetCursorPosX();
   float beginY = ImGui::GetCursorPosY();
   const char* gainNames[] = {"Ks", "Kv", "Ka"};
@@ -605,51 +412,19 @@ void Analyzer::DisplayFeedforwardGains(bool combined) {
       "Both the control loop period and total signal delay should be "
       "at least 3-5 times shorter than this to optimally control the "
       "system.");
-  ++row;
-
-  SetPosition(beginX, beginY, 0, row);
-  DisplayGain("Acceleration r-squared", &m_rSquared);
-  CreateTooltip(
-      "The coefficient of determination of the OLS fit of acceleration "
-      "versus velocity and voltage.  Acceleration is extremely noisy, "
-      "so this is generally quite small.");
-  ++row;
-
-  SetPosition(beginX, beginY, 0, row);
-  DisplayGain("Sim velocity r-squared", m_plot.GetSimRSquared());
-  CreateTooltip(
-      "The coefficient of determination the simulated velocity. "
-      "Velocity is much less-noisy than acceleration, so this "
-      "is pretty close to 1 for a decent fit.");
-  ++row;
-
-  SetPosition(beginX, beginY, 0, row);
-  DisplayGain("Sim RMSE", m_plot.GetRMSE());
-  CreateTooltip(
-      "The Root Mean Squared Error (RMSE) of the simulation "
-      "predictions compared to the recorded data. It is essentially the "
-      "mean error of the simulated model in the recorded velocity units.");
 
   double endY = ImGui::GetCursorPosY();
 
   // Increase spacing to not run into trackwidth in the normal analyzer view
-  auto horizontalSpacing = combined ? 1 : 2;
-  SetPosition(beginX, beginY, horizontalSpacing, 0);
-
-  if (!combined) {
-    if (ImGui::Button("Combined Diagnostics")) {
-      ImGui::OpenPopup("Combined Diagnostics");
-    }
-    SetPosition(beginX, beginY, horizontalSpacing, 1);
-  }
+  constexpr double kHorizontalOffset = 0.9;
+  SetPosition(beginX, beginY, kHorizontalOffset, 0);
 
   // Wait for enter before refresh so double digit entries like "15" don't
   // prematurely refresh with "1". That can cause display stuttering.
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
   int window = m_settings.medianWindow;
   if (ImGui::InputInt("Window Size", &window, 0, 0,
-                      combined ? ImGuiInputTextFlags_ReadOnly
-                               : ImGuiInputTextFlags_EnterReturnsTrue)) {
+                      ImGuiInputTextFlags_EnterReturnsTrue)) {
     m_settings.medianWindow = std::clamp(window, 1, 15);
     m_enabled = true;
     RefreshInformation();
@@ -661,12 +436,11 @@ void Analyzer::DisplayFeedforwardGains(bool combined) {
 
   // Wait for enter before refresh so decimal inputs like "0.2" don't
   // prematurely refresh with a velocity threshold of "0".
-  SetPosition(beginX, beginY, horizontalSpacing, combined ? 1 : 2);
+  SetPosition(beginX, beginY, kHorizontalOffset, 0.9);
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
   double threshold = m_settings.motionThreshold;
   if (ImGui::InputDouble("Velocity Threshold", &threshold, 0.0, 0.0, "%.3f",
-                         combined ? ImGuiInputTextFlags_ReadOnly
-                                  : ImGuiInputTextFlags_EnterReturnsTrue)) {
+                         ImGuiInputTextFlags_EnterReturnsTrue)) {
     m_settings.motionThreshold = std::max(0.0, threshold);
     m_enabled = true;
     RefreshInformation();
@@ -674,23 +448,205 @@ void Analyzer::DisplayFeedforwardGains(bool combined) {
 
   CreateTooltip("Velocity data below this threshold will be ignored.");
 
-  SetPosition(beginX, beginY, horizontalSpacing, combined ? 2 : 3);
+  SetPosition(beginX, beginY, kHorizontalOffset, 2);
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-  if (!combined) {
-    if (ImGui::SliderFloat("Test Duration", &m_stepTestDuration,
-                           m_manager->GetMinDuration(),
-                           m_manager->GetMaxDuration(), "%.2f")) {
-      m_settings.stepTestDuration = units::second_t{m_stepTestDuration};
-      m_enabled = true;
-      RefreshInformation();
+  if (ImGui::SliderFloat("Test Duration", &m_stepTestDuration,
+                         m_manager->GetMinDuration(),
+                         m_manager->GetMaxDuration(), "%.2f")) {
+    m_settings.stepTestDuration = units::second_t{m_stepTestDuration};
+    m_enabled = true;
+    RefreshInformation();
+  }
+
+  ImGui::SetCursorPosY(endY);
+}
+
+void Analyzer::DisplayFeedbackGains() {
+  // Allow the user to select a feedback controller preset.
+  ImGui::Spacing();
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+  if (ImGui::Combo("Gain Preset", &m_selectedPreset, kPresetNames,
+                   IM_ARRAYSIZE(kPresetNames))) {
+    m_settings.preset = m_presets[kPresetNames[m_selectedPreset]];
+    m_settings.convertGainsToEncTicks = m_selectedPreset > 2;
+    m_enabled = true;
+    Calculate();
+  }
+  ImGui::SameLine();
+  sysid::CreateTooltip(
+      "Gain presets represent how feedback gains are calculated for your "
+      "specific feedback controller:\n\n"
+      "Default, WPILib (2020-): For use with the new WPILib PIDController "
+      "class.\n"
+      "WPILib (Pre-2020): For use with the old WPILib PIDController class.\n"
+      "CTRE (New): For use with new CTRE units. Note that CTRE has not "
+      "released an update with these units.\n"
+      "CTRE (Old): For use with old CTRE units. These are the default units "
+      "that ship with CTRE motor controllers.\n"
+      "REV (Brushless): For use with NEO and NEO 550 motors on a SPARK MAX.\n"
+      "REV (Brushed): For use with brushless motors connected to a SPARK MAX.");
+
+  if (m_settings.preset != m_presets[kPresetNames[m_selectedPreset]]) {
+    ImGui::SameLine();
+    ImGui::TextDisabled("(modified)");
+  }
+
+  // Show our feedback controller preset values.
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+  double value = m_settings.preset.outputConversionFactor * 12;
+  if (ImGui::InputDouble("Max Controller Output", &value, 0.0, 0.0, "%.1f") &&
+      value > 0) {
+    m_settings.preset.outputConversionFactor = value / 12.0;
+    m_enabled = true;
+    Calculate();
+  }
+
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+  value = m_settings.preset.outputVelocityTimeFactor;
+  if (ImGui::InputDouble("Velocity Denominator Units (s)", &value, 0.0, 0.0,
+                         "%.1f") &&
+      value > 0) {
+    m_settings.preset.outputVelocityTimeFactor = value;
+    m_enabled = true;
+    Calculate();
+  }
+
+  sysid::CreateTooltip(
+      "This represents the denominator of the velocity unit used by the "
+      "feedback controller. For example, CTRE uses 100 ms = 0.1 s.");
+
+  auto ShowPresetValue = [this](const char* text, double* data,
+                                float cursorX = 0.0f) {
+    if (cursorX > 0) {
+      ImGui::SetCursorPosX(cursorX);
     }
 
-    ImGui::SetCursorPosY(endY);
-  } else {
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);
-    std::string message = fmt::format("{:.2f} of {:.2f}", m_stepTestDuration,
-                                      m_manager->GetMaxDuration());
-    ImGui::InputText("Duration (s)", &message, ImGuiInputTextFlags_ReadOnly);
-    SetPosition(beginX, beginY, 0, 12);
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+    if (ImGui::InputDouble(text, data, 0.0, 0.0, "%.4f") && *data > 0) {
+      m_enabled = true;
+      Calculate();
+    }
+  };
+
+  // Show controller period.
+  ShowPresetValue("Controller Period (s)",
+                  reinterpret_cast<double*>(&m_settings.preset.period));
+
+  // Show whether the controller gains are time-normalized.
+  if (ImGui::Checkbox("Time-Normalized?", &m_settings.preset.normalized)) {
+    m_enabled = true;
+    Calculate();
   }
+
+  // Show position/velocity measurement delay.
+  ShowPresetValue(
+      "Measurement Delay (s)",
+      reinterpret_cast<double*>(&m_settings.preset.measurementDelay));
+
+  // Add CPR and Gearing for converting Feedback Gains
+  ImGui::Separator();
+  ImGui::Spacing();
+
+  if (ImGui::Checkbox("Convert Gains to Encoder Counts",
+                      &m_settings.convertGainsToEncTicks)) {
+    m_enabled = true;
+    Calculate();
+  }
+  sysid::CreateTooltip(
+      "Whether the feedback gains should be in terms of encoder counts or "
+      "output units. Because smart motor controllers usually don't have "
+      "direct access to the output units (i.e. m/s for a drivetrain), they "
+      "perform feedback on the encoder counts directly. If you are using a "
+      "PID Controller on the RoboRIO, you are probably performing feedback "
+      "on the output units directly.\n\nNote that if you have properly set "
+      "up position and velocity conversion factors with the SPARK MAX, you "
+      "can leave this box unchecked. The motor controller will perform "
+      "feedback on the output directly.");
+
+  if (m_settings.convertGainsToEncTicks) {
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
+    if (ImGui::InputDouble("##Numerator", &m_gearingNumerator, 0.0, 0.0,
+                           "%.4f") &&
+        m_gearingNumerator > 0) {
+      m_settings.gearing = m_gearingNumerator / m_gearingDenominator;
+      m_enabled = true;
+      Calculate();
+    }
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
+    if (ImGui::InputDouble("##Denominator", &m_gearingDenominator, 0.0, 0.0,
+                           "%.4f") &&
+        m_gearingDenominator > 0) {
+      m_settings.gearing = m_gearingNumerator / m_gearingDenominator;
+      m_enabled = true;
+      Calculate();
+    }
+    sysid::CreateTooltip(
+        "The gearing between the encoder and the output shaft (# of "
+        "encoder turns / # of output shaft turns).");
+
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
+    if (ImGui::InputInt("CPR", &m_settings.cpr, 0) && m_settings.cpr > 0) {
+      m_enabled = true;
+      Calculate();
+    }
+    sysid::CreateTooltip(
+        "The counts per rotation of your encoder. This is the number of counts "
+        "reported in user code when the encoder is rotated exactly once. Some "
+        "common values for various motors/encoders are:\n\n"
+        "Falcon 500: 2048\nNEO: 1\nCTRE Mag Encoder / CANCoder: 4096\nREV "
+        "Through Bore Encoder: 8192\n");
+  }
+
+  ImGui::Separator();
+  ImGui::Spacing();
+
+  // Allow the user to select a loop type.
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+  if (ImGui::Combo("Loop Type", &m_selectedLoopType, kLoopTypes,
+                   IM_ARRAYSIZE(kLoopTypes))) {
+    m_settings.type =
+        static_cast<FeedbackControllerLoopType>(m_selectedLoopType);
+    m_enabled = true;
+    Calculate();
+  }
+
+  ImGui::Spacing();
+
+  // Show Kp and Kd.
+  float beginY = ImGui::GetCursorPosY();
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+  DisplayGain("Kp", &m_Kp);
+
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+  DisplayGain("Kd", &m_Kd);
+
+  // Come back to the starting y pos.
+  ImGui::SetCursorPosY(beginY);
+
+  auto ShowLQRParam = [this](const char* text, double* data, float min,
+                             float max, bool power = true) {
+    float val = *data;
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
+    ImGui::SetCursorPosX(ImGui::GetFontSize() * 9);
+
+    if (ImGui::SliderFloat(text, &val, min, max, "%.1f",
+                           ImGuiSliderFlags_None |
+                               (power ? ImGuiSliderFlags_Logarithmic : 0))) {
+      *data = static_cast<double>(val);
+      m_enabled = true;
+      Calculate();
+    }
+  };
+
+  if (m_selectedLoopType == 0) {
+    ShowLQRParam(
+        fmt::format("Max Position Error ({})", m_abbrevUnit.c_str()).c_str(),
+        &m_settings.lqr.qp, 0.05f, 40.0f);
+  }
+
+  ShowLQRParam(
+      fmt::format("Max Velocity Error ({}/s)", m_abbrevUnit.c_str()).c_str(),
+      &m_settings.lqr.qv, 0.05f, 40.0f);
+  ShowLQRParam("Max Control Effort (V)", &m_settings.lqr.r, 0.1f, 12.0f, false);
 }

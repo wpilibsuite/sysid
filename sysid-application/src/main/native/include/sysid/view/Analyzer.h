@@ -112,11 +112,13 @@ class Analyzer : public glass::View {
 
   /**
    * Handles the logic for displaying feedforward gains
-   *
-   * @param combined The feedforward gains should be displayed differently if
-   *                 they are on the combined diagnostic plots (combined = true)
    */
-  void DisplayFeedforwardGains(bool combined = false);
+  void DisplayFeedforwardGains();
+
+  /**
+   * Handles the logic for displaying feedback gains
+   */
+  void DisplayFeedbackGains();
 
   /**
    * Estimates ideal step test duration, qp, and qv for the LQR based off of the
@@ -128,14 +130,6 @@ class Analyzer : public glass::View {
    * Handles logic of displaying a gain on ImGui
    */
   void DisplayGain(const char* text, double* data);
-
-  /**
-   * Loads the diagnostic plots.
-   *
-   * @return returns true if the plots have already been loaded, false if they
-   *         have just finished loading.
-   */
-  bool LoadPlots();
 
   /**
    * Handles errors when they pop up.
@@ -175,6 +169,7 @@ class Analyzer : public glass::View {
   // Units
   double m_factor;
   std::string m_unit;
+  std::string m_abbrevUnit;
   int m_selectedOverrideUnit = 0;
 
   // Data analysis

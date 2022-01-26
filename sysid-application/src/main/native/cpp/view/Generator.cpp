@@ -221,7 +221,7 @@ void Generator::Display() {
   const auto& motorControllerNames = kMotorControllerNames.names;
   const auto& gyroNames = kGyroNames.names;
   // Add team / IP selection.
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
   ImGui::InputText("Team/IP", &m_team);
 
   // Add Config Reading Button
@@ -250,7 +250,7 @@ void Generator::Display() {
     ImGui::OpenPopup("Deploy Status");
   }
   // Add analysis type selection.
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
   ImGui::Combo("Analysis Type", &m_analysisIdx, kAnalysisTypes,
                IM_ARRAYSIZE(kAnalysisTypes));
   m_analysisType = kAnalysisTypes[m_analysisIdx];
@@ -305,7 +305,7 @@ void Generator::Display() {
     ImGui::PushID(i);
 
     // Add motor controller selector.
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
     std::string motorControllerName;
     if (drive) {
       motorControllerName = fmt::format("Motor Controller Pair {}", i);
@@ -379,7 +379,7 @@ void Generator::Display() {
   m_prevMainMotorController = mainMotorController;
 
   // Add encoder selection.
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13);
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
   if (mainMotorController == sysid::motorcontroller::kTalonSRX ||
       mainMotorController == sysid::motorcontroller::kTalonFX) {
     if (mainMotorController == sysid::motorcontroller::kTalonFX) {
