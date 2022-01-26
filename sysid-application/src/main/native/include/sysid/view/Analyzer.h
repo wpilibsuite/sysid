@@ -168,6 +168,7 @@ class Analyzer : public glass::View {
   double m_rSquared;
   double m_Kp;
   double m_Kd;
+  double m_timescale;
 
   // Track width
   std::optional<double> m_trackWidth;

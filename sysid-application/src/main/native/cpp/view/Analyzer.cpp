@@ -531,6 +531,7 @@ void Analyzer::Calculate() {
     const auto& [ff, fb, trackWidth] = m_manager->Calculate();
     m_ff = std::get<0>(ff);
     m_rSquared = std::get<1>(ff);
+    m_timescale = m_ff[2] / m_ff[1];
     m_Kp = fb.Kp;
     m_Kd = fb.Kd;
     m_trackWidth = trackWidth;
@@ -628,35 +629,34 @@ void Analyzer::DisplayFeedforwardGains(bool combined) {
     DisplayGain("Track Width", &*m_trackWidth);
   }
 
+  SetPosition(beginX, beginY, 0, 3);
+  DisplayGain("Response Timescale (s)", &m_timescale);
+  CreateTooltip(
+      "The characteristic timescale of the system response in seconds. "
+      "Both the control loop period and total signal delay should be "
+      "at least 3-5 times shorter than this to optimally control the "
+      "system.");
+
   SetPosition(beginX, beginY, 0, 4);
   DisplayGain("Acceleration r-squared", &m_rSquared);
-
-  if (!combined) {
-    CreateTooltip(
-        "The coefficient of determination of the OLS fit of acceleration "
-        "versus velocity and voltage.  Acceleration is extremely noisy, "
-        "so this is generally quite small.");
-  }
+  CreateTooltip(
+      "The coefficient of determination of the OLS fit of acceleration "
+      "versus velocity and voltage.  Acceleration is extremely noisy, "
+      "so this is generally quite small.");
 
   SetPosition(beginX, beginY, 0, 5);
   DisplayGain("Sim velocity r-squared", m_plot.GetSimRSquared());
-
-  if (!combined) {
-    CreateTooltip(
-        "The coefficient of determination the simulated velocity. "
-        "Velocity is much less-noisy than acceleration, so this "
-        "is pretty close to 1 for a decent fit.");
-  }
+  CreateTooltip(
+      "The coefficient of determination the simulated velocity. "
+      "Velocity is much less-noisy than acceleration, so this "
+      "is pretty close to 1 for a decent fit.");
 
   SetPosition(beginX, beginY, 0, 6);
   DisplayGain("Sim RMSE", m_plot.GetRMSE());
-
-  if (!combined) {
-    CreateTooltip(
-        "The Root Mean Squared Error (RMSE) of the simulation "
-        "predictions compared to the recorded data. It is essentially the "
-        "mean error of the simulated model in the recorded velocity units.");
-  }
+  CreateTooltip(
+      "The Root Mean Squared Error (RMSE) of the simulation "
+      "predictions compared to the recorded data. It is essentially the "
+      "mean error of the simulated model in the recorded velocity units.");
 
   double endY = ImGui::GetCursorPosY();
 
