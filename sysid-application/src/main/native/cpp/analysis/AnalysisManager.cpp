@@ -52,10 +52,9 @@ static std::vector<PreparedData> ConvertToPrepared(
   for (int i = 0; i < data.size() - 1; i++) {
     const auto& pt1 = data[i];
     const auto& pt2 = data[i + 1];
-    prepared.emplace_back(
-        PreparedData{units::second_t{pt1[Timestamp]}, pt1[Voltage],
-                     pt1[Position], pt1[Velocity], pt2[Velocity],
-                     units::second_t{pt2[Timestamp] - pt1[Timestamp]}});
+    prepared.emplace_back(PreparedData{
+        units::second_t{pt1[Timestamp]}, pt1[Voltage], pt1[Position],
+        pt1[Velocity], units::second_t{pt2[Timestamp] - pt1[Timestamp]}});
   }
   return prepared;
 }
@@ -349,7 +348,6 @@ static void PrepareAngularDrivetrainData(
 
     for (auto& pt : dataset) {
       pt.velocity *= translationalFactor;
-      pt.nextVelocity *= translationalFactor;
       pt.acceleration *= translationalFactor;
     }
   }
