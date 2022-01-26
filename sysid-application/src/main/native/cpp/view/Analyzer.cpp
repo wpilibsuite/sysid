@@ -583,39 +583,47 @@ void Analyzer::DisplayFeedforwardGains(bool combined) {
     DisplayGain(gainNames[i], &m_ff[i]);
   }
 
-  SetPosition(beginX, beginY, 0, 3);
+  size_t row = 3;
+
+  SetPosition(beginX, beginY, 0, row);
 
   if (m_type == analysis::kElevator) {
     DisplayGain("Kg", &m_ff[3]);
+    ++row;
   } else if (m_type == analysis::kArm) {
     DisplayGain("Kcos", &m_ff[3]);
+    ++row;
   } else if (m_trackWidth) {
     DisplayGain("Track Width", &*m_trackWidth);
+    ++row;
   }
 
-  SetPosition(beginX, beginY, 0, 3);
+  SetPosition(beginX, beginY, 0, row);
   DisplayGain("Response Timescale (s)", &m_timescale);
   CreateTooltip(
       "The characteristic timescale of the system response in seconds. "
       "Both the control loop period and total signal delay should be "
       "at least 3-5 times shorter than this to optimally control the "
       "system.");
+  ++row;
 
-  SetPosition(beginX, beginY, 0, 4);
+  SetPosition(beginX, beginY, 0, row);
   DisplayGain("Acceleration r-squared", &m_rSquared);
   CreateTooltip(
       "The coefficient of determination of the OLS fit of acceleration "
       "versus velocity and voltage.  Acceleration is extremely noisy, "
       "so this is generally quite small.");
+  ++row;
 
-  SetPosition(beginX, beginY, 0, 5);
+  SetPosition(beginX, beginY, 0, row);
   DisplayGain("Sim velocity r-squared", m_plot.GetSimRSquared());
   CreateTooltip(
       "The coefficient of determination the simulated velocity. "
       "Velocity is much less-noisy than acceleration, so this "
       "is pretty close to 1 for a decent fit.");
+  ++row;
 
-  SetPosition(beginX, beginY, 0, 6);
+  SetPosition(beginX, beginY, 0, row);
   DisplayGain("Sim RMSE", m_plot.GetRMSE());
   CreateTooltip(
       "The Root Mean Squared Error (RMSE) of the simulation "
