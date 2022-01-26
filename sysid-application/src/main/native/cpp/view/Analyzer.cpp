@@ -671,25 +671,9 @@ void Analyzer::DisplayFeedforwardGains(bool combined) {
     SetPosition(beginX, beginY, horizontalSpacing, 1);
   }
 
-  // Wait for enter before refresh so double digit entries like "15" don't
-  // prematurely refresh with "1". That can cause display stuttering.
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-  int window = m_settings.windowSize;
-  if (ImGui::InputInt("Window Size", &window, 0, 0,
-                      combined ? ImGuiInputTextFlags_ReadOnly
-                               : ImGuiInputTextFlags_EnterReturnsTrue)) {
-    m_settings.windowSize = std::clamp(window, 2, 15);
-    m_enabled = true;
-    RefreshInformation();
-  }
-
-  CreateTooltip(
-      "The number of samples in the velocity median "
-      "filter's sliding window.");
-
   // Wait for enter before refresh so decimal inputs like "0.2" don't
   // prematurely refresh with a velocity threshold of "0".
-  SetPosition(beginX, beginY, horizontalSpacing, combined ? 1 : 2);
+  SetPosition(beginX, beginY, horizontalSpacing, 1);
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
   double threshold = m_settings.motionThreshold;
   if (ImGui::InputDouble("Velocity Threshold", &threshold, 0.0, 0.0, "%.3f",
@@ -702,7 +686,7 @@ void Analyzer::DisplayFeedforwardGains(bool combined) {
 
   CreateTooltip("Velocity data below this threshold will be ignored.");
 
-  SetPosition(beginX, beginY, horizontalSpacing, combined ? 2 : 3);
+  SetPosition(beginX, beginY, horizontalSpacing, 2);
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
   if (!combined) {
     if (ImGui::SliderFloat("Test Duration", &m_stepTestDuration,

@@ -12,24 +12,6 @@
 #include "sysid/analysis/FilteringUtils.h"
 #include "sysid/analysis/Storage.h"
 
-TEST(FilterTest, MedianFilter) {
-  std::vector<sysid::PreparedData> testData{
-      sysid::PreparedData{0_s, 0, 0, 0},    sysid::PreparedData{0_s, 0, 0, 1},
-      sysid::PreparedData{0_s, 0, 0, 10},   sysid::PreparedData{0_s, 0, 0, 5},
-      sysid::PreparedData{0_s, 0, 0, 3},    sysid::PreparedData{0_s, 0, 0, 0},
-      sysid::PreparedData{0_s, 0, 0, 1000}, sysid::PreparedData{0_s, 0, 0, 7},
-      sysid::PreparedData{0_s, 0, 0, 6},    sysid::PreparedData{0_s, 0, 0, 5}};
-  std::vector<sysid::PreparedData> expectedData{
-      sysid::PreparedData{0_s, 0, 0, 0}, sysid::PreparedData{0_s, 0, 0, 1},
-      sysid::PreparedData{0_s, 0, 0, 5}, sysid::PreparedData{0_s, 0, 0, 5},
-      sysid::PreparedData{0_s, 0, 0, 3}, sysid::PreparedData{0_s, 0, 0, 3},
-      sysid::PreparedData{0_s, 0, 0, 7}, sysid::PreparedData{0_s, 0, 0, 7},
-      sysid::PreparedData{0_s, 0, 0, 6}, sysid::PreparedData{0_s, 0, 0, 5}};
-
-  sysid::ApplyMedianFilter(&testData, 3);
-  EXPECT_EQ(expectedData, testData);
-}
-
 TEST(FilterTest, AccelNoiseFloor) {
   std::vector<sysid::PreparedData> testData = {
       {0_s, 1, 2, 3, 3, 5_ms, 0, 0},    {1_s, 1, 2, 3, 3, 5_ms, 1, 0},

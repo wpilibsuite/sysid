@@ -10,7 +10,6 @@
 
 #include <fmt/format.h>
 #include <frc/filter/LinearFilter.h>
-#include <frc/filter/MedianFilter.h>
 #include <units/math.h>
 #include <wpi/StringExtras.h>
 #include <wpi/numbers>
@@ -186,33 +185,6 @@ units::second_t sysid::GetMeanTimeDelta(const Storage& data) {
   return std::accumulate(dts.begin(), dts.end(), 0_s) / dts.size();
 }
 
-void sysid::ApplyMedianFilter(std::vector<PreparedData>* data, int window) {
-  CheckSize(*data, window);
-
-  size_t step = window / 2;
-  frc::MedianFilter<double> medianFilter(window);
-
-  // Load the median filter with the first value, "step" number of times for
-  // accurate initial behavior.
-  for (int i = 0; i < step; i++) {
-    medianFilter.Calculate(data->at(0).velocity);
-  }
-
-  for (size_t i = 0; i < data->size(); i++) {
-    double median = medianFilter.Calculate(data->at(i).velocity);
-    if (i >= step) {
-      data->at(i - step).velocity = median;
-    }
-  }
-
-  // Run the median filter for the last "step" datapoints by loading the median
-  // filter with the last recorded velocity value.
-  for (int i = data->size() - step; i < data->size(); i++) {
-    double median = medianFilter.Calculate(data->at(data->size() - 1).velocity);
-    data->at(i).velocity = median;
-  }
-}
-
 /**
  * Removes a substring from a string reference
  *
@@ -284,11 +256,6 @@ void sysid::InitialTrimAndFilter(
       if (dataset.empty()) {
         throw std::runtime_error("Quasistatic test trimming removed all data");
       }
-    }
-
-    // Apply Median filter
-    if (IsFiltered(key)) {
-      ApplyMedianFilter(&dataset, settings.windowSize);
     }
 
     // Recalculate Accel and Cosine

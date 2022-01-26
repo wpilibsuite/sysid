@@ -31,17 +31,6 @@ namespace sysid {
 double GetAccelNoiseFloor(const std::vector<PreparedData>& data, int window);
 
 /**
- * Reduces noise in velocity data by applying a median filter.
- *
- * @tparam S The size of the raw data array
- * @tparam Velocity The index of the velocity entry in the raw data.
- * @param data the vector of arrays representing sysid data (must contain
- *             velocity data)
- * @param window the size of the window of the median filter (must be odd)
- */
-void ApplyMedianFilter(std::vector<PreparedData>* data, int window);
-
-/**
  * Trims the step voltage data to discard all points before the maximum
  * acceleration and after reaching stead-state velocity. Also trims the end of
  * the test based off of user specified test durations, but it will determine a
