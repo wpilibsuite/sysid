@@ -244,8 +244,8 @@ void SetupEncoders(
     cancoder->ConfigVelocityMeasurementPeriod(cancoderPeriod);
     cancoder->ConfigVelocityMeasurementWindow(numSamples);
 
-    position = [&] { return cancoder->GetPosition() / combinedCPR; };
-    rate = [&] { return cancoder->GetVelocity() / combinedCPR; };
+    position = [=, &cancoder] { return cancoder->GetPosition() / combinedCPR; };
+    rate = [=, &cancoder] { return cancoder->GetVelocity() / combinedCPR; };
   } else {
     fmt::print("Setup roboRIO quadrature");
     if (isEncoding) {
