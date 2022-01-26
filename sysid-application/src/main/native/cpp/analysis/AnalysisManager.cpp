@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstddef>
 #include <functional>
+#include <numeric>
 #include <stdexcept>
 
 #include <fmt/format.h>
@@ -245,6 +246,20 @@ static void PrepareAngularDrivetrainData(
   static constexpr size_t kAngleCol = 7;
   static constexpr size_t kAngularRateCol = 8;
 
+  auto getMeanTimeDelta =
+      [=](const std::vector<Data>& data) -> units::second_t {
+    std::vector<units::second_t> dts;
+
+    for (int i = 0; i < data.size() - 1; ++i) {
+      auto dt = units::second_t{data[i + 1][kTimeCol] - data[i][kTimeCol]};
+      if (dt > 0_s && dt < 500_ms) {
+        dts.emplace_back(dt);
+      }
+    }
+
+    return std::accumulate(dts.begin(), dts.end(), 0_s) / dts.size();
+  };
+
   WPI_INFO(logger, "{}", "Reading JSON data.");
   // Get the major components from the JSON and store them inside a StringMap.
   for (auto&& key : AnalysisManager::kJsonDataKeys) {
@@ -254,6 +269,7 @@ static void PrepareAngularDrivetrainData(
   WPI_INFO(logger, "{}", "Preprocessing raw data.");
   // Ensure that voltage and velocity have the same sign. Also multiply
   // positions and velocities by the factor.
+  constexpr size_t kWindow = 3;
   for (auto it = data.begin(); it != data.end(); ++it) {
     for (auto&& pt : it->second) {
       pt[kLPosCol] *= factor;
@@ -264,6 +280,26 @@ static void PrepareAngularDrivetrainData(
           (std::copysign(pt[kLVoltageCol], pt[kAngularRateCol]) +
            std::copysign(pt[kRVoltageCol], pt[kAngularRateCol])) /
           2;
+    }
+
+    auto derivative =
+        CentralFiniteDifference<1, kWindow>(getMeanTimeDelta(it->second));
+
+    // Load the derivative filter with the first value for accurate initial
+    // behavior
+    for (int i = 0; i < kWindow; ++i) {
+      derivative.Calculate(it->second.at(0)[kAngularRateCol]);
+    }
+
+    for (size_t i = (kWindow - 1) / 2; i < it->second.size(); ++i) {
+      it->second.at(i - (kWindow - 1) / 2)[kAngularRateCol] =
+          derivative.Calculate(it->second.at(i)[kAngleCol]);
+    }
+
+    // Fill in accelerations past end of derivative filter
+    for (size_t i = it->second.size() - (kWindow - 1) / 2;
+         i < it->second.size(); ++i) {
+      it->second.at(i)[kAngularRateCol] = 0.0;
     }
   }
 
