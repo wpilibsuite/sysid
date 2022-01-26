@@ -349,7 +349,8 @@ void SetupGyro(
     gyroPosition = [&] {
       double xyz[3];
       pigeon->GetAccumGyro(xyz);
-      return xyz[2];
+      units::degree_t pos{xyz[2]};
+      return units::radian_t{pos}.value();
     };
 
     gyroRate = [&] {
@@ -437,12 +438,12 @@ void SetupGyro(
     }
 #ifdef __FRC_ROBORIO__
     gyroPosition = [&] {
-      return units::radian_t(units::degree_t{gyro->GetAngle()}).value();
+      return units::radian_t{units::degree_t{gyro->GetAngle()}}.value();
     };
 
     gyroRate = [&] {
-      return units::radians_per_second_t(
-                 units::degrees_per_second_t{gyro->GetRate()})
+      return units::radians_per_second_t{
+          units::degrees_per_second_t{gyro->GetRate()}}
           .value();
     };
 #endif
