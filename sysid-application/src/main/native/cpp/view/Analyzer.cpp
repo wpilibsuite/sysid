@@ -638,11 +638,11 @@ void Analyzer::DisplayFeedforwardGains(bool combined) {
   // Wait for enter before refresh so double digit entries like "15" don't
   // prematurely refresh with "1". That can cause display stuttering.
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-  int window = m_settings.windowSize;
+  int window = m_settings.medianWindow;
   if (ImGui::InputInt("Window Size", &window, 0, 0,
                       combined ? ImGuiInputTextFlags_ReadOnly
                                : ImGuiInputTextFlags_EnterReturnsTrue)) {
-    m_settings.windowSize = std::clamp(window, 2, 15);
+    m_settings.medianWindow = std::clamp(window, 1, 15);
     m_enabled = true;
     RefreshInformation();
   }

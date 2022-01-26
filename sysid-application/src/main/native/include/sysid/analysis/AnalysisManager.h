@@ -61,7 +61,12 @@ class AnalysisManager {
     /**
      * The window size for computing acceleration.
      */
-    int windowSize = 9;
+    int accelerationWindow = 9;
+
+    /**
+     * The window size for the median filter.
+     */
+    int medianWindow = 1;
 
     /**
      * The dataset that is being analyzed.

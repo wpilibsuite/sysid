@@ -111,7 +111,7 @@ units::second_t sysid::TrimStepVoltageData(std::vector<PreparedData>* data,
   if (settings->stepTestDuration <= minStepTime) {
     // Get noise floor
     const double accelNoiseFloor =
-        GetAccelNoiseFloor(*data, settings->windowSize);
+        GetAccelNoiseFloor(*data, settings->accelerationWindow);
     // Find latest element with nonzero acceleration
     auto endIt = std::find_if(
         data->rbegin(), data->rend(), [&](const PreparedData& entry) {
@@ -287,8 +287,8 @@ void sysid::InitialTrimAndFilter(
     }
 
     // Apply Median filter
-    if (IsFiltered(key)) {
-      ApplyMedianFilter(&dataset, settings.windowSize);
+    if (IsFiltered(key) && settings.medianWindow > 1) {
+      ApplyMedianFilter(&dataset, settings.medianWindow);
     }
 
     // Recalculate Accel and Cosine
