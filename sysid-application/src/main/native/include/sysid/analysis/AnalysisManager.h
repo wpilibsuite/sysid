@@ -61,7 +61,7 @@ class AnalysisManager {
     /**
      * The window size for computing acceleration.
      */
-    int windowSize = 9;
+    int windowSize = 1;
 
     /**
      * The dataset that is being analyzed.

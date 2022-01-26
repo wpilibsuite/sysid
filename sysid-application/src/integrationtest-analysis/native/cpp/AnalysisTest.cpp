@@ -98,7 +98,7 @@ class AnalysisTest : public ::testing::Test {
     auto path = m_manager->SaveJSON(EXPAND_STRINGIZE(PROJECT_ROOT_DIR));
     try {
       auto analyzerSettings = sysid::AnalysisManager::Settings{};
-      analyzerSettings.windowSize = 13;
+      analyzerSettings.windowSize = 1;
       if (m_settings.mechanism == sysid::analysis::kArm) {
         analyzerSettings.motionThreshold = 0.01;  // Reduce threshold for arm
                                                   // test

@@ -642,7 +642,7 @@ void Analyzer::DisplayFeedforwardGains(bool combined) {
   if (ImGui::InputInt("Window Size", &window, 0, 0,
                       combined ? ImGuiInputTextFlags_ReadOnly
                                : ImGuiInputTextFlags_EnterReturnsTrue)) {
-    m_settings.windowSize = std::clamp(window, 2, 15);
+    m_settings.windowSize = std::clamp(window, 1, 15);
     m_enabled = true;
     RefreshInformation();
   }
