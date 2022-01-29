@@ -282,7 +282,10 @@ void sysid::InitialTrimAndFilter(
 
       // Confirm there's still data
       if (dataset.empty()) {
-        throw std::runtime_error("Quasistatic test trimming removed all data");
+        throw std::runtime_error(
+            "Quasistatic test trimming removed all data. Please double check "
+            "your units and test data to make sure that the robot is reporting "
+            "reasonable values.");
       }
     }
 
