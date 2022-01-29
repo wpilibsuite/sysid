@@ -282,6 +282,19 @@ static void PrepareAngularDrivetrainData(
           2;
     }
 
+    auto angleFilter = frc::LinearFilter<double>::SinglePoleIIR(0.8, 5_ms);
+    for (int i = 0; i < 100; ++i) {
+      angleFilter.Calculate(it->second.at(0)[kAngleCol]);
+    }
+    for (int i = 0; i < it->second.size(); ++i) {
+      it->second.at(i)[kAngleCol] =
+          angleFilter.Calculate(it->second.at(i)[kAngleCol]);
+    }
+    for (int i = it->second.size() - 1; i >= 0; --i) {
+      it->second.at(i)[kAngleCol] =
+          angleFilter.Calculate(it->second.at(i)[kAngleCol]);
+    }
+
     auto derivative =
         CentralFiniteDifference<1, kWindow>(getMeanTimeDelta(it->second));
 
