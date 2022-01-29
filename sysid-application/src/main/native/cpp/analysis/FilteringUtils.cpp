@@ -235,7 +235,6 @@ static std::string RemoveStr(std::string_view str, std::string_view removeStr) {
  * Figures out the max duration of the Dynamic tests
  *
  * @param data The raw data String Map
- * @param timeCol The index of the time column
  *
  * @return The maximum duration of the Dynamic Tests
  */

@@ -66,6 +66,7 @@ void SetMotorControllers(
  * @param[in] period The measurement period used to calculate velocity of the
  *                   encoder (doesn't apply to roboRIO encoders)
  * @param[in] cpr The counts per revolution of the encoder
+ * @param[in] gearing The gear ratio from the encoder shaft to the wheel shaft.
  * @param[in] numSamples The number of samples that should be taken for a
  *                       velocity measurement
  * @param[in] controllerName The main motor controller being used in the setup.
@@ -118,14 +119,16 @@ void SetupEncoders(
  *                             the right side of the drivetrain. Intended to be
  *                             used when there's a Pigeon IMU plugged into a
  *                             drive motor controller.
- * @param[in, out] gyro A pointer to a WPILib Gyro Object.
+ * @param[in, out] gyro A pointer to a WPILib Gyro object.
+ * @param[in, out] ADIS16448Gyro A pointer to an ADIS16448_IMU object.
+ * @param[in, out] ADIS16470Gyro A pointer to an ADIS16470_IMU object.
  * @param[in, out] pigeon A pointer to a Pigeon IMU Object
- * @param[in, out] tempTalon A pointer to a TalonSRX Object mean to store a
+ * @param[in, out] tempTalon A pointer to a TalonSRX object mean to store a
  *                           Talon that the Pigeon IMU is plugged into.
- * @param[out] position A reference to a function that is supposed to return the
- *                      gyro position
- * @param[out] rate A reference to a function that is supposed to return the
- *                  gyro rate
+ * @param[out] gyroPosition A reference to a function that is supposed to return
+ *                          the gyro position
+ * @param[out] gyroRate A reference to a function that is supposed to return the
+ *                      gyro rate
  */
 void SetupGyro(
     std::string_view gyroType, std::string_view gyroCtor,
