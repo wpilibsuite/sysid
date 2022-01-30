@@ -204,7 +204,7 @@ void Analyzer::Display() {
     }
 
     // If a JSON is selected
-    if (m_manager) {
+    if (m_manager && m_enabled) {
       DisplayGain("Acceleration R²", &m_rSquared);
       CreateTooltip(
           "The coefficient of determination of the OLS fit of acceleration "
@@ -234,7 +234,7 @@ void Analyzer::Display() {
     // warning message or show the feedback gains.
     if (!m_manager) {
       ImGui::Text("Please Select a JSON File");
-    } else {
+    } else if (m_enabled) {
       DisplayFeedbackGains();
     }
   }
@@ -255,7 +255,6 @@ void Analyzer::SelectFile() {
     WPI_INFO(m_logger, "Opening File: {}", m_selector->result()[0]);
     m_location = m_selector->result()[0];
     m_selector.reset();
-    m_enabled = true;
     WPI_INFO(m_logger, "{}", "Opened File");
 
     // Create the analysis manager.
@@ -273,35 +272,16 @@ void Analyzer::SelectFile() {
   }
 }
 
-void Analyzer::PrepareData() {
-  WPI_INFO(m_logger, "{}", "Preparing Data.");
-  try {
-    m_manager->PrepareData();
-  } catch (const wpi::json::exception& e) {
-    HandleJSONError(e);
-  } catch (const std::exception& e) {
-    HandleGeneralError(e);
-  }
-}
-
 void Analyzer::Calculate() {
   WPI_INFO(m_logger, "{}", "Calculating Gains.");
-  if (!m_enabled) {
-    WPI_INFO(m_logger, "{}", "Returning early for gain calculation.");
-    return;
-  }
-  try {
-    const auto& [ff, fb, trackWidth] = m_manager->Calculate();
-    m_ff = std::get<0>(ff);
-    m_rSquared = std::get<1>(ff);
-    m_timescale = m_ff[2] / m_ff[1];
-    m_Kp = fb.Kp;
-    m_Kd = fb.Kd;
-    m_trackWidth = trackWidth;
-    m_factor = m_manager->GetFactor();
-  } catch (const std::exception& e) {
-    HandleGeneralError(e);
-  }
+  const auto& [ff, fb, trackWidth] = m_manager->Calculate();
+  m_ff = std::get<0>(ff);
+  m_rSquared = std::get<1>(ff);
+  m_timescale = m_ff[2] / m_ff[1];
+  m_Kp = fb.Kp;
+  m_Kd = fb.Kd;
+  m_trackWidth = trackWidth;
+  m_factor = m_manager->GetFactor();
 }
 
 void Analyzer::AbortDataPrep() {
@@ -314,41 +294,36 @@ void Analyzer::AbortDataPrep() {
 
 void Analyzer::PrepareGraphs() {
   WPI_INFO(m_logger, "{}", "Graphing Data.");
-  if (!m_enabled) {
-    // Try to display raw data if manager didn't get reset due to a JSON error
-    if (m_manager) {
-      WPI_INFO(m_logger, "{}", "Attempting to graph only raw time series.");
-      try {
-        AbortDataPrep();
-        m_dataThread = std::thread([&] {
-          m_plot.SetRawData(m_manager->GetOriginalData(), m_manager->GetUnit(),
-                            m_abortDataPrep);
-        });
-      } catch (const std::exception& e) {
-        HandleGeneralError(e);
-      }
-      return;
-    } else {
-      return;
-    }
-  }
-  try {
-    AbortDataPrep();
-    m_dataThread = std::thread([&] {
-      m_plot.SetData(m_manager->GetRawData(), m_manager->GetFilteredData(),
-                     m_manager->GetUnit(), m_ff, m_manager->GetStartTimes(),
-                     m_type, m_abortDataPrep);
-    });
-  } catch (const std::exception& e) {
-    HandleGeneralError(e);
-  }
+  AbortDataPrep();
+  m_dataThread = std::thread([&] {
+    m_plot.SetData(m_manager->GetRawData(), m_manager->GetFilteredData(),
+                   m_manager->GetUnit(), m_ff, m_manager->GetStartTimes(),
+                   m_type, m_abortDataPrep);
+  });
 }
 
 void Analyzer::RefreshInformation() {
   m_enabled = true;
-  PrepareData();
-  Calculate();
-  PrepareGraphs();
+  try {
+    m_manager->PrepareData();
+    Calculate();
+    PrepareGraphs();
+  } catch (const wpi::json::exception& e) {
+    HandleJSONError(e);
+  } catch (const std::exception& e) {
+    HandleGeneralError(e);
+  }
+
+  // If manager was able to load a JSON but data prep failed, try to display the
+  // raw data
+  if (m_manager && !m_enabled) {
+    WPI_INFO(m_logger, "{}", "Graphing only raw time series.");
+    AbortDataPrep();
+    m_dataThread = std::thread([&] {
+      m_plot.SetRawData(m_manager->GetOriginalData(), m_manager->GetUnit(),
+                        m_abortDataPrep);
+    });
+  }
 }
 
 void Analyzer::ResetManagerState() {

@@ -79,12 +79,6 @@ class Analyzer : public glass::View {
   void SelectFile();
 
   /**
-   * Internally turns the raw data into trimmed, filtered, prepared data for
-   * analysis.
-   */
-  void PrepareData();
-
-  /**
    * Calculates feedback and feedforward gains.
    */
   void Calculate();
