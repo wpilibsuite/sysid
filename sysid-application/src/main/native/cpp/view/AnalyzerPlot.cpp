@@ -28,8 +28,8 @@ template <typename Model>
 static std::vector<std::vector<ImPlotPoint>> PopulateTimeDomainSim(
     const std::vector<PreparedData>& data,
     const std::array<units::second_t, 4>& startTimes, size_t step, Model model,
-    double& simSquaredErrorSum, double& squaredVariationSum,
-    int& timeSeriesPoints) {
+    double* simSquaredErrorSum, double* squaredVariationSum,
+    int* timeSeriesPoints) {
   // Create the vector of ImPlotPoints that will contain our simulated data.
   std::vector<std::vector<ImPlotPoint>> pts;
   std::vector<ImPlotPoint> tmp;
@@ -59,9 +59,9 @@ static std::vector<std::vector<ImPlotPoint>> PopulateTimeDomainSim(
 
     model.Update(units::volt_t{pre.voltage}, pre.dt);
     tmp.emplace_back((startTime + t).value(), model.GetVelocity());
-    simSquaredErrorSum += std::pow(now.velocity - model.GetVelocity(), 2);
-    squaredVariationSum += std::pow(now.velocity, 2);
-    timeSeriesPoints++;
+    *simSquaredErrorSum += std::pow(now.velocity - model.GetVelocity(), 2);
+    *squaredVariationSum += std::pow(now.velocity, 2);
+    ++(*timeSeriesPoints);
   }
 
   pts.emplace_back(std::move(tmp));
@@ -283,25 +283,25 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
     const auto& Kg = ffGains[3];
     m_quasistaticData.simData = PopulateTimeDomainSim(
         rawSlow, startTimes, fastStep, sysid::ElevatorSim{Ks, Kv, Ka, Kg},
-        simSquaredErrorSum, squaredVariationSum, timeSeriesPoints);
+        &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
     m_dynamicData.simData = PopulateTimeDomainSim(
         rawFast, startTimes, fastStep, sysid::ElevatorSim{Ks, Kv, Ka, Kg},
-        simSquaredErrorSum, squaredVariationSum, timeSeriesPoints);
+        &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
   } else if (type == analysis::kArm) {
     const auto& Kcos = ffGains[3];
     m_quasistaticData.simData = PopulateTimeDomainSim(
         rawSlow, startTimes, fastStep, sysid::ArmSim{Ks, Kv, Ka, Kcos},
-        simSquaredErrorSum, squaredVariationSum, timeSeriesPoints);
+        &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
     m_dynamicData.simData = PopulateTimeDomainSim(
         rawFast, startTimes, fastStep, sysid::ArmSim{Ks, Kv, Ka, Kcos},
-        simSquaredErrorSum, squaredVariationSum, timeSeriesPoints);
+        &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
   } else {
     m_quasistaticData.simData = PopulateTimeDomainSim(
         rawSlow, startTimes, fastStep, sysid::SimpleMotorSim{Ks, Kv, Ka},
-        simSquaredErrorSum, squaredVariationSum, timeSeriesPoints);
+        &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
     m_dynamicData.simData = PopulateTimeDomainSim(
         rawFast, startTimes, fastStep, sysid::SimpleMotorSim{Ks, Kv, Ka},
-        simSquaredErrorSum, squaredVariationSum, timeSeriesPoints);
+        &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
   }
 
   // RMSE = std::sqrt(sum((x_i - x^_i)^2) / N) where sum represents the sum of
