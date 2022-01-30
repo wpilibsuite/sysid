@@ -92,7 +92,6 @@ void Analyzer::Display() {
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
     if (ImGui::Combo("Dataset", &m_settings.dataset, AnalysisManager::kDatasets,
                      m_type == analysis::kDrivetrain ? 9 : 3)) {
-      m_enabled = true;
       RefreshInformation();
     }
     ImGui::SameLine(width - ImGui::CalcTextSize("Reset").x);
@@ -151,7 +150,6 @@ void Analyzer::Display() {
         ImGui::CloseCurrentPopup();
         try {
           m_manager->OverrideUnits(m_unit, m_factor);
-          m_enabled = true;
           RefreshInformation();
         } catch (const std::exception& e) {
           HandleGeneralError(e);
@@ -167,7 +165,6 @@ void Analyzer::Display() {
         m_manager->ResetUnitsFromJSON();
         m_factor = m_manager->GetFactor();
         m_unit = m_manager->GetUnit();
-        m_enabled = true;
         RefreshInformation();
       } catch (const std::exception& e) {
         HandleGeneralError(e);
@@ -278,10 +275,6 @@ void Analyzer::SelectFile() {
 
 void Analyzer::PrepareData() {
   WPI_INFO(m_logger, "{}", "Preparing Data.");
-  if (!m_enabled) {
-    WPI_INFO(m_logger, "{}", "Returning early for data preparation.");
-    return;
-  }
   try {
     m_manager->PrepareData();
   } catch (const wpi::json::exception& e) {
@@ -352,6 +345,7 @@ void Analyzer::PrepareGraphs() {
 }
 
 void Analyzer::RefreshInformation() {
+  m_enabled = true;
   PrepareData();
   Calculate();
   PrepareGraphs();
@@ -425,7 +419,6 @@ void Analyzer::DisplayFeedforwardGains() {
   if (ImGui::InputInt("Window Size", &window, 0, 0,
                       ImGuiInputTextFlags_EnterReturnsTrue)) {
     m_settings.medianWindow = std::clamp(window, 1, 15);
-    m_enabled = true;
     RefreshInformation();
   }
 
@@ -441,7 +434,6 @@ void Analyzer::DisplayFeedforwardGains() {
   if (ImGui::InputDouble("Velocity Threshold", &threshold, 0.0, 0.0, "%.3f",
                          ImGuiInputTextFlags_EnterReturnsTrue)) {
     m_settings.motionThreshold = std::max(0.0, threshold);
-    m_enabled = true;
     RefreshInformation();
   }
 
@@ -453,7 +445,6 @@ void Analyzer::DisplayFeedforwardGains() {
                          m_manager->GetMinDuration(),
                          m_manager->GetMaxDuration(), "%.2f")) {
     m_settings.stepTestDuration = units::second_t{m_stepTestDuration};
-    m_enabled = true;
     RefreshInformation();
   }
 
