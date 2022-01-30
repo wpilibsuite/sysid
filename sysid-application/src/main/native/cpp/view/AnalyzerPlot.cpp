@@ -104,7 +104,7 @@ void AnalyzerPlot::ResetData() {
 }
 
 void AnalyzerPlot::SetGraphLabels(std::string_view unit) {
-  auto abbreviation = GetAbbreviation(unit);
+  std::string_view abbreviation = GetAbbreviation(unit);
   m_velocityLabel = fmt::format("Velocity ({}/s)", abbreviation);
   m_accelerationLabel = fmt::format("Acceleration ({}/s²)", abbreviation);
   m_velPortionAccelLabel =

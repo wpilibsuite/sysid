@@ -130,7 +130,6 @@ void Analyzer::Display() {
       ImGui::Combo("Units", &m_selectedOverrideUnit, kUnits,
                    IM_ARRAYSIZE(kUnits));
       m_unit = kUnits[m_selectedOverrideUnit];
-      m_abbrevUnit = GetAbbreviation(kUnits[m_selectedOverrideUnit]);
 
       if (m_unit == "Degrees") {
         m_factor = 360.0;
@@ -152,7 +151,7 @@ void Analyzer::Display() {
       if (ImGui::Button("Close")) {
         ImGui::CloseCurrentPopup();
         try {
-          m_manager->OverrideUnits(m_unit, m_abbrevUnit, m_factor);
+          m_manager->OverrideUnits(m_unit, m_factor);
           m_enabled = true;
           Calculate();
         } catch (const std::exception& e) {
@@ -268,7 +267,6 @@ void Analyzer::SelectFile() {
       m_type = m_manager->GetAnalysisType();
       m_factor = m_manager->GetFactor();
       m_unit = m_manager->GetUnit();
-      m_abbrevUnit = m_manager->GetAbbreviatedUnit();
       RefreshInformation();
       ConfigParamsOnFileSelect();
     } catch (const wpi::json::exception& e) {
@@ -639,14 +637,14 @@ void Analyzer::DisplayFeedbackGains() {
     }
   };
 
+  std::string_view abbreviation = GetAbbreviation(m_unit);
+
   if (m_selectedLoopType == 0) {
-    ShowLQRParam(
-        fmt::format("Max Position Error ({})", m_abbrevUnit.c_str()).c_str(),
-        &m_settings.lqr.qp, 0.05f, 40.0f);
+    ShowLQRParam(fmt::format("Max Position Error ({})", abbreviation).c_str(),
+                 &m_settings.lqr.qp, 0.05f, 40.0f);
   }
 
-  ShowLQRParam(
-      fmt::format("Max Velocity Error ({}/s)", m_abbrevUnit.c_str()).c_str(),
-      &m_settings.lqr.qv, 0.05f, 40.0f);
+  ShowLQRParam(fmt::format("Max Velocity Error ({}/s)", abbreviation).c_str(),
+               &m_settings.lqr.qv, 0.05f, 40.0f);
   ShowLQRParam("Max Control Effort (V)", &m_settings.lqr.r, 0.1f, 12.0f, false);
 }

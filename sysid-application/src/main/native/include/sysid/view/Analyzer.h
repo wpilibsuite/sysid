@@ -169,7 +169,6 @@ class Analyzer : public glass::View {
   // Units
   double m_factor;
   std::string m_unit;
-  std::string m_abbrevUnit;
   int m_selectedOverrideUnit = 0;
 
   // Data analysis

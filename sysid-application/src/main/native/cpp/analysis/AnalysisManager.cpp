@@ -596,12 +596,6 @@ AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,
 
   // Get the rotation -> output units factor from the JSON.
   m_unit = m_json.at("units").get<std::string>();
-  for (int i = 0; i < sizeof(kUnits); ++i) {
-    if (m_unit == kUnits[i]) {
-      m_abbrevUnit = GetAbbreviation(kUnits[i]);
-      break;
-    }
-  }
   m_factor = m_json.at("unitsPerRotation").get<double>();
   WPI_DEBUG(m_logger, "Parsing units per rotation as {} {} per rotation",
             m_factor, m_unit);
@@ -659,22 +653,14 @@ AnalysisManager::Gains AnalysisManager::Calculate() {
 }
 
 void AnalysisManager::OverrideUnits(std::string_view unit,
-                                    std::string_view abbrevUnit,
                                     double unitsPerRotation) {
   m_unit = unit;
-  m_abbrevUnit = abbrevUnit;
   m_factor = unitsPerRotation;
   PrepareData();
 }
 
 void AnalysisManager::ResetUnitsFromJSON() {
   m_unit = m_json.at("units").get<std::string>();
-  for (int i = 0; i < sizeof(kUnits); ++i) {
-    if (m_unit == kUnits[i]) {
-      m_abbrevUnit = GetAbbreviation(kUnits[i]);
-      break;
-    }
-  }
   m_factor = m_json.at("unitsPerRotation").get<double>();
   PrepareData();
 }

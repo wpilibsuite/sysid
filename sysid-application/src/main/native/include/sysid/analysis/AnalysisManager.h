@@ -158,12 +158,10 @@ class AnalysisManager {
    * Overrides the units in the JSON with the user-provided ones.
    *
    * @param unit             The unit to output gains in.
-   * @param abbrevUnit       The abbreviated unit to output gains in.
    * @param unitsPerRotation The conversion factor between rotations and the
    *                         selected unit.
    */
-  void OverrideUnits(std::string_view unit, std::string_view abbrevUnit,
-                     double unitsPerRotation);
+  void OverrideUnits(std::string_view unit, double unitsPerRotation);
 
   /**
    * Resets the units back to those defined in the JSON.
@@ -183,13 +181,6 @@ class AnalysisManager {
    * @return The units of analysis.
    */
   std::string_view GetUnit() const { return m_unit; }
-
-  /**
-   * Returns the abbreviated units of analysis.
-   *
-   * @return The abbreviated units of analysis.
-   */
-  std::string_view GetAbbreviatedUnit() const { return m_abbrevUnit; }
 
   /**
    * Returns the factor (a.k.a. units per rotation) for analysis.
@@ -272,7 +263,6 @@ class AnalysisManager {
   // units per rotation.
   AnalysisType m_type;
   std::string m_unit;
-  std::string m_abbrevUnit;
   double m_factor;
 
   units::second_t m_minDuration;
