@@ -53,18 +53,22 @@ const wpi::SmallVector<std::string_view, 4> kPigeonCtors{
     "0", "WPI_TalonSRX-1", "WPI_TalonSRX-2", "WPI_TalonSRX-10"};
 const wpi::SmallVector<std::string_view, 4> kAnalogCtors{"0"};
 const wpi::SmallVector<std::string_view, 4> kNavXCtors{
-    "SerialPort.kUSB", "I2C", "SerialPort.kMXP", "SPI.kMXP"};
-const wpi::SmallVector<std::string_view, 4> kADXRS450Ctors{"SPI.kMXP",
-                                                           "kOnboardCS0"};
-const wpi::SmallVector<std::string_view, 4> kADISCtors{
-    "SPI.kMXP", "kOnboardCS0", "kOnboardCS1", "kOnboardCS2", "kOnboardCS3"};
+    "SerialPort (USB)", "I2C (MXP)", "SerialPort (MXP)", "SPI (MXP)"};
+const wpi::SmallVector<std::string_view, 4> kADXRS450Ctors{"SPI (MXP)",
+                                                           "SPI (Onboard CS0)"};
+const wpi::SmallVector<std::string_view, 4> kADIS16448Ctors{
+    "SPI (MXP)", "SPI (Onboard CS0)", "SPI (Onboard CS1)", "SPI (Onboard CS2)",
+    "SPI (Onboard CS3)"};
+const wpi::SmallVector<std::string_view, 4> kADIS16470Ctors{
+    "SPI (Onboard CS0)", "SPI (Onboard CS1)", "SPI (Onboard CS2)",
+    "SPI (Onboard CS3)", "SPI (MXP)"};
 wpi::StringMap<wpi::SmallVector<std::string_view, 4>> gyroCtorMap = {
     {std::string{sysid::gyro::kAnalogGyro.name}, kAnalogCtors},
     {std::string{sysid::gyro::kPigeon.name}, kPigeonCtors},
     {std::string{sysid::gyro::kADXRS450.name}, kADXRS450Ctors},
     {std::string{sysid::gyro::kNavX.name}, kNavXCtors},
-    {std::string{sysid::gyro::kADIS16470.name}, kADISCtors},
-    {std::string{sysid::gyro::kADIS16448.name}, kADXRS450Ctors},
+    {std::string{sysid::gyro::kADIS16448.name}, kADIS16448Ctors},
+    {std::string{sysid::gyro::kADIS16470.name}, kADIS16470Ctors},
     {std::string{sysid::gyro::kNoGyroOption.name}, kAnalogCtors}};
 
 class GenerationTest : public ::testing::Test {
@@ -146,16 +150,16 @@ class GenerationTest : public ::testing::Test {
         // Pigeon is plugged into CAN
         pigeonPortStr = fmt::format("{} (CAN)", gyroCtor);
       }
-      FindInLog(fmt::format("Pigeon, Port: {}", pigeonPortStr));
-    } else if (gyro == sysid::gyro::kADIS16470.name ||
+      FindInLog(fmt::format("Pigeon, {}", pigeonPortStr));
+    } else if (gyro == sysid::gyro::kADXRS450.name ||
                gyro == sysid::gyro::kADIS16448.name ||
-               gyro == sysid::gyro::kADXRS450.name) {
+               gyro == sysid::gyro::kADIS16470.name) {
       FindInLog(gyro);
-      FindInLog(fmt::format("SPI {}", gyroCtor));
+      FindInLog(fmt::format("{}", gyroCtor));
     } else if (gyro == sysid::gyro::kRomiGyro.name) {
       FindInLog("Romi");
     } else {
-      FindInLog(fmt::format("{}, Port: {}", gyro, gyroCtor));
+      FindInLog(fmt::format("{}, {}", gyro, gyroCtor));
     }
   }
 

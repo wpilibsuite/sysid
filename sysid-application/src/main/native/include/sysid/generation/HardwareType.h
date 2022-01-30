@@ -102,8 +102,8 @@ HardwareType FromEncoderName(std::string_view name);
 namespace gyro {
 constexpr HardwareType kAnalogGyro{"Analog Gyro"};
 constexpr HardwareType kADXRS450{"ADXRS450"};
-constexpr HardwareType kADIS16470{"ADIS16470"};
 constexpr HardwareType kADIS16448{"ADIS16448"};
+constexpr HardwareType kADIS16470{"ADIS16470"};
 constexpr HardwareType kNavX{"NavX"};
 constexpr HardwareType kPigeon{"Pigeon"};
 constexpr HardwareType kRomiGyro{"Romi"};
@@ -111,7 +111,7 @@ constexpr HardwareType kNoGyroOption{"None"};
 
 constexpr std::array<HardwareType, 8> kGyros = {
     kAnalogGyro, kADXRS450,  kNavX,     kPigeon,
-    kADIS16470,  kADIS16448, kRomiGyro, kNoGyroOption};
+    kADIS16448,  kADIS16470, kRomiGyro, kNoGyroOption};
 
 /**
  * Returns an existing gyro HardwareType from a string_view. Throws if the
