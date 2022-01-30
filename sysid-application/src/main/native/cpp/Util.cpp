@@ -43,7 +43,7 @@ void sysid::CreateErrorPopup(bool& isError, std::string_view errorMessage) {
   }
 }
 
-std::string sysid::GetAbbreviation(std::string_view unit) {
+std::string_view sysid::GetAbbreviation(std::string_view unit) {
   if (unit == "Meters") {
     return "m";
   } else if (unit == "Feet") {

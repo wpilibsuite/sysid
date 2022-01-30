@@ -21,6 +21,7 @@
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
 
+#include "sysid/Util.h"
 #include "sysid/analysis/AnalysisType.h"
 #include "sysid/analysis/FilteringUtils.h"
 #include "sysid/analysis/JSONConverter.h"

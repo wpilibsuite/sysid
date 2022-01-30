@@ -105,7 +105,7 @@ std::string sysid::ToCSV(std::string_view path, wpi::Logger& logger) {
   auto type = sysid::analysis::FromName(json.at("test").get<std::string>());
   auto factor = json.at("unitsPerRotation").get<double>();
   auto unit = json.at("units").get<std::string>();
-  auto abbreviation = GetAbbreviation(unit);
+  std::string_view abbreviation = GetAbbreviation(unit);
 
   std::error_code ec;
   // Naming: {sysid-json-name}(Test, Units).csv

@@ -60,7 +60,7 @@ void CreateErrorPopup(bool& isError, std::string_view errorMessage);
  * @param unit The unit to return the abbreviation for.
  * @return The abbreviation for the unit.
  */
-std::string GetAbbreviation(std::string_view unit);
+std::string_view GetAbbreviation(std::string_view unit);
 
 /**
  * Saves a file with the provided contents to a specified location.
