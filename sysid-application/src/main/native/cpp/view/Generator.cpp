@@ -206,9 +206,10 @@ void Generator::UpdateFromConfig() {
     m_gyroParam = GetNewIdx(sysid::kADXRS450Ctors, m_settings.gyroCtor);
   } else if (m_settings.gyro == sysid::gyro::kNavX) {
     m_gyroParam = GetNewIdx(sysid::kNavXCtors, m_settings.gyroCtor);
-  } else if (m_settings.gyro == sysid::gyro::kADIS16470 ||
-             m_settings.gyro == sysid::gyro::kADIS16448) {
-    m_gyroParam = GetNewIdx(sysid::kADISCtors, m_settings.gyroCtor);
+  } else if (m_settings.gyro == sysid::gyro::kADIS16448) {
+    m_gyroParam = GetNewIdx(sysid::kADIS16448Ctors, m_settings.gyroCtor);
+  } else if (m_settings.gyro == sysid::gyro::kADIS16470) {
+    m_gyroParam = GetNewIdx(sysid::kADIS16470Ctors, m_settings.gyroCtor);
   } else {
     m_gyroPort = std::stoi(m_settings.gyroCtor);
   }
@@ -476,7 +477,7 @@ void Generator::Display() {
 
     // Handle each gyro and its special cases.
     if (gyroType == sysid::gyro::kPigeon) {
-      ImGui::InputInt("Gyro Parameter", &m_gyroPort, 0, 0);
+      ImGui::InputInt("CAN ID", &m_gyroPort, 0, 0);
       ImGui::SameLine();
       ImGui::Checkbox("Is Talon", &m_isTalon);
       CreateTooltip(
@@ -489,18 +490,23 @@ void Generator::Display() {
         m_settings.gyroCtor = "WPI_TalonSRX-" + m_settings.gyroCtor;
       }
     } else if (gyroType == sysid::gyro::kADXRS450) {
-      ImGui::Combo("Gyro Parameter", &m_gyroParam, kADXRS450Ctors,
+      ImGui::Combo("SPI Port", &m_gyroParam, kADXRS450Ctors,
                    IM_ARRAYSIZE(kADXRS450Ctors));
       m_settings.gyroCtor = std::string(kADXRS450Ctors[m_gyroParam]);
     } else if (gyroType == sysid::gyro::kNavX) {
-      ImGui::Combo("Gyro Parameter", &m_gyroParam, kNavXCtors,
+      ImGui::Combo("SPI Port", &m_gyroParam, kNavXCtors,
                    IM_ARRAYSIZE(kNavXCtors));
       m_settings.gyroCtor = std::string(kNavXCtors[m_gyroParam]);
-    } else if (m_settings.gyro == sysid::gyro::kADIS16470 ||
-               m_settings.gyro == sysid::gyro::kADIS16448) {
-      m_settings.gyroCtor = std::string(kADISCtors[m_gyroParam]);
-    } else {
-      ImGui::InputInt("Gyro Parameter", &m_gyroPort, 0, 0);
+    } else if (m_settings.gyro == sysid::gyro::kADIS16448) {
+      ImGui::Combo("SPI Port", &m_gyroParam, kADIS16448Ctors,
+                   IM_ARRAYSIZE(kADIS16448Ctors));
+      m_settings.gyroCtor = std::string(kADIS16448Ctors[m_gyroParam]);
+    } else if (m_settings.gyro == sysid::gyro::kADIS16470) {
+      ImGui::Combo("SPI Port", &m_gyroParam, kADIS16470Ctors,
+                   IM_ARRAYSIZE(kADIS16470Ctors));
+      m_settings.gyroCtor = std::string(kADIS16470Ctors[m_gyroParam]);
+    } else if (m_settings.gyro == sysid::gyro::kAnalogGyro) {
+      ImGui::InputInt("Analog Port", &m_gyroPort, 0, 0);
 
       // AnalogGyro port cannot be greater than 1.
       if (m_gyroPort > 1) {

@@ -93,7 +93,7 @@ void Analyzer::Display() {
     if (ImGui::Combo("Dataset", &m_settings.dataset, AnalysisManager::kDatasets,
                      m_type == analysis::kDrivetrain ? 9 : 3)) {
       m_enabled = true;
-      Calculate();
+      RefreshInformation();
       PrepareGraphs();
     }
     ImGui::SameLine(width - ImGui::CalcTextSize("Reset").x);
@@ -153,24 +153,26 @@ void Analyzer::Display() {
         try {
           m_manager->OverrideUnits(m_unit, m_factor);
           m_enabled = true;
-          Calculate();
+          RefreshInformation();
         } catch (const std::exception& e) {
-          ex = true;
-          m_exception = e.what();
+          HandleGeneralError(e);
         }
       }
 
       ImGui::EndPopup();
-      if (ex) {
-        m_errorPopup = true;
-      }
     }
 
     ImGui::SameLine();
     if (ImGui::Button("Reset Units from JSON")) {
-      m_manager->ResetUnitsFromJSON();
-      m_enabled = true;
-      Calculate();
+      try {
+        m_manager->ResetUnitsFromJSON();
+        m_factor = m_manager->GetFactor();
+        m_unit = m_manager->GetUnit();
+        m_enabled = true;
+        RefreshInformation();
+      } catch (const std::exception& e) {
+        HandleGeneralError(e);
+      }
     }
   }
 

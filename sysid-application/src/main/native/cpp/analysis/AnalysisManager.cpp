@@ -626,6 +626,14 @@ void AnalysisManager::PrepareData() {
 }
 
 AnalysisManager::Gains AnalysisManager::Calculate() {
+  if (m_filteredDatasets.empty()) {
+    throw std::runtime_error(
+        "There is an unresolved issue with the data being used. Please "
+        "double-check the data quality and adjust settings such as units, "
+        "velocity threshold, test duration, etc. to make sure that there are "
+        "no errors with the dataset before attempting to re-calculate gains.");
+  }
+
   WPI_INFO(m_logger, "{}", "Calculating Gains");
   // Calculate feedforward gains from the data.
   auto ffGains = sysid::CalculateFeedforwardGains(
