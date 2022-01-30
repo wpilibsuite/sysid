@@ -20,6 +20,7 @@
 #include "sysid/Util.h"
 #include "sysid/analysis/AnalysisType.h"
 #include "sysid/generation/ConfigManager.h"
+#include "sysid/view/UILayout.h"
 
 using namespace sysid;
 
@@ -221,7 +222,7 @@ void Generator::Display() {
   const auto& motorControllerNames = kMotorControllerNames.names;
   const auto& gyroNames = kGyroNames.names;
   // Add team / IP selection.
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
   ImGui::InputText("Team/IP", &m_team);
 
   // Add Config Reading Button
@@ -250,7 +251,7 @@ void Generator::Display() {
     ImGui::OpenPopup("Deploy Status");
   }
   // Add analysis type selection.
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
   ImGui::Combo("Analysis Type", &m_analysisIdx, kAnalysisTypes,
                IM_ARRAYSIZE(kAnalysisTypes));
   m_analysisType = kAnalysisTypes[m_analysisIdx];
@@ -305,7 +306,7 @@ void Generator::Display() {
     ImGui::PushID(i);
 
     // Add motor controller selector.
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
     std::string motorControllerName;
     if (drive) {
       motorControllerName = fmt::format("Motor Controller Pair {}", i);
@@ -379,7 +380,7 @@ void Generator::Display() {
   m_prevMainMotorController = mainMotorController;
 
   // Add encoder selection.
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
   if (mainMotorController == sysid::motorcontroller::kTalonSRX ||
       mainMotorController == sysid::motorcontroller::kTalonFX) {
     if (mainMotorController == sysid::motorcontroller::kTalonFX) {
@@ -465,10 +466,10 @@ void Generator::Display() {
     ImGui::Text("Gyro");
 
     // Add gyro combo box.
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
     ImGui::Combo("Gyro", &m_gyroIdx, gyroNames, kGyroNames.size);
 
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
 
     auto gyroType =
         sysid::gyro::FromGyroName(std::string_view{gyroNames[m_gyroIdx]});

@@ -18,6 +18,7 @@
 
 #include "sysid/Util.h"
 #include "sysid/analysis/AnalysisType.h"
+#include "sysid/view/UILayout.h"
 
 using namespace sysid;
 
@@ -67,7 +68,7 @@ void Logger::Display() {
   ImGui::Text("Project Parameters");
 
   // Add a dropdown for mechanism type.
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
 
   if (ImGui::Combo("Mechanism", &m_selectedType, kTypes,
                    IM_ARRAYSIZE(kTypes))) {
@@ -75,7 +76,7 @@ void Logger::Display() {
   }
 
   // Add Dropdown for Units
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
   if (ImGui::Combo("Unit Type", &m_selectedUnit, kUnits,
                    IM_ARRAYSIZE(kUnits))) {
     m_settings.units = kUnits[m_selectedUnit];
@@ -100,7 +101,7 @@ void Logger::Display() {
   }
 
   // Units Per Rotations entry
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
   ImGui::InputDouble("Units Per Rotation", &m_settings.unitsPerRotation, 0.0f,
                      0.0f, "%.4f",
                      m_isRotationalUnits ? ImGuiInputTextFlags_ReadOnly

@@ -27,7 +27,7 @@
 #include "sysid/view/Generator.h"
 #include "sysid/view/JSONConverter.h"
 #include "sysid/view/Logger.h"
-#include "sysid/view/WindowLayout.h"
+#include "sysid/view/UILayout.h"
 
 namespace gui = wpi::gui;
 

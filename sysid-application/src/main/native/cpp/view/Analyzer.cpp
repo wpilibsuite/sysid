@@ -25,7 +25,7 @@
 #include "sysid/analysis/ElevatorSim.h"
 #include "sysid/analysis/FeedbackControllerPreset.h"
 #include "sysid/analysis/SimpleMotorSim.h"
-#include "sysid/view/WindowLayout.h"
+#include "sysid/view/UILayout.h"
 
 using namespace sysid;
 
@@ -89,7 +89,7 @@ void Analyzer::Display() {
   // Allow the user to select which data set they want analyzed and add a reset
   // button. Also show the units and the units per rotation.
   if (m_manager) {
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
     if (ImGui::Combo("Dataset", &m_settings.dataset, AnalysisManager::kDatasets,
                      m_type == analysis::kDrivetrain ? 9 : 3)) {
       m_enabled = true;
@@ -462,7 +462,7 @@ void Analyzer::DisplayFeedforwardGains() {
 void Analyzer::DisplayFeedbackGains() {
   // Allow the user to select a feedback controller preset.
   ImGui::Spacing();
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
   if (ImGui::Combo("Gain Preset", &m_selectedPreset, kPresetNames,
                    IM_ARRAYSIZE(kPresetNames))) {
     m_settings.preset = m_presets[kPresetNames[m_selectedPreset]];
@@ -600,7 +600,7 @@ void Analyzer::DisplayFeedbackGains() {
   ImGui::Spacing();
 
   // Allow the user to select a loop type.
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10);
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
   if (ImGui::Combo("Loop Type", &m_selectedLoopType, kLoopTypes,
                    IM_ARRAYSIZE(kLoopTypes))) {
     m_settings.type =

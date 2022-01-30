@@ -105,4 +105,7 @@ static constexpr Vector2d kPlotSize{
 // Right column contents
 static constexpr Vector2d kDiagnosticPlotWindowPos = kRightColPos;
 static constexpr Vector2d kDiagnosticPlotWindowSize = kRightColSize;
+
+// Text box width as a multiple of the font size
+static constexpr int kTextBoxWidthMultiple = 10;
 }  // namespace sysid

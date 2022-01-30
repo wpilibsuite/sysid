@@ -16,7 +16,7 @@
 #include "sysid/analysis/ElevatorSim.h"
 #include "sysid/analysis/FilteringUtils.h"
 #include "sysid/analysis/SimpleMotorSim.h"
-#include "sysid/view/WindowLayout.h"
+#include "sysid/view/UILayout.h"
 
 using namespace sysid;
 
