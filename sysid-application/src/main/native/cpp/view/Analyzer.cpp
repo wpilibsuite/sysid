@@ -29,8 +29,6 @@
 
 using namespace sysid;
 
-static double kBadDataGain = -9999.0;
-
 Analyzer::Analyzer(glass::Storage& storage, wpi::Logger& logger)
     : m_location(""), m_logger(logger) {
   // Fill the StringMap with preset values.
@@ -47,9 +45,6 @@ Analyzer::Analyzer(glass::Storage& storage, wpi::Logger& logger)
 
 void Analyzer::DisplayGain(const char* text, double* data) {
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
-  if (!m_enabled) {
-    data = &kBadDataGain;
-  }
   ImGui::InputDouble(text, data, 0.0, 0.0, "%.5G",
                      ImGuiInputTextFlags_ReadOnly);
 }
@@ -176,14 +171,13 @@ void Analyzer::Display() {
   ImGui::Spacing();
   ImGui::Spacing();
 
-  // Collapsing Headers are used for Feedforward and Feedback Analysis.
-  ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-  if (ImGui::CollapsingHeader("Feedforward Analysis")) {
-    // Depending on whether a file has been selected or not, display a generic
-    // warning message or show the feedforward gains.
-    if (!m_manager) {
-      ImGui::Text("Please Select a JSON File");
-    } else {
+  if (!m_manager) {
+    ImGui::Text("Please Select a JSON File");
+  }
+
+  if (m_manager) {
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    if (ImGui::CollapsingHeader("Feedforward Analysis")) {
       DisplayFeedforwardGains();
     }
   }
@@ -228,13 +222,9 @@ void Analyzer::Display() {
 
   ImGui::End();
 
-  ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-  if (ImGui::CollapsingHeader("Feedback Analysis")) {
-    // Depending on whether a file has been selected or not, display a generic
-    // warning message or show the feedback gains.
-    if (!m_manager) {
-      ImGui::Text("Please Select a JSON File");
-    } else if (m_enabled) {
+  if (m_manager && m_enabled) {
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    if (ImGui::CollapsingHeader("Feedback Analysis")) {
       DisplayFeedbackGains();
     }
   }
@@ -351,35 +341,38 @@ void Analyzer::HandleJSONError(const wpi::json::exception& e) {
 void Analyzer::DisplayFeedforwardGains() {
   float beginX = ImGui::GetCursorPosX();
   float beginY = ImGui::GetCursorPosY();
-  const char* gainNames[] = {"Ks", "Kv", "Ka"};
 
-  for (size_t i = 0; i < 3; i++) {
-    SetPosition(beginX, beginY, 0, i);
-    DisplayGain(gainNames[i], &m_ff[i]);
+  if (m_enabled) {
+    const char* gainNames[] = {"Ks", "Kv", "Ka"};
+
+    for (size_t i = 0; i < 3; i++) {
+      SetPosition(beginX, beginY, 0, i);
+      DisplayGain(gainNames[i], &m_ff[i]);
+    }
+
+    size_t row = 3;
+
+    SetPosition(beginX, beginY, 0, row);
+
+    if (m_type == analysis::kElevator) {
+      DisplayGain("Kg", &m_ff[3]);
+      ++row;
+    } else if (m_type == analysis::kArm) {
+      DisplayGain("Kcos", &m_ff[3]);
+      ++row;
+    } else if (m_trackWidth) {
+      DisplayGain("Track Width", &*m_trackWidth);
+      ++row;
+    }
+
+    SetPosition(beginX, beginY, 0, row);
+    DisplayGain("Response Timescale (s)", &m_timescale);
+    CreateTooltip(
+        "The characteristic timescale of the system response in seconds. "
+        "Both the control loop period and total signal delay should be "
+        "at least 3-5 times shorter than this to optimally control the "
+        "system.");
   }
-
-  size_t row = 3;
-
-  SetPosition(beginX, beginY, 0, row);
-
-  if (m_type == analysis::kElevator) {
-    DisplayGain("Kg", &m_ff[3]);
-    ++row;
-  } else if (m_type == analysis::kArm) {
-    DisplayGain("Kcos", &m_ff[3]);
-    ++row;
-  } else if (m_trackWidth) {
-    DisplayGain("Track Width", &*m_trackWidth);
-    ++row;
-  }
-
-  SetPosition(beginX, beginY, 0, row);
-  DisplayGain("Response Timescale (s)", &m_timescale);
-  CreateTooltip(
-      "The characteristic timescale of the system response in seconds. "
-      "Both the control loop period and total signal delay should be "
-      "at least 3-5 times shorter than this to optimally control the "
-      "system.");
 
   double endY = ImGui::GetCursorPosY();
 
@@ -403,7 +396,7 @@ void Analyzer::DisplayFeedforwardGains() {
 
   // Wait for enter before refresh so decimal inputs like "0.2" don't
   // prematurely refresh with a velocity threshold of "0".
-  SetPosition(beginX, beginY, kHorizontalOffset, 0.9);
+  SetPosition(beginX, beginY, kHorizontalOffset, 1);
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
   double threshold = m_settings.motionThreshold;
   if (ImGui::InputDouble("Velocity Threshold", &threshold, 0.0, 0.0, "%.3f",
