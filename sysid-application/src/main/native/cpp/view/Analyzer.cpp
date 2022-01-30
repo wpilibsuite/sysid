@@ -94,7 +94,6 @@ void Analyzer::Display() {
                      m_type == analysis::kDrivetrain ? 9 : 3)) {
       m_enabled = true;
       RefreshInformation();
-      PrepareGraphs();
     }
     ImGui::SameLine(width - ImGui::CalcTextSize("Reset").x);
     if (ImGui::Button("Reset")) {
