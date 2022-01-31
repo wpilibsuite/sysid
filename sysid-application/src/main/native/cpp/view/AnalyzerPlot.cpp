@@ -16,7 +16,6 @@
 #include "sysid/analysis/ElevatorSim.h"
 #include "sysid/analysis/FilteringUtils.h"
 #include "sysid/analysis/SimpleMotorSim.h"
-#include "sysid/view/UILayout.h"
 
 using namespace sysid;
 
@@ -345,15 +344,27 @@ bool AnalyzerPlot::DisplayPlots() {
     return false;
   }
 
-  m_quasistaticData.Plot("Quasistatic Velocity vs. Time",
+  ImVec2 plotSize = ImGui::GetContentRegionAvail();
+
+  // Fit two plots horizontally
+  plotSize.x = (plotSize.x - ImGui::GetStyle().ItemSpacing.x) / 2.f;
+
+  // Fit two plots vertically while leaving room for three text boxes
+  const float textBoxHeight = ImGui::GetFontSize() * 1.75;
+  plotSize.y =
+      (plotSize.y - textBoxHeight * 3 - ImGui::GetStyle().ItemSpacing.y) / 2.f;
+
+  m_quasistaticData.Plot("Quasistatic Velocity vs. Time", plotSize,
                          m_velocityLabel.c_str());
   ImGui::SameLine();
-  m_dynamicData.Plot("Dynamic Velocity vs. Time", m_velocityLabel.c_str());
+  m_dynamicData.Plot("Dynamic Velocity vs. Time", plotSize,
+                     m_velocityLabel.c_str());
 
-  m_regressionData.Plot("Acceleration vs. Velocity", m_velocityLabel.c_str(),
-                        m_velPortionAccelLabel.c_str(), true, true);
+  m_regressionData.Plot("Acceleration vs. Velocity", plotSize,
+                        m_velocityLabel.c_str(), m_velPortionAccelLabel.c_str(),
+                        true, true);
   ImGui::SameLine();
-  m_timestepData.Plot("Timesteps vs. Time", "Time (s)",
+  m_timestepData.Plot("Timesteps vs. Time", plotSize, "Time (s)",
                       "Timestep duration (ms)", true, false,
                       [] { ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 50); });
 
@@ -366,14 +377,15 @@ AnalyzerPlot::FilteredDataVsTimePlot::FilteredDataVsTimePlot() {
   simData.reserve(kMaxSize);
 }
 
-void AnalyzerPlot::FilteredDataVsTimePlot::Plot(const char* plotTitle,
+void AnalyzerPlot::FilteredDataVsTimePlot::Plot(const char* title,
+                                                const ImVec2& size,
                                                 const char* yLabel) {
   // Generate Sim vs Filtered Plot
   if (fitNextPlot) {
     ImPlot::SetNextAxesToFit();
   }
 
-  if (ImPlot::BeginPlot(plotTitle, ImVec2{kPlotSize})) {
+  if (ImPlot::BeginPlot(title, size)) {
     ImPlot::SetupAxis(ImAxis_X1, "Time (s)", ImPlotAxisFlags_NoGridLines);
     ImPlot::SetupAxis(ImAxis_Y1, yLabel, ImPlotAxisFlags_NoGridLines);
     ImPlot::SetupLegend(ImPlotLocation_NorthEast);
@@ -409,11 +421,9 @@ AnalyzerPlot::DataWithFitLinePlot::DataWithFitLinePlot() {
   data.reserve(kMaxSize);
 }
 
-void AnalyzerPlot::DataWithFitLinePlot::Plot(const char* plotTitle,
-                                             const char* xLabel,
-                                             const char* yLabel, bool fitX,
-                                             bool fitY,
-                                             std::function<void()> setup) {
+void AnalyzerPlot::DataWithFitLinePlot::Plot(
+    const char* title, const ImVec2& size, const char* xLabel,
+    const char* yLabel, bool fitX, bool fitY, std::function<void()> setup) {
   if (fitNextPlot) {
     if (fitX && fitY) {
       ImPlot::SetNextAxesToFit();
@@ -424,7 +434,7 @@ void AnalyzerPlot::DataWithFitLinePlot::Plot(const char* plotTitle,
     }
   }
 
-  if (ImPlot::BeginPlot(plotTitle, ImVec2{kPlotSize})) {
+  if (ImPlot::BeginPlot(title, size)) {
     setup();
     ImPlot::SetupAxis(ImAxis_X1, xLabel, ImPlotAxisFlags_NoGridLines);
     ImPlot::SetupAxis(ImAxis_Y1, yLabel, ImPlotAxisFlags_NoGridLines);
