@@ -97,11 +97,6 @@ static constexpr Vector2d kRightColPos =
 static constexpr Vector2d kRightColSize =
     kAppWindowSize - kRightColPos - Vector2d{kWindowGap, kWindowGap};
 
-// Plot size
-static constexpr Vector2d kPlotSize{
-    (kRightColSize.x - 3 * kWindowGap - 10) / 2,
-    (kRightColSize.x - 3 * kWindowGap - 10) / 2};
-
 // Right column contents
 static constexpr Vector2d kDiagnosticPlotWindowPos = kRightColPos;
 static constexpr Vector2d kDiagnosticPlotWindowSize = kRightColSize;

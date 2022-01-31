@@ -131,10 +131,11 @@ class AnalyzerPlot {
     /**
      * Plots data and fit line.
      *
-     * @param plotTitle Plot title.
+     * @param title Plot title.
+     * @param size Plot size.
      * @param yLabel Y axis label.
      */
-    void Plot(const char* plotTitle, const char* yLabel);
+    void Plot(const char* title, const ImVec2& size, const char* yLabel);
 
     /**
      * Clears plot.
@@ -145,6 +146,8 @@ class AnalyzerPlot {
   struct DataWithFitLinePlot {
     std::vector<ImPlotPoint> data;
     std::array<ImPlotPoint, 2> fitLine;
+
+    // Stores whether this was the first call to Plot() since setting data
     bool fitNextPlot = false;
 
     DataWithFitLinePlot();
@@ -152,7 +155,8 @@ class AnalyzerPlot {
     /**
      * Plots data and fit line.
      *
-     * @param plotTitle Plot title.
+     * @param title Plot title.
+     * @param size Plot size.
      * @param xLabel X axis label.
      * @param yLabel Y axis label.
      * @param fitX True if X axis should be autofitted.
@@ -161,8 +165,9 @@ class AnalyzerPlot {
      *              setup.
      */
     void Plot(
-        const char* plotTitle, const char* xLabel, const char* yLabel,
-        bool fitX, bool fitY, std::function<void()> setup = [] {});
+        const char* title, const ImVec2& size, const char* xLabel,
+        const char* yLabel, bool fitX, bool fitY,
+        std::function<void()> setup = [] {});
 
     /**
      * Clears plot.
