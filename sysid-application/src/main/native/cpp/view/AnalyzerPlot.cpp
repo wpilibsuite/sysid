@@ -355,17 +355,17 @@ bool AnalyzerPlot::DisplayPlots() {
       (plotSize.y - textBoxHeight * 3 - ImGui::GetStyle().ItemSpacing.y) / 2.f;
 
   m_quasistaticData.Plot("Quasistatic Velocity vs. Time", plotSize,
-                         m_velocityLabel.c_str());
+                         m_velocityLabel.c_str(), m_pointSize);
   ImGui::SameLine();
   m_dynamicData.Plot("Dynamic Velocity vs. Time", plotSize,
-                     m_velocityLabel.c_str());
+                     m_velocityLabel.c_str(), m_pointSize);
 
   m_regressionData.Plot("Acceleration vs. Velocity", plotSize,
                         m_velocityLabel.c_str(), m_velPortionAccelLabel.c_str(),
-                        true, true);
+                        true, true, m_pointSize);
   ImGui::SameLine();
   m_timestepData.Plot("Timesteps vs. Time", plotSize, "Time (s)",
-                      "Timestep duration (ms)", true, false,
+                      "Timestep duration (ms)", true, false, m_pointSize,
                       [] { ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 50); });
 
   return true;
@@ -379,7 +379,8 @@ AnalyzerPlot::FilteredDataVsTimePlot::FilteredDataVsTimePlot() {
 
 void AnalyzerPlot::FilteredDataVsTimePlot::Plot(const char* title,
                                                 const ImVec2& size,
-                                                const char* yLabel) {
+                                                const char* yLabel,
+                                                float pointSize) {
   // Generate Sim vs Filtered Plot
   if (fitNextPlot) {
     ImPlot::SetNextAxesToFit();
@@ -392,10 +393,12 @@ void AnalyzerPlot::FilteredDataVsTimePlot::Plot(const char* title,
 
     // Plot Raw Data
     ImPlot::SetNextMarkerStyle(IMPLOT_AUTO, 1, IMPLOT_AUTO_COL, 0);
+    ImPlot::SetNextMarkerStyle(ImPlotStyleVar_MarkerSize, pointSize);
     ImPlot::PlotScatterG("Raw Data", Getter, rawData.data(), rawData.size());
 
     // Plot Filtered Data after Raw data
     ImPlot::SetNextMarkerStyle(IMPLOT_AUTO, 1, IMPLOT_AUTO_COL, 0);
+    ImPlot::SetNextMarkerStyle(ImPlotStyleVar_MarkerSize, pointSize);
     ImPlot::PlotScatterG("Filtered Data", Getter, filteredData.data(),
                          filteredData.size());
 
@@ -421,9 +424,12 @@ AnalyzerPlot::DataWithFitLinePlot::DataWithFitLinePlot() {
   data.reserve(kMaxSize);
 }
 
-void AnalyzerPlot::DataWithFitLinePlot::Plot(
-    const char* title, const ImVec2& size, const char* xLabel,
-    const char* yLabel, bool fitX, bool fitY, std::function<void()> setup) {
+void AnalyzerPlot::DataWithFitLinePlot::Plot(const char* title,
+                                             const ImVec2& size,
+                                             const char* xLabel,
+                                             const char* yLabel, bool fitX,
+                                             bool fitY, float pointSize,
+                                             std::function<void()> setup) {
   if (fitNextPlot) {
     if (fitX && fitY) {
       ImPlot::SetNextAxesToFit();
@@ -442,6 +448,7 @@ void AnalyzerPlot::DataWithFitLinePlot::Plot(
 
     // Get a reference to the data that we are plotting.
     ImPlot::SetNextMarkerStyle(IMPLOT_AUTO, 1, IMPLOT_AUTO_COL, 0);
+    ImPlot::SetNextMarkerStyle(ImPlotStyleVar_MarkerSize, pointSize);
     ImPlot::PlotScatterG("Filtered Data", Getter, data.data(), data.size());
 
     ImPlot::SetNextLineStyle(IMPLOT_AUTO_COL, 1.5);
