@@ -26,6 +26,8 @@ namespace sysid {
  */
 class AnalyzerPlot {
  public:
+  float m_pointSize = 1.25;
+
   /**
    * Constructs an instance of the analyzer plot helper and allocates memory for
    * all data vectors.
@@ -134,8 +136,10 @@ class AnalyzerPlot {
      * @param title Plot title.
      * @param size Plot size.
      * @param yLabel Y axis label.
+     * @param pointSize The size of the data point markers (in pixels).
      */
-    void Plot(const char* title, const ImVec2& size, const char* yLabel);
+    void Plot(const char* title, const ImVec2& size, const char* yLabel,
+              float pointSize);
 
     /**
      * Clears plot.
@@ -161,12 +165,13 @@ class AnalyzerPlot {
      * @param yLabel Y axis label.
      * @param fitX True if X axis should be autofitted.
      * @param fitY True if Y axis should be autofitted.
+     * @param pointSize The size of the data point markers (in pixels).
      * @param setup Callback within BeginPlot() block that performs custom plot
      *              setup.
      */
     void Plot(
         const char* title, const ImVec2& size, const char* xLabel,
-        const char* yLabel, bool fitX, bool fitY,
+        const char* yLabel, bool fitX, bool fitY, float pointSize,
         std::function<void()> setup = [] {});
 
     /**

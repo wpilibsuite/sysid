@@ -187,6 +187,12 @@ void Analyzer::Display() {
   ImGui::SetNextWindowSize(ImVec2{kDiagnosticPlotWindowSize},
                            ImGuiCond_FirstUseEver);
   ImGui::Begin("Diagnostic Plots");
+
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 6);
+  if (ImGui::SliderFloat("Point Size", &m_plot.m_pointSize, 1, 2, "%.2f")) {
+    RefreshInformation();
+  }
+
   // If the plots were already loaded, store the scroll position. Else go to
   // the last recorded scroll position if they have just been initialized
   bool plotsLoaded = m_plot.DisplayPlots();
