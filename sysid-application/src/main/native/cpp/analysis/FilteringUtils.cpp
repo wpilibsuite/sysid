@@ -63,22 +63,14 @@ static bool IsFiltered(std::string_view key) {
  */
 static void PrepareMechData(std::vector<PreparedData>* data,
                             std::string_view unit = "") {
-  constexpr size_t kOrder = 2;
-  constexpr size_t kWindow = kOrder + 1;
+  constexpr size_t kWindow = 3;
 
   CheckSize(*data, kWindow);
 
-  const double h = GetMeanTimeDelta(*data).value();
-
-  // Compute acceleration and add it to the vector.
-  for (size_t i = kWindow / 2; i < data->size() - kWindow / 2; ++i) {
+  // Calculates the cosine of the position data for single jointed arm analysis
+  for (int i = 0; i < data->size(); ++i) {
     auto& pt = data->at(i);
 
-    pt.acceleration = CentralFiniteDifference<kOrder>(
-        [&](size_t i) { return data->at(i).velocity; }, i, h);
-
-    // Calculates the cosine of the position data for single jointed arm
-    // analysis
     double cos = 0.0;
     if (unit == "Radians") {
       cos = std::cos(pt.position);
@@ -88,6 +80,25 @@ static void PrepareMechData(std::vector<PreparedData>* data,
       cos = std::cos(pt.position * 2 * wpi::numbers::pi);
     }
     pt.cos = cos;
+  }
+
+  auto derivative =
+      CentralFiniteDifference<1, kWindow>(GetMeanTimeDelta(*data));
+
+  // Load the derivative filter with the first value for accurate initial
+  // behavior
+  for (int i = 0; i < kWindow; ++i) {
+    derivative.Calculate(data->at(0).velocity);
+  }
+
+  for (size_t i = (kWindow - 1) / 2; i < data->size(); ++i) {
+    data->at(i - (kWindow - 1) / 2).acceleration =
+        derivative.Calculate(data->at(i).velocity);
+  }
+
+  // Fill in accelerations past end of derivative filter
+  for (size_t i = data->size() - (kWindow - 1) / 2; i < data->size(); ++i) {
+    data->at(i).acceleration = 0.0;
   }
 }
 
@@ -189,27 +200,23 @@ units::second_t sysid::GetMeanTimeDelta(const Storage& data) {
 void sysid::ApplyMedianFilter(std::vector<PreparedData>* data, int window) {
   CheckSize(*data, window);
 
-  size_t step = window / 2;
   frc::MedianFilter<double> medianFilter(window);
 
-  // Load the median filter with the first value, "step" number of times for
-  // accurate initial behavior.
-  for (int i = 0; i < step; i++) {
+  // Load the median filter with the first value for accurate initial behavior
+  for (int i = 0; i < window; i++) {
     medianFilter.Calculate(data->at(0).velocity);
   }
 
-  for (size_t i = 0; i < data->size(); i++) {
-    double median = medianFilter.Calculate(data->at(i).velocity);
-    if (i >= step) {
-      data->at(i - step).velocity = median;
-    }
+  for (size_t i = (window - 1) / 2; i < data->size(); i++) {
+    data->at(i - (window - 1) / 2).velocity =
+        medianFilter.Calculate(data->at(i).velocity);
   }
 
-  // Run the median filter for the last "step" datapoints by loading the median
-  // filter with the last recorded velocity value.
-  for (int i = data->size() - step; i < data->size(); i++) {
-    double median = medianFilter.Calculate(data->at(data->size() - 1).velocity);
-    data->at(i).velocity = median;
+  // Run the median filter for the last half window of datapoints by loading the
+  // median filter with the last recorded velocity value
+  for (int i = data->size() - (window - 1) / 2; i < data->size(); i++) {
+    data->at(i).velocity =
+        medianFilter.Calculate(data->at(data->size() - 1).velocity);
   }
 }
 

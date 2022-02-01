@@ -68,61 +68,99 @@ TEST(FilterTest, StepTrim) {
   EXPECT_EQ(2, minTime.value());
 }
 
-TEST(FilterTest, CentralFiniteDifference) {
-  constexpr double h = 0.05;
+template <int Derivative, int Samples, typename F, typename DfDx>
+void AssertCentralResults(F&& f, DfDx&& dfdx, units::second_t h, double min,
+                          double max) {
+  static_assert(Samples % 2 != 0, "Number of samples must be odd.");
 
-  auto CheckResults = [](auto&& f, auto&& dfdx, double h, double min,
-                         double max) {
-    for (int i = min / h; i < max / h; ++i) {
-      // The order of accuracy is O(h^(N - d)) where N is number of stencil
-      // points and d is order of derivative
-      EXPECT_NEAR(sysid::CentralFiniteDifference<2>(f, i, h), dfdx(i),
-                  std::max(std::pow(h, 3 - 1), 1e-7));
-      EXPECT_NEAR(sysid::CentralFiniteDifference<4>(f, i, h), dfdx(i),
-                  std::max(std::pow(h, 5 - 1), 1e-7));
-      EXPECT_NEAR(sysid::CentralFiniteDifference<6>(f, i, h), dfdx(i),
-                  std::max(std::pow(h, 7 - 1), 1e-7));
-      EXPECT_NEAR(sysid::CentralFiniteDifference<8>(f, i, h), dfdx(i),
-                  std::max(std::pow(h, 9 - 1), 1e-7));
+  auto filter = sysid::CentralFiniteDifference<Derivative, Samples>(h);
+
+  for (int i = min / h.value(); i < max / h.value(); ++i) {
+    // Let filter initialize
+    if (i < static_cast<int>(min / h.value()) + Samples) {
+      filter.Calculate(f(i * h.value()));
+      continue;
     }
-  };
 
-  CheckResults(
-      [=](int i) {
-        // f(x) = x^2
-        double x = i * h;
+    // For central finite difference, the derivative computed at this point is
+    // half the window size in the past.
+    // The order of accuracy is O(h^(N - d)) where N is number of stencil
+    // points and d is order of derivative
+    EXPECT_NEAR(dfdx((i - static_cast<int>((Samples - 1) / 2)) * h.value()),
+                filter.Calculate(f(i * h.value())),
+                std::pow(h.value(), Samples - Derivative));
+  }
+}
+
+/**
+ * Test central finite difference.
+ */
+TEST(LinearFilterOutputTest, CentralFiniteDifference) {
+  constexpr auto h = 5_ms;
+
+  AssertCentralResults<1, 3>(
+      [](double x) {
+        // f(x) = x²
         return x * x;
       },
-      [=](int i) {
+      [](double x) {
         // df/dx = 2x
-        double x = i * h;
         return 2.0 * x;
       },
       h, -20.0, 20.0);
 
-  CheckResults(
-      [=](int i) {
+  AssertCentralResults<1, 3>(
+      [](double x) {
         // f(x) = std::sin(x)
-        double x = i * h;
         return std::sin(x);
       },
-      [=](int i) {
+      [](double x) {
         // df/dx = std::cos(x)
-        double x = i * h;
         return std::cos(x);
       },
       h, -20.0, 20.0);
 
-  CheckResults(
-      [=](int i) {
+  AssertCentralResults<1, 3>(
+      [](double x) {
         // f(x) = ln(x)
-        double x = i * h;
         return std::log(x);
       },
-      [=](int i) {
+      [](double x) {
         // df/dx = 1 / x
-        double x = i * h;
         return 1.0 / x;
+      },
+      h, 1.0, 20.0);
+
+  AssertCentralResults<2, 5>(
+      [](double x) {
+        // f(x) = x^2
+        return x * x;
+      },
+      [](double x) {
+        // d²f/dx² = 2
+        return 2.0;
+      },
+      h, -20.0, 20.0);
+
+  AssertCentralResults<2, 5>(
+      [](double x) {
+        // f(x) = std::sin(x)
+        return std::sin(x);
+      },
+      [](double x) {
+        // d²f/dx² = -std::sin(x)
+        return -std::sin(x);
+      },
+      h, -20.0, 20.0);
+
+  AssertCentralResults<2, 5>(
+      [](double x) {
+        // f(x) = ln(x)
+        return std::log(x);
+      },
+      [](double x) {
+        // d²f/dx² = -1 / x²
+        return -1.0 / (x * x);
       },
       h, 1.0, 20.0);
 }
