@@ -85,7 +85,7 @@ static constexpr Vector2d kCenterColSize{
 
 // Center column contents
 static constexpr Vector2d kAnalyzerWindowPos = kCenterColPos;
-static constexpr Vector2d kAnalyzerWindowSize{kCenterColSize.x, 570};
+static constexpr Vector2d kAnalyzerWindowSize{kCenterColSize.x, 550};
 static constexpr Vector2d kProgramLogWindowPos =
     kAnalyzerWindowPos + Vector2d{0, kAnalyzerWindowSize.y + kWindowGap};
 static constexpr Vector2d kProgramLogWindowSize{

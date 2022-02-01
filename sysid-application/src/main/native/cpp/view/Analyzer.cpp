@@ -78,13 +78,13 @@ void Analyzer::Display() {
         std::vector<std::string>{"JSON File", SYSID_PFD_JSON_EXT});
   }
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(width - ImGui::CalcTextSize("Select").x);
+  ImGui::SetNextItemWidth(width - ImGui::CalcTextSize("Select").x -
+                          ImGui::GetFontSize() * 5);
   ImGui::InputText("##location", &m_location, ImGuiInputTextFlags_ReadOnly);
 
   // Allow the user to select which data set they want analyzed and add a reset
   // button. Also show the units and the units per rotation.
   if (m_manager) {
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
     ImGui::SameLine(width - ImGui::CalcTextSize("Reset").x);
     if (ImGui::Button("Reset")) {
       m_plot.ResetData();
