@@ -14,7 +14,6 @@
 
 #include <units/time.h>
 #include <wpi/Logger.h>
-#include <wpi/StringMap.h>
 #include <wpi/json.h>
 
 #include "sysid/analysis/AnalysisType.h"
@@ -69,11 +68,6 @@ class AnalysisManager {
     int medianWindow = 1;
 
     /**
-     * The dataset that is being analyzed.
-     */
-    int dataset = 0;
-
-    /**
      * The duration of the dynamic test that should be considered. A value of
      * zero indicates it needs to be set to the default.
      */
@@ -123,14 +117,6 @@ class AnalysisManager {
       "slow-forward", "slow-backward", "fast-forward", "fast-backward"};
 
   /**
-   * The names of the various datasets to analyze.
-   */
-  static constexpr const char* kDatasets[] = {
-      "Combined",      "Forward",        "Backward",
-      "Left Forward",  "Left Backward",  "Left Combined",
-      "Right Forward", "Right Backward", "Right Combined"};
-
-  /**
    * Constructs an instance of the analysis manager with the given path (to the
    * JSON) and analysis manager settings.
    *
@@ -142,7 +128,8 @@ class AnalysisManager {
                   wpi::Logger& logger);
 
   /**
-   * Prepares data from the JSON and stores the output in the StringMap.
+   * Prepares data from the JSON and stores the output in Storage member
+   * variables.
    */
   void PrepareData();
 
@@ -196,7 +183,7 @@ class AnalysisManager {
    *
    * @return A reference to the raw internal data.
    */
-  Storage& GetRawData() { return m_rawDatasets[kDatasets[m_settings.dataset]]; }
+  Storage& GetRawData() { return m_rawDataset; }
 
   /**
    * Returns a reference to the iterator of the currently selected filtered
@@ -205,18 +192,14 @@ class AnalysisManager {
    *
    * @return A reference to the filtered internal data.
    */
-  Storage& GetFilteredData() {
-    return m_filteredDatasets[kDatasets[m_settings.dataset]];
-  }
+  Storage& GetFilteredData() { return m_filteredDataset; }
 
   /**
    * Returns the original dataset.
    *
    * @return The original (untouched) dataset
    */
-  Storage& GetOriginalData() {
-    return m_originalDatasets[kDatasets[m_settings.dataset]];
-  }
+  Storage& GetOriginalData() { return m_originalDataset; }
 
   /**
    * Returns the minimum duration of the Step Voltage Test of the currently
@@ -248,9 +231,9 @@ class AnalysisManager {
   // Backward, etc.)
   wpi::json m_json;
 
-  wpi::StringMap<Storage> m_originalDatasets;
-  wpi::StringMap<Storage> m_rawDatasets;
-  wpi::StringMap<Storage> m_filteredDatasets;
+  Storage m_originalDataset;
+  Storage m_rawDataset;
+  Storage m_filteredDataset;
 
   // Stores the various start times of the different tests.
   std::array<units::second_t, 4> m_startTimes;

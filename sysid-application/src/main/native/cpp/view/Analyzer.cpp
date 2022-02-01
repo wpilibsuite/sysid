@@ -85,10 +85,6 @@ void Analyzer::Display() {
   // button. Also show the units and the units per rotation.
   if (m_manager) {
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
-    if (ImGui::Combo("Dataset", &m_settings.dataset, AnalysisManager::kDatasets,
-                     m_type == analysis::kDrivetrain ? 9 : 3)) {
-      RefreshInformation();
-    }
     ImGui::SameLine(width - ImGui::CalcTextSize("Reset").x);
     if (ImGui::Button("Reset")) {
       m_plot.ResetData();
