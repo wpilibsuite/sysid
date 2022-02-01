@@ -30,14 +30,15 @@ TEST(FilterTest, MedianFilter) {
   EXPECT_EQ(expectedData, testData);
 }
 
-TEST(FilterTest, AccelNoiseFloor) {
+TEST(FilterTest, NoiseFloor) {
   std::vector<sysid::PreparedData> testData = {
       {0_s, 1, 2, 3, 5_ms, 0, 0},    {1_s, 1, 2, 3, 5_ms, 1, 0},
       {2_s, 1, 2, 3, 5_ms, 2, 0},    {3_s, 1, 2, 3, 5_ms, 5, 0},
       {4_s, 1, 2, 3, 5_ms, 0.35, 0}, {5_s, 1, 2, 3, 5_ms, 0.15, 0},
       {6_s, 1, 2, 3, 5_ms, 0, 0},    {7_s, 1, 2, 3, 5_ms, 0.02, 0},
       {8_s, 1, 2, 3, 5_ms, 0.01, 0}, {9_s, 1, 2, 3, 5_ms, 0, 0}};
-  double noiseFloor = GetAccelNoiseFloor(testData, 2);
+  double noiseFloor =
+      GetNoiseFloor(testData, 2, [](auto&& pt) { return pt.acceleration; });
   EXPECT_NEAR(0.953, noiseFloor, 0.001);
 }
 

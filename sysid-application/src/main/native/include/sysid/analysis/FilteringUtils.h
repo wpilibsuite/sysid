@@ -20,6 +20,8 @@
 
 namespace sysid {
 
+constexpr int kNoiseMeanWindow = 9;
+
 /**
  * Calculates the expected acceleration noise to be used as the floor of the
  * Voltage Trim. This is done by taking the standard deviation from the moving
@@ -27,9 +29,13 @@ namespace sysid {
  *
  * @param data the prepared data vector containing acceleration data
  * @param window the size of the window for the moving average
+ * @param accessorFunction a function that accesses the desired data from the
+ *                         PreparedData struct.
  * @return The expected acceleration noise
  */
-double GetAccelNoiseFloor(const std::vector<PreparedData>& data, int window);
+double GetNoiseFloor(
+    const std::vector<PreparedData>& data, int window,
+    std::function<double(const PreparedData&)> accessorFunction);
 
 /**
  * Reduces noise in velocity data by applying a median filter.
@@ -128,7 +134,7 @@ frc::LinearFilter<double> CentralFiniteDifference(units::second_t period) {
  *             cosine data)
  */
 void InitialTrimAndFilter(wpi::StringMap<std::vector<PreparedData>>* data,
-                          AnalysisManager::Settings& settings,
+                          AnalysisManager::Settings* settings,
                           units::second_t& minStepTime,
                           units::second_t& maxStepTime,
                           std::string_view unit = "");

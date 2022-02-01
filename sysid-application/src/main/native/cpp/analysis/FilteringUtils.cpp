@@ -121,8 +121,8 @@ units::second_t sysid::TrimStepVoltageData(std::vector<PreparedData>* data,
   // before the acceleration first hits zero)
   if (settings->stepTestDuration <= minStepTime) {
     // Get noise floor
-    const double accelNoiseFloor =
-        GetAccelNoiseFloor(*data, settings->accelerationWindow);
+    const double accelNoiseFloor = GetNoiseFloor(
+        *data, kNoiseMeanWindow, [](auto&& pt) { return pt.acceleration; });
     // Find latest element with nonzero acceleration
     auto endIt = std::find_if(
         data->rbegin(), data->rend(), [&](const PreparedData& entry) {
@@ -153,15 +153,16 @@ units::second_t sysid::TrimStepVoltageData(std::vector<PreparedData>* data,
   return minStepTime;
 }
 
-double sysid::GetAccelNoiseFloor(const std::vector<PreparedData>& data,
-                                 int window) {
+double sysid::GetNoiseFloor(
+    const std::vector<PreparedData>& data, int window,
+    std::function<double(const PreparedData&)> accessorFunction) {
   double sum = 0.0;
   size_t step = window / 2;
   auto averageFilter = frc::LinearFilter<double>::MovingAverage(window);
   for (size_t i = 0; i < data.size(); i++) {
-    double mean = averageFilter.Calculate(data[i].acceleration);
+    double mean = averageFilter.Calculate(accessorFunction(data[i]));
     if (i >= step) {
-      sum += std::pow(data[i - step].acceleration - mean, 2);
+      sum += std::pow(accessorFunction(data[i - step]) - mean, 2);
     }
   }
   return std::sqrt(sum / (data.size() - step));
@@ -264,12 +265,26 @@ static units::second_t GetMaxTime(
 
 void sysid::InitialTrimAndFilter(
     wpi::StringMap<std::vector<PreparedData>>* data,
-    AnalysisManager::Settings& settings, units::second_t& minStepTime,
+    AnalysisManager::Settings* settings, units::second_t& minStepTime,
     units::second_t& maxStepTime, std::string_view unit) {
   auto& preparedData = *data;
 
   // Find the maximum Step Test Duration of the dynamic tests
   maxStepTime = GetMaxTime(preparedData);
+
+  // Calculate Velocity Threshold if it hasn't been set yet
+  if (settings->motionThreshold >= 100000) {
+    for (auto& it : preparedData) {
+      auto key = it.first();
+      auto& dataset = it.getValue();
+      if (wpi::contains(key, "slow")) {
+        settings->motionThreshold =
+            std::min(settings->motionThreshold,
+                     GetNoiseFloor(dataset, kNoiseMeanWindow,
+                                   [](auto&& pt) { return pt.velocity; }));
+      }
+    }
+  }
 
   for (auto& it : preparedData) {
     auto key = it.first();
@@ -282,7 +297,7 @@ void sysid::InitialTrimAndFilter(
                                    [&](const auto& pt) {
                                      return std::abs(pt.voltage) <= 0 ||
                                             std::abs(pt.velocity) <
-                                                settings.motionThreshold;
+                                                settings->motionThreshold;
                                    }),
                     dataset.end());
 
@@ -296,8 +311,8 @@ void sysid::InitialTrimAndFilter(
     }
 
     // Apply Median filter
-    if (IsFiltered(key) && settings.medianWindow > 1) {
-      ApplyMedianFilter(&dataset, settings.medianWindow);
+    if (IsFiltered(key) && settings->medianWindow > 1) {
+      ApplyMedianFilter(&dataset, settings->medianWindow);
     }
 
     // Recalculate Accel and Cosine
@@ -310,7 +325,7 @@ void sysid::InitialTrimAndFilter(
 
       // Trim Filtered Data
       auto tempMinStepTime = TrimStepVoltageData(
-          &preparedData[filteredKey], &settings, minStepTime, maxStepTime);
+          &preparedData[filteredKey], settings, minStepTime, maxStepTime);
       minStepTime = tempMinStepTime;
 
       // Set the Raw Data to start at the same time as the Filtered Data

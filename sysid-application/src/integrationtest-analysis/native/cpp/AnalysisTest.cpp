@@ -98,11 +98,6 @@ class AnalysisTest : public ::testing::Test {
     auto path = m_manager->SaveJSON(EXPAND_STRINGIZE(PROJECT_ROOT_DIR));
     try {
       auto analyzerSettings = sysid::AnalysisManager::Settings{};
-      analyzerSettings.accelerationWindow = 13;
-      if (m_settings.mechanism == sysid::analysis::kArm) {
-        analyzerSettings.motionThreshold = 0.01;  // Reduce threshold for arm
-                                                  // test
-      }
       sysid::AnalysisManager analyzer{path, analyzerSettings, m_logger};
 
       analyzer.PrepareData();
