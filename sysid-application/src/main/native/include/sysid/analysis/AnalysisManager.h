@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <limits>
 #include <optional>
@@ -110,6 +111,28 @@ class AnalysisManager {
    */
   static constexpr const char* kJsonDataKeys[] = {
       "slow-forward", "slow-backward", "fast-forward", "fast-backward"};
+
+  /**
+   * Concatenates a list of vectors. The contents of the source vectors are
+   * copied (not moved) into the new vector. Also sorts the datapoints by
+   * timestamp to assist with future simulation.
+   *
+   * @param sources The source vectors.
+   * @return The concatenated vector
+   */
+  template <typename... Sources>
+  static std::vector<PreparedData> DataConcat(const Sources&... sources) {
+    std::vector<PreparedData> result;
+    (result.insert(result.end(), sources.begin(), sources.end()), ...);
+
+    // Sort data by timestamp to remove the possibility of negative dts in
+    // future simulations.
+    std::sort(result.begin(), result.end(), [](const auto& a, const auto& b) {
+      return a.timestamp < b.timestamp;
+    });
+
+    return result;
+  }
 
   /**
    * Constructs an instance of the analysis manager with the given path (to the
