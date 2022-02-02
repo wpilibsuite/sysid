@@ -77,6 +77,8 @@ struct Storage {
    * Dataset for fast (aka dynamic) test
    */
   std::vector<PreparedData> fast;
+
+  bool empty() const { return slow.empty() || fast.empty(); }
 };
 
 }  // namespace sysid
