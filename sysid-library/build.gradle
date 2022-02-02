@@ -9,6 +9,7 @@ plugins {
 
 wpi.versions.wpilibVersion = '2022.+'
 wpi.versions.wpimathVersion = '2022.+'
+wpi.versions.niLibrariesVersion = '2022.4.0'
 
 model {
   components {
