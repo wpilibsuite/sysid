@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstddef>
 #include <functional>
+#include <limits>
 #include <stdexcept>
 #include <string_view>
 #include <vector>
@@ -602,7 +603,7 @@ AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,
 
   // Reset settings for Dynamic Test Limits
   m_settings.stepTestDuration = units::second_t{0.0};
-  m_settings.motionThreshold = 100000;
+  m_settings.motionThreshold = std::numeric_limits<double>::infinity();
   m_minDuration = units::second_t{100000};
 }
 

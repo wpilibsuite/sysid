@@ -4,6 +4,7 @@
 
 #include "sysid/analysis/FilteringUtils.h"
 
+#include <limits>
 #include <numeric>
 #include <stdexcept>
 #include <vector>
@@ -273,7 +274,7 @@ void sysid::InitialTrimAndFilter(
   maxStepTime = GetMaxTime(preparedData);
 
   // Calculate Velocity Threshold if it hasn't been set yet
-  if (settings->motionThreshold >= 100000) {
+  if (settings->motionThreshold == std::numeric_limits<double>::infinity()) {
     for (auto& it : preparedData) {
       auto key = it.first();
       auto& dataset = it.getValue();
