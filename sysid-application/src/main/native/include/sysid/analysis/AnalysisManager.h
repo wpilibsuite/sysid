@@ -58,11 +58,6 @@ class AnalysisManager {
     double motionThreshold = 0.2;
 
     /**
-     * The window size for computing acceleration.
-     */
-    int accelerationWindow = 9;
-
-    /**
      * The window size for the median filter.
      */
     int medianWindow = 1;

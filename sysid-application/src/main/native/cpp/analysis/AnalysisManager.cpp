@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstddef>
 #include <functional>
+#include <limits>
 #include <stdexcept>
 #include <string_view>
 #include <vector>
@@ -201,8 +202,8 @@ static void PrepareGeneralData(
                                     preparedData["original-raw-fast-backward"]);
 
   WPI_INFO(logger, "{}", "Initial trimming and filtering.");
-  sysid::InitialTrimAndFilter(&preparedData, settings, minStepTime, maxStepTime,
-                              unit);
+  sysid::InitialTrimAndFilter(&preparedData, &settings, minStepTime,
+                              maxStepTime, unit);
 
   WPI_INFO(logger, "{}", "Acceleration filtering.");
   sysid::AccelFilter(&preparedData);
@@ -341,7 +342,7 @@ static void PrepareAngularDrivetrainData(
                                     preparedData["original-raw-fast-backward"]);
 
   WPI_INFO(logger, "{}", "Applying trimming and filtering.");
-  sysid::InitialTrimAndFilter(&preparedData, settings, minStepTime,
+  sysid::InitialTrimAndFilter(&preparedData, &settings, minStepTime,
                               maxStepTime);
 
   WPI_INFO(logger, "{}", "Acceleration filtering.");
@@ -458,7 +459,7 @@ static void PrepareLinearDrivetrainData(
                                     originalFastForward, originalFastBackward);
 
   WPI_INFO(logger, "{}", "Applying trimming and filtering.");
-  sysid::InitialTrimAndFilter(&preparedData, settings, minStepTime,
+  sysid::InitialTrimAndFilter(&preparedData, &settings, minStepTime,
                               maxStepTime);
 
   auto slowForward = DataConcat(preparedData["left-slow-forward"],
@@ -544,6 +545,7 @@ AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,
 
   // Reset settings for Dynamic Test Limits
   m_settings.stepTestDuration = units::second_t{0.0};
+  m_settings.motionThreshold = std::numeric_limits<double>::infinity();
   m_minDuration = units::second_t{100000};
 }
 
