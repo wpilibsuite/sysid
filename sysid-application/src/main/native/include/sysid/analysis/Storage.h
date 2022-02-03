@@ -71,14 +71,19 @@ struct Storage {
   /**
    * Dataset for slow (aka quasistatic) test
    */
-  std::vector<PreparedData> slow;
+  std::vector<PreparedData> slowForward;
+  std::vector<PreparedData> slowBackward;
 
   /**
    * Dataset for fast (aka dynamic) test
    */
-  std::vector<PreparedData> fast;
+  std::vector<PreparedData> fastForward;
+  std::vector<PreparedData> fastBackward;
 
-  bool empty() const { return slow.empty() || fast.empty(); }
+  bool empty() const {
+    return slowForward.empty() || slowBackward.empty() || fastForward.empty() ||
+           fastBackward.empty();
+  }
 };
 
 }  // namespace sysid

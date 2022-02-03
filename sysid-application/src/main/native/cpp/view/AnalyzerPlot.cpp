@@ -12,6 +12,7 @@
 #include <units/math.h>
 
 #include "sysid/Util.h"
+#include "sysid/analysis/AnalysisManager.h"
 #include "sysid/analysis/ArmSim.h"
 #include "sysid/analysis/ElevatorSim.h"
 #include "sysid/analysis/FilteringUtils.h"
@@ -56,7 +57,7 @@ static std::vector<std::vector<ImPlotPoint>> PopulateTimeDomainSim(
       continue;
     }
 
-    model.Update(units::volt_t{pre.voltage}, pre.dt);
+    model.Update(units::volt_t{pre.voltage}, now.timestamp - pre.timestamp);
     tmp.emplace_back((startTime + t).value(), model.GetVelocity());
     *simSquaredErrorSum += std::pow(now.velocity - model.GetVelocity(), 2);
     *squaredVariationSum += std::pow(now.velocity, 2);
@@ -110,15 +111,18 @@ void AnalyzerPlot::SetGraphLabels(std::string_view unit) {
       fmt::format("Velocity-Portion Accel ({}/s²)", abbreviation);
 }
 
-void AnalyzerPlot::SetRawData(const Storage& rawData, std::string_view unit,
+void AnalyzerPlot::SetRawData(const Storage& data, std::string_view unit,
                               std::atomic<bool>& abort) {
-  auto& [rawSlow, rawFast] = rawData;
+  const auto& [slowForward, slowBackward, fastForward, fastBackward] = data;
+  const auto& slow = m_direction == 0 ? slowForward : slowBackward;
+  const auto& fast = m_direction == 0 ? fastForward : fastBackward;
+
   SetGraphLabels(unit);
 
   std::scoped_lock lock(m_mutex);
 
   ResetData();
-  SetRawTimeData(rawSlow, rawFast, abort);
+  SetRawTimeData(slow, fast, abort);
 }
 
 void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
@@ -126,8 +130,24 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
                            const std::vector<double>& ffGains,
                            const std::array<units::second_t, 4>& startTimes,
                            AnalysisType type, std::atomic<bool>& abort) {
-  auto& [slow, fast] = filteredData;
-  auto& [rawSlow, rawFast] = rawData;
+  double simSquaredErrorSum = 0;
+  double squaredVariationSum = 0;
+  int timeSeriesPoints = 0;
+
+  const auto& Ks = ffGains[0];
+  const auto& Kv = ffGains[1];
+  const auto& Ka = ffGains[2];
+
+  auto& [slowForward, slowBackward, fastForward, fastBackward] = filteredData;
+  auto& [rawSlowForward, rawSlowBackward, rawFastForward, rawFastBackward] =
+      rawData;
+
+  const auto slow = AnalysisManager::DataConcat(slowForward, slowBackward);
+  const auto fast = AnalysisManager::DataConcat(fastForward, fastBackward);
+  const auto rawSlow =
+      AnalysisManager::DataConcat(rawSlowForward, rawSlowBackward);
+  const auto rawFast =
+      AnalysisManager::DataConcat(rawFastForward, rawFastBackward);
 
   SetGraphLabels(unit);
 
@@ -142,59 +162,93 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
 
   units::second_t dtMean = GetMeanTimeDelta(filteredData);
 
-  // Populate quasistatic time-domain graphs
-  for (size_t i = 0; i < slow.size(); i += slowStep) {
-    if (abort) {
-      return;
+  // Velocity-vs-time plots
+  {
+    const auto& slow = m_direction == 0 ? slowForward : slowBackward;
+    const auto& fast = m_direction == 0 ? fastForward : fastBackward;
+    const auto& rawSlow = m_direction == 0 ? rawSlowForward : rawSlowBackward;
+    const auto& rawFast = m_direction == 0 ? rawFastForward : rawFastBackward;
+
+    // Populate quasistatic time-domain graphs
+    for (size_t i = 0; i < slow.size(); i += slowStep) {
+      if (abort) {
+        return;
+      }
+
+      m_quasistaticData.filteredData.emplace_back((slow[i].timestamp).value(),
+                                                  slow[i].velocity);
+
+      if (i > 0) {
+        // If the current timestamp is not in the startTimes array, it is the
+        // during a test and should be included. If it is in the startTimes
+        // array, it is the beginning of a new test and the dt will be inflated.
+        // Therefore we skip those to exclude that dt and effectively reset dt
+        // calculations.
+        if (slow[i].dt > 0_s &&
+            std::find(startTimes.begin(), startTimes.end(),
+                      slow[i].timestamp) == startTimes.end()) {
+          m_timestepData.data.emplace_back(
+              (slow[i].timestamp).value(),
+              units::millisecond_t{slow[i].dt}.value());
+        }
+      }
     }
 
-    m_quasistaticData.filteredData.emplace_back((slow[i].timestamp).value(),
-                                                slow[i].velocity);
-
-    if (i > 0) {
-      // If the current timestamp is not in the startTimes array, it is the
-      // during a test and should be included. If it is in the startTimes array,
-      // it is the beginning of a new test and the dt will be inflated.
-      // Therefore we skip those to exclude that dt and effectively reset dt
-      // calculations.
-      if (slow[i].dt > 0_s &&
-          std::find(startTimes.begin(), startTimes.end(), slow[i].timestamp) ==
-              startTimes.end()) {
-        m_timestepData.data.emplace_back(
-            (slow[i].timestamp).value(),
-            units::millisecond_t{slow[i].dt}.value());
+    // Populate dynamic time-domain graphs
+    for (size_t i = 0; i < fast.size(); i += fastStep) {
+      if (abort) {
+        return;
       }
+
+      m_dynamicData.filteredData.emplace_back((fast[i].timestamp).value(),
+                                              fast[i].velocity);
+
+      if (i > 0) {
+        // If the current timestamp is not in the startTimes array, it is the
+        // during a test and should be included. If it is in the startTimes
+        // array, it is the beginning of a new test and the dt will be inflated.
+        // Therefore we skip those to exclude that dt and effectively reset dt
+        // calculations.
+        if (fast[i].dt > 0_s &&
+            std::find(startTimes.begin(), startTimes.end(),
+                      fast[i].timestamp) == startTimes.end()) {
+          m_timestepData.data.emplace_back(
+              (fast[i].timestamp).value(),
+              units::millisecond_t{fast[i].dt}.value());
+        }
+      }
+    }
+
+    SetRawTimeData(rawSlow, rawFast, abort);
+
+    // Populate simulated time domain data
+    if (type == analysis::kElevator) {
+      const auto& Kg = ffGains[3];
+      m_quasistaticData.simData = PopulateTimeDomainSim(
+          rawSlow, startTimes, fastStep, sysid::ElevatorSim{Ks, Kv, Ka, Kg},
+          &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
+      m_dynamicData.simData = PopulateTimeDomainSim(
+          rawFast, startTimes, fastStep, sysid::ElevatorSim{Ks, Kv, Ka, Kg},
+          &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
+    } else if (type == analysis::kArm) {
+      const auto& Kcos = ffGains[3];
+      m_quasistaticData.simData = PopulateTimeDomainSim(
+          rawSlow, startTimes, fastStep, sysid::ArmSim{Ks, Kv, Ka, Kcos},
+          &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
+      m_dynamicData.simData = PopulateTimeDomainSim(
+          rawFast, startTimes, fastStep, sysid::ArmSim{Ks, Kv, Ka, Kcos},
+          &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
+    } else {
+      m_quasistaticData.simData = PopulateTimeDomainSim(
+          rawSlow, startTimes, fastStep, sysid::SimpleMotorSim{Ks, Kv, Ka},
+          &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
+      m_dynamicData.simData = PopulateTimeDomainSim(
+          rawFast, startTimes, fastStep, sysid::SimpleMotorSim{Ks, Kv, Ka},
+          &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
     }
   }
 
-  // Populate dynamic time-domain graphs
-  for (size_t i = 0; i < fast.size(); i += fastStep) {
-    if (abort) {
-      return;
-    }
-
-    m_dynamicData.filteredData.emplace_back((fast[i].timestamp).value(),
-                                            fast[i].velocity);
-
-    if (i > 0) {
-      // If the current timestamp is not in the startTimes array, it is the
-      // during a test and should be included. If it is in the startTimes array,
-      // it is the beginning of a new test and the dt will be inflated.
-      // Therefore we skip those to exclude that dt and effectively reset dt
-      // calculations.
-      if (fast[i].dt > 0_s &&
-          std::find(startTimes.begin(), startTimes.end(), fast[i].timestamp) ==
-              startTimes.end()) {
-        m_timestepData.data.emplace_back(
-            (fast[i].timestamp).value(),
-            units::millisecond_t{fast[i].dt}.value());
-      }
-    }
-  }
-
-  const auto& Ks = ffGains[0];
-  const auto& Kv = ffGains[1];
-  const auto& Ka = ffGains[2];
+  // Acceleration-vs-velocity plot
 
   // Find minimum velocity of slow and fast datasets, then find point for line
   // of best fit
@@ -262,6 +316,42 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
     m_regressionData.data.emplace_back(fast[i].velocity, accelPortion);
   }
 
+  // Timestep-vs-time plot
+
+  for (size_t i = 0; i < slow.size(); i += slowStep) {
+    if (i > 0) {
+      // If the current timestamp is not in the startTimes array, it is the
+      // during a test and should be included. If it is in the startTimes
+      // array, it is the beginning of a new test and the dt will be inflated.
+      // Therefore we skip those to exclude that dt and effectively reset dt
+      // calculations.
+      if (slow[i].dt > 0_s &&
+          std::find(startTimes.begin(), startTimes.end(), slow[i].timestamp) ==
+              startTimes.end()) {
+        m_timestepData.data.emplace_back(
+            (slow[i].timestamp).value(),
+            units::millisecond_t{slow[i].dt}.value());
+      }
+    }
+  }
+
+  for (size_t i = 0; i < fast.size(); i += fastStep) {
+    if (i > 0) {
+      // If the current timestamp is not in the startTimes array, it is the
+      // during a test and should be included. If it is in the startTimes
+      // array, it is the beginning of a new test and the dt will be inflated.
+      // Therefore we skip those to exclude that dt and effectively reset dt
+      // calculations.
+      if (fast[i].dt > 0_s &&
+          std::find(startTimes.begin(), startTimes.end(), fast[i].timestamp) ==
+              startTimes.end()) {
+        m_timestepData.data.emplace_back(
+            (fast[i].timestamp).value(),
+            units::millisecond_t{fast[i].dt}.value());
+      }
+    }
+  }
+
   auto minTime =
       units::math::min(slow.front().timestamp, fast.front().timestamp);
   m_timestepData.fitLine[0] =
@@ -270,38 +360,6 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
   auto maxTime = units::math::max(slow.back().timestamp, fast.back().timestamp);
   m_timestepData.fitLine[1] =
       ImPlotPoint{maxTime.value(), units::millisecond_t{dtMean}.value()};
-
-  SetRawTimeData(rawSlow, rawFast, abort);
-
-  double simSquaredErrorSum = 0;
-  double squaredVariationSum = 0;
-  int timeSeriesPoints = 0;
-
-  // Populate simulated time domain data
-  if (type == analysis::kElevator) {
-    const auto& Kg = ffGains[3];
-    m_quasistaticData.simData = PopulateTimeDomainSim(
-        rawSlow, startTimes, fastStep, sysid::ElevatorSim{Ks, Kv, Ka, Kg},
-        &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
-    m_dynamicData.simData = PopulateTimeDomainSim(
-        rawFast, startTimes, fastStep, sysid::ElevatorSim{Ks, Kv, Ka, Kg},
-        &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
-  } else if (type == analysis::kArm) {
-    const auto& Kcos = ffGains[3];
-    m_quasistaticData.simData = PopulateTimeDomainSim(
-        rawSlow, startTimes, fastStep, sysid::ArmSim{Ks, Kv, Ka, Kcos},
-        &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
-    m_dynamicData.simData = PopulateTimeDomainSim(
-        rawFast, startTimes, fastStep, sysid::ArmSim{Ks, Kv, Ka, Kcos},
-        &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
-  } else {
-    m_quasistaticData.simData = PopulateTimeDomainSim(
-        rawSlow, startTimes, fastStep, sysid::SimpleMotorSim{Ks, Kv, Ka},
-        &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
-    m_dynamicData.simData = PopulateTimeDomainSim(
-        rawFast, startTimes, fastStep, sysid::SimpleMotorSim{Ks, Kv, Ka},
-        &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
-  }
 
   // RMSE = std::sqrt(sum((x_i - x^_i)^2) / N) where sum represents the sum of
   // all time series points, x_i represents the velocity at a timestep, x^_i

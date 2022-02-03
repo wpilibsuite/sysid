@@ -87,10 +87,10 @@ void Analyzer::Display() {
   if (m_manager) {
     ImGui::SameLine(width - ImGui::CalcTextSize("Reset").x);
     if (ImGui::Button("Reset")) {
+      ResetManagerState();
       m_plot.ResetData();
       m_manager.reset();
       m_location = "";
-      m_enabled = true;
     }
     ImGui::Spacing();
     ImGui::Text(
@@ -186,7 +186,18 @@ void Analyzer::Display() {
 
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 6);
   if (ImGui::SliderFloat("Point Size", &m_plot.m_pointSize, 1, 2, "%.2f")) {
-    RefreshInformation();
+    if (m_enabled) {
+      RefreshInformation();
+    }
+  }
+
+  ImGui::SameLine();
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 6);
+  const char* items[] = {"Forward", "Backward"};
+  if (ImGui::Combo("Direction", &m_plot.m_direction, items, 2)) {
+    if (m_enabled) {
+      RefreshInformation();
+    }
   }
 
   // If the plots were already loaded, store the scroll position. Else go to

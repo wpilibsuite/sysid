@@ -184,13 +184,25 @@ units::second_t sysid::GetMeanTimeDelta(const std::vector<PreparedData>& data) {
 units::second_t sysid::GetMeanTimeDelta(const Storage& data) {
   std::vector<units::second_t> dts;
 
-  for (const auto& pt : data.slow) {
+  for (const auto& pt : data.slowForward) {
     if (pt.dt > 0_s && pt.dt < 500_ms) {
       dts.emplace_back(pt.dt);
     }
   }
 
-  for (const auto& pt : data.fast) {
+  for (const auto& pt : data.slowBackward) {
+    if (pt.dt > 0_s && pt.dt < 500_ms) {
+      dts.emplace_back(pt.dt);
+    }
+  }
+
+  for (const auto& pt : data.fastForward) {
+    if (pt.dt > 0_s && pt.dt < 500_ms) {
+      dts.emplace_back(pt.dt);
+    }
+  }
+
+  for (const auto& pt : data.fastBackward) {
     if (pt.dt > 0_s && pt.dt < 500_ms) {
       dts.emplace_back(pt.dt);
     }

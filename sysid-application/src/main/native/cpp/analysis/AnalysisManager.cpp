@@ -62,28 +62,6 @@ static std::vector<PreparedData> ConvertToPrepared(
 }
 
 /**
- * Concatenates a list of vectors. The contents of the source vectors are copied
- * (not moved) into the new vector. Also sorts the datapoints by timestamp to
- * assist with future simulation.
- *
- * @param sources The source vectors.
- * @return The concatenated vector
- */
-template <typename... Sources>
-std::vector<PreparedData> DataConcat(const Sources&... sources) {
-  std::vector<PreparedData> result;
-  (result.insert(result.end(), sources.begin(), sources.end()), ...);
-
-  // Sort data by timestamp to remove the possibility of negative dts in future
-  // simulations.
-  std::sort(result.begin(), result.end(), [](const auto& a, const auto& b) {
-    return a.timestamp < b.timestamp;
-  });
-
-  return result;
-}
-
-/**
  * To preserve a raw copy of the data, this method saves a raw version
  * in the dataset StringMap where the key of the raw data starts with "raw-"
  * before the name of the original data.
@@ -121,8 +99,7 @@ static Storage CombineDatasets(const std::vector<PreparedData>& slowForward,
                                const std::vector<PreparedData>& slowBackward,
                                const std::vector<PreparedData>& fastForward,
                                const std::vector<PreparedData>& fastBackward) {
-  return Storage{DataConcat(slowForward, slowBackward),
-                 DataConcat(fastForward, fastBackward)};
+  return Storage{slowForward, slowBackward, fastForward, fastBackward};
 }
 
 /**
@@ -442,18 +419,18 @@ static void PrepareLinearDrivetrainData(
   }
 
   // Create the distinct raw datasets and store them
-  auto originalSlowForward =
-      DataConcat(preparedData["left-original-raw-slow-forward"],
-                 preparedData["right-original-raw-slow-forward"]);
-  auto originalSlowBackward =
-      DataConcat(preparedData["left-original-raw-slow-backward"],
-                 preparedData["right-original-raw-slow-backward"]);
-  auto originalFastForward =
-      DataConcat(preparedData["left-original-raw-fast-forward"],
-                 preparedData["right-original-raw-fast-forward"]);
-  auto originalFastBackward =
-      DataConcat(preparedData["left-original-raw-fast-backward"],
-                 preparedData["right-original-raw-fast-backward"]);
+  auto originalSlowForward = AnalysisManager::DataConcat(
+      preparedData["left-original-raw-slow-forward"],
+      preparedData["right-original-raw-slow-forward"]);
+  auto originalSlowBackward = AnalysisManager::DataConcat(
+      preparedData["left-original-raw-slow-backward"],
+      preparedData["right-original-raw-slow-backward"]);
+  auto originalFastForward = AnalysisManager::DataConcat(
+      preparedData["left-original-raw-fast-forward"],
+      preparedData["right-original-raw-fast-forward"]);
+  auto originalFastBackward = AnalysisManager::DataConcat(
+      preparedData["left-original-raw-fast-backward"],
+      preparedData["right-original-raw-fast-backward"]);
 
   originalDataset = CombineDatasets(originalSlowForward, originalSlowBackward,
                                     originalFastForward, originalFastBackward);
@@ -462,14 +439,14 @@ static void PrepareLinearDrivetrainData(
   sysid::InitialTrimAndFilter(&preparedData, &settings, minStepTime,
                               maxStepTime);
 
-  auto slowForward = DataConcat(preparedData["left-slow-forward"],
-                                preparedData["right-slow-forward"]);
-  auto slowBackward = DataConcat(preparedData["left-slow-backward"],
-                                 preparedData["right-slow-backward"]);
-  auto fastForward = DataConcat(preparedData["left-fast-forward"],
-                                preparedData["right-fast-forward"]);
-  auto fastBackward = DataConcat(preparedData["left-fast-backward"],
-                                 preparedData["right-fast-backward"]);
+  auto slowForward = AnalysisManager::DataConcat(
+      preparedData["left-slow-forward"], preparedData["right-slow-forward"]);
+  auto slowBackward = AnalysisManager::DataConcat(
+      preparedData["left-slow-backward"], preparedData["right-slow-backward"]);
+  auto fastForward = AnalysisManager::DataConcat(
+      preparedData["left-fast-forward"], preparedData["right-fast-forward"]);
+  auto fastBackward = AnalysisManager::DataConcat(
+      preparedData["left-fast-backward"], preparedData["right-fast-backward"]);
 
   WPI_INFO(logger, "{}", "Acceleration filtering.");
   sysid::AccelFilter(&preparedData);
@@ -477,14 +454,18 @@ static void PrepareLinearDrivetrainData(
   WPI_INFO(logger, "{}", "Storing datasets.");
 
   // Create the distinct raw datasets and store them
-  auto rawSlowForward = DataConcat(preparedData["left-raw-slow-forward"],
-                                   preparedData["right-raw-slow-forward"]);
-  auto rawSlowBackward = DataConcat(preparedData["left-raw-slow-backward"],
-                                    preparedData["right-raw-slow-backward"]);
-  auto rawFastForward = DataConcat(preparedData["left-raw-fast-forward"],
-                                   preparedData["right-raw-fast-forward"]);
-  auto rawFastBackward = DataConcat(preparedData["left-raw-fast-backward"],
-                                    preparedData["right-raw-fast-backward"]);
+  auto rawSlowForward =
+      AnalysisManager::DataConcat(preparedData["left-raw-slow-forward"],
+                                  preparedData["right-raw-slow-forward"]);
+  auto rawSlowBackward =
+      AnalysisManager::DataConcat(preparedData["left-raw-slow-backward"],
+                                  preparedData["right-raw-slow-backward"]);
+  auto rawFastForward =
+      AnalysisManager::DataConcat(preparedData["left-raw-fast-forward"],
+                                  preparedData["right-raw-fast-forward"]);
+  auto rawFastBackward =
+      AnalysisManager::DataConcat(preparedData["left-raw-fast-backward"],
+                                  preparedData["right-raw-fast-backward"]);
 
   rawDataset = CombineDatasets(rawSlowForward, rawSlowBackward, rawFastForward,
                                rawFastBackward);

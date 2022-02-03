@@ -27,6 +27,8 @@ namespace sysid {
 class AnalyzerPlot {
  public:
   float m_pointSize = 1.25;
+  // 0 for forward, 1 for reverse
+  int m_direction = 0;
 
   /**
    * Constructs an instance of the analyzer plot helper and allocates memory for
@@ -81,11 +83,11 @@ class AnalyzerPlot {
    * Sets up only the raw time series data to be plotted. This is mainly
    * intended to be used if the filtered data has issues with it.
    *
-   * @param rawData Raw data storage.
+   * @param data    The raw data.
    * @param unit    Unit of the dataset.
    * @param abort   Aborts analysis early if set to true from another thread.
    */
-  void SetRawData(const Storage& rawData, std::string_view unit,
+  void SetRawData(const Storage& data, std::string_view unit,
                   std::atomic<bool>& abort);
 
   /**
