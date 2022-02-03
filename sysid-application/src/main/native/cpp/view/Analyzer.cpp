@@ -87,10 +87,10 @@ void Analyzer::Display() {
   if (m_manager) {
     ImGui::SameLine(width - ImGui::CalcTextSize("Reset").x);
     if (ImGui::Button("Reset")) {
+      ResetManagerState();
       m_plot.ResetData();
       m_manager.reset();
       m_location = "";
-      m_enabled = true;
     }
     ImGui::Spacing();
     ImGui::Text(
@@ -186,7 +186,7 @@ void Analyzer::Display() {
 
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 6);
   if (ImGui::SliderFloat("Point Size", &m_plot.m_pointSize, 1, 2, "%.2f")) {
-    if (m_hasData) {
+    if (m_enabled) {
       RefreshInformation();
     }
   }
@@ -195,7 +195,7 @@ void Analyzer::Display() {
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 6);
   const char* items[] = {"Forward", "Backward"};
   if (ImGui::Combo("Direction", &m_plot.m_direction, items, 2)) {
-    if (m_hasData) {
+    if (m_enabled) {
       RefreshInformation();
     }
   }
@@ -264,7 +264,6 @@ void Analyzer::SelectFile() {
     try {
       m_manager =
           std::make_unique<AnalysisManager>(m_location, m_settings, m_logger);
-      m_hasData = true;
       m_type = m_manager->GetAnalysisType();
       m_factor = m_manager->GetFactor();
       m_unit = m_manager->GetUnit();

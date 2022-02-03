@@ -135,11 +135,8 @@ class Analyzer : public glass::View {
    */
   void HandleJSONError(const wpi::json::exception& e);
 
-  // Whether data has been selected
-  bool m_hasData = false;
-
   // This is true when the analysis is allowed to occur.
-  bool m_enabled = true;
+  bool m_enabled = false;
 
   // This is true if the error popup needs to be displayed
   bool m_errorPopup = false;
