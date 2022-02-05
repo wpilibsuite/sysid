@@ -24,12 +24,15 @@ using namespace sysid;
  *
  * @param data The data that is being used.
  * @param window The window size for the operation.
+ * @param operation The operation we're checking the size for (for error
+ *                  throwing purposes).
  */
-static void CheckSize(const std::vector<PreparedData>& data, int window) {
+static void CheckSize(const std::vector<PreparedData>& data, int window,
+                      std::string_view operation) {
   if (data.size() < window) {
-    throw std::runtime_error(
-        "The data collected is too small! This can be caused by too high of a "
-        "motion threshold or bad data collection.");
+    throw sysid::InvalidDataError(
+        fmt::format("Not enough data to run {} which has a window size of {}.",
+                    operation, window));
   }
 }
 
@@ -66,7 +69,7 @@ static void PrepareMechData(std::vector<PreparedData>* data,
                             std::string_view unit = "") {
   constexpr size_t kWindow = 3;
 
-  CheckSize(*data, kWindow);
+  CheckSize(*data, kWindow, "Acceleration Calculation");
 
   // Calculates the cosine of the position data for single jointed arm analysis
   for (int i = 0; i < data->size(); ++i) {
@@ -212,7 +215,7 @@ units::second_t sysid::GetMeanTimeDelta(const Storage& data) {
 }
 
 void sysid::ApplyMedianFilter(std::vector<PreparedData>* data, int window) {
-  CheckSize(*data, window);
+  CheckSize(*data, window, "Median Filter");
 
   frc::MedianFilter<double> medianFilter(window);
 
@@ -316,10 +319,7 @@ void sysid::InitialTrimAndFilter(
 
       // Confirm there's still data
       if (dataset.empty()) {
-        throw std::runtime_error(
-            "Quasistatic test trimming removed all data. Please double check "
-            "your units and test data to make sure that the robot is reporting "
-            "reasonable values.");
+        throw sysid::NoQuasistaticDataError();
       }
     }
 
@@ -350,7 +350,7 @@ void sysid::InitialTrimAndFilter(
 
       // Confirm there's still data
       if (preparedData[key].empty()) {
-        throw std::runtime_error("Dynamic test trimming removed all data");
+        throw sysid::NoDynamicDataError();
       }
     }
   }
@@ -374,6 +374,7 @@ void sysid::AccelFilter(wpi::StringMap<std::vector<PreparedData>>* data) {
   // Confirm there's still data
   if (std::any_of(preparedData.begin(), preparedData.end(),
                   [](const auto& it) { return it.getValue().empty(); })) {
-    throw std::runtime_error("Acceleration filtering removed all data");
+    throw sysid::InvalidDataError(
+        "Acceleration filtering has removed all data.");
   }
 }

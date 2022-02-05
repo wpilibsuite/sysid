@@ -480,7 +480,7 @@ AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,
     wpi::raw_fd_istream is{path, ec};
 
     if (ec) {
-      throw std::runtime_error(fmt::format("Unable to read: {}", path));
+      throw FileReadingError(path);
     }
 
     is >> m_json;
@@ -498,7 +498,7 @@ AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,
     wpi::raw_fd_istream is{newPath, ec};
 
     if (ec) {
-      throw std::runtime_error(fmt::format("Unable to read: {}", newPath));
+      throw FileReadingError(newPath);
     }
 
     is >> m_json;
@@ -541,49 +541,62 @@ void AnalysisManager::PrepareData() {
   WPI_INFO(m_logger, "{}", "Finished Preparing Data");
 }
 
-AnalysisManager::Gains AnalysisManager::Calculate() {
+AnalysisManager::FeedforwardGains AnalysisManager::CalculateFeedforward() {
   if (m_filteredDataset.empty()) {
-    throw std::runtime_error(
-        "There is an unresolved issue with the data being used. Please "
-        "double-check the data quality and adjust settings such as units, "
-        "velocity threshold, test duration, etc. to make sure that there are "
-        "no errors with the dataset before attempting to re-calculate gains.");
+    throw sysid::InvalidDataError(
+        "There is no data to perform gain calculation on.");
   }
 
   WPI_INFO(m_logger, "{}", "Calculating Gains");
   // Calculate feedforward gains from the data.
-  auto ffGains = sysid::CalculateFeedforwardGains(m_filteredDataset, m_type);
+  const auto& ff = sysid::CalculateFeedforwardGains(m_filteredDataset, m_type);
+  m_ffGains = {ff, m_trackWidth};
 
-  const auto& Kv = std::get<0>(ffGains)[1];
-  const auto& Ka = std::get<0>(ffGains)[2];
+  const auto& Ks = std::get<0>(ff)[0];
+  const auto& Kv = std::get<0>(ff)[1];
+  const auto& Ka = std::get<0>(ff)[2];
 
-  // Calculate the appropriate gains.
-  FeedbackGains fbGains;
+  if (Ka <= 0 || Kv < 0) {
+    throw InvalidDataError(
+        fmt::format("The calculated feedforward gains of kS: {}, Kv: {}, Ka: "
+                    "{} are erroneous. Your Ka should be > 0 while your Kv and "
+                    "Ks constants should both >= 0. Try adjusting the "
+                    "filtering and trimming settings or collect better data.",
+                    Ks, Kv, Ka));
+  }
+
+  return m_ffGains;
+}
+
+sysid::FeedbackGains AnalysisManager::CalculateFeedback() {
+  const auto& [ff, trackWidth] = m_ffGains;
+  const auto& Ks = std::get<0>(ff)[0];
+  const auto& Kv = std::get<0>(ff)[1];
+  const auto& Ka = std::get<0>(ff)[2];
   if (m_settings.type == FeedbackControllerLoopType::kPosition) {
-    fbGains = sysid::CalculatePositionFeedbackGains(
+    m_fbGains = sysid::CalculatePositionFeedbackGains(
         m_settings.preset, m_settings.lqr, Kv, Ka,
         m_settings.convertGainsToEncTicks
             ? m_settings.gearing * m_settings.cpr * m_factor
             : 1);
   } else {
-    fbGains = sysid::CalculateVelocityFeedbackGains(
+    m_fbGains = sysid::CalculateVelocityFeedbackGains(
         m_settings.preset, m_settings.lqr, Kv, Ka,
         m_settings.convertGainsToEncTicks
             ? m_settings.gearing * m_settings.cpr * m_factor
             : 1);
   }
-  return {ffGains, fbGains, m_trackWidth};
+
+  return m_fbGains;
 }
 
 void AnalysisManager::OverrideUnits(std::string_view unit,
                                     double unitsPerRotation) {
   m_unit = unit;
   m_factor = unitsPerRotation;
-  PrepareData();
 }
 
 void AnalysisManager::ResetUnitsFromJSON() {
   m_unit = m_json.at("units").get<std::string>();
   m_factor = m_json.at("unitsPerRotation").get<double>();
-  PrepareData();
 }

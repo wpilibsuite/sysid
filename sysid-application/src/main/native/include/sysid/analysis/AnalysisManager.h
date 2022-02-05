@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <array>
+#include <exception>
 #include <limits>
 #include <optional>
 #include <string>
@@ -87,23 +88,38 @@ class AnalysisManager {
   };
 
   /**
-   * Stores feedforward and feedback gains.
+   * Stores feedforward.
    */
-  struct Gains {
+  struct FeedforwardGains {
     /**
      * Stores the Feedforward gains.
      */
     std::tuple<std::vector<double>, double> ffGains;
 
     /**
-     * Stores the Feedback gains.
-     */
-    FeedbackGains fbGains;
-
-    /**
      * Stores the trackwidth for angular drivetrain tests.
      */
     std::optional<double> trackWidth;
+  };
+
+  /**
+   * Exception for File Reading Errors.
+   */
+  struct FileReadingError : public std::exception {
+    /**
+     * Creates a FileReadingError object
+     *
+     * @param path The path of the file attempted to open
+     */
+    explicit FileReadingError(std::string_view path) {
+      msg = fmt::format("Unable to read: {}", path);
+    }
+
+    /**
+     * The path of the file that was opened.
+     */
+    std::string msg;
+    const char* what() const noexcept override { return msg.c_str(); }
   };
 
   /**
@@ -155,9 +171,17 @@ class AnalysisManager {
    * Calculates the gains with the latest data (from the pointers in the
    * settings struct that this instance was constructed with).
    *
-   * @return The latest feedforward and feedback gains.
+   * @return The latest feedforward gains and trackwidth (if needed).
    */
-  Gains Calculate();
+  FeedforwardGains CalculateFeedforward();
+
+  /**
+   * Calculates the gains with the latest data (from the pointers in the
+   * settings struct that this instance was constructed with).
+   *
+   * @return The latest feedback gains.
+   */
+  FeedbackGains CalculateFeedback();
 
   /**
    * Overrides the units in the JSON with the user-provided ones.
@@ -268,6 +292,10 @@ class AnalysisManager {
 
   units::second_t m_minDuration;
   units::second_t m_maxDuration;
+
+  // Stores feedforward gains
+  FeedforwardGains m_ffGains;
+  FeedbackGains m_fbGains;
 
   // Stores an optional track width if we are doing the drivetrain angular test.
   std::optional<double> m_trackWidth;
