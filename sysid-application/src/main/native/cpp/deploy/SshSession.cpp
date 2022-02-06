@@ -65,7 +65,7 @@ void SshSession::Open() {
   }
 }
 
-void SshSession::Execute(std::string_view cmd) {
+std::string SshSession::Execute(std::string_view cmd) {
   // Allocate a new channel.
   ssh_channel channel = ssh_channel_new(m_session);
   if (!channel) {
@@ -92,12 +92,15 @@ void SshSession::Execute(std::string_view cmd) {
   char buf[512];
   int read = ssh_channel_read(channel, buf, sizeof(buf), 0);
   if (read != 0) {
-    INFO("{}", cmd);
+    INFO("{}", buf);
   }
 
   // Close and free channel.
   ssh_channel_close(channel);
   ssh_channel_free(channel);
+
+  // Return the command output.
+  return std::string{buf};
 }
 
 void SshSession::Put(std::string_view path, std::string_view contents) {

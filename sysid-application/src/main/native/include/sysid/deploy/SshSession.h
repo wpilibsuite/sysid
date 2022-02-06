@@ -60,8 +60,10 @@ class SshSession {
    * Executes a command and logs the output (if there is any).
    *
    * @param cmd The command to execute on the server.
+   *
+   * @return The output of the command.
    */
-  void Execute(std::string_view cmd);
+  std::string Execute(std::string_view cmd);
 
   /**
    * Puts a file on the server using SFTP.
