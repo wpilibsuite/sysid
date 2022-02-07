@@ -74,6 +74,11 @@ class Analyzer : public glass::View {
   static constexpr const char* kLoopTypes[] = {"Position", "Velocity"};
 
   /**
+   * Linear drivetrain analysis subsets
+   */
+  static constexpr const char* kDatasets[] = {"Combined", "Left", "Right"};
+
+  /**
    * Creates the Analyzer widget
    *
    * @param storage Glass Storage
@@ -199,6 +204,7 @@ class Analyzer : public glass::View {
   // Data analysis
   std::unique_ptr<AnalysisManager> m_manager;
   AnalysisType m_type;
+  int m_dataset = 0;
   int m_window = 8;
   double m_threshold = 0.2;
   float m_stepTestDuration = 0.0;
