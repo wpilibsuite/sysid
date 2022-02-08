@@ -5,8 +5,8 @@
 #include "Robot.h"
 
 #include <cstddef>
+#include <cstdio>
 #include <exception>
-#include <iostream>
 #include <string>
 
 #include <fmt/format.h>
@@ -59,7 +59,7 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
     fmt::print("Project failed: {}\n", e.what());
     std::exit(-1);
   }
-  std::cout.flush();
+  std::fflush(stdout);
 #ifdef INTEGRATION
   frc::SmartDashboard::PutBoolean("SysIdRun", false);
   // TODO use std::exit or EndCompetition once CTRE bug is fixed

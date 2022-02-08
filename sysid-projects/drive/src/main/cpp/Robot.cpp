@@ -6,8 +6,8 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdio>
 #include <exception>
-#include <iostream>
 #include <string>
 #include <string_view>
 
@@ -92,7 +92,7 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
     std::exit(-1);
   }
   m_logger.UpdateThreadPriority();
-  std::cout.flush();
+  std::fflush(stdout);
 
 #ifdef INTEGRATION
   frc::SmartDashboard::PutBoolean("SysIdRun", false);
