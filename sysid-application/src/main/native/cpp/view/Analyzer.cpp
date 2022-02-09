@@ -96,6 +96,20 @@ bool Analyzer::DisplayResetAndUnitOverride() {
     m_state = AnalyzerState::kWaitingForJSON;
     return true;
   }
+
+  if (m_type == analysis::kDrivetrain) {
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
+    if (ImGui::Combo("Dataset", &m_dataset, kDatasets, 3)) {
+      m_state = AnalyzerState::kDataPrep;
+      m_settings.dataset =
+          static_cast<AnalysisManager::Settings::DrivetrainDataset>(m_dataset);
+    }
+    ImGui::SameLine();
+  } else {
+    m_settings.dataset =
+        AnalysisManager::Settings::DrivetrainDataset::kCombined;
+  }
+
   ImGui::Spacing();
   ImGui::Text(
       "Units:              %s\n"
@@ -394,6 +408,9 @@ void Analyzer::SelectFile() {
     m_factor = m_manager->GetFactor();
     m_unit = m_manager->GetUnit();
     m_state = AnalyzerState::kDataPrep;
+    m_dataset = 0;
+    m_settings.dataset =
+        AnalysisManager::Settings::DrivetrainDataset::kCombined;
     m_calcDefaults = true;
   }
 }

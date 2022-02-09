@@ -39,6 +39,7 @@ class AnalysisManager {
    * dataset.
    */
   struct Settings {
+    enum class DrivetrainDataset { kCombined = 0, kLeft = 1, kRight = 2 };
     /**
      * The feedback controller preset used to calculate gains.
      */
@@ -85,6 +86,8 @@ class AnalysisManager {
      * in a smart motor controller).
      */
     bool convertGainsToEncTicks = false;
+
+    DrivetrainDataset dataset = DrivetrainDataset::kCombined;
   };
 
   /**
@@ -225,7 +228,9 @@ class AnalysisManager {
    *
    * @return A reference to the raw internal data.
    */
-  Storage& GetRawData() { return m_rawDataset; }
+  Storage& GetRawData() {
+    return m_rawDataset[static_cast<int>(m_settings.dataset)];
+  }
 
   /**
    * Returns a reference to the iterator of the currently selected filtered
@@ -234,14 +239,18 @@ class AnalysisManager {
    *
    * @return A reference to the filtered internal data.
    */
-  Storage& GetFilteredData() { return m_filteredDataset; }
+  Storage& GetFilteredData() {
+    return m_filteredDataset[static_cast<int>(m_settings.dataset)];
+  }
 
   /**
    * Returns the original dataset.
    *
    * @return The original (untouched) dataset
    */
-  Storage& GetOriginalData() { return m_originalDataset; }
+  Storage& GetOriginalData() {
+    return m_originalDataset[static_cast<int>(m_settings.dataset)];
+  }
 
   /**
    * Returns the minimum duration of the Step Voltage Test of the currently
@@ -273,9 +282,9 @@ class AnalysisManager {
   // Backward, etc.)
   wpi::json m_json;
 
-  Storage m_originalDataset;
-  Storage m_rawDataset;
-  Storage m_filteredDataset;
+  std::array<Storage, 3> m_originalDataset;
+  std::array<Storage, 3> m_rawDataset;
+  std::array<Storage, 3> m_filteredDataset;
 
   // Stores the various start times of the different tests.
   std::array<units::second_t, 4> m_startTimes;

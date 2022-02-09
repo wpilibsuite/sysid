@@ -121,10 +121,10 @@ static Storage CombineDatasets(const std::vector<PreparedData>& slowForward,
  */
 static void PrepareGeneralData(
     const wpi::json& json, AnalysisManager::Settings& settings, double factor,
-    std::string_view unit, Storage& originalDataset, Storage& rawDataset,
-    Storage& filteredDataset, std::array<units::second_t, 4>& startTimes,
-    units::second_t& minStepTime, units::second_t& maxStepTime,
-    wpi::Logger& logger) {
+    std::string_view unit, std::array<Storage, 3>& originalDataset,
+    std::array<Storage, 3>& rawDataset, std::array<Storage, 3>& filteredDataset,
+    std::array<units::second_t, 4>& startTimes, units::second_t& minStepTime,
+    units::second_t& maxStepTime, wpi::Logger& logger) {
   using Data = std::array<double, 4>;
   wpi::StringMap<std::vector<Data>> data;
   wpi::StringMap<std::vector<PreparedData>> preparedData;
@@ -165,10 +165,12 @@ static void PrepareGeneralData(
   }
 
   // Store the original datasets
-  originalDataset = CombineDatasets(preparedData["original-raw-slow-forward"],
-                                    preparedData["original-raw-slow-backward"],
-                                    preparedData["original-raw-fast-forward"],
-                                    preparedData["original-raw-fast-backward"]);
+  originalDataset[static_cast<int>(
+      AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
+      CombineDatasets(preparedData["original-raw-slow-forward"],
+                      preparedData["original-raw-slow-backward"],
+                      preparedData["original-raw-fast-forward"],
+                      preparedData["original-raw-fast-backward"]);
 
   WPI_INFO(logger, "{}", "Initial trimming and filtering.");
   sysid::InitialTrimAndFilter(&preparedData, &settings, minStepTime,
@@ -179,14 +181,18 @@ static void PrepareGeneralData(
 
   WPI_INFO(logger, "{}", "Storing datasets.");
   // Store the raw datasets
-  rawDataset = CombineDatasets(
-      preparedData["raw-slow-forward"], preparedData["raw-slow-backward"],
-      preparedData["raw-fast-forward"], preparedData["raw-fast-backward"]);
+  rawDataset[static_cast<int>(
+      AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
+      CombineDatasets(
+          preparedData["raw-slow-forward"], preparedData["raw-slow-backward"],
+          preparedData["raw-fast-forward"], preparedData["raw-fast-backward"]);
 
   // Store the filtered datasets
-  filteredDataset = CombineDatasets(
-      preparedData["slow-forward"], preparedData["slow-backward"],
-      preparedData["fast-forward"], preparedData["fast-backward"]);
+  filteredDataset[static_cast<int>(
+      AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
+      CombineDatasets(
+          preparedData["slow-forward"], preparedData["slow-backward"],
+          preparedData["fast-forward"], preparedData["fast-backward"]);
 
   startTimes = {preparedData["raw-slow-forward"][0].timestamp,
                 preparedData["raw-slow-backward"][0].timestamp,
@@ -222,8 +228,8 @@ static void PrepareGeneralData(
  */
 static void PrepareAngularDrivetrainData(
     const wpi::json& json, AnalysisManager::Settings& settings, double factor,
-    std::optional<double>& trackWidth, Storage& originalDataset,
-    Storage& rawDataset, Storage& filteredDataset,
+    std::optional<double>& trackWidth, std::array<Storage, 3>& originalDataset,
+    std::array<Storage, 3>& rawDataset, std::array<Storage, 3>& filteredDataset,
     std::array<units::second_t, 4>& startTimes, units::second_t& minStepTime,
     units::second_t& maxStepTime, wpi::Logger& logger) {
   using Data = std::array<double, 9>;
@@ -305,10 +311,12 @@ static void PrepareAngularDrivetrainData(
   }
 
   // Create the distinct datasets and store them
-  originalDataset = CombineDatasets(preparedData["original-raw-slow-forward"],
-                                    preparedData["original-raw-slow-backward"],
-                                    preparedData["original-raw-fast-forward"],
-                                    preparedData["original-raw-fast-backward"]);
+  originalDataset[static_cast<int>(
+      AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
+      CombineDatasets(preparedData["original-raw-slow-forward"],
+                      preparedData["original-raw-slow-backward"],
+                      preparedData["original-raw-fast-forward"],
+                      preparedData["original-raw-fast-backward"]);
 
   WPI_INFO(logger, "{}", "Applying trimming and filtering.");
   sysid::InitialTrimAndFilter(&preparedData, &settings, minStepTime,
@@ -319,12 +327,16 @@ static void PrepareAngularDrivetrainData(
 
   WPI_INFO(logger, "{}", "Storing datasets.");
   // Create the distinct datasets and store them
-  rawDataset = CombineDatasets(
-      preparedData["raw-slow-forward"], preparedData["raw-slow-backward"],
-      preparedData["raw-fast-forward"], preparedData["raw-fast-backward"]);
-  filteredDataset = CombineDatasets(
-      preparedData["slow-forward"], preparedData["slow-backward"],
-      preparedData["fast-forward"], preparedData["fast-backward"]);
+  rawDataset[static_cast<int>(
+      AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
+      CombineDatasets(
+          preparedData["raw-slow-forward"], preparedData["raw-slow-backward"],
+          preparedData["raw-fast-forward"], preparedData["raw-fast-backward"]);
+  filteredDataset[static_cast<int>(
+      AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
+      CombineDatasets(
+          preparedData["slow-forward"], preparedData["slow-backward"],
+          preparedData["fast-forward"], preparedData["fast-backward"]);
 
   startTimes = {preparedData["slow-forward"][0].timestamp,
                 preparedData["slow-backward"][0].timestamp,
@@ -358,7 +370,8 @@ static void PrepareAngularDrivetrainData(
  */
 static void PrepareLinearDrivetrainData(
     const wpi::json& json, AnalysisManager::Settings& settings, double factor,
-    Storage& originalDataset, Storage& rawDataset, Storage& filteredDataset,
+    std::array<Storage, 3>& originalDataset, std::array<Storage, 3>& rawDataset,
+    std::array<Storage, 3>& filteredDataset,
     std::array<units::second_t, 4>& startTimes, units::second_t& minStepTime,
     units::second_t& maxStepTime, wpi::Logger& logger) {
   using Data = std::array<double, 9>;
@@ -423,9 +436,22 @@ static void PrepareLinearDrivetrainData(
   auto originalFastBackward = AnalysisManager::DataConcat(
       preparedData["left-original-raw-fast-backward"],
       preparedData["right-original-raw-fast-backward"]);
-
-  originalDataset = CombineDatasets(originalSlowForward, originalSlowBackward,
-                                    originalFastForward, originalFastBackward);
+  originalDataset[static_cast<int>(
+      AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
+      CombineDatasets(originalSlowForward, originalSlowBackward,
+                      originalFastForward, originalFastBackward);
+  originalDataset[static_cast<int>(
+      AnalysisManager::Settings::DrivetrainDataset::kLeft)] =
+      CombineDatasets(preparedData["left-original-raw-slow-forward"],
+                      preparedData["left-original-raw-slow-backward"],
+                      preparedData["left-original-raw-fast-forward"],
+                      preparedData["left-original-raw-fast-backward"]);
+  originalDataset[static_cast<int>(
+      AnalysisManager::Settings::DrivetrainDataset::kRight)] =
+      CombineDatasets(preparedData["right-original-raw-slow-forward"],
+                      preparedData["right-original-raw-slow-backward"],
+                      preparedData["right-original-raw-fast-forward"],
+                      preparedData["right-original-raw-fast-backward"]);
 
   WPI_INFO(logger, "{}", "Applying trimming and filtering.");
   sysid::InitialTrimAndFilter(&preparedData, &settings, minStepTime,
@@ -459,12 +485,39 @@ static void PrepareLinearDrivetrainData(
       AnalysisManager::DataConcat(preparedData["left-raw-fast-backward"],
                                   preparedData["right-raw-fast-backward"]);
 
-  rawDataset = CombineDatasets(rawSlowForward, rawSlowBackward, rawFastForward,
-                               rawFastBackward);
+  rawDataset[static_cast<int>(
+      AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
+      CombineDatasets(rawSlowForward, rawSlowBackward, rawFastForward,
+                      rawFastBackward);
+  rawDataset[static_cast<int>(
+      AnalysisManager::Settings::DrivetrainDataset::kLeft)] =
+      CombineDatasets(preparedData["left-raw-slow-forward"],
+                      preparedData["left-raw-slow-backward"],
+                      preparedData["left-raw-fast-forward"],
+                      preparedData["left-raw-fast-backward"]);
+  rawDataset[static_cast<int>(
+      AnalysisManager::Settings::DrivetrainDataset::kRight)] =
+      CombineDatasets(preparedData["right-raw-slow-forward"],
+                      preparedData["right-raw-slow-backward"],
+                      preparedData["right-raw-fast-forward"],
+                      preparedData["right-raw-fast-backward"]);
 
   // Create the distinct filtered datasets and store them
-  filteredDataset =
+  filteredDataset[static_cast<int>(
+      AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
       CombineDatasets(slowForward, slowBackward, fastForward, fastBackward);
+  filteredDataset[static_cast<int>(
+      AnalysisManager::Settings::DrivetrainDataset::kLeft)] =
+      CombineDatasets(preparedData["left-slow-forward"],
+                      preparedData["left-slow-backward"],
+                      preparedData["left-fast-forward"],
+                      preparedData["left-fast-backward"]);
+  filteredDataset[static_cast<int>(
+      AnalysisManager::Settings::DrivetrainDataset::kRight)] =
+      CombineDatasets(preparedData["right-slow-forward"],
+                      preparedData["right-slow-backward"],
+                      preparedData["right-fast-forward"],
+                      preparedData["right-fast-backward"]);
 
   startTimes = {
       rawSlowForward.front().timestamp, rawSlowBackward.front().timestamp,
@@ -549,7 +602,7 @@ AnalysisManager::FeedforwardGains AnalysisManager::CalculateFeedforward() {
 
   WPI_INFO(m_logger, "{}", "Calculating Gains");
   // Calculate feedforward gains from the data.
-  const auto& ff = sysid::CalculateFeedforwardGains(m_filteredDataset, m_type);
+  const auto& ff = sysid::CalculateFeedforwardGains(GetFilteredData(), m_type);
   m_ffGains = {ff, m_trackWidth};
 
   const auto& Ks = std::get<0>(ff)[0];
