@@ -188,7 +188,8 @@ class Analyzer : public glass::View {
 
   // Feedforward and feedback gains.
   std::vector<double> m_ff;
-  double m_rSquared;
+  double m_accelRSquared;
+  double m_accelRMSE;
   double m_Kp;
   double m_Kd;
   double m_timescale;
