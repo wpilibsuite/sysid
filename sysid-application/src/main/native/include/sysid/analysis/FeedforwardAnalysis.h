@@ -17,8 +17,9 @@ namespace sysid {
  * perform.
  *
  * @return Tuple containing the coefficients of the analysis along with the
- *         r-squared (coefficient of determination) of the fit.
+ *         r-squared (coefficient of determination) and RMSE (standard deviation
+ * of the residuals) of the fit.
  */
-std::tuple<std::vector<double>, double> CalculateFeedforwardGains(
+std::tuple<std::vector<double>, double, double> CalculateFeedforwardGains(
     const Storage& data, const AnalysisType& type);
 }  // namespace sysid

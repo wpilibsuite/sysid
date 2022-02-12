@@ -107,7 +107,7 @@ class AnalyzerPlot {
    *
    * @return A pointer to the RMSE
    */
-  double* GetRMSE();
+  double* GetSimRMSE();
 
   /**
    * Gets the pointer to the stored simulated velocity R-squared for display
@@ -198,6 +198,6 @@ class AnalyzerPlot {
   DataWithFitLinePlot m_timestepData;
 
   double m_RMSE;
-  double m_RSquared;
+  double m_accelRSquared;
 };
 }  // namespace sysid

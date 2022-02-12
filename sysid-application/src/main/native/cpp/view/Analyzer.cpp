@@ -242,7 +242,8 @@ void Analyzer::Display() {
     try {
       const auto& [ff, trackWidth] = m_manager->CalculateFeedforward();
       m_ff = std::get<0>(ff);
-      m_rSquared = std::get<1>(ff);
+      m_accelRSquared = std::get<1>(ff);
+      m_accelRMSE = std::get<2>(ff);
       m_timescale = m_ff[2] / m_ff[1];
       m_trackWidth = trackWidth;
       m_state = AnalyzerState::kGraphPrep;
@@ -370,11 +371,19 @@ void Analyzer::DisplayGraphs() {
 
     // If a JSON is selected
     if (m_state == AnalyzerState::kNominalDisplay) {
-      DisplayGain("Acceleration R²", &m_rSquared);
+      DisplayGain("Acceleration R²", &m_accelRSquared);
       CreateTooltip(
           "The coefficient of determination of the OLS fit of acceleration "
           "versus velocity and voltage.  Acceleration is extremely noisy, "
           "so this is generally quite small.");
+
+      ImGui::SameLine();
+      DisplayGain("Acceleration RMSE", &m_accelRMSE);
+      CreateTooltip(
+          "The standard deviation of the residuals from the predicted "
+          "acceleration."
+          "This can be interpreted loosely as the mean measured disturbance "
+          "from the \"ideal\" system equation.");
 
       DisplayGain("Sim velocity R²", m_plot.GetSimRSquared());
       CreateTooltip(
@@ -382,11 +391,13 @@ void Analyzer::DisplayGraphs() {
           "Velocity is much less-noisy than acceleration, so this "
           "is pretty close to 1 for a decent fit.");
 
-      DisplayGain("Sim RMSE", m_plot.GetRMSE());
+      ImGui::SameLine();
+      DisplayGain("Sim velocity RMSE", m_plot.GetSimRMSE());
       CreateTooltip(
-          "The Root Mean Squared Error (RMSE) of the simulation "
-          "predictions compared to the recorded data. It is essentially the "
-          "mean error of the simulated model in the recorded velocity units.");
+          "The standard deviation of the residuals from the simulated velocity "
+          "predictions - essentially the size of the mean error of the "
+          "simulated model "
+          "in the recorded velocity units.");
     }
   }
   m_prevPlotsLoaded = plotsLoaded;
