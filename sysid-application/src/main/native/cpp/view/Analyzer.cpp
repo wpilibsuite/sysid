@@ -584,6 +584,13 @@ void Analyzer::DisplayFeedbackGains() {
   ShowPresetValue(
       "Measurement Delay (s)",
       reinterpret_cast<double*>(&m_settings.preset.measurementDelay));
+  sysid::CreateTooltip(
+      "The average measurement delay of the process variable in seconds. "
+      "This may depend on your encoder settings and choice of motor "
+      "controller. Default velocity filtering windows are quite long "
+      "on many motor controllers, so be careful that this value is "
+      "accurate if the characteristic timescale of the mechanism "
+      "is small.");
 
   // Add CPR and Gearing for converting Feedback Gains
   ImGui::Separator();
