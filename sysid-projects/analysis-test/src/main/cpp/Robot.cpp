@@ -45,7 +45,14 @@ class Robot : public frc::TimedRobot {
     }
   }
 
-  void DisabledPeriodic() override { m_arm.ResetReadings(); }
+  void DisabledPeriodic() override {
+    m_arm.ResetReadings();
+    if (m_test == "Drivetrain" || m_test == "Drivetrain (Angular)") {
+      m_driveLogger.ClearWhenReceived();
+    } else {
+      m_generalLogger.ClearWhenReceived();
+    }
+  }
 
   void RobotPeriodic() override {
     m_drive.Periodic();

@@ -30,6 +30,11 @@ class SysIdLogger {
   void SendData();
 
   /**
+   * Clears the data entry when sysid logger acknowledges that it received data.
+   */
+  void ClearWhenReceived();
+
+  /**
    * Makes the current execution thread of the logger a real-time thread which
    * will make it scheduled more consistently.
    */
@@ -86,6 +91,8 @@ class SysIdLogger {
    * Stores all of the collected data.
    */
   std::vector<double> m_data;
+
+  int m_ackNum = 0;
 
   /**
    * Creates the SysId logger, disables live view telemetry, sets up the
