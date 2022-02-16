@@ -8,6 +8,15 @@ import sys
 # Load data
 filename = sys.argv[1]
 
+UNIT_TO_ABBREVIATION = {
+    "Meters": "m",
+    "Feet": "ft",
+    "Inches": "in",
+    "Degrees": "deg",
+    "Rotations": "rot",
+    "Radinas": "rad",
+}
+
 # Make DataFrame to facillitate plotting
 if filename.endswith(".json"):
     with open(filename) as json_file:
@@ -15,19 +24,9 @@ if filename.endswith(".json"):
     unit = raw_data["units"]
 
     # Get Unit
-    if unit == "Meters":
-        abbreviation = "m"
-    elif unit == "Feet":
-        abbreviation = "ft"
-    elif unit == "Inches":
-        abbreviation = "in"
-    elif unit == "Degrees":
-        abbreviation = "deg"
-    elif unit == "Rotations":
-        abbreviation = "rot"
-    elif unit == "Radians":
-        abbreviation = "rad"
-    else:
+    try:
+        abbreviation = UNIT_TO_ABBREVIATION[unit]
+    except KeyError:
         raise ValueError("Invalid Unit")
 
     # Make Columns
