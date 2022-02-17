@@ -36,6 +36,8 @@ class Robot : public frc::TimedRobot {
   void TestInit() override;
   void TestPeriodic() override;
 
+  void PushNTDiagnostics();
+
  private:
   std::vector<std::unique_ptr<frc::MotorController>> m_controllers;
   std::function<double()> m_position;

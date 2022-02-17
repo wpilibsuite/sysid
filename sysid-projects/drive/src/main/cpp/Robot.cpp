@@ -103,28 +103,7 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 
 void Robot::RobotInit() {}
 
-/**
- * This function is called every robot packet, no matter the mode. Use
- * this for items like diagnostics that you want ran during disabled,
- * autonomous, teleoperated and test.
- *
- * <p> This runs after the mode specific periodic functions, but before
- * LiveWindow and SmartDashboard integrated updating.
- */
-void Robot::RobotPeriodic() {
-  try {
-    frc::SmartDashboard::PutNumber("Left Position", m_leftPosition());
-    frc::SmartDashboard::PutNumber("Right Position", m_rightPosition());
-    frc::SmartDashboard::PutNumber("Left Velocity", m_leftRate());
-    frc::SmartDashboard::PutNumber("Right Velocity", m_rightRate());
-
-    frc::SmartDashboard::PutNumber("Gyro Reading", m_gyroPosition());
-    frc::SmartDashboard::PutNumber("Gyro Rate", m_gyroRate());
-  } catch (std::exception& e) {
-    fmt::print("Project failed: {}\n", e.what());
-    std::exit(-1);
-  }
-}
+void Robot::RobotPeriodic() {}
 
 /**
  * This autonomous (along with the chooser code above) shows how to select
@@ -155,7 +134,9 @@ void Robot::AutonomousPeriodic() {
 
 void Robot::TeleopInit() {}
 
-void Robot::TeleopPeriodic() {}
+void Robot::TeleopPeriodic() {
+  PushNTDiagnostics();
+}
 
 void Robot::DisabledInit() {
   sysid::SetMotorControllers(0_V, m_leftControllers);
@@ -179,11 +160,30 @@ void Robot::SimulationPeriodic() {
 #endif
 }
 
-void Robot::DisabledPeriodic() {}
+void Robot::DisabledPeriodic() {
+  PushNTDiagnostics();
+}
 
 void Robot::TestInit() {}
 
-void Robot::TestPeriodic() {}
+void Robot::TestPeriodic() {
+  PushNTDiagnostics();
+}
+
+void Robot::PushNTDiagnostics() {
+  try {
+    frc::SmartDashboard::PutNumber("Left Position", m_leftPosition());
+    frc::SmartDashboard::PutNumber("Right Position", m_rightPosition());
+    frc::SmartDashboard::PutNumber("Left Velocity", m_leftRate());
+    frc::SmartDashboard::PutNumber("Right Velocity", m_rightRate());
+
+    frc::SmartDashboard::PutNumber("Gyro Reading", m_gyroPosition());
+    frc::SmartDashboard::PutNumber("Gyro Rate", m_gyroRate());
+  } catch (std::exception& e) {
+    fmt::print("Project failed: {}\n", e.what());
+    std::exit(-1);
+  }
+}
 
 #ifndef RUNNING_FRC_TESTS
 int main() {
