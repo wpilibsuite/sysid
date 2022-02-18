@@ -524,6 +524,13 @@ static void PrepareLinearDrivetrainData(
       rawFastForward.front().timestamp, rawFastBackward.front().timestamp};
 }
 
+AnalysisManager::AnalysisManager(Settings& settings, wpi::Logger& logger)
+    : m_settings(settings),
+      m_logger(logger),
+      m_type(analysis::kSimple),
+      m_factor(1),
+      m_unit("Meters") {}
+
 AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,
                                  wpi::Logger& logger)
     : m_settings(settings), m_logger(logger) {
@@ -603,7 +610,7 @@ AnalysisManager::FeedforwardGains AnalysisManager::CalculateFeedforward() {
   WPI_INFO(m_logger, "{}", "Calculating Gains");
   // Calculate feedforward gains from the data.
   const auto& ff = sysid::CalculateFeedforwardGains(GetFilteredData(), m_type);
-  m_ffGains = {ff, m_trackWidth};
+  FeedforwardGains ffGains = {ff, m_trackWidth};
 
   const auto& Ks = std::get<0>(ff)[0];
   const auto& Kv = std::get<0>(ff)[1];
@@ -618,29 +625,29 @@ AnalysisManager::FeedforwardGains AnalysisManager::CalculateFeedforward() {
                     Ks, Kv, Ka));
   }
 
-  return m_ffGains;
+  return ffGains;
 }
 
-sysid::FeedbackGains AnalysisManager::CalculateFeedback() {
-  const auto& [ff, trackWidth] = m_ffGains;
-  const auto& Ks = std::get<0>(ff)[0];
-  const auto& Kv = std::get<0>(ff)[1];
-  const auto& Ka = std::get<0>(ff)[2];
+sysid::FeedbackGains AnalysisManager::CalculateFeedback(
+    std::vector<double> ff) {
+  const auto& Kv = ff[1];
+  const auto& Ka = ff[2];
+  FeedbackGains fb;
   if (m_settings.type == FeedbackControllerLoopType::kPosition) {
-    m_fbGains = sysid::CalculatePositionFeedbackGains(
+    fb = sysid::CalculatePositionFeedbackGains(
         m_settings.preset, m_settings.lqr, Kv, Ka,
         m_settings.convertGainsToEncTicks
             ? m_settings.gearing * m_settings.cpr * m_factor
             : 1);
   } else {
-    m_fbGains = sysid::CalculateVelocityFeedbackGains(
+    fb = sysid::CalculateVelocityFeedbackGains(
         m_settings.preset, m_settings.lqr, Kv, Ka,
         m_settings.convertGainsToEncTicks
             ? m_settings.gearing * m_settings.cpr * m_factor
             : 1);
   }
 
-  return m_fbGains;
+  return fb;
 }
 
 void AnalysisManager::OverrideUnits(std::string_view unit,
