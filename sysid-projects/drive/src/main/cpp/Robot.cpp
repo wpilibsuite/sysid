@@ -125,8 +125,10 @@ void Robot::AutonomousInit() {
  * position, l velocity, r velocity, angle, angular rate
  */
 void Robot::AutonomousPeriodic() {
-  m_logger.Log(m_leftPosition(), m_rightPosition(), m_leftRate(), m_rightRate(),
-               m_gyroPosition(), m_gyroRate());
+  m_logger.Log(m_logger.MeasureVoltage(m_leftControllers),
+               m_logger.MeasureVoltage(m_rightControllers), m_leftPosition(),
+               m_rightPosition(), m_leftRate(), m_rightRate(), m_gyroPosition(),
+               m_gyroRate());
   sysid::SetMotorControllers(m_logger.GetLeftMotorVoltage(), m_leftControllers);
   sysid::SetMotorControllers(m_logger.GetRightMotorVoltage(),
                              m_rightControllers);

@@ -16,20 +16,15 @@ units::volt_t SysIdDrivetrainLogger::GetRightMotorVoltage() const {
   return m_secondaryMotorVoltage;
 }
 
-void SysIdDrivetrainLogger::Log(double leftPosition, double rightPosition,
+void SysIdDrivetrainLogger::Log(double leftVoltage, double rightVoltage,
+                                double leftPosition, double rightPosition,
                                 double leftVelocity, double rightVelocity,
                                 double measuredAngle, double angularRate) {
   UpdateData();
   if (m_data.size() < kDataVectorSize) {
-    std::array<double, 9> arr = {m_timestamp,
-                                 m_primaryMotorVoltage.value(),
-                                 m_secondaryMotorVoltage.value(),
-                                 leftPosition,
-                                 rightPosition,
-                                 leftVelocity,
-                                 rightVelocity,
-                                 measuredAngle,
-                                 angularRate};
+    std::array<double, 9> arr = {m_timestamp,   leftVoltage,   rightVoltage,
+                                 leftPosition,  rightPosition, leftVelocity,
+                                 rightVelocity, measuredAngle, angularRate};
     m_data.insert(m_data.end(), arr.cbegin(), arr.cend());
   }
 

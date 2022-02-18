@@ -75,7 +75,9 @@ class Robot : public frc::TimedRobot {
 
   void AutonomousPeriodic() override {
     if (m_test == "Drivetrain" || m_test == "Drivetrain (Angular)") {
-      m_driveLogger.Log(m_driveMechanism->GetLEncDistance(),
+      m_driveLogger.Log(m_driveLogger.GetLeftMotorVoltage().value(),
+                        m_driveLogger.GetRightMotorVoltage().value(),
+                        m_driveMechanism->GetLEncDistance(),
                         m_driveMechanism->GetREncDistance(),
                         m_driveMechanism->GetLEncVelocity(),
                         m_driveMechanism->GetREncVelocity(),
@@ -84,7 +86,8 @@ class Robot : public frc::TimedRobot {
       m_driveMechanism->SetLMotor(m_driveLogger.GetLeftMotorVoltage());
       m_driveMechanism->SetRMotor(m_driveLogger.GetRightMotorVoltage());
     } else {
-      m_generalLogger.Log(m_mechanism->GetPosition(),
+      m_generalLogger.Log(m_generalLogger.GetMotorVoltage().value(),
+                          m_mechanism->GetPosition(),
                           m_mechanism->GetVelocity());
       m_mechanism->SetMotor(m_generalLogger.GetMotorVoltage());
     }

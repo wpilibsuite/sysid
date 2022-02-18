@@ -11,6 +11,7 @@
 #include <fmt/core.h>
 #include <frc/Notifier.h>
 #include <frc/RobotBase.h>
+#include <frc/RobotController.h>
 #include <frc/Threads.h>
 #include <frc/Timer.h>
 #include <frc/livewindow/LiveWindow.h>
@@ -30,6 +31,19 @@ void SysIdLogger::InitLogging() {
   m_voltageCommand = frc::SmartDashboard::GetNumber("SysIdVoltageCommand", 0.0);
   m_startTime = frc::Timer::GetFPGATimestamp().value();
   m_data.clear();
+}
+
+double SysIdLogger::MeasureVoltage(
+    const std::vector<std::unique_ptr<frc::MotorController>>& controllers) {
+  // double batteryVoltage = GetBatteryVoltage();
+
+  double sum = 0.0;
+  for (auto&& controller : controllers) {
+    sum += controller->Get();
+  }
+
+  return sum * frc::RobotController::GetBatteryVoltage().value() /
+         controllers.size();
 }
 
 void SysIdLogger::SendData() {

@@ -90,7 +90,7 @@ void Robot::AutonomousInit() {
  * Outputs data in the format: timestamp, voltage, position, velocity
  */
 void Robot::AutonomousPeriodic() {
-  m_logger.Log(m_position(), m_rate());
+  m_logger.Log(m_logger.MeasureVoltage(m_controllers), m_position(), m_rate());
   sysid::SetMotorControllers(m_logger.GetMotorVoltage(), m_controllers);
 }
 

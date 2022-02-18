@@ -5,8 +5,11 @@
 #pragma once
 
 #include <cstddef>
+#include <memory>
 #include <string>
 #include <vector>
+
+#include <frc/motorcontrol/MotorController.h>
 
 namespace sysid {
 
@@ -34,6 +37,15 @@ class SysIdLogger {
    * will make it scheduled more consistently.
    */
   static void UpdateThreadPriority();
+
+  /**
+   * Utility function for getting motor controller voltage
+   *
+   * @param controllers A set of motor controllers powering a mechanism.
+   * @return The average of the measured voltages of the motor controllers.
+   */
+  static double MeasureVoltage(
+      const std::vector<std::unique_ptr<frc::MotorController>>& controllers);
 
  protected:
   /**
