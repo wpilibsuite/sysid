@@ -16,6 +16,7 @@
 #include <frc/Timer.h>
 #include <frc/livewindow/LiveWindow.h>
 #include <frc/smartdashboard/SmartDashboard.h>
+#include <wpi/StringExtras.h>
 
 using namespace sysid;
 
@@ -34,12 +35,16 @@ void SysIdLogger::InitLogging() {
 }
 
 double SysIdLogger::MeasureVoltage(
-    const std::vector<std::unique_ptr<frc::MotorController>>& controllers) {
-  // double batteryVoltage = GetBatteryVoltage();
-
+    const std::vector<std::unique_ptr<frc::MotorController>>& controllers, const std::vector<std::string>& controllerNames) {
   double sum = 0.0;
-  for (auto&& controller : controllers) {
-    sum += controller->Get();
+  for (int i = 0; i < controllers.size(); ++i) {
+    if (wpi::starts_with(controllerNames[i], "SPARK MAX")) {
+
+    } else if (controllerNames[i] == "Venom") {
+
+    } else {
+      sum += controllers[i]->Get();
+    }
   }
 
   return sum * frc::RobotController::GetBatteryVoltage().value() /

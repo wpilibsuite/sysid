@@ -45,7 +45,7 @@ class SysIdLogger {
    * @return The average of the measured voltages of the motor controllers.
    */
   static double MeasureVoltage(
-      const std::vector<std::unique_ptr<frc::MotorController>>& controllers);
+      const std::vector<std::unique_ptr<frc::MotorController>>& controllers, const std::vector<std::string>& controllerNames);
 
  protected:
   /**
