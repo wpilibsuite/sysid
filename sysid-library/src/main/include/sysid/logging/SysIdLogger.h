@@ -42,10 +42,12 @@ class SysIdLogger {
    * Utility function for getting motor controller voltage
    *
    * @param controllers A set of motor controllers powering a mechanism.
+   * @param controllerNames The names of the motor controllers.
    * @return The average of the measured voltages of the motor controllers.
    */
   static double MeasureVoltage(
-      const std::vector<std::unique_ptr<frc::MotorController>>& controllers, const std::vector<std::string>& controllerNames);
+      const std::vector<std::unique_ptr<frc::MotorController>>& controllers,
+      const std::vector<std::string>& controllerNames);
 
  protected:
   /**

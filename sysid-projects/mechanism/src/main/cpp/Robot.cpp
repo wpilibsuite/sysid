@@ -22,7 +22,7 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
     fmt::print("Reading JSON\n");
     std::vector<int> ports =
         m_json.at("primary motor ports").get<std::vector<int>>();
-    std::vector<std::string> controllerNames =
+    m_controllerNames =
         m_json.at("motor controllers").get<std::vector<std::string>>();
     std::vector<int> encoderPorts =
         m_json.at("primary encoder ports").get<std::vector<int>>();
@@ -45,13 +45,13 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 
     fmt::print("Initializing Motors\n");
     for (size_t i = 0; i < ports.size(); i++) {
-      sysid::AddMotorController(ports[i], controllerNames[i], motorsInverted[i],
-                                &m_controllers);
+      sysid::AddMotorController(ports[i], m_controllerNames[i],
+                                motorsInverted[i], &m_controllers);
     }
 
     fmt::print("Initializing encoder\n");
     sysid::SetupEncoders(encoderType, isEncoding, period, cpr, gearing,
-                         numSamples, controllerNames[0],
+                         numSamples, m_controllerNames[0],
                          m_controllers.front().get(), encoderInverted,
                          encoderPorts, m_cancoder, m_revEncoderPort,
                          m_revDataPort, m_encoder, m_position, m_rate);
@@ -90,7 +90,8 @@ void Robot::AutonomousInit() {
  * Outputs data in the format: timestamp, voltage, position, velocity
  */
 void Robot::AutonomousPeriodic() {
-  m_logger.Log(m_logger.MeasureVoltage(m_controllers), m_position(), m_rate());
+  m_logger.Log(m_logger.MeasureVoltage(m_controllers, m_controllerNames),
+               m_position(), m_rate());
   sysid::SetMotorControllers(m_logger.GetMotorVoltage(), m_controllers);
 }
 
