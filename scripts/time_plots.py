@@ -54,8 +54,9 @@ if filename.endswith(".json"):
     prepared_data = pd.DataFrame(columns=columns)
     for test in (test for test in raw_data.keys() if "-" in test):
         formatted_entry = [[pt[0]] + [test] + pt[1:] for pt in raw_data[test]]
-        prepared_data = prepared_data.append(
-            pd.DataFrame(formatted_entry, columns=columns))
+        prepared_data = pd.concat(
+            [prepared_data,
+             pd.DataFrame(formatted_entry, columns=columns)])
 
     units_per_rot = raw_data["unitsPerRotation"]
 
