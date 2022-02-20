@@ -17,7 +17,7 @@ UNIT_TO_ABBREVIATION = {
     "Radinas": "rad",
 }
 
-# Make DataFrame to facillitate plotting
+# Make DataFrame to facilitate plotting
 if filename.endswith(".json"):
     with open(filename) as json_file:
         raw_data = json.load(json_file)
