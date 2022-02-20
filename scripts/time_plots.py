@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 import json
+import pathlib
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import sys
 
 # Load data
-filename = sys.argv[1]
+filename = pathlib.Path(sys.argv[1])
 
 UNIT_TO_ABBREVIATION = {
     "Meters": "m",
@@ -18,9 +20,8 @@ UNIT_TO_ABBREVIATION = {
 }
 
 # Make DataFrame to facilitate plotting
-if filename.endswith(".json"):
-    with open(filename) as json_file:
-        raw_data = json.load(json_file)
+if filename.suffix == ".json":
+    raw_data = json.loads(filename.read_text())
     unit = raw_data["units"]
 
     # Get Unit
