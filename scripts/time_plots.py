@@ -16,7 +16,7 @@ UNIT_TO_ABBREVIATION = {
     "Inches": "in",
     "Degrees": "deg",
     "Rotations": "rot",
-    "Radinas": "rad",
+    "Radians": "rad",
 }
 
 # Make DataFrame to facilitate plotting
