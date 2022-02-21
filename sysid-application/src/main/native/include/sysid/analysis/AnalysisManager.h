@@ -154,6 +154,15 @@ class AnalysisManager {
   }
 
   /**
+   * Constructs an instance of the analysis manager for theoretical analysis,
+   * containing settings and gains but no data.
+   *
+   * @param settings The settings for this instance of the analysis manager.
+   * @param logger The logger instance to use for log data.
+   */
+  AnalysisManager(Settings& settings, wpi::Logger& logger);
+
+  /**
    * Constructs an instance of the analysis manager with the given path (to the
    * JSON) and analysis manager settings.
    *
@@ -179,12 +188,12 @@ class AnalysisManager {
   FeedforwardGains CalculateFeedforward();
 
   /**
-   * Calculates the gains with the latest data (from the pointers in the
-   * settings struct that this instance was constructed with).
+   * Calculates feedback gains from the given feedforward gains.
    *
-   * @return The latest feedback gains.
+   * @param ff The feedforward gains.
+   * @return The calculated feedback gains.
    */
-  FeedbackGains CalculateFeedback();
+  FeedbackGains CalculateFeedback(std::vector<double> ff);
 
   /**
    * Overrides the units in the JSON with the user-provided ones.
@@ -301,10 +310,6 @@ class AnalysisManager {
 
   units::second_t m_minDuration;
   units::second_t m_maxDuration;
-
-  // Stores feedforward gains
-  FeedforwardGains m_ffGains;
-  FeedbackGains m_fbGains;
 
   // Stores an optional track width if we are doing the drivetrain angular test.
   std::optional<double> m_trackWidth;

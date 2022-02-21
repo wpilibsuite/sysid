@@ -46,10 +46,6 @@ class Analyzer : public glass::View {
   enum class AnalyzerState {
     kWaitingForJSON,
     kNominalDisplay,
-    kDataPrep,
-    kFeedforwardGainCalc,
-    kFeedbackGainCalc,
-    kGraphPrep,
     kMotionThresholdError,
     kTestDurationError,
     kGeneralDataError,
@@ -121,6 +117,11 @@ class Analyzer : public glass::View {
   void DisplayFileSelector();
 
   /**
+   * Resets the current analysis data.
+   */
+  void ResetData();
+
+  /**
    * Sets up the reset button and Unit override buttons.
    *
    * @return True if the tool had been reset.
@@ -128,9 +129,19 @@ class Analyzer : public glass::View {
   bool DisplayResetAndUnitOverride();
 
   /**
+   * Prepares the data for analysis.
+   */
+  void PrepareData();
+
+  /**
    * Sets up the graphs to display Raw Data.
    */
   void PrepareRawGraphs();
+
+  /**
+   * Sets up the graphs to display filtered/processed data.
+   */
+  void PrepareGraphs();
 
   /**
    * True if the stored state is associated with an error.
@@ -143,12 +154,17 @@ class Analyzer : public glass::View {
   bool IsDataErrorState();
 
   /**
-   * Handles the logic for displaying feedforward gains
+   * Displays inputs to allow the collecting of theoretical feedforward gains.
+   */
+  void CollectFeedforwardGains(float beginX, float beginY);
+
+  /**
+   * Displays calculated feedforward gains.
    */
   void DisplayFeedforwardGains(float beginX, float beginY);
 
   /**
-   * Handles the logic for displaying feedback gains
+   * Displays calculated feedback gains.
    */
   void DisplayFeedbackGains();
 
@@ -159,9 +175,19 @@ class Analyzer : public glass::View {
   void ConfigParamsOnFileSelect();
 
   /**
+   * Updates feedforward gains from the analysis manager.
+   */
+  void UpdateFeedforwardGains();
+
+  /**
+   * Updates feedback gains from the analysis manager.
+   */
+  void UpdateFeedbackGains();
+
+  /**
    * Handles logic of displaying a gain on ImGui
    */
-  void DisplayGain(const char* text, double* data);
+  bool DisplayGain(const char* text, double* data, bool readOnly);
 
   /**
    * Handles errors when they pop up.
@@ -198,13 +224,10 @@ class Analyzer : public glass::View {
   std::optional<double> m_trackWidth;
 
   // Units
-  double m_factor;
-  std::string m_unit;
   int m_selectedOverrideUnit = 0;
 
   // Data analysis
   std::unique_ptr<AnalysisManager> m_manager;
-  AnalysisType m_type;
   int m_dataset = 0;
   int m_window = 8;
   double m_threshold = 0.2;
