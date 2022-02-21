@@ -1,33 +1,33 @@
 #!/usr/bin/env python3
 
 import json
+import pathlib
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import sys
 
 # Load data
-filename = sys.argv[1]
+filename = pathlib.Path(sys.argv[1])
 
-# Make DataFrame to facillitate plotting
-if filename.endswith(".json"):
-    with open(filename) as json_file:
-        raw_data = json.load(json_file)
+UNIT_TO_ABBREVIATION = {
+    "Meters": "m",
+    "Feet": "ft",
+    "Inches": "in",
+    "Degrees": "deg",
+    "Rotations": "rot",
+    "Radians": "rad",
+}
+
+# Make DataFrame to facilitate plotting
+if filename.suffix == ".json":
+    raw_data = json.loads(filename.read_text())
     unit = raw_data["units"]
 
     # Get Unit
-    if unit == "Meters":
-        abbreviation = "m"
-    elif unit == "Feet":
-        abbreviation = "ft"
-    elif unit == "Inches":
-        abbreviation = "in"
-    elif unit == "Degrees":
-        abbreviation = "deg"
-    elif unit == "Rotations":
-        abbreviation = "rot"
-    elif unit == "Radians":
-        abbreviation = "rad"
-    else:
+    try:
+        abbreviation = UNIT_TO_ABBREVIATION[unit]
+    except KeyError:
         raise ValueError("Invalid Unit")
 
     # Make Columns
