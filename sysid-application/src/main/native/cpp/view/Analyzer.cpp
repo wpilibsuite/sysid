@@ -751,28 +751,31 @@ void Analyzer::DisplayFeedbackGains() {
   // Come back to the starting y pos.
   ImGui::SetCursorPosY(beginY);
 
-  auto ShowLQRParam = [this](const char* text, double* data, float min,
-                             float max, bool power = true) {
-    float val = *data;
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
-    ImGui::SetCursorPosX(ImGui::GetFontSize() * 9);
-
-    if (ImGui::SliderFloat(text, &val, min, max, "%.1f",
-                           ImGuiSliderFlags_None |
-                               (power ? ImGuiSliderFlags_Logarithmic : 0))) {
-      *data = static_cast<double>(val);
-      UpdateFeedbackGains();
-    }
-  };
-
   std::string_view abbreviation = GetAbbreviation(m_manager->GetUnit());
 
   if (m_selectedLoopType == 0) {
-    ShowLQRParam(fmt::format("Max Position Error ({})", abbreviation).c_str(),
-                 &m_settings.lqr.qp, 0.05f, 40.0f);
+    ImGui::SetCursorPosX(ImGui::GetFontSize() * 9);
+    if (DisplayGain(
+            fmt::format("Max Position Error ({})", abbreviation).c_str(),
+            &m_settings.lqr.qp, false)) {
+      if (m_settings.lqr.qp > 0) {
+        UpdateFeedbackGains();
+      }
+    }
   }
 
-  ShowLQRParam(fmt::format("Max Velocity Error ({}/s)", abbreviation).c_str(),
-               &m_settings.lqr.qv, 0.05f, 40.0f);
-  ShowLQRParam("Max Control Effort (V)", &m_settings.lqr.r, 0.1f, 12.0f, false);
+  ImGui::SetCursorPosX(ImGui::GetFontSize() * 9);
+  if (DisplayGain(
+          fmt::format("Max Velocity Error ({}/s)", abbreviation).c_str(),
+          &m_settings.lqr.qv, false)) {
+    if (m_settings.lqr.qv > 0) {
+      UpdateFeedbackGains();
+    }
+  }
+  ImGui::SetCursorPosX(ImGui::GetFontSize() * 9);
+  if (DisplayGain("Max Control Effort (V)", &m_settings.lqr.r, false)) {
+    if (m_settings.lqr.r > 0) {
+      UpdateFeedbackGains();
+    }
+  }
 }
