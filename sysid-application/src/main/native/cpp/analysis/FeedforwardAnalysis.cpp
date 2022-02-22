@@ -42,7 +42,7 @@ static void PopulateOLSVector(const std::vector<PreparedData>& d,
     // Add test-specific variables
     if (type == analysis::kElevator) {
       // Add the gravity term (for Kg)
-      olsData.push_back(1.0);
+      olsData.push_back(-1.0);
     } else if (type == analysis::kArm) {
       // Add the cosine term (for Kcos)
       olsData.push_back(pt.cos);
