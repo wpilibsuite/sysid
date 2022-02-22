@@ -553,7 +553,7 @@ void Analyzer::CollectFeedforwardGains(float beginX, float beginY) {
 
 void Analyzer::DisplayFeedforwardGains(float beginX, float beginY) {
   SetPosition(beginX, beginY, 0, 0);
-  DisplayGain("Ks", &m_ff[1]);
+  DisplayGain("Ks", &m_ff[0]);
 
   SetPosition(beginX, beginY, 0, 1);
   DisplayGain("Kv", &m_ff[1]);
