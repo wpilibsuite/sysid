@@ -127,7 +127,7 @@ void TelemetryManager::EndTest() {
           "Elevator) or vice versa. Please double check your settings and "
           "try again.";
     } else if (!m_params.data.empty()) {
-      std::string units;
+      std::string units = m_settings.units;
       std::transform(m_settings.units.begin(), m_settings.units.end(),
                      units.begin(), ::tolower);
 
