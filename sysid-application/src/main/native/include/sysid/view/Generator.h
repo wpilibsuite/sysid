@@ -75,8 +75,8 @@ static constexpr std::array<const char*, 1> kBuiltInEncoders{
     sysid::encoder::kBuiltInSetting.displayName};
 
 static constexpr std::array<const char*, 2> kSparkMaxEncoders{
-    sysid::encoder::kSMaxDataPort.displayName,
-    sysid::encoder::kSMaxEncoderPort.displayName};
+    sysid::encoder::kSMaxEncoderPort.displayName,
+    sysid::encoder::kSMaxDataPort.displayName};
 
 static constexpr auto kGyroNames = DisplayNameStorage(sysid::gyro::kGyros);
 static constexpr const char* kNavXCtors[] = {"SerialPort (USB)", "I2C (MXP)",
