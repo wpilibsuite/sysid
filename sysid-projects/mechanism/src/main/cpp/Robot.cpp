@@ -134,6 +134,8 @@ void Robot::TestPeriodic() {
 
 void Robot::PushNTDiagnostics() {
   try {
+    frc::SmartDashboard::PutNumber(
+        "Voltage", m_logger.MeasureVoltage(m_controllers, m_controllerNames));
     frc::SmartDashboard::PutNumber("Position", m_position());
     frc::SmartDashboard::PutNumber("Rate", m_rate());
   } catch (std::exception& e) {

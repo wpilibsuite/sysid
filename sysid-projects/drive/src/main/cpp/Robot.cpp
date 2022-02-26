@@ -175,6 +175,13 @@ void Robot::TestPeriodic() {
 
 void Robot::PushNTDiagnostics() {
   try {
+    frc::SmartDashboard::PutNumber(
+        "Left Voltage",
+        m_logger.MeasureVoltage(m_leftControllers, m_controllerNames));
+    frc::SmartDashboard::PutNumber(
+        "Right Voltage",
+        m_logger.MeasureVoltage(m_rightControllers, m_controllerNames));
+
     frc::SmartDashboard::PutNumber("Left Position", m_leftPosition());
     frc::SmartDashboard::PutNumber("Right Position", m_rightPosition());
     frc::SmartDashboard::PutNumber("Left Velocity", m_leftRate());
