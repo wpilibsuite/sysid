@@ -494,8 +494,7 @@ void Generator::Display() {
                    IM_ARRAYSIZE(kADXRS450Ctors));
       m_settings.gyroCtor = std::string(kADXRS450Ctors[m_gyroParam]);
     } else if (gyroType == sysid::gyro::kNavX) {
-      ImGui::Combo("SPI Port", &m_gyroParam, kNavXCtors,
-                   IM_ARRAYSIZE(kNavXCtors));
+      ImGui::Combo("Port", &m_gyroParam, kNavXCtors, IM_ARRAYSIZE(kNavXCtors));
       m_settings.gyroCtor = std::string(kNavXCtors[m_gyroParam]);
     } else if (m_settings.gyro == sysid::gyro::kADIS16448) {
       ImGui::Combo("SPI Port", &m_gyroParam, kADIS16448Ctors,
