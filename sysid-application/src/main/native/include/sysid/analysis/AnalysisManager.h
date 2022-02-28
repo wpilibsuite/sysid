@@ -8,6 +8,7 @@
 #include <array>
 #include <exception>
 #include <limits>
+#include <numeric>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -267,7 +268,7 @@ class AnalysisManager {
    *
    * @return The minimum step test duration.
    */
-  double GetMinDuration() const { return m_minDuration.value(); }
+  units::second_t GetMinStepTime() const { return m_minStepTime; }
 
   /**
    * Returns the maximum duration of the Step Voltage Test of the currently
@@ -275,7 +276,31 @@ class AnalysisManager {
    *
    * @return  Maximum step test duration
    */
-  double GetMaxDuration() const { return m_maxDuration.value(); }
+  units::second_t GetMaxStepTime() const { return m_maxStepTime; }
+
+  /**
+   * Returns the estimated time delay of the measured position, including
+   * CAN delays.
+   *
+   * @return Position delay
+   */
+  units::second_t GetPositionDelay() const {
+    return std::accumulate(m_positionDelays.begin(), m_positionDelays.end(),
+                           0_s) /
+           m_positionDelays.size();
+  }
+
+  /**
+   * Returns the estimated time delay of the measured velocity, including
+   * CAN delays.
+   *
+   * @return Velocity delay
+   */
+  units::second_t GetVelocityDelay() const {
+    return std::accumulate(m_velocityDelays.begin(), m_velocityDelays.end(),
+                           0_s) /
+           m_positionDelays.size();
+  }
 
   /**
    * Returns the different start times of the recorded tests.
@@ -308,10 +333,18 @@ class AnalysisManager {
   std::string m_unit;
   double m_factor;
 
-  units::second_t m_minDuration;
-  units::second_t m_maxDuration;
+  units::second_t m_minStepTime{0};
+  units::second_t m_maxStepTime{std::numeric_limits<double>::infinity()};
+  std::vector<units::second_t> m_positionDelays;
+  std::vector<units::second_t> m_velocityDelays;
 
   // Stores an optional track width if we are doing the drivetrain angular test.
   std::optional<double> m_trackWidth;
+
+  void PrepareGeneralData();
+
+  void PrepareAngularDrivetrainData();
+
+  void PrepareLinearDrivetrainData();
 };
 }  // namespace sysid

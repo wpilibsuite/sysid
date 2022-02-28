@@ -61,7 +61,9 @@ TEST(FilterTest, StepTrim) {
   auto minTime = maxTime;
 
   sysid::AnalysisManager::Settings settings;
-  minTime = sysid::TrimStepVoltageData(&testData, &settings, minTime, maxTime);
+  auto [tempMinTime, positionDelay, velocityDelay] =
+      sysid::TrimStepVoltageData(&testData, &settings, minTime, maxTime);
+  minTime = tempMinTime;
 
   EXPECT_EQ(expectedData[0].acceleration, testData[0].acceleration);
   EXPECT_EQ(expectedData.back().acceleration, testData.back().acceleration);

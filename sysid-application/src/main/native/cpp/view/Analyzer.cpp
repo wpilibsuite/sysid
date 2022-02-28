@@ -55,6 +55,10 @@ void Analyzer::UpdateFeedforwardGains() {
     m_accelRSquared = std::get<1>(ff);
     m_accelRMSE = std::get<2>(ff);
     m_trackWidth = trackWidth;
+    m_settings.preset.measurementDelay =
+        m_settings.type == FeedbackControllerLoopType::kPosition
+            ? m_manager->GetPositionDelay()
+            : m_manager->GetVelocityDelay();
     PrepareGraphs();
   } catch (const sysid::InvalidDataError& e) {
     m_state = AnalyzerState::kGeneralDataError;
@@ -521,8 +525,8 @@ void Analyzer::DisplayFeedforwardParameters(float beginX, float beginY) {
     SetPosition(beginX, beginY, kHorizontalOffset, 2);
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
     if (ImGui::SliderFloat("Test Duration", &m_stepTestDuration,
-                           m_manager->GetMinDuration(),
-                           m_manager->GetMaxDuration(), "%.2f")) {
+                           m_manager->GetMinStepTime().value(),
+                           m_manager->GetMaxStepTime().value(), "%.2f")) {
       m_settings.stepTestDuration = units::second_t{m_stepTestDuration};
       PrepareData();
     }
@@ -571,7 +575,27 @@ void Analyzer::DisplayFeedforwardGains(float beginX, float beginY) {
       "at least 3-5 times shorter than this to optimally control the "
       "system.");
 
-  size_t row = 4;
+  SetPosition(beginX, beginY, 0, 4);
+  double positionDelay = m_manager->GetPositionDelay().value();
+  DisplayGain("Position Measurement Delay (s)", &positionDelay);
+  CreateTooltip(
+      "The average elapsed time between the first application of "
+      "voltage and the first detected change in mechanism position "
+      "in the step-voltage tests.  This includes CAN delays, and "
+      "may overestimate the true delay for on-motor-controller "
+      "feedback loops by up to 20ms.");
+
+  SetPosition(beginX, beginY, 0, 5);
+  double velocityDelay = m_manager->GetVelocityDelay().value();
+  DisplayGain("Velocity Measurement Delay (s)", &velocityDelay);
+  CreateTooltip(
+      "The average elapsed time between the first application of "
+      "voltage and the maximum calculated mechanism acceleration "
+      "in the step-voltage tests.  This includes CAN delays, and "
+      "may overestimate the true delay for on-motor-controller "
+      "feedback loops by up to 20ms.");
+
+  size_t row = 6;
 
   SetPosition(beginX, beginY, 0, row);
 
@@ -596,6 +620,9 @@ void Analyzer::DisplayFeedbackGains() {
   if (ImGui::Combo("Gain Preset", &m_selectedPreset, kPresetNames,
                    IM_ARRAYSIZE(kPresetNames))) {
     m_settings.preset = m_presets[kPresetNames[m_selectedPreset]];
+    m_settings.type = FeedbackControllerLoopType::kVelocity;
+    m_selectedLoopType =
+        static_cast<int>(FeedbackControllerLoopType::kVelocity);
     m_settings.convertGainsToEncTicks = m_selectedPreset > 2;
     UpdateFeedbackGains();
   }
@@ -735,6 +762,15 @@ void Analyzer::DisplayFeedbackGains() {
                    IM_ARRAYSIZE(kLoopTypes))) {
     m_settings.type =
         static_cast<FeedbackControllerLoopType>(m_selectedLoopType);
+    if (m_state == AnalyzerState::kWaitingForJSON) {
+      m_settings.preset.measurementDelay = 0_ms;
+    } else {
+      if (m_settings.type == FeedbackControllerLoopType::kPosition) {
+        m_settings.preset.measurementDelay = m_manager->GetPositionDelay();
+      } else {
+        m_settings.preset.measurementDelay = m_manager->GetVelocityDelay();
+      }
+    }
     UpdateFeedbackGains();
   }
 
