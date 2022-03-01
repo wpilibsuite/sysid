@@ -182,6 +182,8 @@ void AnalysisManager::PrepareAngularDrivetrainData() {
   static constexpr size_t kRVoltageCol = 2;
   static constexpr size_t kLPosCol = 3;
   static constexpr size_t kRPosCol = 4;
+  static constexpr size_t kLVelCol = 5;
+  static constexpr size_t kRVelCol = 6;
   static constexpr size_t kAngleCol = 7;
   static constexpr size_t kAngularRateCol = 8;
 
@@ -198,12 +200,28 @@ void AnalysisManager::PrepareAngularDrivetrainData() {
     for (auto&& pt : it->second) {
       pt[kLPosCol] *= m_factor;
       pt[kRPosCol] *= m_factor;
+      pt[kLVelCol] *= m_factor;
+      pt[kRVelCol] *= m_factor;
 
-      // Store the summarized average voltages in the left voltage column
-      pt[kLVoltageCol] =
-          (std::copysign(pt[kLVoltageCol], pt[kAngularRateCol]) +
-           std::copysign(pt[kRVoltageCol], pt[kAngularRateCol])) /
-          2;
+      // Stores the average voltages in the left voltage column.
+      // This aggregates the left and right voltages into a single voltage
+      // column for the ConvertToPrepared() method. std::copysign() ensures the
+      // polarity of the voltage matches the direction the robot turns.
+      pt[kLVoltageCol] = std::copysign(
+          (std::abs(pt[kLVoltageCol]) + std::abs(pt[kRVoltageCol])) / 2,
+          pt[kAngularRateCol]);
+
+      // ω = (v_r - v_l) / trackwidth
+      // v = ωr => v = ω * trackwidth / 2
+      // (v_r - v_l) / trackwidth * (trackwidth / 2) = (v_r - v_l) / 2
+      // However, since we know this is an angular test, the left and right
+      // wheel velocities will have opposite signs, allowing us to add their
+      // absolute values and get the same result (in terms of magnitude).
+      // std::copysign() is used to make sure the direction of the wheel
+      // velocities matches the direction the robot turns.
+      pt[kAngularRateCol] =
+          std::copysign((std::abs(pt[kRVelCol]) + std::abs(pt[kLVelCol])) / 2,
+                        pt[kAngularRateCol]);
     }
   }
 
@@ -234,20 +252,6 @@ void AnalysisManager::PrepareAngularDrivetrainData() {
     auto key = it.first();
     preparedData[key] = ConvertToPrepared<9, kTimeCol, kLVoltageCol, kAngleCol,
                                           kAngularRateCol>(data[key]);
-  }
-
-  // To convert the angular rates into translational velocities (to work with
-  // the model + OLS), v = ωr => v = ω * trackwidth / 2
-  double translationalFactor = m_trackWidth.value() / 2.0;
-
-  // Scale Angular Rate Data
-  for (auto& it : preparedData) {
-    auto& dataset = it.getValue();
-
-    for (auto& pt : dataset) {
-      pt.velocity *= translationalFactor;
-      pt.acceleration *= translationalFactor;
-    }
   }
 
   // Create the distinct datasets and store them
