@@ -218,7 +218,7 @@ class Analyzer : public glass::View {
   double m_accelRMSE;
   double m_Kp;
   double m_Kd;
-  double m_timescale;
+  units::millisecond_t m_timescale;
 
   // Track width
   std::optional<double> m_trackWidth;

@@ -282,9 +282,9 @@ class AnalysisManager {
    * Returns the estimated time delay of the measured position, including
    * CAN delays.
    *
-   * @return Position delay
+   * @return Position delay in milliseconds
    */
-  units::second_t GetPositionDelay() const {
+  units::millisecond_t GetPositionDelay() const {
     return std::accumulate(m_positionDelays.begin(), m_positionDelays.end(),
                            0_s) /
            m_positionDelays.size();
@@ -294,9 +294,9 @@ class AnalysisManager {
    * Returns the estimated time delay of the measured velocity, including
    * CAN delays.
    *
-   * @return Velocity delay
+   * @return Velocity delay in milliseconds
    */
-  units::second_t GetVelocityDelay() const {
+  units::millisecond_t GetVelocityDelay() const {
     return std::accumulate(m_velocityDelays.begin(), m_velocityDelays.end(),
                            0_s) /
            m_positionDelays.size();
