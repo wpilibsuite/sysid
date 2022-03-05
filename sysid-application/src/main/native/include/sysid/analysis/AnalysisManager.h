@@ -307,7 +307,15 @@ class AnalysisManager {
    *
    * @return The start times for each test
    */
-  const std::array<units::second_t, 4> GetStartTimes() { return m_startTimes; }
+  const std::array<units::second_t, 4>& GetStartTimes() const {
+    return m_startTimes;
+  }
+
+  bool HasData() const {
+    return !m_originalDataset[static_cast<int>(
+                                  Settings::DrivetrainDataset::kCombined)]
+                .empty();
+  }
 
  private:
   wpi::Logger& m_logger;
