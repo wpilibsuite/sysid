@@ -633,10 +633,8 @@ void Analyzer::DisplayFeedbackGains() {
       "Default, WPILib (2020-): For use with the new WPILib PIDController "
       "class.\n"
       "WPILib (Pre-2020): For use with the old WPILib PIDController class.\n"
-      "CTRE (New): For use with new CTRE units. Note that CTRE has not "
-      "released an update with these units.\n"
-      "CTRE (Old): For use with old CTRE units. These are the default units "
-      "that ship with CTRE motor controllers.\n"
+      "CTRE: For use with CTRE units. These are the default units that ship "
+      "with CTRE motor controllers.\n"
       "REV (Brushless): For use with NEO and NEO 550 motors on a SPARK MAX.\n"
       "REV (Brushed): For use with brushed motors connected to a SPARK MAX.");
 
