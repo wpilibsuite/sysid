@@ -82,10 +82,12 @@ void Analyzer::UpdateFeedforwardGains() {
 }
 
 void Analyzer::UpdateFeedbackGains() {
-  const auto& fb = m_manager->CalculateFeedback(m_ff);
-  m_timescale = m_ff[2] / m_ff[1];
-  m_Kp = fb.Kp;
-  m_Kd = fb.Kd;
+  if (m_ff[1] > 0 && m_ff[2] > 0) {
+    const auto& fb = m_manager->CalculateFeedback(m_ff);
+    m_timescale = units::second_t{m_ff[2] / m_ff[1]};
+    m_Kp = fb.Kp;
+    m_Kd = fb.Kd;
+  }
 }
 
 bool Analyzer::DisplayGain(const char* text, double* data,
@@ -547,9 +549,10 @@ void Analyzer::CollectFeedforwardGains(float beginX, float beginY) {
   SetPosition(beginX, beginY, 0, 2);
   // Show Timescale
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-  DisplayGain("Response Timescale (s)", &m_timescale);
+  DisplayGain("Response Timescale (ms)",
+              reinterpret_cast<double*>(&m_timescale));
   CreateTooltip(
-      "The characteristic timescale of the system response in seconds. "
+      "The characteristic timescale of the system response in milliseconds. "
       "Both the control loop period and total signal delay should be "
       "at least 3-5 times shorter than this to optimally control the "
       "system.");
@@ -568,16 +571,18 @@ void Analyzer::DisplayFeedforwardGains(float beginX, float beginY) {
   SetPosition(beginX, beginY, 0, 3);
   // Show Timescale
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-  DisplayGain("Response Timescale (s)", &m_timescale);
+  DisplayGain("Response Timescale (ms)",
+              reinterpret_cast<double*>(&m_timescale));
   CreateTooltip(
-      "The characteristic timescale of the system response in seconds. "
+      "The characteristic timescale of the system response in milliseconds. "
       "Both the control loop period and total signal delay should be "
       "at least 3-5 times shorter than this to optimally control the "
       "system.");
 
   SetPosition(beginX, beginY, 0, 4);
-  double positionDelay = m_manager->GetPositionDelay().value();
-  DisplayGain("Position Measurement Delay (s)", &positionDelay);
+  auto positionDelay = m_manager->GetPositionDelay();
+  DisplayGain("Position Measurement Delay (ms)",
+              reinterpret_cast<double*>(&positionDelay));
   CreateTooltip(
       "The average elapsed time between the first application of "
       "voltage and the first detected change in mechanism position "
@@ -586,8 +591,9 @@ void Analyzer::DisplayFeedforwardGains(float beginX, float beginY) {
       "feedback loops by up to 20ms.");
 
   SetPosition(beginX, beginY, 0, 5);
-  double velocityDelay = m_manager->GetVelocityDelay().value();
-  DisplayGain("Velocity Measurement Delay (s)", &velocityDelay);
+  auto velocityDelay = m_manager->GetVelocityDelay();
+  DisplayGain("Velocity Measurement Delay (ms)",
+              reinterpret_cast<double*>(&velocityDelay));
   CreateTooltip(
       "The average elapsed time between the first application of "
       "voltage and the maximum calculated mechanism acceleration "
@@ -674,13 +680,13 @@ void Analyzer::DisplayFeedbackGains() {
     }
 
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-    if (ImGui::InputDouble(text, data, 0.0, 0.0, "%.4f") && *data > 0) {
+    if (ImGui::InputDouble(text, data, 0.0, 0.0, "%.5G") && *data > 0) {
       UpdateFeedbackGains();
     }
   };
 
   // Show controller period.
-  ShowPresetValue("Controller Period (s)",
+  ShowPresetValue("Controller Period (ms)",
                   reinterpret_cast<double*>(&m_settings.preset.period));
 
   // Show whether the controller gains are time-normalized.
@@ -690,10 +696,10 @@ void Analyzer::DisplayFeedbackGains() {
 
   // Show position/velocity measurement delay.
   ShowPresetValue(
-      "Measurement Delay (s)",
+      "Measurement Delay (ms)",
       reinterpret_cast<double*>(&m_settings.preset.measurementDelay));
   sysid::CreateTooltip(
-      "The average measurement delay of the process variable in seconds. "
+      "The average measurement delay of the process variable in milliseconds. "
       "This may depend on your encoder settings and choice of motor "
       "controller. Default velocity filtering windows are quite long "
       "on many motor controllers, so be careful that this value is "
