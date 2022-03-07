@@ -79,16 +79,16 @@ static bool CheckRoboRIOImageVersion(SshSession& session, wpi::Logger& logger) {
 
       // Check whether this image matches our list of valid images.
       for (auto&& image : kValidImageVersions) {
-        // Find the wildcard location (if it exists) .
-        auto wildcard = std::find(image.cbegin(), image.cend(), "*");
+        // Find the wildcard location (if it exists).
+        size_t wildcardPosition = image.find("*");
 
         // No wildcard, check if versions are equal.
-        if (wildcard == image.cend()) {
+        if (wildcardPosition == std::string_view::npos) {
           return image == version;
         } else {
           // There is a wildcard, so take that into account and check.
-          int dist = std::distance(image.cbegin(), wildcard);
-          return version.substr(0, dist) == image.substr(0, dist);
+          return version.substr(0, wildcardPosition) ==
+                 image.substr(0, wildcardPosition);
         }
       }
     }
