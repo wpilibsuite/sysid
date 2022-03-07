@@ -4,17 +4,23 @@
 
 #include "sysid/logging/SysIdLogger.h"
 
+#include <ctre/Phoenix.h>
+
 #include <cstddef>
 #include <sstream>
 #include <stdexcept>
 
+#include <CANVenom.h>
 #include <fmt/core.h>
 #include <frc/Notifier.h>
 #include <frc/RobotBase.h>
+#include <frc/RobotController.h>
 #include <frc/Threads.h>
 #include <frc/Timer.h>
 #include <frc/livewindow/LiveWindow.h>
 #include <frc/smartdashboard/SmartDashboard.h>
+#include <rev/CANSparkMax.h>
+#include <wpi/StringExtras.h>
 
 using namespace sysid;
 
@@ -30,6 +36,43 @@ void SysIdLogger::InitLogging() {
   m_voltageCommand = frc::SmartDashboard::GetNumber("SysIdVoltageCommand", 0.0);
   m_startTime = frc::Timer::GetFPGATimestamp().value();
   m_data.clear();
+}
+
+double SysIdLogger::MeasureVoltage(
+    const std::vector<std::unique_ptr<frc::MotorController>>& controllers,
+    const std::vector<std::string>& controllerNames) {
+  double sum = 0.0;
+  for (size_t i = 0; i < controllers.size(); ++i) {
+    auto&& controller = controllers[i].get();
+    if (wpi::starts_with(controllerNames[i], "SPARK MAX")) {
+      auto* smax = static_cast<rev::CANSparkMax*>(controller);
+      sum += smax->GetBusVoltage() * smax->GetAppliedOutput();
+      if constexpr (frc::RobotBase::IsSimulation()) {
+        fmt::print("Recording SPARK MAX voltage\n");
+      }
+    } else if (wpi::starts_with(controllerNames[i], "Talon") ||
+               wpi::starts_with(controllerNames[i], "Victor")) {
+      auto* ctreController = dynamic_cast<WPI_BaseMotorController*>(controller);
+      sum += ctreController->GetMotorOutputVoltage();
+      if constexpr (frc::RobotBase::IsSimulation()) {
+        fmt::print("Recording CTRE voltage\n");
+      }
+    } else if (controllerNames[i] == "Venom") {
+      auto* venom = static_cast<frc::CANVenom*>(controller);
+      sum += venom->GetOutputVoltage();
+      if constexpr (frc::RobotBase::IsSimulation()) {
+        fmt::print("Recording Venom voltage\n");
+      }
+    } else {
+      sum += controllers[i]->Get() *
+             frc::RobotController::GetBatteryVoltage().value();
+      if constexpr (frc::RobotBase::IsSimulation()) {
+        fmt::print("Recording General voltage\n");
+      }
+    }
+  }
+
+  return sum / controllers.size();
 }
 
 void SysIdLogger::SendData() {

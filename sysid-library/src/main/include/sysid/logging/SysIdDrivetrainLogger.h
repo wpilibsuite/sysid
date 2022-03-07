@@ -38,6 +38,8 @@ class SysIdDrivetrainLogger : public SysIdLogger {
    * voltage, r voltage, l position, r position, l velocity, r velocity, angle,
    * angular rate
    *
+   * @param leftVoltage the recorded voltage of the left motors
+   * @param rightVoltage the recorded voltage of the right motors
    * @param leftPosition the recorded rotations of the left shaft
    * @param rightPosition the recorded rotations of the right shaft
    * @param leftVelocity the recorded rotations per second of the left shaft
@@ -46,8 +48,9 @@ class SysIdDrivetrainLogger : public SysIdLogger {
    * @param angularRate the recorded angular rate of the gyro in radians per
    *                    second
    */
-  void Log(double leftPosition, double rightPosition, double leftVelocity,
-           double rightVelocity, double measuredAngle, double angularRate);
+  void Log(double leftVoltage, double rightVoltage, double leftPosition,
+           double rightPosition, double leftVelocity, double rightVelocity,
+           double measuredAngle, double angularRate);
 
   void Reset() override;
 

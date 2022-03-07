@@ -89,8 +89,8 @@ class GenerationTest : public ::testing::Test {
     std::this_thread::sleep_for(2s);
   }
 
-  void FindInLog(std::string_view str) {
-    auto searchString = fmt::format("Setup {}", str);
+  void FindInLog(std::string_view str, std::string_view prefix = "Setup") {
+    auto searchString = fmt::format("{} {}", prefix, str);
     fmt::print(stderr, "Searching for: {}\n", searchString);
     bool found = wpi::contains(m_logContent, searchString);
     EXPECT_TRUE(found);
@@ -122,13 +122,27 @@ class GenerationTest : public ::testing::Test {
     }
 
     FindInLog(encoderString);
+
+    std::string voltageAccessor;
+    if (motorController == sysid::motorcontroller::kSPARKMAXBrushless.name ||
+        motorController == sysid::motorcontroller::kSPARKMAXBrushed.name) {
+      voltageAccessor = "SPARK MAX";
+    } else if (motorController == sysid::motorcontroller::kTalonSRX.name ||
+               motorController == sysid::motorcontroller::kVictorSPX.name ||
+               motorController == sysid::motorcontroller::kTalonFX.name) {
+      voltageAccessor = "CTRE";
+    } else if (motorController == sysid::motorcontroller::kVenom.name) {
+      voltageAccessor = "Venom";
+    } else {
+      voltageAccessor = "General";
+    }
+    FindInLog(fmt::format("{} voltage", voltageAccessor), "Recording");
   }
 
   void TestHardwareConfig(std::string_view motorController,
                           std::string_view encoder, std::string_view gyro,
                           std::string_view gyroCtor) {
     TestHardwareConfig(motorController, encoder);
-
     // FIXME: Add in gyro specific conditions once CTRE and REV simulations work
     if (gyro == sysid::gyro::kNoGyroOption.name) {
       FindInLog(gyro);

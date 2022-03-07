@@ -29,10 +29,11 @@ class SysIdGeneralMechanismLogger : public SysIdLogger {
    * When SendData() is called it outputs data in the form: timestamp, voltage,
    * position, velocity.
    *
+   * @param voltage the recorded voltage of the motors
    * @param measuredPosition the recorded rotations of the shaft
    * @param measuredVelocity the recorded rotations per second of the shaft
    */
-  void Log(double measuredPosition, double measuredVelocity);
+  void Log(double voltage, double measuredPosition, double measuredVelocity);
 
   void Reset() override;
 

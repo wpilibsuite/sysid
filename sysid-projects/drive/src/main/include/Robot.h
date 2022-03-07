@@ -8,6 +8,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include <frc/ADIS16448_IMU.h>
@@ -42,6 +43,7 @@ class Robot : public frc::TimedRobot {
  private:
   std::vector<std::unique_ptr<frc::MotorController>> m_rightControllers;
   std::vector<std::unique_ptr<frc::MotorController>> m_leftControllers;
+  std::vector<std::string> m_controllerNames;
   std::function<double()> m_leftPosition;
   std::function<double()> m_leftRate;
   std::function<double()> m_rightPosition;
