@@ -357,23 +357,27 @@ void Analyzer::PrepareData() {
 }
 
 void Analyzer::PrepareRawGraphs() {
-  AbortDataPrep();
-  m_dataThread = std::thread([&] {
-    m_plot.SetRawData(m_manager->GetOriginalData(), m_manager->GetUnit(),
-                      m_abortDataPrep);
-  });
+  if (m_manager->HasData()) {
+    AbortDataPrep();
+    m_dataThread = std::thread([&] {
+      m_plot.SetRawData(m_manager->GetOriginalData(), m_manager->GetUnit(),
+                        m_abortDataPrep);
+    });
+  }
 }
 
 void Analyzer::PrepareGraphs() {
-  WPI_INFO(m_logger, "{}", "Graph state");
-  AbortDataPrep();
-  m_dataThread = std::thread([&] {
-    m_plot.SetData(m_manager->GetRawData(), m_manager->GetFilteredData(),
-                   m_manager->GetUnit(), m_ff, m_manager->GetStartTimes(),
-                   m_manager->GetAnalysisType(), m_abortDataPrep);
-  });
-  UpdateFeedbackGains();
-  m_state = AnalyzerState::kNominalDisplay;
+  if (m_manager->HasData()) {
+    WPI_INFO(m_logger, "{}", "Graph state");
+    AbortDataPrep();
+    m_dataThread = std::thread([&] {
+      m_plot.SetData(m_manager->GetRawData(), m_manager->GetFilteredData(),
+                     m_manager->GetUnit(), m_ff, m_manager->GetStartTimes(),
+                     m_manager->GetAnalysisType(), m_abortDataPrep);
+    });
+    UpdateFeedbackGains();
+    m_state = AnalyzerState::kNominalDisplay;
+  }
 }
 
 void Analyzer::HandleError(std::string_view msg) {
