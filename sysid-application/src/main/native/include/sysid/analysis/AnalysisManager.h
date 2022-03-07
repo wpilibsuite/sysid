@@ -6,7 +6,9 @@
 
 #include <algorithm>
 #include <array>
+#include <exception>
 #include <limits>
+#include <numeric>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -38,6 +40,7 @@ class AnalysisManager {
    * dataset.
    */
   struct Settings {
+    enum class DrivetrainDataset { kCombined = 0, kLeft = 1, kRight = 2 };
     /**
      * The feedback controller preset used to calculate gains.
      */
@@ -84,26 +87,43 @@ class AnalysisManager {
      * in a smart motor controller).
      */
     bool convertGainsToEncTicks = false;
+
+    DrivetrainDataset dataset = DrivetrainDataset::kCombined;
   };
 
   /**
-   * Stores feedforward and feedback gains.
+   * Stores feedforward.
    */
-  struct Gains {
+  struct FeedforwardGains {
     /**
      * Stores the Feedforward gains.
      */
-    std::tuple<std::vector<double>, double> ffGains;
-
-    /**
-     * Stores the Feedback gains.
-     */
-    FeedbackGains fbGains;
+    std::tuple<std::vector<double>, double, double> ffGains;
 
     /**
      * Stores the trackwidth for angular drivetrain tests.
      */
     std::optional<double> trackWidth;
+  };
+
+  /**
+   * Exception for File Reading Errors.
+   */
+  struct FileReadingError : public std::exception {
+    /**
+     * Creates a FileReadingError object
+     *
+     * @param path The path of the file attempted to open
+     */
+    explicit FileReadingError(std::string_view path) {
+      msg = fmt::format("Unable to read: {}", path);
+    }
+
+    /**
+     * The path of the file that was opened.
+     */
+    std::string msg;
+    const char* what() const noexcept override { return msg.c_str(); }
   };
 
   /**
@@ -135,6 +155,15 @@ class AnalysisManager {
   }
 
   /**
+   * Constructs an instance of the analysis manager for theoretical analysis,
+   * containing settings and gains but no data.
+   *
+   * @param settings The settings for this instance of the analysis manager.
+   * @param logger The logger instance to use for log data.
+   */
+  AnalysisManager(Settings& settings, wpi::Logger& logger);
+
+  /**
    * Constructs an instance of the analysis manager with the given path (to the
    * JSON) and analysis manager settings.
    *
@@ -155,9 +184,17 @@ class AnalysisManager {
    * Calculates the gains with the latest data (from the pointers in the
    * settings struct that this instance was constructed with).
    *
-   * @return The latest feedforward and feedback gains.
+   * @return The latest feedforward gains and trackwidth (if needed).
    */
-  Gains Calculate();
+  FeedforwardGains CalculateFeedforward();
+
+  /**
+   * Calculates feedback gains from the given feedforward gains.
+   *
+   * @param ff The feedforward gains.
+   * @return The calculated feedback gains.
+   */
+  FeedbackGains CalculateFeedback(std::vector<double> ff);
 
   /**
    * Overrides the units in the JSON with the user-provided ones.
@@ -201,7 +238,9 @@ class AnalysisManager {
    *
    * @return A reference to the raw internal data.
    */
-  Storage& GetRawData() { return m_rawDataset; }
+  Storage& GetRawData() {
+    return m_rawDataset[static_cast<int>(m_settings.dataset)];
+  }
 
   /**
    * Returns a reference to the iterator of the currently selected filtered
@@ -210,14 +249,18 @@ class AnalysisManager {
    *
    * @return A reference to the filtered internal data.
    */
-  Storage& GetFilteredData() { return m_filteredDataset; }
+  Storage& GetFilteredData() {
+    return m_filteredDataset[static_cast<int>(m_settings.dataset)];
+  }
 
   /**
    * Returns the original dataset.
    *
    * @return The original (untouched) dataset
    */
-  Storage& GetOriginalData() { return m_originalDataset; }
+  Storage& GetOriginalData() {
+    return m_originalDataset[static_cast<int>(m_settings.dataset)];
+  }
 
   /**
    * Returns the minimum duration of the Step Voltage Test of the currently
@@ -225,7 +268,7 @@ class AnalysisManager {
    *
    * @return The minimum step test duration.
    */
-  double GetMinDuration() const { return m_minDuration.value(); }
+  units::second_t GetMinStepTime() const { return m_minStepTime; }
 
   /**
    * Returns the maximum duration of the Step Voltage Test of the currently
@@ -233,14 +276,46 @@ class AnalysisManager {
    *
    * @return  Maximum step test duration
    */
-  double GetMaxDuration() const { return m_maxDuration.value(); }
+  units::second_t GetMaxStepTime() const { return m_maxStepTime; }
+
+  /**
+   * Returns the estimated time delay of the measured position, including
+   * CAN delays.
+   *
+   * @return Position delay in milliseconds
+   */
+  units::millisecond_t GetPositionDelay() const {
+    return std::accumulate(m_positionDelays.begin(), m_positionDelays.end(),
+                           0_s) /
+           m_positionDelays.size();
+  }
+
+  /**
+   * Returns the estimated time delay of the measured velocity, including
+   * CAN delays.
+   *
+   * @return Velocity delay in milliseconds
+   */
+  units::millisecond_t GetVelocityDelay() const {
+    return std::accumulate(m_velocityDelays.begin(), m_velocityDelays.end(),
+                           0_s) /
+           m_positionDelays.size();
+  }
 
   /**
    * Returns the different start times of the recorded tests.
    *
    * @return The start times for each test
    */
-  const std::array<units::second_t, 4> GetStartTimes() { return m_startTimes; }
+  const std::array<units::second_t, 4>& GetStartTimes() const {
+    return m_startTimes;
+  }
+
+  bool HasData() const {
+    return !m_originalDataset[static_cast<int>(
+                                  Settings::DrivetrainDataset::kCombined)]
+                .empty();
+  }
 
  private:
   wpi::Logger& m_logger;
@@ -249,9 +324,9 @@ class AnalysisManager {
   // Backward, etc.)
   wpi::json m_json;
 
-  Storage m_originalDataset;
-  Storage m_rawDataset;
-  Storage m_filteredDataset;
+  std::array<Storage, 3> m_originalDataset;
+  std::array<Storage, 3> m_rawDataset;
+  std::array<Storage, 3> m_filteredDataset;
 
   // Stores the various start times of the different tests.
   std::array<units::second_t, 4> m_startTimes;
@@ -266,10 +341,18 @@ class AnalysisManager {
   std::string m_unit;
   double m_factor;
 
-  units::second_t m_minDuration;
-  units::second_t m_maxDuration;
+  units::second_t m_minStepTime{0};
+  units::second_t m_maxStepTime{std::numeric_limits<double>::infinity()};
+  std::vector<units::second_t> m_positionDelays;
+  std::vector<units::second_t> m_velocityDelays;
 
   // Stores an optional track width if we are doing the drivetrain angular test.
   std::optional<double> m_trackWidth;
+
+  void PrepareGeneralData();
+
+  void PrepareAngularDrivetrainData();
+
+  void PrepareLinearDrivetrainData();
 };
 }  // namespace sysid

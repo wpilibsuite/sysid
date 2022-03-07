@@ -50,8 +50,9 @@ static void PopulateOLSVector(const std::vector<PreparedData>& d,
   }
 }
 
-std::tuple<std::vector<double>, double> sysid::CalculateFeedforwardGains(
-    const Storage& data, const AnalysisType& type) {
+std::tuple<std::vector<double>, double, double>
+sysid::CalculateFeedforwardGains(const Storage& data,
+                                 const AnalysisType& type) {
   // Create a raw vector of doubles with our data in it.
   std::vector<double> olsData;
 
@@ -88,5 +89,5 @@ std::tuple<std::vector<double>, double> sysid::CalculateFeedforwardGains(
   }
 
   // Gains are Ks, Kv, Ka, Kg (elevator only)
-  return std::tuple{gains, std::get<1>(ols)};
+  return std::tuple{gains, std::get<1>(ols), std::get<2>(ols)};
 }

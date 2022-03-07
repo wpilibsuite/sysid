@@ -102,7 +102,7 @@ class AnalysisTest : public ::testing::Test {
 
       analyzer.PrepareData();
 
-      const auto& [ff, fb, trackWidth] = analyzer.Calculate();
+      const auto& [ff, trackWidth] = analyzer.CalculateFeedforward();
       const auto& ffGains = std::get<0>(ff);
 
       fmt::print(stderr, "Ks: {}\nKv: {}\nKa: {}\n", ffGains[0], ffGains[1],

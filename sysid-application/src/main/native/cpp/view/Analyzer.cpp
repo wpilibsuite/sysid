@@ -24,6 +24,7 @@
 #include "sysid/analysis/ArmSim.h"
 #include "sysid/analysis/ElevatorSim.h"
 #include "sysid/analysis/FeedbackControllerPreset.h"
+#include "sysid/analysis/FilteringUtils.h"
 #include "sysid/analysis/SimpleMotorSim.h"
 #include "sysid/view/UILayout.h"
 
@@ -41,12 +42,63 @@ Analyzer::Analyzer(glass::Storage& storage, wpi::Logger& logger)
   m_presets["REV Brushed Encoder Port"] = presets::kREVNonNEO;
   m_presets["REV Data Port"] = presets::kREVNonNEO;
   m_presets["Venom"] = presets::kVenom;
+
+  ResetData();
+  UpdateFeedbackGains();
 }
 
-void Analyzer::DisplayGain(const char* text, double* data) {
+void Analyzer::UpdateFeedforwardGains() {
+  WPI_INFO(m_logger, "{}", "Gain calc");
+  try {
+    const auto& [ff, trackWidth] = m_manager->CalculateFeedforward();
+    m_ff = std::get<0>(ff);
+    m_accelRSquared = std::get<1>(ff);
+    m_accelRMSE = std::get<2>(ff);
+    m_trackWidth = trackWidth;
+    m_settings.preset.measurementDelay =
+        m_settings.type == FeedbackControllerLoopType::kPosition
+            ? m_manager->GetPositionDelay()
+            : m_manager->GetVelocityDelay();
+    PrepareGraphs();
+  } catch (const sysid::InvalidDataError& e) {
+    m_state = AnalyzerState::kGeneralDataError;
+    HandleError(e.what());
+  } catch (const sysid::NoQuasistaticDataError& e) {
+    m_state = AnalyzerState::kMotionThresholdError;
+    HandleError(e.what());
+  } catch (const sysid::NoDynamicDataError& e) {
+    m_state = AnalyzerState::kTestDurationError;
+    HandleError(e.what());
+  } catch (const AnalysisManager::FileReadingError& e) {
+    m_state = AnalyzerState::kFileError;
+    HandleError(e.what());
+  } catch (const wpi::json::exception& e) {
+    m_state = AnalyzerState::kFileError;
+    HandleError(e.what());
+  } catch (const std::exception& e) {
+    m_state = AnalyzerState::kFileError;
+    HandleError(e.what());
+  }
+}
+
+void Analyzer::UpdateFeedbackGains() {
+  if (m_ff[1] > 0 && m_ff[2] > 0) {
+    const auto& fb = m_manager->CalculateFeedback(m_ff);
+    m_timescale = units::second_t{m_ff[2] / m_ff[1]};
+    m_Kp = fb.Kp;
+    m_Kd = fb.Kd;
+  }
+}
+
+bool Analyzer::DisplayGain(const char* text, double* data,
+                           bool readOnly = true) {
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
-  ImGui::InputDouble(text, data, 0.0, 0.0, "%.5G",
-                     ImGuiInputTextFlags_ReadOnly);
+  if (readOnly) {
+    return ImGui::InputDouble(text, data, 0.0, 0.0, "%.5G",
+                              ImGuiInputTextFlags_ReadOnly);
+  } else {
+    return ImGui::InputDouble(text, data, 0.0, 0.0, "%.5G");
+  }
 }
 
 static void SetPosition(double beginX, double beginY, double xShift,
@@ -55,18 +107,20 @@ static void SetPosition(double beginX, double beginY, double xShift,
                              beginY + yShift * 1.75 * ImGui::GetFontSize()));
 }
 
-void Analyzer::ConfigParamsOnFileSelect() {
-  if (m_enabled) {
-    m_stepTestDuration = m_settings.stepTestDuration.to<float>();
-
-    // Estimate qp as 1/8 * units-per-rot
-    m_settings.lqr.qp = 0.125 * m_manager->GetFactor();
-    // Estimate qv as 1/4 * max velocity = 1/4 * (12V - kS) / kV
-    m_settings.lqr.qv = 0.25 * (12.0 - m_ff[0]) / m_ff[1];
-  }
+bool Analyzer::IsErrorState() {
+  return m_state == AnalyzerState::kMotionThresholdError ||
+         m_state == AnalyzerState::kTestDurationError ||
+         m_state == AnalyzerState::kGeneralDataError ||
+         m_state == AnalyzerState::kFileError;
 }
 
-void Analyzer::Display() {
+bool Analyzer::IsDataErrorState() {
+  return m_state == AnalyzerState::kMotionThresholdError ||
+         m_state == AnalyzerState::kTestDurationError ||
+         m_state == AnalyzerState::kGeneralDataError;
+}
+
+void Analyzer::DisplayFileSelector() {
   // Get the current width of the window. This will be used to scale
   // our UI elements.
   float width = ImGui::GetContentRegionAvail().x;
@@ -81,103 +135,261 @@ void Analyzer::Display() {
   ImGui::SetNextItemWidth(width - ImGui::CalcTextSize("Select").x -
                           ImGui::GetFontSize() * 5);
   ImGui::InputText("##location", &m_location, ImGuiInputTextFlags_ReadOnly);
+}
 
-  // Allow the user to select which data set they want analyzed and add a reset
-  // button. Also show the units and the units per rotation.
-  if (m_manager) {
-    ImGui::SameLine(width - ImGui::CalcTextSize("Reset").x);
-    if (ImGui::Button("Reset")) {
-      ResetManagerState();
-      m_plot.ResetData();
-      m_manager.reset();
-      m_location = "";
+void Analyzer::ResetData() {
+  m_plot.ResetData();
+  m_manager = std::make_unique<AnalysisManager>(m_settings, m_logger);
+  m_location = "";
+  m_ff = std::vector<double>{1, 1, 1};
+  UpdateFeedbackGains();
+}
+
+bool Analyzer::DisplayResetAndUnitOverride() {
+  auto type = m_manager->GetAnalysisType();
+  auto unit = m_manager->GetUnit();
+  auto factor = m_manager->GetFactor();
+
+  float width = ImGui::GetContentRegionAvail().x;
+  ImGui::SameLine(width - ImGui::CalcTextSize("Reset").x);
+  if (ImGui::Button("Reset")) {
+    ResetData();
+    m_state = AnalyzerState::kWaitingForJSON;
+    return true;
+  }
+
+  if (type == analysis::kDrivetrain) {
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
+    if (ImGui::Combo("Dataset", &m_dataset, kDatasets, 3)) {
+      PrepareData();
+      m_settings.dataset =
+          static_cast<AnalysisManager::Settings::DrivetrainDataset>(m_dataset);
     }
-    ImGui::Spacing();
-    ImGui::Text(
-        "Units:              %s\n"
-        "Units Per Rotation: %.4f\n"
-        "Type:               %s",
-        m_unit.c_str(), m_factor, m_type.name);
-
-    if (m_type == analysis::kDrivetrainAngular) {
-      ImGui::SameLine();
-      sysid::CreateTooltip(
-          "Here, the units and units per rotation represent what the wheel "
-          "positions and velocities were captured in. The track width value "
-          "will reflect the unit selected here. However, the Kv and Ka will "
-          "always be in Vs/rad and Vs^2 / rad respectively.");
-    }
-
-    if (ImGui::Button("Override Units")) {
-      ImGui::OpenPopup("Override Units");
-    }
-
-    auto size = ImGui::GetIO().DisplaySize;
-    ImGui::SetNextWindowSize(ImVec2(size.x / 4, size.y * 0.2));
-    if (ImGui::BeginPopupModal("Override Units")) {
-      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);
-      ImGui::Combo("Units", &m_selectedOverrideUnit, kUnits,
-                   IM_ARRAYSIZE(kUnits));
-      m_unit = kUnits[m_selectedOverrideUnit];
-
-      if (m_unit == "Degrees") {
-        m_factor = 360.0;
-      } else if (m_unit == "Radians") {
-        m_factor = 2 * wpi::numbers::pi;
-      } else if (m_unit == "Rotations") {
-        m_factor = 1.0;
-      }
-
-      bool isRotational = m_selectedOverrideUnit > 2;
-
-      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);
-      ImGui::InputDouble("Units Per Rotation", &m_factor, 0.0, 0.0, "%.4f",
-                         isRotational ? ImGuiInputTextFlags_ReadOnly
-                                      : ImGuiInputTextFlags_None);
-
-      bool ex = false;
-
-      if (ImGui::Button("Close")) {
-        ImGui::CloseCurrentPopup();
-        try {
-          m_manager->OverrideUnits(m_unit, m_factor);
-          RefreshInformation();
-        } catch (const std::exception& e) {
-          HandleGeneralError(e);
-        }
-      }
-
-      ImGui::EndPopup();
-    }
-
     ImGui::SameLine();
-    if (ImGui::Button("Reset Units from JSON")) {
-      try {
-        m_manager->ResetUnitsFromJSON();
-        m_factor = m_manager->GetFactor();
-        m_unit = m_manager->GetUnit();
-        RefreshInformation();
-      } catch (const std::exception& e) {
-        HandleGeneralError(e);
+  } else {
+    m_settings.dataset =
+        AnalysisManager::Settings::DrivetrainDataset::kCombined;
+  }
+
+  ImGui::Spacing();
+  ImGui::Text(
+      "Units:              %s\n"
+      "Units Per Rotation: %.4f\n"
+      "Type:               %s",
+      std::string(unit).c_str(), factor, type.name);
+
+  if (type == analysis::kDrivetrainAngular) {
+    ImGui::SameLine();
+    sysid::CreateTooltip(
+        "Here, the units and units per rotation represent what the wheel "
+        "positions and velocities were captured in. The track width value "
+        "will reflect the unit selected here. However, the Kv and Ka will "
+        "always be in Vs/rad and Vs^2 / rad respectively.");
+  }
+
+  if (ImGui::Button("Override Units")) {
+    ImGui::OpenPopup("Override Units");
+  }
+
+  auto size = ImGui::GetIO().DisplaySize;
+  ImGui::SetNextWindowSize(ImVec2(size.x / 4, size.y * 0.2));
+  if (ImGui::BeginPopupModal("Override Units")) {
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);
+    ImGui::Combo("Units", &m_selectedOverrideUnit, kUnits,
+                 IM_ARRAYSIZE(kUnits));
+    unit = kUnits[m_selectedOverrideUnit];
+
+    if (unit == "Degrees") {
+      factor = 360.0;
+    } else if (unit == "Radians") {
+      factor = 2 * wpi::numbers::pi;
+    } else if (unit == "Rotations") {
+      factor = 1.0;
+    }
+
+    bool isRotational = m_selectedOverrideUnit > 2;
+
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);
+    ImGui::InputDouble(
+        "Units Per Rotation", &factor, 0.0, 0.0, "%.4f",
+        isRotational ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
+
+    bool ex = false;
+
+    if (ImGui::Button("Close")) {
+      ImGui::CloseCurrentPopup();
+      m_manager->OverrideUnits(unit, factor);
+      PrepareData();
+    }
+
+    ImGui::EndPopup();
+  }
+
+  ImGui::SameLine();
+  if (ImGui::Button("Reset Units from JSON")) {
+    m_manager->ResetUnitsFromJSON();
+    PrepareData();
+  }
+
+  return false;
+}
+
+void Analyzer::ConfigParamsOnFileSelect() {
+  WPI_INFO(m_logger, "{}", "Configuring Params");
+  m_stepTestDuration = m_settings.stepTestDuration.to<float>();
+
+  // Estimate qp as 1/8 * units-per-rot
+  m_settings.lqr.qp = 0.125 * m_manager->GetFactor();
+  // Estimate qv as 1/4 * max velocity = 1/4 * (12V - kS) / kV
+  m_settings.lqr.qv = 0.25 * (12.0 - m_ff[0]) / m_ff[1];
+}
+
+void Analyzer::Display() {
+  DisplayFileSelector();
+  DisplayGraphs();
+
+  switch (m_state) {
+    case AnalyzerState::kWaitingForJSON: {
+      ImGui::Text(
+          "SysId is currently in theoretical analysis mode.\n"
+          "To analyze recorded test data, select a "
+          "data JSON.");
+      sysid::CreateTooltip(
+          "Theoretical feedback gains can be calculated from a "
+          "physical model of the mechanism being controlled. "
+          "Theoretical gains for several common mechanisms can "
+          "be obtained from ReCalc (https://reca.lc).");
+      ImGui::Spacing();
+      ImGui::Spacing();
+
+      ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+      if (ImGui::CollapsingHeader("Feedforward Gains (Theoretical)")) {
+        float beginX = ImGui::GetCursorPosX();
+        float beginY = ImGui::GetCursorPosY();
+        CollectFeedforwardGains(beginX, beginY);
       }
+      ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+      if (ImGui::CollapsingHeader("Feedback Analysis")) {
+        DisplayFeedbackGains();
+      }
+      break;
+    }
+    case AnalyzerState::kNominalDisplay: {  // Allow the user to select which
+                                            // data set they want analyzed and
+                                            // add a
+      // reset button. Also show the units and the units per rotation.
+      if (DisplayResetAndUnitOverride()) {
+        return;
+      }
+      ImGui::Spacing();
+      ImGui::Spacing();
+
+      ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+      if (ImGui::CollapsingHeader("Feedforward Analysis")) {
+        float beginX = ImGui::GetCursorPosX();
+        float beginY = ImGui::GetCursorPosY();
+        DisplayFeedforwardGains(beginX, beginY);
+      }
+      ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+      if (ImGui::CollapsingHeader("Feedback Analysis")) {
+        DisplayFeedbackGains();
+      }
+      break;
+    }
+    case AnalyzerState::kFileError: {
+      CreateErrorPopup(m_errorPopup, m_exception);
+      if (!m_errorPopup) {
+        m_state = AnalyzerState::kWaitingForJSON;
+        return;
+      }
+      break;
+    }
+    case AnalyzerState::kGeneralDataError:
+    case AnalyzerState::kTestDurationError:
+    case AnalyzerState::kMotionThresholdError: {
+      CreateErrorPopup(m_errorPopup, m_exception);
+      if (DisplayResetAndUnitOverride()) {
+        return;
+      }
+      float beginX = ImGui::GetCursorPosX();
+      float beginY = ImGui::GetCursorPosY();
+      DisplayFeedforwardParameters(beginX, beginY);
+      break;
     }
   }
 
-  // Function that displays a read-only value.
-  ImGui::Spacing();
-  ImGui::Spacing();
-
-  if (!m_manager) {
-    ImGui::Text("Please Select a JSON File");
+  // Periodic functions
+  try {
+    SelectFile();
+  } catch (const AnalysisManager::FileReadingError& e) {
+    m_state = AnalyzerState::kFileError;
+    HandleError(e.what());
+  } catch (const wpi::json::exception& e) {
+    m_state = AnalyzerState::kFileError;
+    HandleError(e.what());
   }
+}
 
-  if (m_manager) {
-    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::CollapsingHeader("Feedforward Analysis")) {
-      DisplayFeedforwardGains();
-    }
+void Analyzer::PrepareData() {
+  try {
+    m_manager->PrepareData();
+    UpdateFeedforwardGains();
+    UpdateFeedbackGains();
+  } catch (const sysid::InvalidDataError& e) {
+    m_state = AnalyzerState::kGeneralDataError;
+    HandleError(e.what());
+  } catch (const sysid::NoQuasistaticDataError& e) {
+    m_state = AnalyzerState::kMotionThresholdError;
+    HandleError(e.what());
+  } catch (const sysid::NoDynamicDataError& e) {
+    m_state = AnalyzerState::kTestDurationError;
+    HandleError(e.what());
+  } catch (const AnalysisManager::FileReadingError& e) {
+    m_state = AnalyzerState::kFileError;
+    HandleError(e.what());
+  } catch (const wpi::json::exception& e) {
+    m_state = AnalyzerState::kFileError;
+    HandleError(e.what());
+  } catch (const std::exception& e) {
+    m_state = AnalyzerState::kFileError;
+    HandleError(e.what());
   }
+}
 
+void Analyzer::PrepareRawGraphs() {
+  if (m_manager->HasData()) {
+    AbortDataPrep();
+    m_dataThread = std::thread([&] {
+      m_plot.SetRawData(m_manager->GetOriginalData(), m_manager->GetUnit(),
+                        m_abortDataPrep);
+    });
+  }
+}
+
+void Analyzer::PrepareGraphs() {
+  if (m_manager->HasData()) {
+    WPI_INFO(m_logger, "{}", "Graph state");
+    AbortDataPrep();
+    m_dataThread = std::thread([&] {
+      m_plot.SetData(m_manager->GetRawData(), m_manager->GetFilteredData(),
+                     m_manager->GetUnit(), m_ff, m_manager->GetStartTimes(),
+                     m_manager->GetAnalysisType(), m_abortDataPrep);
+    });
+    UpdateFeedbackGains();
+    m_state = AnalyzerState::kNominalDisplay;
+  }
+}
+
+void Analyzer::HandleError(std::string_view msg) {
+  m_exception = msg;
+  m_errorPopup = true;
+  if (m_state == AnalyzerState::kFileError) {
+    m_location = "";
+  }
+  PrepareRawGraphs();
+}
+
+void Analyzer::DisplayGraphs() {
   ImGui::SetNextWindowPos(ImVec2{kDiagnosticPlotWindowPos},
                           ImGuiCond_FirstUseEver);
   ImGui::SetNextWindowSize(ImVec2{kDiagnosticPlotWindowSize},
@@ -186,8 +398,10 @@ void Analyzer::Display() {
 
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 6);
   if (ImGui::SliderFloat("Point Size", &m_plot.m_pointSize, 1, 2, "%.2f")) {
-    if (m_enabled) {
-      RefreshInformation();
+    if (!IsErrorState()) {
+      PrepareGraphs();
+    } else {
+      PrepareRawGraphs();
     }
   }
 
@@ -195,8 +409,10 @@ void Analyzer::Display() {
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 6);
   const char* items[] = {"Forward", "Backward"};
   if (ImGui::Combo("Direction", &m_plot.m_direction, items, 2)) {
-    if (m_enabled) {
-      RefreshInformation();
+    if (!IsErrorState()) {
+      PrepareGraphs();
+    } else {
+      PrepareRawGraphs();
     }
   }
 
@@ -211,12 +427,20 @@ void Analyzer::Display() {
     }
 
     // If a JSON is selected
-    if (m_manager && m_enabled) {
-      DisplayGain("Acceleration R²", &m_rSquared);
+    if (m_state == AnalyzerState::kNominalDisplay) {
+      DisplayGain("Acceleration R²", &m_accelRSquared);
       CreateTooltip(
           "The coefficient of determination of the OLS fit of acceleration "
           "versus velocity and voltage.  Acceleration is extremely noisy, "
           "so this is generally quite small.");
+
+      ImGui::SameLine();
+      DisplayGain("Acceleration RMSE", &m_accelRMSE);
+      CreateTooltip(
+          "The standard deviation of the residuals from the predicted "
+          "acceleration."
+          "This can be interpreted loosely as the mean measured disturbance "
+          "from the \"ideal\" system equation.");
 
       DisplayGain("Sim velocity R²", m_plot.GetSimRSquared());
       CreateTooltip(
@@ -224,31 +448,18 @@ void Analyzer::Display() {
           "Velocity is much less-noisy than acceleration, so this "
           "is pretty close to 1 for a decent fit.");
 
-      DisplayGain("Sim RMSE", m_plot.GetRMSE());
+      ImGui::SameLine();
+      DisplayGain("Sim velocity RMSE", m_plot.GetSimRMSE());
       CreateTooltip(
-          "The Root Mean Squared Error (RMSE) of the simulation "
-          "predictions compared to the recorded data. It is essentially the "
-          "mean error of the simulated model in the recorded velocity units.");
+          "The standard deviation of the residuals from the simulated velocity "
+          "predictions - essentially the size of the mean error of the "
+          "simulated model "
+          "in the recorded velocity units.");
     }
   }
   m_prevPlotsLoaded = plotsLoaded;
 
   ImGui::End();
-
-  if (m_manager && m_enabled) {
-    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::CollapsingHeader("Feedback Analysis")) {
-      DisplayFeedbackGains();
-    }
-  }
-
-  // Periodic functions
-  try {
-    SelectFile();
-  } catch (const std::exception& e) {
-    HandleGeneralError(e);
-  }
-  CreateErrorPopup(m_errorPopup, m_exception);
 }
 
 void Analyzer::SelectFile() {
@@ -259,32 +470,15 @@ void Analyzer::SelectFile() {
     m_location = m_selector->result()[0];
     m_selector.reset();
     WPI_INFO(m_logger, "{}", "Opened File");
-
-    // Create the analysis manager.
-    try {
-      m_manager =
-          std::make_unique<AnalysisManager>(m_location, m_settings, m_logger);
-      m_type = m_manager->GetAnalysisType();
-      m_factor = m_manager->GetFactor();
-      m_unit = m_manager->GetUnit();
-      RefreshInformation();
-      ConfigParamsOnFileSelect();
-    } catch (const wpi::json::exception& e) {
-      HandleJSONError(e);
-    }
+    m_manager =
+        std::make_unique<AnalysisManager>(m_location, m_settings, m_logger);
+    PrepareData();
+    m_dataset = 0;
+    m_settings.dataset =
+        AnalysisManager::Settings::DrivetrainDataset::kCombined;
+    ConfigParamsOnFileSelect();
+    UpdateFeedbackGains();
   }
-}
-
-void Analyzer::Calculate() {
-  WPI_INFO(m_logger, "{}", "Calculating Gains.");
-  const auto& [ff, fb, trackWidth] = m_manager->Calculate();
-  m_ff = std::get<0>(ff);
-  m_rSquared = std::get<1>(ff);
-  m_timescale = m_ff[2] / m_ff[1];
-  m_Kp = fb.Kp;
-  m_Kd = fb.Kd;
-  m_trackWidth = trackWidth;
-  m_factor = m_manager->GetFactor();
 }
 
 void Analyzer::AbortDataPrep() {
@@ -295,140 +489,137 @@ void Analyzer::AbortDataPrep() {
   }
 }
 
-void Analyzer::PrepareGraphs() {
-  WPI_INFO(m_logger, "{}", "Graphing Data.");
-  AbortDataPrep();
-  m_dataThread = std::thread([&] {
-    m_plot.SetData(m_manager->GetRawData(), m_manager->GetFilteredData(),
-                   m_manager->GetUnit(), m_ff, m_manager->GetStartTimes(),
-                   m_type, m_abortDataPrep);
-  });
-}
-
-void Analyzer::RefreshInformation() {
-  m_enabled = true;
-  try {
-    m_manager->PrepareData();
-    Calculate();
-    PrepareGraphs();
-  } catch (const wpi::json::exception& e) {
-    HandleJSONError(e);
-  } catch (const std::exception& e) {
-    HandleGeneralError(e);
-  }
-
-  // If manager was able to load a JSON but data prep failed, try to display the
-  // raw data
-  if (m_manager && !m_enabled) {
-    WPI_INFO(m_logger, "{}", "Graphing only raw time series.");
-    AbortDataPrep();
-    m_dataThread = std::thread([&] {
-      m_plot.SetRawData(m_manager->GetOriginalData(), m_manager->GetUnit(),
-                        m_abortDataPrep);
-    });
-  }
-}
-
-void Analyzer::ResetManagerState() {
-  m_enabled = false;
-}
-
-void Analyzer::HandleGeneralError(const std::exception& e) {
-  m_exception = e.what();
-  ResetManagerState();
-  m_errorPopup = true;
-}
-
-void Analyzer::HandleJSONError(const wpi::json::exception& e) {
-  m_exception = fmt::format(
-      "The provided JSON was invalid! You may need to rerun the logger.\nError "
-      "message:{}",
-      std::string(e.what()));
-  ResetManagerState();
-  // Invalid JSONS should not be stored or used as data
-  m_manager.reset();
-  m_location = "";
-  m_errorPopup = true;
-}
-
-void Analyzer::DisplayFeedforwardGains() {
-  float beginX = ImGui::GetCursorPosX();
-  float beginY = ImGui::GetCursorPosY();
-
-  if (m_enabled) {
-    const char* gainNames[] = {"Ks", "Kv", "Ka"};
-
-    for (size_t i = 0; i < 3; i++) {
-      SetPosition(beginX, beginY, 0, i);
-      DisplayGain(gainNames[i], &m_ff[i]);
-    }
-
-    size_t row = 3;
-
-    SetPosition(beginX, beginY, 0, row);
-
-    if (m_type == analysis::kElevator) {
-      DisplayGain("Kg", &m_ff[3]);
-      ++row;
-    } else if (m_type == analysis::kArm) {
-      DisplayGain("Kcos", &m_ff[3]);
-      ++row;
-    } else if (m_trackWidth) {
-      DisplayGain("Track Width", &*m_trackWidth);
-      ++row;
-    }
-
-    SetPosition(beginX, beginY, 0, row);
-    DisplayGain("Response Timescale (s)", &m_timescale);
-    CreateTooltip(
-        "The characteristic timescale of the system response in seconds. "
-        "Both the control loop period and total signal delay should be "
-        "at least 3-5 times shorter than this to optimally control the "
-        "system.");
-  }
-
-  double endY = ImGui::GetCursorPosY();
-
+void Analyzer::DisplayFeedforwardParameters(float beginX, float beginY) {
   // Increase spacing to not run into trackwidth in the normal analyzer view
   constexpr double kHorizontalOffset = 0.9;
   SetPosition(beginX, beginY, kHorizontalOffset, 0);
 
-  // Wait for enter before refresh so double digit entries like "15" don't
-  // prematurely refresh with "1". That can cause display stuttering.
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-  int window = m_settings.medianWindow;
-  if (ImGui::InputInt("Window Size", &window, 0, 0,
-                      ImGuiInputTextFlags_EnterReturnsTrue)) {
-    m_settings.medianWindow = std::clamp(window, 1, 15);
-    RefreshInformation();
+  bool displayAll =
+      !IsErrorState() || m_state == AnalyzerState::kGeneralDataError;
+
+  if (displayAll) {
+    // Wait for enter before refresh so double digit entries like "15" don't
+    // prematurely refresh with "1". That can cause display stuttering.
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+    int window = m_settings.medianWindow;
+    if (ImGui::InputInt("Window Size", &window, 0, 0,
+                        ImGuiInputTextFlags_EnterReturnsTrue)) {
+      m_settings.medianWindow = std::clamp(window, 1, 15);
+      PrepareData();
+    }
+
+    CreateTooltip(
+        "The number of samples in the velocity median "
+        "filter's sliding window.");
   }
 
+  if (displayAll || m_state == AnalyzerState::kMotionThresholdError) {
+    // Wait for enter before refresh so decimal inputs like "0.2" don't
+    // prematurely refresh with a velocity threshold of "0".
+    SetPosition(beginX, beginY, kHorizontalOffset, 1);
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+    double threshold = m_settings.motionThreshold;
+    if (ImGui::InputDouble("Velocity Threshold", &threshold, 0.0, 0.0, "%.3f",
+                           ImGuiInputTextFlags_EnterReturnsTrue)) {
+      m_settings.motionThreshold = std::max(0.0, threshold);
+      PrepareData();
+    }
+    CreateTooltip("Velocity data below this threshold will be ignored.");
+  }
+
+  if (displayAll || m_state == AnalyzerState::kTestDurationError) {
+    SetPosition(beginX, beginY, kHorizontalOffset, 2);
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+    if (ImGui::SliderFloat("Test Duration", &m_stepTestDuration,
+                           m_manager->GetMinStepTime().value(),
+                           m_manager->GetMaxStepTime().value(), "%.2f")) {
+      m_settings.stepTestDuration = units::second_t{m_stepTestDuration};
+      PrepareData();
+    }
+  }
+}
+
+void Analyzer::CollectFeedforwardGains(float beginX, float beginY) {
+  SetPosition(beginX, beginY, 0, 0);
+  if (DisplayGain("Kv", &m_ff[1], false)) {
+    UpdateFeedbackGains();
+  }
+
+  SetPosition(beginX, beginY, 0, 1);
+  if (DisplayGain("Ka", &m_ff[2], false)) {
+    UpdateFeedbackGains();
+  }
+
+  SetPosition(beginX, beginY, 0, 2);
+  // Show Timescale
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+  DisplayGain("Response Timescale (ms)",
+              reinterpret_cast<double*>(&m_timescale));
   CreateTooltip(
-      "The number of samples in the velocity median "
-      "filter's sliding window.");
+      "The characteristic timescale of the system response in milliseconds. "
+      "Both the control loop period and total signal delay should be "
+      "at least 3-5 times shorter than this to optimally control the "
+      "system.");
+}
 
-  // Wait for enter before refresh so decimal inputs like "0.2" don't
-  // prematurely refresh with a velocity threshold of "0".
-  SetPosition(beginX, beginY, kHorizontalOffset, 1);
+void Analyzer::DisplayFeedforwardGains(float beginX, float beginY) {
+  SetPosition(beginX, beginY, 0, 0);
+  DisplayGain("Ks", &m_ff[0]);
+
+  SetPosition(beginX, beginY, 0, 1);
+  DisplayGain("Kv", &m_ff[1]);
+
+  SetPosition(beginX, beginY, 0, 2);
+  DisplayGain("Ka", &m_ff[2]);
+
+  SetPosition(beginX, beginY, 0, 3);
+  // Show Timescale
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-  double threshold = m_settings.motionThreshold;
-  if (ImGui::InputDouble("Velocity Threshold", &threshold, 0.0, 0.0, "%.3f",
-                         ImGuiInputTextFlags_EnterReturnsTrue)) {
-    m_settings.motionThreshold = std::max(0.0, threshold);
-    RefreshInformation();
+  DisplayGain("Response Timescale (ms)",
+              reinterpret_cast<double*>(&m_timescale));
+  CreateTooltip(
+      "The characteristic timescale of the system response in milliseconds. "
+      "Both the control loop period and total signal delay should be "
+      "at least 3-5 times shorter than this to optimally control the "
+      "system.");
+
+  SetPosition(beginX, beginY, 0, 4);
+  auto positionDelay = m_manager->GetPositionDelay();
+  DisplayGain("Position Measurement Delay (ms)",
+              reinterpret_cast<double*>(&positionDelay));
+  CreateTooltip(
+      "The average elapsed time between the first application of "
+      "voltage and the first detected change in mechanism position "
+      "in the step-voltage tests.  This includes CAN delays, and "
+      "may overestimate the true delay for on-motor-controller "
+      "feedback loops by up to 20ms.");
+
+  SetPosition(beginX, beginY, 0, 5);
+  auto velocityDelay = m_manager->GetVelocityDelay();
+  DisplayGain("Velocity Measurement Delay (ms)",
+              reinterpret_cast<double*>(&velocityDelay));
+  CreateTooltip(
+      "The average elapsed time between the first application of "
+      "voltage and the maximum calculated mechanism acceleration "
+      "in the step-voltage tests.  This includes CAN delays, and "
+      "may overestimate the true delay for on-motor-controller "
+      "feedback loops by up to 20ms.");
+
+  size_t row = 6;
+
+  SetPosition(beginX, beginY, 0, row);
+
+  if (m_manager->GetAnalysisType() == analysis::kElevator ||
+      m_manager->GetAnalysisType() == analysis::kArm) {
+    DisplayGain("Kg", &m_ff[3]);
+    ++row;
+  } else if (m_trackWidth) {
+    DisplayGain("Track Width", &*m_trackWidth);
+    ++row;
   }
+  double endY = ImGui::GetCursorPosY();
 
-  CreateTooltip("Velocity data below this threshold will be ignored.");
-
-  SetPosition(beginX, beginY, kHorizontalOffset, 2);
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-  if (ImGui::SliderFloat("Test Duration", &m_stepTestDuration,
-                         m_manager->GetMinDuration(),
-                         m_manager->GetMaxDuration(), "%.2f")) {
-    m_settings.stepTestDuration = units::second_t{m_stepTestDuration};
-    RefreshInformation();
-  }
-
+  DisplayFeedforwardParameters(beginX, beginY);
   ImGui::SetCursorPosY(endY);
 }
 
@@ -439,9 +630,11 @@ void Analyzer::DisplayFeedbackGains() {
   if (ImGui::Combo("Gain Preset", &m_selectedPreset, kPresetNames,
                    IM_ARRAYSIZE(kPresetNames))) {
     m_settings.preset = m_presets[kPresetNames[m_selectedPreset]];
+    m_settings.type = FeedbackControllerLoopType::kVelocity;
+    m_selectedLoopType =
+        static_cast<int>(FeedbackControllerLoopType::kVelocity);
     m_settings.convertGainsToEncTicks = m_selectedPreset > 2;
-    m_enabled = true;
-    Calculate();
+    UpdateFeedbackGains();
   }
   ImGui::SameLine();
   sysid::CreateTooltip(
@@ -450,12 +643,10 @@ void Analyzer::DisplayFeedbackGains() {
       "Default, WPILib (2020-): For use with the new WPILib PIDController "
       "class.\n"
       "WPILib (Pre-2020): For use with the old WPILib PIDController class.\n"
-      "CTRE (New): For use with new CTRE units. Note that CTRE has not "
-      "released an update with these units.\n"
-      "CTRE (Old): For use with old CTRE units. These are the default units "
-      "that ship with CTRE motor controllers.\n"
+      "CTRE: For use with CTRE units. These are the default units that ship "
+      "with CTRE motor controllers.\n"
       "REV (Brushless): For use with NEO and NEO 550 motors on a SPARK MAX.\n"
-      "REV (Brushed): For use with brushless motors connected to a SPARK MAX.");
+      "REV (Brushed): For use with brushed motors connected to a SPARK MAX.");
 
   if (m_settings.preset != m_presets[kPresetNames[m_selectedPreset]]) {
     ImGui::SameLine();
@@ -468,8 +659,7 @@ void Analyzer::DisplayFeedbackGains() {
   if (ImGui::InputDouble("Max Controller Output", &value, 0.0, 0.0, "%.1f") &&
       value > 0) {
     m_settings.preset.outputConversionFactor = value / 12.0;
-    m_enabled = true;
-    Calculate();
+    UpdateFeedbackGains();
   }
 
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
@@ -478,8 +668,7 @@ void Analyzer::DisplayFeedbackGains() {
                          "%.1f") &&
       value > 0) {
     m_settings.preset.outputVelocityTimeFactor = value;
-    m_enabled = true;
-    Calculate();
+    UpdateFeedbackGains();
   }
 
   sysid::CreateTooltip(
@@ -493,26 +682,31 @@ void Analyzer::DisplayFeedbackGains() {
     }
 
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-    if (ImGui::InputDouble(text, data, 0.0, 0.0, "%.4f") && *data > 0) {
-      m_enabled = true;
-      Calculate();
+    if (ImGui::InputDouble(text, data, 0.0, 0.0, "%.5G") && *data > 0) {
+      UpdateFeedbackGains();
     }
   };
 
   // Show controller period.
-  ShowPresetValue("Controller Period (s)",
+  ShowPresetValue("Controller Period (ms)",
                   reinterpret_cast<double*>(&m_settings.preset.period));
 
   // Show whether the controller gains are time-normalized.
   if (ImGui::Checkbox("Time-Normalized?", &m_settings.preset.normalized)) {
-    m_enabled = true;
-    Calculate();
+    UpdateFeedbackGains();
   }
 
   // Show position/velocity measurement delay.
   ShowPresetValue(
-      "Measurement Delay (s)",
+      "Measurement Delay (ms)",
       reinterpret_cast<double*>(&m_settings.preset.measurementDelay));
+  sysid::CreateTooltip(
+      "The average measurement delay of the process variable in milliseconds. "
+      "This may depend on your encoder settings and choice of motor "
+      "controller. Default velocity filtering windows are quite long "
+      "on many motor controllers, so be careful that this value is "
+      "accurate if the characteristic timescale of the mechanism "
+      "is small.");
 
   // Add CPR and Gearing for converting Feedback Gains
   ImGui::Separator();
@@ -520,8 +714,7 @@ void Analyzer::DisplayFeedbackGains() {
 
   if (ImGui::Checkbox("Convert Gains to Encoder Counts",
                       &m_settings.convertGainsToEncTicks)) {
-    m_enabled = true;
-    Calculate();
+    UpdateFeedbackGains();
   }
   sysid::CreateTooltip(
       "Whether the feedback gains should be in terms of encoder counts or "
@@ -536,30 +729,29 @@ void Analyzer::DisplayFeedbackGains() {
 
   if (m_settings.convertGainsToEncTicks) {
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
-    if (ImGui::InputDouble("##Numerator", &m_gearingNumerator, 0.0, 0.0,
-                           "%.4f") &&
+    if (ImGui::InputDouble("##Numerator", &m_gearingNumerator, 0.0, 0.0, "%.4f",
+                           ImGuiInputTextFlags_EnterReturnsTrue) &&
         m_gearingNumerator > 0) {
       m_settings.gearing = m_gearingNumerator / m_gearingDenominator;
-      m_enabled = true;
-      Calculate();
+      UpdateFeedbackGains();
     }
     ImGui::SameLine();
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
     if (ImGui::InputDouble("##Denominator", &m_gearingDenominator, 0.0, 0.0,
-                           "%.4f") &&
+                           "%.4f", ImGuiInputTextFlags_EnterReturnsTrue) &&
         m_gearingDenominator > 0) {
       m_settings.gearing = m_gearingNumerator / m_gearingDenominator;
-      m_enabled = true;
-      Calculate();
+      UpdateFeedbackGains();
     }
     sysid::CreateTooltip(
         "The gearing between the encoder and the output shaft (# of "
         "encoder turns / # of output shaft turns).");
 
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
-    if (ImGui::InputInt("CPR", &m_settings.cpr, 0) && m_settings.cpr > 0) {
-      m_enabled = true;
-      Calculate();
+    if (ImGui::InputInt("CPR", &m_settings.cpr, 0, 0,
+                        ImGuiInputTextFlags_EnterReturnsTrue) &&
+        m_settings.cpr > 0) {
+      UpdateFeedbackGains();
     }
     sysid::CreateTooltip(
         "The counts per rotation of your encoder. This is the number of counts "
@@ -578,8 +770,16 @@ void Analyzer::DisplayFeedbackGains() {
                    IM_ARRAYSIZE(kLoopTypes))) {
     m_settings.type =
         static_cast<FeedbackControllerLoopType>(m_selectedLoopType);
-    m_enabled = true;
-    Calculate();
+    if (m_state == AnalyzerState::kWaitingForJSON) {
+      m_settings.preset.measurementDelay = 0_ms;
+    } else {
+      if (m_settings.type == FeedbackControllerLoopType::kPosition) {
+        m_settings.preset.measurementDelay = m_manager->GetPositionDelay();
+      } else {
+        m_settings.preset.measurementDelay = m_manager->GetVelocityDelay();
+      }
+    }
+    UpdateFeedbackGains();
   }
 
   ImGui::Spacing();
@@ -595,29 +795,31 @@ void Analyzer::DisplayFeedbackGains() {
   // Come back to the starting y pos.
   ImGui::SetCursorPosY(beginY);
 
-  auto ShowLQRParam = [this](const char* text, double* data, float min,
-                             float max, bool power = true) {
-    float val = *data;
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
-    ImGui::SetCursorPosX(ImGui::GetFontSize() * 9);
-
-    if (ImGui::SliderFloat(text, &val, min, max, "%.1f",
-                           ImGuiSliderFlags_None |
-                               (power ? ImGuiSliderFlags_Logarithmic : 0))) {
-      *data = static_cast<double>(val);
-      m_enabled = true;
-      Calculate();
-    }
-  };
-
-  std::string_view abbreviation = GetAbbreviation(m_unit);
+  std::string_view abbreviation = GetAbbreviation(m_manager->GetUnit());
 
   if (m_selectedLoopType == 0) {
-    ShowLQRParam(fmt::format("Max Position Error ({})", abbreviation).c_str(),
-                 &m_settings.lqr.qp, 0.05f, 40.0f);
+    ImGui::SetCursorPosX(ImGui::GetFontSize() * 9);
+    if (DisplayGain(
+            fmt::format("Max Position Error ({})", abbreviation).c_str(),
+            &m_settings.lqr.qp, false)) {
+      if (m_settings.lqr.qp > 0) {
+        UpdateFeedbackGains();
+      }
+    }
   }
 
-  ShowLQRParam(fmt::format("Max Velocity Error ({}/s)", abbreviation).c_str(),
-               &m_settings.lqr.qv, 0.05f, 40.0f);
-  ShowLQRParam("Max Control Effort (V)", &m_settings.lqr.r, 0.1f, 12.0f, false);
+  ImGui::SetCursorPosX(ImGui::GetFontSize() * 9);
+  if (DisplayGain(
+          fmt::format("Max Velocity Error ({}/s)", abbreviation).c_str(),
+          &m_settings.lqr.qv, false)) {
+    if (m_settings.lqr.qv > 0) {
+      UpdateFeedbackGains();
+    }
+  }
+  ImGui::SetCursorPosX(ImGui::GetFontSize() * 9);
+  if (DisplayGain("Max Control Effort (V)", &m_settings.lqr.r, false)) {
+    if (m_settings.lqr.r > 0) {
+      UpdateFeedbackGains();
+    }
+  }
 }

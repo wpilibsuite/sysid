@@ -5,8 +5,8 @@
 #include "Robot.h"
 
 #include <cstddef>
+#include <cstdio>
 #include <exception>
-#include <iostream>
 #include <string>
 
 #include <fmt/format.h>
@@ -22,7 +22,7 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
     fmt::print("Reading JSON\n");
     std::vector<int> ports =
         m_json.at("primary motor ports").get<std::vector<int>>();
-    std::vector<std::string> controllerNames =
+    m_controllerNames =
         m_json.at("motor controllers").get<std::vector<std::string>>();
     std::vector<int> encoderPorts =
         m_json.at("primary encoder ports").get<std::vector<int>>();
@@ -45,13 +45,13 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 
     fmt::print("Initializing Motors\n");
     for (size_t i = 0; i < ports.size(); i++) {
-      sysid::AddMotorController(ports[i], controllerNames[i], motorsInverted[i],
-                                &m_controllers);
+      sysid::AddMotorController(ports[i], m_controllerNames[i],
+                                motorsInverted[i], &m_controllers);
     }
 
     fmt::print("Initializing encoder\n");
     sysid::SetupEncoders(encoderType, isEncoding, period, cpr, gearing,
-                         numSamples, controllerNames[0],
+                         numSamples, m_controllerNames[0],
                          m_controllers.front().get(), encoderInverted,
                          encoderPorts, m_cancoder, m_revEncoderPort,
                          m_revDataPort, m_encoder, m_position, m_rate);
@@ -59,7 +59,7 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
     fmt::print("Project failed: {}\n", e.what());
     std::exit(-1);
   }
-  std::cout.flush();
+  std::fflush(stdout);
 #ifdef INTEGRATION
   frc::SmartDashboard::PutBoolean("SysIdRun", false);
   // TODO use std::exit or EndCompetition once CTRE bug is fixed
@@ -69,24 +69,7 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 
 void Robot::RobotInit() {}
 
-/**
- * This function is called every robot packet, no matter the mode. Use
- * this for items like diagnostics that you want ran during disabled,
- * autonomous, teleoperated and test.
- *
- * <p> This runs after the mode specific periodic functions, but before
- * LiveWindow and SmartDashboard integrated updating.
- */
-void Robot::RobotPeriodic() {
-  try {
-    frc::SmartDashboard::PutNumber("Position", m_position());
-    frc::SmartDashboard::PutNumber("Rate", m_rate());
-  } catch (std::exception& e) {
-    fmt::print("Project failed: {}\n", e.what());
-    std::exit(-1);
-  }
-  // TODO Put actual readings once supported
-}
+void Robot::RobotPeriodic() {}
 
 /**
  * This autonomous (along with the chooser code above) shows how to select
@@ -107,13 +90,16 @@ void Robot::AutonomousInit() {
  * Outputs data in the format: timestamp, voltage, position, velocity
  */
 void Robot::AutonomousPeriodic() {
-  m_logger.Log(m_position(), m_rate());
+  m_logger.Log(m_logger.MeasureVoltage(m_controllers, m_controllerNames),
+               m_position(), m_rate());
   sysid::SetMotorControllers(m_logger.GetMotorVoltage(), m_controllers);
 }
 
 void Robot::TeleopInit() {}
 
-void Robot::TeleopPeriodic() {}
+void Robot::TeleopPeriodic() {
+  PushNTDiagnostics();
+}
 
 void Robot::DisabledInit() {
   sysid::SetMotorControllers(0_V, m_controllers);
@@ -136,11 +122,27 @@ void Robot::SimulationPeriodic() {
 #endif
 }
 
-void Robot::DisabledPeriodic() {}
+void Robot::DisabledPeriodic() {
+  PushNTDiagnostics();
+}
 
 void Robot::TestInit() {}
 
-void Robot::TestPeriodic() {}
+void Robot::TestPeriodic() {
+  PushNTDiagnostics();
+}
+
+void Robot::PushNTDiagnostics() {
+  try {
+    frc::SmartDashboard::PutNumber(
+        "Voltage", m_logger.MeasureVoltage(m_controllers, m_controllerNames));
+    frc::SmartDashboard::PutNumber("Position", m_position());
+    frc::SmartDashboard::PutNumber("Rate", m_rate());
+  } catch (std::exception& e) {
+    fmt::print("Project failed: {}\n", e.what());
+    std::exit(-1);
+  }
+}
 
 #ifndef RUNNING_FRC_TESTS
 int main() {

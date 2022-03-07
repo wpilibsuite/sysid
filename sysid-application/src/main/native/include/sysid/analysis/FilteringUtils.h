@@ -7,7 +7,9 @@
 #include <algorithm>
 #include <cmath>
 #include <exception>
+#include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -21,6 +23,57 @@
 namespace sysid {
 
 constexpr int kNoiseMeanWindow = 9;
+
+/**
+ * Exception for Invalid Data Errors in which we can't pin the cause of error to
+ * any one specific setting of the GUI.
+ */
+struct InvalidDataError : public std::exception {
+  /**
+   * Creates an InvalidDataError Exception. It adds additional steps after the
+   * initial error message to inform users in the ways that they could fix their
+   * data.
+   *
+   * @param message The error message
+   */
+  explicit InvalidDataError(std::string_view message) {
+    m_message = fmt::format(
+        "{}. Please verify that your units and data is reasonable and then "
+        "adjust your motion threshold, test duration, and/or window size to "
+        "try to fix this issue.",
+        message);
+  }
+
+  /**
+   * Stores the error message
+   */
+  std::string m_message;
+  const char* what() const noexcept override { return m_message.c_str(); }
+};
+
+/**
+ * Exception for Quasistatic Data being completely removed.
+ */
+struct NoQuasistaticDataError : public std::exception {
+  const char* what() const noexcept override {
+    return "Quasistatic test trimming removed all data. Please adjust your "
+           "motion threshold and double check "
+           "your units and test data to make sure that the robot is reporting "
+           "reasonable values.";
+  }
+};
+
+/**
+ * Exception for Dynamic Data being completely removed.
+ */
+struct NoDynamicDataError : public std::exception {
+  const char* what() const noexcept override {
+    return "Dynamic test trimming removed all data. Please adjust your test "
+           "duration and double check "
+           "your units and test data to make sure that the robot is reporting "
+           "reasonable values.";
+  }
+};
 
 /**
  * Calculates the expected acceleration noise to be used as the floor of the
@@ -63,10 +116,10 @@ void ApplyMedianFilter(std::vector<PreparedData>* data, int window);
  * @param maxStepTime The maximum step test duration.
  * @return The updated minimum step test duration.
  */
-units::second_t TrimStepVoltageData(std::vector<PreparedData>* data,
-                                    AnalysisManager::Settings* settings,
-                                    units::second_t minStepTime,
-                                    units::second_t maxStepTime);
+std::tuple<units::second_t, units::second_t, units::second_t>
+TrimStepVoltageData(std::vector<PreparedData>* data,
+                    AnalysisManager::Settings* settings,
+                    units::second_t minStepTime, units::second_t maxStepTime);
 
 /**
  * Compute the mean time delta of the given data.
@@ -126,6 +179,10 @@ frc::LinearFilter<double> CentralFiniteDifference(units::second_t period) {
  * @param data A pointer to a data vector recently created by the
  *             ConvertToPrepared method
  * @param settings A reference to the analysis settings
+ * @param positionDelays A reference to the vector of computed position signal
+ * delays.
+ * @param velocityDelays A reference to the vector of computed velocity signal
+ * delays.
  * @param minStepTime A reference to the minimum dynamic test duration as one of
  *                    the trimming procedures will remove this amount from the
  *                    start of the test.
@@ -135,6 +192,8 @@ frc::LinearFilter<double> CentralFiniteDifference(units::second_t period) {
  */
 void InitialTrimAndFilter(wpi::StringMap<std::vector<PreparedData>>* data,
                           AnalysisManager::Settings* settings,
+                          std::vector<units::second_t>& positionDelays,
+                          std::vector<units::second_t>& velocityDelays,
                           units::second_t& minStepTime,
                           units::second_t& maxStepTime,
                           std::string_view unit = "");

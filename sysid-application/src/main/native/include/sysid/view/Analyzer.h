@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <vector>
 
@@ -40,7 +41,18 @@ namespace sysid {
 class Analyzer : public glass::View {
  public:
   /**
-   * The different motor controlle rtiming presets that can be used.
+   * The different display and processing states for the GUI
+   */
+  enum class AnalyzerState {
+    kWaitingForJSON,
+    kNominalDisplay,
+    kMotionThresholdError,
+    kTestDurationError,
+    kGeneralDataError,
+    kFileError
+  };
+  /**
+   * The different motor controller timing presets that can be used.
    */
   static constexpr const char* kPresetNames[] = {"Default",
                                                  "WPILib (2020-)",
@@ -56,6 +68,11 @@ class Analyzer : public glass::View {
    * The different control loops that can be used.
    */
   static constexpr const char* kLoopTypes[] = {"Position", "Velocity"};
+
+  /**
+   * Linear drivetrain analysis subsets
+   */
+  static constexpr const char* kDatasets[] = {"Combined", "Left", "Right"};
 
   /**
    * Creates the Analyzer widget
@@ -79,38 +96,75 @@ class Analyzer : public glass::View {
   void SelectFile();
 
   /**
-   * Calculates feedback and feedforward gains.
-   */
-  void Calculate();
-
-  /**
-   * Disables the backend to avoid erroneous calculations from happening.
-   */
-  void ResetManagerState();
-
-  /**
-   * Handles the logic of the diagnostic plots
-   */
-  void PrepareGraphs();
-
-  /**
-   * Prepares the data, calculates it, and generates graphs. This should be
-   * called when the data needs to be reupdated after user input.
-   */
-  void RefreshInformation();
-
-  /**
    * Kills the data preparation thread
    */
   void AbortDataPrep();
 
   /**
-   * Handles the logic for displaying feedforward gains
+   * Displays the settings to adjust trimming and filtering for feedforward
+   * gains.
    */
-  void DisplayFeedforwardGains();
+  void DisplayFeedforwardParameters(float beginX, float beginY);
 
   /**
-   * Handles the logic for displaying feedback gains
+   * Displays the graphs of the data.
+   */
+  void DisplayGraphs();
+
+  /**
+   * Displays the file selection widget.
+   */
+  void DisplayFileSelector();
+
+  /**
+   * Resets the current analysis data.
+   */
+  void ResetData();
+
+  /**
+   * Sets up the reset button and Unit override buttons.
+   *
+   * @return True if the tool had been reset.
+   */
+  bool DisplayResetAndUnitOverride();
+
+  /**
+   * Prepares the data for analysis.
+   */
+  void PrepareData();
+
+  /**
+   * Sets up the graphs to display Raw Data.
+   */
+  void PrepareRawGraphs();
+
+  /**
+   * Sets up the graphs to display filtered/processed data.
+   */
+  void PrepareGraphs();
+
+  /**
+   * True if the stored state is associated with an error.
+   */
+  bool IsErrorState();
+
+  /**
+   * True if the stored state is associated with a data processing error.
+   */
+  bool IsDataErrorState();
+
+  /**
+   * Displays inputs to allow the collecting of theoretical feedforward gains.
+   */
+  void CollectFeedforwardGains(float beginX, float beginY);
+
+  /**
+   * Displays calculated feedforward gains.
+   */
+  void DisplayFeedforwardGains(float beginX, float beginY);
+
+  /**
+   * Displays calculated feedback gains.
    */
   void DisplayFeedbackGains();
 
@@ -121,27 +175,35 @@ class Analyzer : public glass::View {
   void ConfigParamsOnFileSelect();
 
   /**
+   * Updates feedforward gains from the analysis manager.
+   */
+  void UpdateFeedforwardGains();
+
+  /**
+   * Updates feedback gains from the analysis manager.
+   */
+  void UpdateFeedbackGains();
+
+  /**
    * Handles logic of displaying a gain on ImGui
    */
-  void DisplayGain(const char* text, double* data);
+  bool DisplayGain(const char* text, double* data, bool readOnly);
 
   /**
    * Handles errors when they pop up.
    */
-  void HandleGeneralError(const std::exception& e);
+  void HandleError(std::string_view msg);
 
-  /**
-   * Handles json errors when they pop up.
-   */
-  void HandleJSONError(const wpi::json::exception& e);
+  // State of the Display GUI
+  AnalyzerState m_state = AnalyzerState::kWaitingForJSON;
 
-  // This is true when the analysis is allowed to occur.
-  bool m_enabled = false;
+  // Stores the exception message.
+  std::string m_exception;
+
+  bool m_calcDefaults = false;
 
   // This is true if the error popup needs to be displayed
   bool m_errorPopup = false;
-
-  std::string m_exception;
 
   // Everything related to feedback controller calculations.
   AnalysisManager::Settings m_settings;
@@ -152,22 +214,21 @@ class Analyzer : public glass::View {
 
   // Feedforward and feedback gains.
   std::vector<double> m_ff;
-  double m_rSquared;
+  double m_accelRSquared;
+  double m_accelRMSE;
   double m_Kp;
   double m_Kd;
-  double m_timescale;
+  units::millisecond_t m_timescale;
 
   // Track width
   std::optional<double> m_trackWidth;
 
   // Units
-  double m_factor;
-  std::string m_unit;
   int m_selectedOverrideUnit = 0;
 
   // Data analysis
   std::unique_ptr<AnalysisManager> m_manager;
-  AnalysisType m_type;
+  int m_dataset = 0;
   int m_window = 8;
   double m_threshold = 0.2;
   float m_stepTestDuration = 0.0;

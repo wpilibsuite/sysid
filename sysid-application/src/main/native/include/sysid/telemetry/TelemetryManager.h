@@ -217,5 +217,9 @@ class TelemetryManager {
   NT_Entry m_mechanism;
   NT_Entry m_mechError;
   NT_Entry m_fieldInfo;
+  NT_Entry m_ackNumberEntry;
+
+  int m_ackNumber;
+  int m_updatedAckNumber;
 };
 }  // namespace sysid

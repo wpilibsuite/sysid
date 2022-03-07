@@ -24,12 +24,15 @@ using namespace sysid;
  *
  * @param data The data that is being used.
  * @param window The window size for the operation.
+ * @param operation The operation we're checking the size for (for error
+ *                  throwing purposes).
  */
-static void CheckSize(const std::vector<PreparedData>& data, int window) {
+static void CheckSize(const std::vector<PreparedData>& data, int window,
+                      std::string_view operation) {
   if (data.size() < window) {
-    throw std::runtime_error(
-        "The data collected is too small! This can be caused by too high of a "
-        "motion threshold or bad data collection.");
+    throw sysid::InvalidDataError(
+        fmt::format("Not enough data to run {} which has a window size of {}.",
+                    operation, window));
   }
 }
 
@@ -66,7 +69,7 @@ static void PrepareMechData(std::vector<PreparedData>* data,
                             std::string_view unit = "") {
   constexpr size_t kWindow = 3;
 
-  CheckSize(*data, kWindow);
+  CheckSize(*data, kWindow, "Acceleration Calculation");
 
   // Calculates the cosine of the position data for single jointed arm analysis
   for (int i = 0; i < data->size(); ++i) {
@@ -103,18 +106,34 @@ static void PrepareMechData(std::vector<PreparedData>* data,
   }
 }
 
-units::second_t sysid::TrimStepVoltageData(std::vector<PreparedData>* data,
-                                           AnalysisManager::Settings* settings,
-                                           units::second_t minStepTime,
-                                           units::second_t maxStepTime) {
-  auto firstTimestamp = data->at(0).timestamp;
+std::tuple<units::second_t, units::second_t, units::second_t>
+sysid::TrimStepVoltageData(std::vector<PreparedData>* data,
+                           AnalysisManager::Settings* settings,
+                           units::second_t minStepTime,
+                           units::second_t maxStepTime) {
+  auto voltageBegins =
+      std::find_if(data->begin(), data->end(),
+                   [](auto& datum) { return std::abs(datum.voltage) > 0; });
+
+  units::second_t firstTimestamp = voltageBegins->timestamp;
+  double firstPosition = voltageBegins->position;
+
+  auto motionBegins = std::find_if(
+      data->begin(), data->end(), [settings, firstPosition](auto& datum) {
+        return std::abs(datum.position - firstPosition) >
+               (settings->motionThreshold * datum.dt.value());
+      });
+
+  auto maxAccel = std::max_element(
+      data->begin(), data->end(), [](const auto& a, const auto& b) {
+        return std::abs(a.acceleration) < std::abs(b.acceleration);
+      });
+
+  units::second_t positionDelay = motionBegins->timestamp - firstTimestamp;
+  units::second_t velocityDelay = maxAccel->timestamp - firstTimestamp;
 
   // Trim data before max acceleration
-  data->erase(data->begin(),
-              std::max_element(
-                  data->begin(), data->end(), [](const auto& a, const auto& b) {
-                    return std::abs(a.acceleration) < std::abs(b.acceleration);
-                  }));
+  data->erase(data->begin(), maxAccel);
 
   minStepTime = std::min(data->at(0).timestamp - firstTimestamp, minStepTime);
 
@@ -151,7 +170,7 @@ units::second_t sysid::TrimStepVoltageData(std::vector<PreparedData>* data,
   if (maxIt != data->end()) {
     data->erase(maxIt, data->end());
   }
-  return minStepTime;
+  return std::make_tuple(minStepTime, positionDelay, velocityDelay);
 }
 
 double sysid::GetNoiseFloor(
@@ -212,7 +231,7 @@ units::second_t sysid::GetMeanTimeDelta(const Storage& data) {
 }
 
 void sysid::ApplyMedianFilter(std::vector<PreparedData>* data, int window) {
-  CheckSize(*data, window);
+  CheckSize(*data, window, "Median Filter");
 
   frc::MedianFilter<double> medianFilter(window);
 
@@ -259,31 +278,33 @@ static std::string RemoveStr(std::string_view str, std::string_view removeStr) {
  *
  * @return The maximum duration of the Dynamic Tests
  */
-static units::second_t GetMaxTime(
+static units::second_t GetMaxStepTime(
     wpi::StringMap<std::vector<PreparedData>>& data) {
-  auto maxDuration = 0_s;
+  auto maxStepTime = 0_s;
   for (auto& it : data) {
     auto key = it.first();
     auto& dataset = it.getValue();
 
     if (IsRaw(key) && wpi::contains(key, "fast")) {
       auto duration = dataset.back().timestamp - dataset.front().timestamp;
-      if (duration > maxDuration) {
-        maxDuration = duration;
+      if (duration > maxStepTime) {
+        maxStepTime = duration;
       }
     }
   }
-  return maxDuration;
+  return maxStepTime;
 }
 
 void sysid::InitialTrimAndFilter(
     wpi::StringMap<std::vector<PreparedData>>* data,
-    AnalysisManager::Settings* settings, units::second_t& minStepTime,
+    AnalysisManager::Settings* settings,
+    std::vector<units::second_t>& positionDelays,
+    std::vector<units::second_t>& velocityDelays, units::second_t& minStepTime,
     units::second_t& maxStepTime, std::string_view unit) {
   auto& preparedData = *data;
 
   // Find the maximum Step Test Duration of the dynamic tests
-  maxStepTime = GetMaxTime(preparedData);
+  maxStepTime = GetMaxStepTime(preparedData);
 
   // Calculate Velocity Threshold if it hasn't been set yet
   if (settings->motionThreshold == std::numeric_limits<double>::infinity()) {
@@ -316,10 +337,7 @@ void sysid::InitialTrimAndFilter(
 
       // Confirm there's still data
       if (dataset.empty()) {
-        throw std::runtime_error(
-            "Quasistatic test trimming removed all data. Please double check "
-            "your units and test data to make sure that the robot is reporting "
-            "reasonable values.");
+        throw sysid::NoQuasistaticDataError();
       }
     }
 
@@ -337,9 +355,13 @@ void sysid::InitialTrimAndFilter(
       auto filteredKey = RemoveStr(key, "raw-");
 
       // Trim Filtered Data
-      auto tempMinStepTime = TrimStepVoltageData(
-          &preparedData[filteredKey], settings, minStepTime, maxStepTime);
-      minStepTime = tempMinStepTime;
+      auto [tempMinStepTime, positionDelay, velocityDelay] =
+          TrimStepVoltageData(&preparedData[filteredKey], settings, minStepTime,
+                              maxStepTime);
+      auto minStepTime = tempMinStepTime;
+
+      positionDelays.emplace_back(positionDelay);
+      velocityDelays.emplace_back(velocityDelay);
 
       // Set the Raw Data to start at the same time as the Filtered Data
       auto startTime = preparedData[filteredKey].front().timestamp;
@@ -350,7 +372,7 @@ void sysid::InitialTrimAndFilter(
 
       // Confirm there's still data
       if (preparedData[key].empty()) {
-        throw std::runtime_error("Dynamic test trimming removed all data");
+        throw sysid::NoDynamicDataError();
       }
     }
   }
@@ -374,6 +396,7 @@ void sysid::AccelFilter(wpi::StringMap<std::vector<PreparedData>>* data) {
   // Confirm there's still data
   if (std::any_of(preparedData.begin(), preparedData.end(),
                   [](const auto& it) { return it.getValue().empty(); })) {
-    throw std::runtime_error("Acceleration filtering removed all data");
+    throw sysid::InvalidDataError(
+        "Acceleration filtering has removed all data.");
   }
 }

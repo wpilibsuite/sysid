@@ -5,8 +5,11 @@
 #pragma once
 
 #include <cstddef>
+#include <memory>
 #include <string>
 #include <vector>
+
+#include <frc/motorcontrol/MotorController.h>
 
 namespace sysid {
 
@@ -30,10 +33,26 @@ class SysIdLogger {
   void SendData();
 
   /**
+   * Clears the data entry when sysid logger acknowledges that it received data.
+   */
+  void ClearWhenReceived();
+
+  /**
    * Makes the current execution thread of the logger a real-time thread which
    * will make it scheduled more consistently.
    */
   static void UpdateThreadPriority();
+
+  /**
+   * Utility function for getting motor controller voltage
+   *
+   * @param controllers A set of motor controllers powering a mechanism.
+   * @param controllerNames The names of the motor controllers.
+   * @return The average of the measured voltages of the motor controllers.
+   */
+  static double MeasureVoltage(
+      const std::vector<std::unique_ptr<frc::MotorController>>& controllers,
+      const std::vector<std::string>& controllerNames);
 
  protected:
   /**
@@ -86,6 +105,8 @@ class SysIdLogger {
    * Stores all of the collected data.
    */
   std::vector<double> m_data;
+
+  int m_ackNum = 0;
 
   /**
    * Creates the SysId logger, disables live view telemetry, sets up the

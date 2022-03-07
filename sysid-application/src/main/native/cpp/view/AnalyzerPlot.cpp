@@ -366,7 +366,8 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
   // represents the prediction at the timestep, and N represents the number of
   // points
   m_RMSE = std::sqrt(simSquaredErrorSum / timeSeriesPoints);
-  m_RSquared = 1 - m_RMSE / std::sqrt(squaredVariationSum / timeSeriesPoints);
+  m_accelRSquared =
+      1 - m_RMSE / std::sqrt(squaredVariationSum / timeSeriesPoints);
   FitPlots();
 }
 
@@ -378,12 +379,12 @@ void AnalyzerPlot::FitPlots() {
   m_timestepData.fitNextPlot = true;
 }
 
-double* AnalyzerPlot::GetRMSE() {
+double* AnalyzerPlot::GetSimRMSE() {
   return &m_RMSE;
 }
 
 double* AnalyzerPlot::GetSimRSquared() {
-  return &m_RSquared;
+  return &m_accelRSquared;
 }
 
 static void PlotSimData(std::vector<std::vector<ImPlotPoint>>& data) {

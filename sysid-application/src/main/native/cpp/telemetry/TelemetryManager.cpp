@@ -40,12 +40,14 @@ TelemetryManager::TelemetryManager(const Settings& settings,
       m_telemetryOld(nt::GetEntry(m_inst, "/robot/telemetry")),
       m_mechanism(nt::GetEntry(m_inst, "/SmartDashboard/SysIdTest")),
       m_mechError(nt::GetEntry(m_inst, "/SmartDashboard/SysIdWrongMech")),
+      m_ackNumberEntry(nt::GetEntry(m_inst, "/SmartDashboard/SysIdAckNumber")),
       m_fieldInfo(nt::GetEntry(m_inst, "/FMSInfo/FMSControlData")) {
   // Add listeners for our readable entries.
   nt::AddPolledEntryListener(m_poller, m_telemetry, kNTFlags);
   nt::AddPolledEntryListener(m_poller, m_overflow, kNTFlags);
   nt::AddPolledEntryListener(m_poller, m_mechError, kNTFlags);
   nt::AddPolledEntryListener(m_poller, m_fieldInfo, kNTFlags);
+  nt::AddPolledEntryListener(m_poller, m_ackNumberEntry, kNTFlags);
   nt::AddPolledEntryListener(m_poller, m_telemetryOld,
                              NT_NOTIFY_NEW | NT_NOTIFY_UPDATE);
 }
@@ -82,8 +84,6 @@ void TelemetryManager::BeginTest(std::string_view name) {
   // Set the current mechanism in NT.
   nt::SetEntryValue(m_mechanism,
                     nt::Value::MakeString(m_settings.mechanism.name));
-  // Clear the telemetry entry
-  nt::SetEntryValue(m_telemetry, nt::Value::MakeString(""));
   // Set Overflow to False
   nt::SetEntryValue(m_overflow, nt::Value::MakeBoolean(false));
   // Set Mechanism Error to False
@@ -127,7 +127,7 @@ void TelemetryManager::EndTest() {
           "Elevator) or vice versa. Please double check your settings and "
           "try again.";
     } else if (!m_params.data.empty()) {
-      std::string units;
+      std::string units = m_settings.units;
       std::transform(m_settings.units.begin(), m_settings.units.end(),
                      units.begin(), ::tolower);
 
@@ -177,6 +177,12 @@ void TelemetryManager::Update() {
 
   // Update the NT entries that we're reading.
   bool timedOut = false;
+  int currAckNumber = 0;
+
+  if (nt::GetEntryValue(m_ackNumberEntry)->IsDouble()) {
+    currAckNumber = nt::GetEntryValue(m_ackNumberEntry)->GetDouble();
+  }
+  std::string telemetryValue;
   for (auto&& event : nt::PollEntryListener(m_poller, 0, &timedOut)) {
     // Get the FMS Control Word.
     if (event.entry == m_fieldInfo && event.value && event.value->IsDouble()) {
@@ -185,11 +191,7 @@ void TelemetryManager::Update() {
     }
     // Get the string in the data field.
     if (event.entry == m_telemetry && event.value && event.value->IsString()) {
-      std::string value{event.value->GetString()};
-      if (!value.empty()) {
-        m_params.raw = std::move(value);
-        nt::SetEntryValue(m_telemetry, nt::Value::MakeString(""));
-      }
+      telemetryValue = event.value->GetString();
     }
     // Get the overflow flag
     if (event.entry == m_overflow && event.value && event.value->IsBoolean()) {
@@ -217,6 +219,7 @@ void TelemetryManager::Update() {
     if (m_params.enabled) {
       m_params.enableStart = wpi::Now() * 1E-6;
       m_params.state = State::RunningTest;
+      m_ackNumber = currAckNumber;
       WPI_INFO(m_logger, "{}", "Transitioned to running test state.");
     }
   }
@@ -234,6 +237,7 @@ void TelemetryManager::Update() {
     if (!m_params.enabled) {
       m_params.disableStart = wpi::Now() * 1E-6;
       m_params.state = State::WaitingForData;
+      WPI_INFO(m_logger, "{}", "Transitioned to waiting for data.");
     }
   }
 
@@ -242,8 +246,18 @@ void TelemetryManager::Update() {
     nt::SetEntryValue(m_voltageCommand, nt::Value::MakeDouble(0.0));
     nt::Flush(m_inst);
 
+    // Process valid data
+    if (!telemetryValue.empty() && m_ackNumber < currAckNumber) {
+      m_params.raw = std::move(telemetryValue);
+      m_ackNumber = currAckNumber;
+    }
+
     // We have the data that we need, so we can parse it and end the test.
-    if (!m_params.raw.empty()) {
+    if (!m_params.raw.empty() &&
+        wpi::starts_with(m_params.raw, m_tests.back())) {
+      // Remove test type from start of string
+      m_params.raw.erase(0, m_params.raw.find(';') + 1);
+
       // Clean up the string -- remove spaces if there are any.
       m_params.raw.erase(
           std::remove_if(m_params.raw.begin(), m_params.raw.end(), ::isspace),
@@ -274,6 +288,7 @@ void TelemetryManager::Update() {
                "Received data with size: {} for the {} test in {} seconds.",
                m_params.data.size(), m_tests.back(),
                m_params.data.back()[0] - m_params.data.front()[0]);
+      nt::SetEntryValue(m_ackNumberEntry, nt::Value::MakeDouble(++m_ackNumber));
       EndTest();
     }
 

@@ -12,7 +12,7 @@
 
 using namespace sysid;
 
-std::tuple<std::vector<double>, double> sysid::OLS(
+std::tuple<std::vector<double>, double, double> sysid::OLS(
     const std::vector<double>& data, size_t independentVariables) {
   // Perform some quick sanity checks regarding the size of the vector.
   assert(data.size() % (independentVariables + 1) == 0);
@@ -56,6 +56,7 @@ std::tuple<std::vector<double>, double> sysid::OLS(
 
   double rSquared = (SSTO - SSE) / SSTO;
   double adjRSquared = 1 - (1 - rSquared) * ((n - 1.0) / (n - 3));
+  double RMSE = std::sqrt(SSE / n);
 
-  return {{b.data(), b.data() + b.rows()}, adjRSquared};
+  return {{b.data(), b.data() + b.rows()}, adjRSquared, RMSE};
 }

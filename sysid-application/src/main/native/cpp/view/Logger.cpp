@@ -52,7 +52,7 @@ void Logger::Display() {
   if (ImGui::Button("Reset Telemetry")) {
     m_settings = TelemetryManager::Settings{};
     m_manager = std::make_unique<TelemetryManager>(m_settings, m_logger);
-    m_selectedType = 0;
+    m_settings.mechanism = analysis::FromName(kTypes[m_selectedType]);
   }
 
   // Add NT connection indicator.
