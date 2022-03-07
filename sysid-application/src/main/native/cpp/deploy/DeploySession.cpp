@@ -71,7 +71,7 @@ static bool CheckRoboRIOImageVersion(SshSession& session, wpi::Logger& logger) {
   wpi::SmallVector<std::string_view, 2> strings;
   wpi::split(contents, strings, '\n');
   for (auto&& str : strings) {
-    std::cmatch m;
+    std::match_results<std::string_view::const_iterator> m;
     if (std::regex_match(str.begin(), str.end(), m, pattern)) {
       // The regex matched, the image is the second element of the match.
       std::string version = m[1];
