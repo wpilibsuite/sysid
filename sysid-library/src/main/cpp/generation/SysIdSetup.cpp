@@ -302,7 +302,7 @@ void SetupGyro(
 #ifndef __FRC_ROBORIO__
   sysid::SetDefaultDataCollection(gyroPosition, gyroRate);
 #endif
-  if (gyroType == "Pigeon") {
+  if (wpi::starts_with(gyroType, "Pigeon")) {
     std::string portStr;
     if (wpi::contains(gyroCtor, "WPI_TalonSRX")) {
       portStr = wpi::split(gyroCtor, "-").second;
@@ -338,9 +338,17 @@ void SetupGyro(
         portStr = fmt::format("{} (plugged to other motorcontroller)", portStr);
       }
       pigeon = std::make_unique<PigeonIMU>(talon);
+      fmt::print("Setup Pigeon, {}\n", portStr);
     } else {
-      pigeon = std::make_unique<PigeonIMU>(srxPort);
       portStr = fmt::format("{} (CAN)", portStr);
+
+      if (gyroType == "Pigeon") {
+        pigeon = std::make_unique<PigeonIMU>(srxPort);
+        fmt::print("Setup Pigeon, {}\n", portStr);
+      } else {
+        pigeon = std::make_unique<Pigeon2>(srxPort);
+        fmt::print("Setup Pigeon2, {}\n", portStr);
+      }
     }
 
     // setup functions
@@ -357,7 +365,6 @@ void SetupGyro(
       units::degrees_per_second_t rate{xyz_dps[2]};
       return units::radians_per_second_t{rate}.value();
     };
-    fmt::print("Setup Pigeon, {}\n", portStr);
   } else if (wpi::starts_with(gyroType, "ADIS")) {
     auto port = GetSPIPort(gyroCtor);
     if (gyroType == "ADIS16448") {

@@ -489,6 +489,9 @@ void Generator::Display() {
       if (m_isTalon) {
         m_settings.gyroCtor = "WPI_TalonSRX-" + m_settings.gyroCtor;
       }
+    } else if (gyroType == sysid::gyro::kPigeon2) {
+      ImGui::InputInt("CAN ID", &m_gyroPort, 0, 0);
+      m_settings.gyroCtor = std::to_string(m_gyroPort);
     } else if (gyroType == sysid::gyro::kADXRS450) {
       ImGui::Combo("SPI Port", &m_gyroParam, kADXRS450Ctors,
                    IM_ARRAYSIZE(kADXRS450Ctors));
