@@ -682,14 +682,17 @@ void Analyzer::DisplayFeedbackGains() {
     }
 
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-    if (ImGui::InputDouble(text, data, 0.0, 0.0, "%.5G") && *data > 0) {
-      UpdateFeedbackGains();
-    }
+    return ImGui::InputDouble(text, data, 0.0, 0.0, "%.5G");
   };
 
   // Show controller period.
-  ShowPresetValue("Controller Period (ms)",
-                  reinterpret_cast<double*>(&m_settings.preset.period));
+  if (ShowPresetValue("Controller Period (ms)",
+                      reinterpret_cast<double*>(&m_settings.preset.period))) {
+    if (m_settings.preset.period > 0_s &&
+        m_settings.preset.measurementDelay >= 0_s) {
+      UpdateFeedbackGains();
+    }
+  }
 
   // Show whether the controller gains are time-normalized.
   if (ImGui::Checkbox("Time-Normalized?", &m_settings.preset.normalized)) {
@@ -697,9 +700,15 @@ void Analyzer::DisplayFeedbackGains() {
   }
 
   // Show position/velocity measurement delay.
-  ShowPresetValue(
-      "Measurement Delay (ms)",
-      reinterpret_cast<double*>(&m_settings.preset.measurementDelay));
+  if (ShowPresetValue(
+          "Measurement Delay (ms)",
+          reinterpret_cast<double*>(&m_settings.preset.measurementDelay))) {
+    if (m_settings.preset.period > 0_s &&
+        m_settings.preset.measurementDelay >= 0_s) {
+      UpdateFeedbackGains();
+    }
+  }
+
   sysid::CreateTooltip(
       "The average measurement delay of the process variable in milliseconds. "
       "This may depend on your encoder settings and choice of motor "
