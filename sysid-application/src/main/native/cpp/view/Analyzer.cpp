@@ -21,11 +21,8 @@
 #include "sysid/Util.h"
 #include "sysid/analysis/AnalysisManager.h"
 #include "sysid/analysis/AnalysisType.h"
-#include "sysid/analysis/ArmSim.h"
-#include "sysid/analysis/ElevatorSim.h"
 #include "sysid/analysis/FeedbackControllerPreset.h"
 #include "sysid/analysis/FilteringUtils.h"
-#include "sysid/analysis/SimpleMotorSim.h"
 #include "sysid/view/UILayout.h"
 
 using namespace sysid;

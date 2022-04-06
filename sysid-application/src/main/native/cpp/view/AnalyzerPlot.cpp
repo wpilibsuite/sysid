@@ -232,12 +232,15 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
           &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
     } else if (type == analysis::kArm) {
       const auto& Kcos = ffGains[3];
+      const auto& offset = ffGains[4];
       m_quasistaticData.simData = PopulateTimeDomainSim(
-          rawSlow, startTimes, fastStep, sysid::ArmSim{Ks, Kv, Ka, Kcos},
-          &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
+          rawSlow, startTimes, fastStep,
+          sysid::ArmSim{Ks, Kv, Ka, Kcos, offset}, &simSquaredErrorSum,
+          &squaredVariationSum, &timeSeriesPoints);
       m_dynamicData.simData = PopulateTimeDomainSim(
-          rawFast, startTimes, fastStep, sysid::ArmSim{Ks, Kv, Ka, Kcos},
-          &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
+          rawFast, startTimes, fastStep,
+          sysid::ArmSim{Ks, Kv, Ka, Kcos, offset}, &simSquaredErrorSum,
+          &squaredVariationSum, &timeSeriesPoints);
     } else {
       m_quasistaticData.simData = PopulateTimeDomainSim(
           rawSlow, startTimes, fastStep, sysid::SimpleMotorSim{Ks, Kv, Ka},
