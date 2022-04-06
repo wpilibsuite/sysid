@@ -136,7 +136,7 @@ void Logger::Display() {
       "quasistatic test.");
 
   CreateVoltageParameters("Dynamic Step Voltage (V)", &m_settings.stepVoltage,
-                          2.0f, 10.0f);
+                          0.0f, 10.0f);
   sysid::CreateTooltip(
       "This is the voltage that will be applied for the "
       "dynamic voltage (acceleration) tests.");
