@@ -64,7 +64,7 @@ class Robot : public frc::TimedRobot {
   std::unique_ptr<CANCoder> m_leftCancoder;
   std::unique_ptr<CANCoder> m_rightCancoder;
   std::unique_ptr<WPI_TalonSRX> m_tempTalon;
-  std::unique_ptr<PigeonIMU> m_pigeon;
+  std::unique_ptr<BasePigeon> m_pigeon;
 
   sysid::SysIdDrivetrainLogger m_logger;
 };

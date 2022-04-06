@@ -106,11 +106,12 @@ constexpr HardwareType kADIS16448{"ADIS16448"};
 constexpr HardwareType kADIS16470{"ADIS16470"};
 constexpr HardwareType kNavX{"NavX"};
 constexpr HardwareType kPigeon{"Pigeon"};
+constexpr HardwareType kPigeon2{"Pigeon2"};
 constexpr HardwareType kRomiGyro{"Romi"};
 constexpr HardwareType kNoGyroOption{"None"};
 
-constexpr std::array<HardwareType, 8> kGyros = {
-    kAnalogGyro, kADXRS450,  kNavX,     kPigeon,
+constexpr std::array<HardwareType, 9> kGyros = {
+    kAnalogGyro, kADXRS450,  kNavX,     kPigeon,      kPigeon2,
     kADIS16448,  kADIS16470, kRomiGyro, kNoGyroOption};
 
 /**
