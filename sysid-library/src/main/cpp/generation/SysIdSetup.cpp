@@ -296,13 +296,13 @@ void SetupGyro(
     std::unique_ptr<frc::Gyro>& gyro,
     std::unique_ptr<frc::ADIS16448_IMU>& ADIS16448Gyro,
     std::unique_ptr<frc::ADIS16470_IMU>& ADIS16470Gyro,
-    std::unique_ptr<PigeonIMU>& pigeon,
+    std::unique_ptr<BasePigeon>& pigeon,
     std::unique_ptr<WPI_TalonSRX>& tempTalon,
     std::function<double()>& gyroPosition, std::function<double()>& gyroRate) {
 #ifndef __FRC_ROBORIO__
   sysid::SetDefaultDataCollection(gyroPosition, gyroRate);
 #endif
-  if (gyroType == "Pigeon") {
+  if (wpi::starts_with(gyroType, "Pigeon")) {
     std::string portStr;
     if (wpi::contains(gyroCtor, "WPI_TalonSRX")) {
       portStr = wpi::split(gyroCtor, "-").second;
@@ -313,36 +313,42 @@ void SetupGyro(
     // converts gyroCtor into port #
     int srxPort = std::stoi(portStr);
     if (wpi::contains(gyroCtor, "WPI_TalonSRX")) {
-      bool talonDeclared = false;
+      std::vector<int> ports = leftPorts;
+      ports.insert(ports.end(), rightPorts.begin(), rightPorts.end());
       // Check if there is a Talon Port in Left Ports
-      auto findPort = std::find(leftPorts.begin(), leftPorts.end(), srxPort);
+      auto findPort = std::find(ports.begin(), ports.end(), srxPort);
 
-      // Check Right Ports if not found
-      if (findPort == leftPorts.end()) {
-        findPort = std::find(rightPorts.begin(), rightPorts.end(), srxPort);
-        if (findPort != rightPorts.end() &&
-            controllerNames[findPort - rightPorts.begin()] == "TalonSRX") {
-          pigeon = std::make_unique<PigeonIMU>(dynamic_cast<WPI_TalonSRX*>(
-              rightControllers.at(findPort - rightPorts.begin()).get()));
-          talonDeclared = true;
+      WPI_TalonSRX* talon;
+      if (findPort != ports.end()) {
+        // If the object already exists, find it and store it
+        if (std::distance(ports.begin(), findPort) <
+            std::distance(leftPorts.begin(), leftPorts.end())) {
+          talon = dynamic_cast<WPI_TalonSRX*>(
+              leftControllers.at(findPort - ports.begin()).get());
+        } else {
+          talon = dynamic_cast<WPI_TalonSRX*>(
+              rightControllers.at(findPort - ports.begin() - leftPorts.size())
+                  .get());
         }
-      } else if (controllerNames[findPort - leftPorts.begin()] == "TalonSRX") {
-        pigeon = std::make_unique<PigeonIMU>(dynamic_cast<WPI_TalonSRX*>(
-            leftControllers.at(findPort - leftPorts.begin()).get()));
-        talonDeclared = true;
-      }
-
-      // If it isn't tied to an existing Talon, create a new object
-      if (!talonDeclared) {
-        tempTalon = std::make_unique<WPI_TalonSRX>(srxPort);
-        pigeon = std::make_unique<PigeonIMU>(tempTalon.get());
-        portStr = fmt::format("{} (plugged to other motorcontroller)", portStr);
-      } else {
         portStr = fmt::format("{} (plugged to drive motorcontroller)", portStr);
+      } else {
+        // If it isn't tied to an existing Talon, create a new object
+        tempTalon = std::make_unique<WPI_TalonSRX>(srxPort);
+        talon = tempTalon.get();
+        portStr = fmt::format("{} (plugged to other motorcontroller)", portStr);
       }
+      pigeon = std::make_unique<PigeonIMU>(talon);
+      fmt::print("Setup Pigeon, {}\n", portStr);
     } else {
-      pigeon = std::make_unique<PigeonIMU>(srxPort);
       portStr = fmt::format("{} (CAN)", portStr);
+
+      if (gyroType == "Pigeon") {
+        pigeon = std::make_unique<PigeonIMU>(srxPort);
+        fmt::print("Setup Pigeon, {}\n", portStr);
+      } else {
+        pigeon = std::make_unique<Pigeon2>(srxPort);
+        fmt::print("Setup Pigeon2, {}\n", portStr);
+      }
     }
 
     // setup functions
@@ -359,7 +365,6 @@ void SetupGyro(
       units::degrees_per_second_t rate{xyz_dps[2]};
       return units::radians_per_second_t{rate}.value();
     };
-    fmt::print("Setup Pigeon, {}\n", portStr);
   } else if (wpi::starts_with(gyroType, "ADIS")) {
     auto port = GetSPIPort(gyroCtor);
     if (gyroType == "ADIS16448") {

@@ -65,6 +65,7 @@ const wpi::SmallVector<std::string_view, 4> kADIS16470Ctors{
 wpi::StringMap<wpi::SmallVector<std::string_view, 4>> gyroCtorMap = {
     {std::string{sysid::gyro::kAnalogGyro.name}, kAnalogCtors},
     {std::string{sysid::gyro::kPigeon.name}, kPigeonCtors},
+    {std::string{sysid::gyro::kPigeon2.name}, kAnalogCtors},
     {std::string{sysid::gyro::kADXRS450.name}, kADXRS450Ctors},
     {std::string{sysid::gyro::kNavX.name}, kNavXCtors},
     {std::string{sysid::gyro::kADIS16448.name}, kADIS16448Ctors},
@@ -165,6 +166,8 @@ class GenerationTest : public ::testing::Test {
         pigeonPortStr = fmt::format("{} (CAN)", gyroCtor);
       }
       FindInLog(fmt::format("Pigeon, {}", pigeonPortStr));
+    } else if (gyro == sysid::gyro::kPigeon2.name) {
+      FindInLog(fmt::format("Pigeon2, {} (CAN)", gyroCtor));
     } else if (gyro == sysid::gyro::kADXRS450.name ||
                gyro == sysid::gyro::kADIS16448.name ||
                gyro == sysid::gyro::kADIS16470.name) {
