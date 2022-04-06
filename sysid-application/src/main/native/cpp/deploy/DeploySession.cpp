@@ -174,14 +174,14 @@ void DeploySession::Execute(wpi::uv::Loop& lp) {
           try {
             // Check to make sure the roboRIO image version is valid.
             if (!CheckRoboRIOImageVersion(session, m_logger)) {
-              // TODO
+              ERROR("{}", "Invalid roboRIO image version");
+              return;
             }
 
             // As far as I can tell, the order of this doesn't matter.
             // It only comments out some stuff for the LabVIEW runtime that
-            // apparently isn't needed, and dramatically reduces memory
-            // usage. See
-            // https://github.com/wpilibsuite/EclipsePlugins/pull/154
+            // apparently isn't needed, and dramatically reduces memory usage.
+            // See https://github.com/wpilibsuite/EclipsePlugins/pull/154
             session.Execute(
                 "sed -i -e 's/^StartupDLLs/;StartupDLLs/' "
                 "/etc/natinst/share/ni-rt.ini");
