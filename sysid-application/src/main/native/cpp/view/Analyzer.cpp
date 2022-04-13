@@ -608,10 +608,20 @@ void Analyzer::DisplayFeedforwardGains(float beginX, float beginY) {
     DisplayGain("Kg", &m_ff[3]);
   } else if (m_manager->GetAnalysisType() == analysis::kArm) {
     DisplayGain("Kcos", &m_ff[3]);
-    DisplayGain(fmt::format("Angle offset to horizontal ({})",
-                            GetAbbreviation(m_manager->GetUnit()))
-                    .c_str(),
-                &m_ff[4]);
+
+    double offset;
+    auto unit = m_manager->GetUnit();
+    if (unit == "Radians") {
+      offset = m_ff[4];
+    } else if (unit == "Degrees") {
+      offset = m_ff[4] / wpi::numbers::pi * 180.0;
+    } else if (unit == "Rotations") {
+      offset = m_ff[4] / (2 * wpi::numbers::pi);
+    }
+    DisplayGain(
+        fmt::format("Angle offset to horizontal ({})", GetAbbreviation(unit))
+            .c_str(),
+        &offset);
     CreateTooltip(
         "This is the angle offset which, when added to the angle measurement, "
         "zeroes it out when the arm is horizontal. This is needed for the arm "
