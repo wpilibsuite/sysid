@@ -76,14 +76,19 @@ static void PrepareMechData(std::vector<PreparedData>* data,
     auto& pt = data->at(i);
 
     double cos = 0.0;
+    double sin = 0.0;
     if (unit == "Radians") {
       cos = std::cos(pt.position);
+      sin = std::sin(pt.position);
     } else if (unit == "Degrees") {
       cos = std::cos(pt.position * wpi::numbers::pi / 180.0);
+      sin = std::sin(pt.position * wpi::numbers::pi / 180.0);
     } else if (unit == "Rotations") {
       cos = std::cos(pt.position * 2 * wpi::numbers::pi);
+      sin = std::sin(pt.position * 2 * wpi::numbers::pi);
     }
     pt.cos = cos;
+    pt.sin = sin;
   }
 
   auto derivative =

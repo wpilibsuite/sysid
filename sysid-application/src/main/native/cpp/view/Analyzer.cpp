@@ -21,11 +21,8 @@
 #include "sysid/Util.h"
 #include "sysid/analysis/AnalysisManager.h"
 #include "sysid/analysis/AnalysisType.h"
-#include "sysid/analysis/ArmSim.h"
-#include "sysid/analysis/ElevatorSim.h"
 #include "sysid/analysis/FeedbackControllerPreset.h"
 #include "sysid/analysis/FilteringUtils.h"
-#include "sysid/analysis/SimpleMotorSim.h"
 #include "sysid/view/UILayout.h"
 
 using namespace sysid;
@@ -605,17 +602,32 @@ void Analyzer::DisplayFeedforwardGains(float beginX, float beginY) {
       "may overestimate the true delay for on-motor-controller "
       "feedback loops by up to 20ms.");
 
-  size_t row = 6;
+  SetPosition(beginX, beginY, 0, 6);
 
-  SetPosition(beginX, beginY, 0, row);
-
-  if (m_manager->GetAnalysisType() == analysis::kElevator ||
-      m_manager->GetAnalysisType() == analysis::kArm) {
+  if (m_manager->GetAnalysisType() == analysis::kElevator) {
     DisplayGain("Kg", &m_ff[3]);
-    ++row;
+  } else if (m_manager->GetAnalysisType() == analysis::kArm) {
+    DisplayGain("Kcos", &m_ff[3]);
+
+    double offset;
+    auto unit = m_manager->GetUnit();
+    if (unit == "Radians") {
+      offset = m_ff[4];
+    } else if (unit == "Degrees") {
+      offset = m_ff[4] / wpi::numbers::pi * 180.0;
+    } else if (unit == "Rotations") {
+      offset = m_ff[4] / (2 * wpi::numbers::pi);
+    }
+    DisplayGain(
+        fmt::format("Angle offset to horizontal ({})", GetAbbreviation(unit))
+            .c_str(),
+        &offset);
+    CreateTooltip(
+        "This is the angle offset which, when added to the angle measurement, "
+        "zeroes it out when the arm is horizontal. This is needed for the arm "
+        "feedforward to work.");
   } else if (m_trackWidth) {
     DisplayGain("Track Width", &*m_trackWidth);
-    ++row;
   }
   double endY = ImGui::GetCursorPosY();
 
