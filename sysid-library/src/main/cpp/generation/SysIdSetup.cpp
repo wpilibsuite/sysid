@@ -184,9 +184,9 @@ void SetupEncoders(
     } else {  // Venom
       fmt::print("Setup Built-in+Venom\n");
       auto* venom = static_cast<frc::CANVenom*>(controller);
-      position = [=] { return venom->GetPosition(); };
+      position = [=] { return venom->GetPosition() / gearing; };
       rate = [=] {
-        return venom->GetSpeed() /
+        return venom->GetSpeed() / gearing /
                60;  // Conversion from RPM to rotations per second
       };
     }
