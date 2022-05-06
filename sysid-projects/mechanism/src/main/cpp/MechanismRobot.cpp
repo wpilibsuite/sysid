@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-#include "Robot.h"
+#include "MechanismRobot.h"
 
 #include <cstddef>
 #include <cstdio>
@@ -16,7 +16,7 @@
 
 #include "sysid/generation/SysIdSetup.h"
 
-Robot::Robot() : frc::TimedRobot(5_ms) {
+MechanismRobot::MechanismRobot() : frc::TimedRobot(5_ms) {
   try {
     m_json = sysid::GetConfigJson();
     fmt::print("Reading JSON\n");
@@ -67,9 +67,9 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 #endif
 }
 
-void Robot::RobotInit() {}
+void MechanismRobot::RobotInit() {}
 
-void Robot::RobotPeriodic() {}
+void MechanismRobot::RobotPeriodic() {}
 
 /**
  * This autonomous (along with the chooser code above) shows how to select
@@ -82,32 +82,32 @@ void Robot::RobotPeriodic() {}
  * if-else structure below with additional strings. If using the SendableChooser
  * make sure to add them to the chooser code above as well.
  */
-void Robot::AutonomousInit() {
+void MechanismRobot::AutonomousInit() {
   m_logger.InitLogging();
 }
 
 /**
  * Outputs data in the format: timestamp, voltage, position, velocity
  */
-void Robot::AutonomousPeriodic() {
+void MechanismRobot::AutonomousPeriodic() {
   m_logger.Log(m_logger.MeasureVoltage(m_controllers, m_controllerNames),
                m_position(), m_rate());
   sysid::SetMotorControllers(m_logger.GetMotorVoltage(), m_controllers);
 }
 
-void Robot::TeleopInit() {}
+void MechanismRobot::TeleopInit() {}
 
-void Robot::TeleopPeriodic() {
+void MechanismRobot::TeleopPeriodic() {
   PushNTDiagnostics();
 }
 
-void Robot::DisabledInit() {
+void MechanismRobot::DisabledInit() {
   sysid::SetMotorControllers(0_V, m_controllers);
   fmt::print("Robot Disabled\n");
   m_logger.SendData();
 }
 
-void Robot::SimulationPeriodic() {
+void MechanismRobot::SimulationPeriodic() {
 #ifdef INTEGRATION
 
   bool enable = frc::SmartDashboard::GetBoolean("SysIdRun", false);
@@ -122,17 +122,17 @@ void Robot::SimulationPeriodic() {
 #endif
 }
 
-void Robot::DisabledPeriodic() {
+void MechanismRobot::DisabledPeriodic() {
   PushNTDiagnostics();
 }
 
-void Robot::TestInit() {}
+void MechanismRobot::TestInit() {}
 
-void Robot::TestPeriodic() {
+void MechanismRobot::TestPeriodic() {
   PushNTDiagnostics();
 }
 
-void Robot::PushNTDiagnostics() {
+void MechanismRobot::PushNTDiagnostics() {
   try {
     frc::SmartDashboard::PutNumber(
         "Voltage", m_logger.MeasureVoltage(m_controllers, m_controllerNames));
@@ -146,6 +146,6 @@ void Robot::PushNTDiagnostics() {
 
 #ifndef RUNNING_FRC_TESTS
 int main() {
-  return frc::StartRobot<Robot>();
+  return frc::StartRobot<MechanismRobot>();
 }
 #endif

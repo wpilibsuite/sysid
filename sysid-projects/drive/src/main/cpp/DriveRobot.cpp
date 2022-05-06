@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-#include "Robot.h"
+#include "DriveRobot.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -20,7 +20,7 @@
 
 #include "sysid/generation/SysIdSetup.h"
 
-Robot::Robot() : frc::TimedRobot(5_ms) {
+DriveRobot::DriveRobot() : frc::TimedRobot(5_ms) {
   m_json = sysid::GetConfigJson();
 
   try {
@@ -102,9 +102,9 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 #endif
 }
 
-void Robot::RobotInit() {}
+void DriveRobot::RobotInit() {}
 
-void Robot::RobotPeriodic() {}
+void DriveRobot::RobotPeriodic() {}
 
 /**
  * This autonomous (along with the chooser code above) shows how to select
@@ -117,7 +117,7 @@ void Robot::RobotPeriodic() {}
  * if-else structure below with additional strings. If using the
  * SendableChooser make sure to add them to the chooser code above as well.
  */
-void Robot::AutonomousInit() {
+void DriveRobot::AutonomousInit() {
   m_logger.InitLogging();
 }
 
@@ -125,7 +125,7 @@ void Robot::AutonomousInit() {
  * Outputs data in the format: timestamp, l voltage, r voltage, l position, r
  * position, l velocity, r velocity, angle, angular rate
  */
-void Robot::AutonomousPeriodic() {
+void DriveRobot::AutonomousPeriodic() {
   m_logger.Log(m_logger.MeasureVoltage(m_leftControllers, m_controllerNames),
                m_logger.MeasureVoltage(m_rightControllers, m_controllerNames),
                m_leftPosition(), m_rightPosition(), m_leftRate(), m_rightRate(),
@@ -135,20 +135,20 @@ void Robot::AutonomousPeriodic() {
                              m_rightControllers);
 }
 
-void Robot::TeleopInit() {}
+void DriveRobot::TeleopInit() {}
 
-void Robot::TeleopPeriodic() {
+void DriveRobot::TeleopPeriodic() {
   PushNTDiagnostics();
 }
 
-void Robot::DisabledInit() {
+void DriveRobot::DisabledInit() {
   sysid::SetMotorControllers(0_V, m_leftControllers);
   sysid::SetMotorControllers(0_V, m_rightControllers);
   fmt::print("Robot disabled\n");
   m_logger.SendData();
 }
 
-void Robot::SimulationPeriodic() {
+void DriveRobot::SimulationPeriodic() {
 #ifdef INTEGRATION
 
   bool enable = frc::SmartDashboard::GetBoolean("SysIdRun", false);
@@ -163,17 +163,17 @@ void Robot::SimulationPeriodic() {
 #endif
 }
 
-void Robot::DisabledPeriodic() {
+void DriveRobot::DisabledPeriodic() {
   PushNTDiagnostics();
 }
 
-void Robot::TestInit() {}
+void DriveRobot::TestInit() {}
 
-void Robot::TestPeriodic() {
+void DriveRobot::TestPeriodic() {
   PushNTDiagnostics();
 }
 
-void Robot::PushNTDiagnostics() {
+void DriveRobot::PushNTDiagnostics() {
   try {
     frc::SmartDashboard::PutNumber(
         "Left Voltage",
@@ -197,6 +197,6 @@ void Robot::PushNTDiagnostics() {
 
 #ifndef RUNNING_FRC_TESTS
 int main() {
-  return frc::StartRobot<Robot>();
+  return frc::StartRobot<DriveRobot>();
 }
 #endif
