@@ -7,8 +7,8 @@ plugins {
 // wpi.maven.useLocal = false
 // wpi.maven.useDevelopment = true
 
-wpi.versions.wpilibVersion = '2022.+'
-wpi.versions.wpimathVersion = '2022.+'
+wpi.versions.wpilibVersion = '2022.4.1'
+wpi.versions.wpimathVersion = '2022.4.1'
 wpi.versions.niLibrariesVersion = '2022.4.0'
 
 model {
