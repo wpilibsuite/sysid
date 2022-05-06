@@ -77,6 +77,5 @@ class Elevator : public SysIdGeneralMechanism {
                                             1000,
                                             2_in,
                                             -Constants::Elevator::kHeight,
-                                            Constants::Elevator::kHeight,
-                                            true};
+                                            Constants::Elevator::kHeight};
 };
