@@ -12,7 +12,7 @@ if (OperatingSystem.current().isWindows())
   apply plugin: "windows-resources"
 
 ext {
-  wpilibVersion = "2022.+"
+  wpilibVersion = "2023.0.0-alpha-1"
   libsshVersion = "0.95-1"
 }
 

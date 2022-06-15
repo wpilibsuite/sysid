@@ -57,7 +57,8 @@ nativeUtils {
     gui(getNativeDependencyTypeClass('AllPlatformsCombinedNativeDependency')) {
       dependencies = [
                       "libglassnt", "libglass", "wpigui", "imgui_static",
-                      "wpimath_static", "ntcore_static", "wpiutil_static"]
+                      "wpimath_static", "ntcore_static", "wpinet_static",
+                      "wpiutil_static"]
     }
     ssh(getNativeDependencyTypeClass('AllPlatformsCombinedNativeDependency')) {
       dependencies = ["libssh"]
