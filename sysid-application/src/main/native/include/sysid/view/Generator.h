@@ -14,9 +14,9 @@
 #include <glass/View.h>
 #include <imgui.h>
 #include <portable-file-dialogs.h>
-#include <wpi/EventLoopRunner.h>
 #include <wpi/Logger.h>
 #include <wpi/mutex.h>
+#include <wpinet/EventLoopRunner.h>
 
 #include "sysid/deploy/DeploySession.h"
 #include "sysid/generation/ConfigManager.h"

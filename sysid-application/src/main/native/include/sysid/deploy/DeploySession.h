@@ -11,7 +11,7 @@
 
 #include <wpi/Logger.h>
 #include <wpi/json.h>
-#include <wpi/uv/Loop.h>
+#include <wpinet/uv/Loop.h>
 
 namespace sysid {
 // Define an integer for a successful message in the log (shown in green on the

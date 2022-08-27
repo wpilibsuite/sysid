@@ -1,9 +1,6 @@
 import org.gradle.internal.os.OperatingSystem
 
 pluginManagement {
-  plugins {
-    id "edu.wpi.first.GradleRIO" version "2022.2.1"
-  }
   repositories {
     mavenLocal()
     gradlePluginPortal()
