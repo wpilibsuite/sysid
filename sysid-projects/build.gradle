@@ -45,7 +45,7 @@ model {
         }
         lib project: ":sysid-library", library: "libsysid", linkage: "static"
 
-        nativeUtils.wpi.nativeVendor.cpp(it)
+        nativeUtils.wpi.vendorDeps.nativeVendor.cpp(it)
 
         // In order for vendors to work correctly, we must always build with shared wpilib
         nativeUtils.useRequiredLibrary(it, 'wpilib_executable_shared')

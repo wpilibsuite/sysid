@@ -30,7 +30,7 @@ model {
           it.cppCompiler.define("INTEGRATION")
       }
 
-      nativeUtils.wpi.nativeVendor.cpp(it)
+      nativeUtils.wpi.vendorDeps.nativeVendor.cpp(it)
       nativeUtils.useRequiredLibrary(it, 'wpilib_executable_shared')
     }
   }

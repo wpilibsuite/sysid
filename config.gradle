@@ -3,8 +3,8 @@ apply plugin: 'edu.wpi.first.NativeUtils'
 
 nativeUtils.addWpiNativeUtils()
 
-nativeUtils.wpi.addVendor()
-nativeUtils.wpi.vendor.addVendorReposToMaven(true)
+nativeUtils.wpi.addVendorDeps()
+nativeUtils.wpi.vendorDeps.addVendorReposToMaven(true)
 
 nativeUtils {
     wpi {
