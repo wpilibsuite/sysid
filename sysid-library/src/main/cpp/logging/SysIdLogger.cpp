@@ -4,13 +4,13 @@
 
 #include "sysid/logging/SysIdLogger.h"
 
-#include <ctre/Phoenix.h>
+// #include <ctre/Phoenix.h>
 
 #include <cstddef>
 #include <sstream>
 #include <stdexcept>
 
-#include <CANVenom.h>
+// #include <CANVenom.h>
 #include <fmt/core.h>
 #include <frc/Notifier.h>
 #include <frc/RobotBase.h>
@@ -19,7 +19,7 @@
 #include <frc/Timer.h>
 #include <frc/livewindow/LiveWindow.h>
 #include <frc/smartdashboard/SmartDashboard.h>
-#include <rev/CANSparkMax.h>
+// #include <rev/CANSparkMax.h>
 #include <wpi/StringExtras.h>
 
 using namespace sysid;
@@ -45,23 +45,24 @@ double SysIdLogger::MeasureVoltage(
     const std::vector<std::string>& controllerNames) {
   double sum = 0.0;
   for (size_t i = 0; i < controllers.size(); ++i) {
-    auto&& controller = controllers[i].get();
+    // auto&& controller = controllers[i].get();
     if (wpi::starts_with(controllerNames[i], "SPARK MAX")) {
-      auto* smax = static_cast<rev::CANSparkMax*>(controller);
-      sum += smax->GetBusVoltage() * smax->GetAppliedOutput();
+      // auto* smax = static_cast<rev::CANSparkMax*>(controller);
+      // sum += smax->GetBusVoltage() * smax->GetAppliedOutput();
       if constexpr (frc::RobotBase::IsSimulation()) {
         fmt::print("Recording SPARK MAX voltage\n");
       }
     } else if (wpi::starts_with(controllerNames[i], "Talon") ||
                wpi::starts_with(controllerNames[i], "Victor")) {
-      auto* ctreController = dynamic_cast<WPI_BaseMotorController*>(controller);
-      sum += ctreController->GetMotorOutputVoltage();
+      // auto* ctreController =
+      // dynamic_cast<WPI_BaseMotorController*>(controller); sum +=
+      // ctreController->GetMotorOutputVoltage();
       if constexpr (frc::RobotBase::IsSimulation()) {
         fmt::print("Recording CTRE voltage\n");
       }
     } else if (controllerNames[i] == "Venom") {
-      auto* venom = static_cast<frc::CANVenom*>(controller);
-      sum += venom->GetOutputVoltage();
+      // auto* venom = static_cast<frc::CANVenom*>(controller);
+      // sum += venom->GetOutputVoltage();
       if constexpr (frc::RobotBase::IsSimulation()) {
         fmt::print("Recording Venom voltage\n");
       }
