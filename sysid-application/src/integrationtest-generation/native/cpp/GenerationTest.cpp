@@ -313,11 +313,11 @@ TEST_F(GenerationTest, Drivetrain) {
     }
   }
 
-  m_settings = sysid::kRomiConfig;
-  auto json = m_manager.Generate(size);
-  sysid::SaveFile(json.dump(), m_jsonPath);
-  fmt::print(stderr, "Testing: Romi Config\n");
-  Run();
+  // m_settings = sysid::kRomiConfig;
+  // auto json = m_manager.Generate(size);
+  // sysid::SaveFile(json.dump(), m_jsonPath);
+  // fmt::print(stderr, "Testing: Romi Config\n");
+  // Run();
   if (HasFatalFailure()) {
     TearDown();
     return;
