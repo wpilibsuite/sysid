@@ -91,6 +91,6 @@ class DeploySession {
 
   // The number of hostnames that have completed their resolution/connection
   // attempts.
-  std::atomic_int m_visited = 0;
+  std::atomic_uint m_visited = 0;
 };
 }  // namespace sysid

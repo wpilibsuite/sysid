@@ -40,8 +40,8 @@ TelemetryManager::TelemetryManager(const Settings& settings,
       m_telemetryOld(nt::GetEntry(m_inst, "/robot/telemetry")),
       m_mechanism(nt::GetEntry(m_inst, "/SmartDashboard/SysIdTest")),
       m_mechError(nt::GetEntry(m_inst, "/SmartDashboard/SysIdWrongMech")),
-      m_ackNumberEntry(nt::GetEntry(m_inst, "/SmartDashboard/SysIdAckNumber")),
-      m_fieldInfo(nt::GetEntry(m_inst, "/FMSInfo/FMSControlData")) {
+      m_fieldInfo(nt::GetEntry(m_inst, "/FMSInfo/FMSControlData")),
+      m_ackNumberEntry(nt::GetEntry(m_inst, "/SmartDashboard/SysIdAckNumber")) {
   // Add listeners for our readable entries.
   nt::AddPolledEntryListener(m_poller, m_telemetry, kNTFlags);
   nt::AddPolledEntryListener(m_poller, m_overflow, kNTFlags);
