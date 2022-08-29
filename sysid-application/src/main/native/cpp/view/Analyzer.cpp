@@ -211,8 +211,6 @@ bool Analyzer::DisplayResetAndUnitOverride() {
         "Units Per Rotation", &m_conversionFactor, 0.0, 0.0, "%.4f",
         isRotational ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
 
-    bool ex = false;
-
     if (ImGui::Button("Close")) {
       ImGui::CloseCurrentPopup();
       m_manager->OverrideUnits(unit, m_conversionFactor);
@@ -687,8 +685,8 @@ void Analyzer::DisplayFeedbackGains() {
       "This represents the denominator of the velocity unit used by the "
       "feedback controller. For example, CTRE uses 100 ms = 0.1 s.");
 
-  auto ShowPresetValue = [this](const char* text, double* data,
-                                float cursorX = 0.0f) {
+  auto ShowPresetValue = [](const char* text, double* data,
+                            float cursorX = 0.0f) {
     if (cursorX > 0) {
       ImGui::SetCursorPosX(cursorX);
     }

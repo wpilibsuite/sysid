@@ -21,16 +21,14 @@ struct Vector2d {
    */
   float y = 0;
 
-  /**
-   * Vecctor2d assignment operator.
-   *
-   * @param rhs Vector to assign.
-   * @return This object.
-   */
-  constexpr Vector2d& operator=(const Vector2d& rhs) = default;
+  constexpr Vector2d(const Vector2d&) = default;
+  constexpr Vector2d& operator=(const Vector2d&) = default;
+
+  constexpr Vector2d(Vector2d&&) = default;
+  constexpr Vector2d& operator=(Vector2d&&) = default;
 
   /**
-   * Vecctor2d addition operator.
+   * Vector2d addition operator.
    *
    * @param rhs Vector to add.
    * @return Sum of two vectors.
@@ -40,7 +38,7 @@ struct Vector2d {
   }
 
   /**
-   * Vecctor2d subtraction operator.
+   * Vector2d subtraction operator.
    *
    * @param rhs Vector to subtract.
    * @return Difference of two vectors.
