@@ -27,7 +27,7 @@ using namespace sysid;
  * @param operation The operation we're checking the size for (for error
  *                  throwing purposes).
  */
-static void CheckSize(const std::vector<PreparedData>& data, int window,
+static void CheckSize(const std::vector<PreparedData>& data, size_t window,
                       std::string_view operation) {
   if (data.size() < window) {
     throw sysid::InvalidDataError(
@@ -72,7 +72,7 @@ static void PrepareMechData(std::vector<PreparedData>* data,
   CheckSize(*data, kWindow, "Acceleration Calculation");
 
   // Calculates the cosine of the position data for single jointed arm analysis
-  for (int i = 0; i < data->size(); ++i) {
+  for (size_t i = 0; i < data->size(); ++i) {
     auto& pt = data->at(i);
 
     double cos = 0.0;
@@ -96,7 +96,7 @@ static void PrepareMechData(std::vector<PreparedData>* data,
 
   // Load the derivative filter with the first value for accurate initial
   // behavior
-  for (int i = 0; i < kWindow; ++i) {
+  for (size_t i = 0; i < kWindow; ++i) {
     derivative.Calculate(data->at(0).velocity);
   }
 
@@ -252,7 +252,7 @@ void sysid::ApplyMedianFilter(std::vector<PreparedData>* data, int window) {
 
   // Run the median filter for the last half window of datapoints by loading the
   // median filter with the last recorded velocity value
-  for (int i = data->size() - (window - 1) / 2; i < data->size(); i++) {
+  for (size_t i = data->size() - (window - 1) / 2; i < data->size(); i++) {
     data->at(i).velocity =
         medianFilter.Calculate(data->at(data->size() - 1).velocity);
   }
@@ -363,7 +363,6 @@ void sysid::InitialTrimAndFilter(
       auto [tempMinStepTime, positionDelay, velocityDelay] =
           TrimStepVoltageData(&preparedData[filteredKey], settings, minStepTime,
                               maxStepTime);
-      auto minStepTime = tempMinStepTime;
 
       positionDelays.emplace_back(positionDelay);
       velocityDelays.emplace_back(velocityDelay);
@@ -390,7 +389,7 @@ void sysid::AccelFilter(wpi::StringMap<std::vector<PreparedData>>* data) {
   for (auto& it : preparedData) {
     auto& dataset = it.getValue();
 
-    for (int i = 0; i < dataset.size(); i++) {
+    for (size_t i = 0; i < dataset.size(); i++) {
       if (dataset.at(i).acceleration == 0.0) {
         dataset.erase(dataset.begin() + i);
         i--;

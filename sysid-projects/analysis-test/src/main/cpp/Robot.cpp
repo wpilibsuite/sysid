@@ -159,7 +159,7 @@ class Robot : public frc::TimedRobot {
 };
 
 #ifndef RUNNING_FRC_TESTS
-int main() {
+int main() {  // NOLINT (bugprone-exception-escape)
   return frc::StartRobot<Robot>();
 }
 #endif
