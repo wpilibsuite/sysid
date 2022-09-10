@@ -104,3 +104,25 @@ model {
 task installSimulateNativeRelease {
   dependsOn 'installFrcUserProgram' + nativeUtils.wpi.nativePlatforms.desktop.capitalize() + 'ReleaseExecutable'
 }
+
+class CustomExec extends AbstractExecTask<CustomExec> {
+  @Inject
+  public CustomExec() {
+      super(CustomExec.class);
+      getOutputs().upToDateWhen(spec -> false);
+  }
+
+
+  @TaskAction
+  @Override
+  protected void exec() {
+    def installTask = project.tasks.named('installFrcUserProgram' + project.nativeUtils.wpi.nativePlatforms.desktop.capitalize() + 'ReleaseExecutable').get()
+    println installTask
+    setExecutable(installTask.getRunScriptFile().get().getAsFile())
+    super.exec()
+  }
+}
+
+task simulateNativeRelease(type: CustomExec) {
+  dependsOn(installSimulateNativeRelease)
+}
