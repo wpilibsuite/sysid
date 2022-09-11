@@ -20,7 +20,7 @@
 
 using namespace sysid;
 
-static ImPlotPoint Getter(void* data, int idx) {
+static ImPlotPoint Getter(int idx, void* data) {
   return static_cast<ImPlotPoint*>(data)[idx];
 }
 
