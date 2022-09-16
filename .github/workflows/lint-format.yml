@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Fetch all history and metadata
         run: |
-          git config --global --add safe.directory /__w/allwpilib/allwpilib
+          git config --global --add safe.directory /__w/sysid/sysid
           git fetch --prune --unshallow
           git checkout -b pr
           git branch -f main origin/main
