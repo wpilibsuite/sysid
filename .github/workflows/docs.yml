@@ -10,7 +10,7 @@ jobs:
   docs:
     name: "Doc Build"
     runs-on: ubuntu-latest
-    container: wpilib/roborio-cross-ubuntu:2021-20.04
+    container: wpilib/roborio-cross-ubuntu:2022-20.04
     steps:
       - uses: actions/checkout@v2
         with:

@@ -74,7 +74,7 @@ wpi::StringMap<wpi::SmallVector<std::string_view, 4>> gyroCtorMap = {
 
 class GenerationTest : public ::testing::Test {
  public:
-  void SetUp(std::string_view directory) {
+  void Initialize(std::string_view directory) {
     m_nt = nt::GetDefaultInstance();
     m_kill = nt::GetEntry(m_nt, "/SmartDashboard/SysIdKill");
     m_mechanism = nt::GetEntry(m_nt, "/SmartDashboard/SysIdTest");
@@ -258,7 +258,7 @@ class GenerationTest : public ::testing::Test {
 wpi::Logger GenerationTest::m_logger;
 
 TEST_F(GenerationTest, GeneralMechanism) {
-  SetUp("sysid-projects:mechanism");
+  Initialize("sysid-projects:mechanism");
   constexpr size_t size = 2;
   for (auto&& motorController : sysid::motorcontroller::kMotorControllers) {
     m_settings.motorControllers =
@@ -282,7 +282,7 @@ TEST_F(GenerationTest, GeneralMechanism) {
 }
 
 TEST_F(GenerationTest, Drivetrain) {
-  SetUp("sysid-projects:drive");
+  Initialize("sysid-projects:drive");
   constexpr size_t size = 2;
 
   m_settings.motorControllers = wpi::SmallVector<sysid::HardwareType, 3>(
@@ -313,11 +313,11 @@ TEST_F(GenerationTest, Drivetrain) {
     }
   }
 
-  m_settings = sysid::kRomiConfig;
-  auto json = m_manager.Generate(size);
-  sysid::SaveFile(json.dump(), m_jsonPath);
-  fmt::print(stderr, "Testing: Romi Config\n");
-  Run();
+  // m_settings = sysid::kRomiConfig;
+  // auto json = m_manager.Generate(size);
+  // sysid::SaveFile(json.dump(), m_jsonPath);
+  // fmt::print(stderr, "Testing: Romi Config\n");
+  // Run();
   if (HasFatalFailure()) {
     TearDown();
     return;
@@ -328,7 +328,7 @@ TEST_F(GenerationTest, Drivetrain) {
 }
 
 TEST_F(GenerationTest, WrongMechDrivetrain) {
-  SetUp("sysid-projects:drive");
+  Initialize("sysid-projects:drive");
   // Save default config to path
   m_settings = sysid::ConfigSettings();
   auto json = m_manager.Generate(2);
@@ -348,7 +348,7 @@ TEST_F(GenerationTest, WrongMechDrivetrain) {
 }
 
 TEST_F(GenerationTest, WrongMechGeneralMechanism) {
-  SetUp("sysid-projects:mechanism");
+  Initialize("sysid-projects:mechanism");
   // Save default config to path
   m_settings = sysid::ConfigSettings();
   auto json = m_manager.Generate(1);

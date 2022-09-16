@@ -1,0 +1,52 @@
+// Add WPI extensions.
+apply plugin: 'edu.wpi.first.NativeUtils'
+
+nativeUtils.addWpiNativeUtils()
+
+nativeUtils.wpi.addVendorDeps()
+nativeUtils.wpi.vendorDeps.nativeVendor.initializeNativeDependencies()
+nativeUtils.wpi.vendorDeps.addVendorReposToMaven(true)
+
+nativeUtils {
+    wpi {
+        configureDependencies {
+            wpiVersion = "2023.0.0-alpha-1"
+            niLibVersion = "2022.4.0"
+            opencvVersion = "4.5.5-3"
+            googleTestVersion = "1.11.0-2"
+            imguiVersion = "1.88-4"
+            wpimathVersion = "2023.0.0-alpha-1"
+        }
+    }
+}
+
+nativeUtils.wpi.addWarnings()
+
+if (project.name != 'wpilibcExamples') {
+    nativeUtils.wpi.addReleaseSymbolGeneration()
+}
+
+nativeUtils.setSinglePrintPerPlatform()
+nativeUtils.enableSourceLink()
+
+nativeUtils.platformConfigs.each {
+    if (it.name.contains('windows')) {
+        return
+    }
+    if (it.name.contains('osx')) {
+        it.linker.args << '-Wl,-rpath,\'@loader_path\''
+        it.linker.args << "-headerpad_max_install_names"
+    } else {
+        it.linker.args << '-Wl,-rpath,\'$ORIGIN\''
+    }
+}
+
+nativeUtils.platformConfigs.linuxathena.linker.args.add("-Wl,--fatal-warnings")
+
+model {
+    binaries {
+        withType(NativeBinarySpec).all {
+            nativeUtils.usePlatformArguments(it)
+        }
+    }
+}

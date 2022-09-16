@@ -43,7 +43,7 @@ template <size_t S, size_t Timestamp, size_t Voltage, size_t Position,
 static std::vector<PreparedData> ConvertToPrepared(
     const std::vector<std::array<double, S>>& data) {
   std::vector<PreparedData> prepared;
-  for (int i = 0; i < data.size() - 1; i++) {
+  for (size_t i = 0; i < data.size() - 1; i++) {
     const auto& pt1 = data[i];
     const auto& pt2 = data[i + 1];
     prepared.emplace_back(PreparedData{
@@ -65,7 +65,6 @@ static std::vector<PreparedData> ConvertToPrepared(
 template <size_t S>
 static void CopyRawData(
     wpi::StringMap<std::vector<std::array<double, S>>>* dataset) {
-  using Data = std::array<double, S>;
   auto& data = *dataset;
   // Loads the Raw Data
   for (auto& it : data) {
@@ -440,15 +439,15 @@ void AnalysisManager::PrepareLinearDrivetrainData() {
 }
 
 AnalysisManager::AnalysisManager(Settings& settings, wpi::Logger& logger)
-    : m_settings(settings),
-      m_logger(logger),
-      m_type(analysis::kSimple),
-      m_factor(1),
-      m_unit("Meters") {}
+    : m_logger{logger},
+      m_settings{settings},
+      m_type{analysis::kSimple},
+      m_unit{"Meters"},
+      m_factor{1} {}
 
 AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,
                                  wpi::Logger& logger)
-    : m_settings(settings), m_logger(logger) {
+    : m_logger{logger}, m_settings{settings} {
   {
     // Read JSON from the specified path
     std::error_code ec;

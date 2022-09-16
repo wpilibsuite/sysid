@@ -4,21 +4,20 @@ plugins {
   id "edu.wpi.first.wpilib.versioning.WPILibVersioningPlugin" version "4.1.0"
   id "edu.wpi.first.wpilib.repositories.WPILibRepositoriesPlugin" version "2020.2"
   id "org.ysb33r.doxygen" version "0.7.0"
-  id "edu.wpi.first.NativeUtils" version "2022.8.2" apply false
+  id "edu.wpi.first.NativeUtils" version "2023.1.0" apply false
 }
 
 // Configure versioning for this project.
 wpilibVersioning.buildServerMode = project.hasProperty("buildServer")
 wpilibVersioning.releaseMode = project.hasProperty("releaseMode")
 wpilibVersioning.useAllTags = true
-//wpi.maven.useDevelopment = true
 // Configure what repositories we should get dependencies from.
 allprojects {
-  if (project.hasProperty("releaseMode")) {
+  // if (project.hasProperty("releaseMode")) {
     wpilibRepositories.addAllReleaseRepositories(it)
-  } else {
-    wpilibRepositories.addAllDevelopmentRepositories(it)
-  }
+  // } else {
+  //   wpilibRepositories.addAllDevelopmentRepositories(it)
+  // }
 }
 
 // Finalize the versioning for this project.
