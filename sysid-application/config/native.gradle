@@ -2,17 +2,6 @@ import org.gradle.internal.os.OperatingSystem;
 // This configures native dependencies for building Glass extensions,
 // including WPILib versions, etc.
 
-// Add WPI extensions.
-nativeUtils.addWpiNativeUtils()
-
-// Configure WPILib, wpimath, and Dear ImGui versions.
-nativeUtils.wpi.configureDependencies {
-  wpiVersion = wpilibVersion
-  wpimathVersion = wpilibVersion
-  imguiVersion = "1.86-1"
-  googleTestVersion = "1.9.0-5-437e100-1"
-}
-
 // Configure wpigui, libglass, libglassnt.
 nativeUtils {
   nativeDependencyContainer {
@@ -22,7 +11,7 @@ nativeUtils {
       headerClassifier = "headers"
       sourceClassifier = "sources"
       ext = "zip"
-      version = wpilibVersion
+      version = nativeUtils.wpi.versions.wpiVersion.get()
       targetPlatforms.addAll(nativeUtils.wpi.platforms.desktopPlatforms)
     }
     libglass(getNativeDependencyTypeClass('WPIStaticMavenDependency')) {
@@ -31,7 +20,7 @@ nativeUtils {
       headerClassifier = "headers"
       sourceClassifier = "sources"
       ext = "zip"
-      version = wpilibVersion
+      version = nativeUtils.wpi.versions.wpiVersion.get()
       targetPlatforms.addAll(nativeUtils.wpi.platforms.desktopPlatforms)
     }
     libglassnt(getNativeDependencyTypeClass('WPIStaticMavenDependency')) {
@@ -40,7 +29,7 @@ nativeUtils {
       headerClassifier = "headers"
       sourceClassifier = "sources"
       ext = "zip"
-      version = wpilibVersion
+      version = nativeUtils.wpi.versions.wpiVersion.get()
       targetPlatforms.addAll(nativeUtils.wpi.platforms.desktopPlatforms)
     }
     libssh(getNativeDependencyTypeClass('WPIStaticMavenDependency')) {
@@ -57,7 +46,7 @@ nativeUtils {
     gui(getNativeDependencyTypeClass('AllPlatformsCombinedNativeDependency')) {
       dependencies = [
                       "libglassnt", "libglass", "wpigui", "imgui_static",
-                      "wpimath_static", "ntcore_static", "wpiutil_static"]
+                      "wpimath_static", "ntcore_static", "wpinet_static", "wpiutil_static"]
     }
     ssh(getNativeDependencyTypeClass('AllPlatformsCombinedNativeDependency')) {
       dependencies = ["libssh"]

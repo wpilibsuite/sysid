@@ -70,24 +70,25 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
     }
 
     fmt::print("Setup encoders\n");
-    sysid::SetupEncoders(encoderType, isEncoding, period, cpr, gearing,
-                         numSamples, m_controllerNames[0],
-                         m_leftControllers.at(0).get(), leftEncoderInverted,
-                         leftEncoderPorts, m_leftCancoder, m_leftRevEncoderPort,
-                         m_leftRevDataPort, m_leftEncoder, m_leftPosition,
-                         m_leftRate);
-    sysid::SetupEncoders(encoderType, isEncoding, period, cpr, gearing,
-                         numSamples, m_controllerNames[0],
-                         m_rightControllers.at(0).get(), rightEncoderInverted,
-                         rightEncoderPorts, m_rightCancoder,
-                         m_rightRevEncoderPort, m_rightRevDataPort,
-                         m_rightEncoder, m_rightPosition, m_rightRate);
+    sysid::SetupEncoders(
+        encoderType, isEncoding, period, cpr, gearing, numSamples,
+        m_controllerNames[0], m_leftControllers.at(0).get(),
+        leftEncoderInverted, leftEncoderPorts,
+        // m_leftCancoder, m_leftRevEncoderPort,m_leftRevDataPort,
+        m_leftEncoder, m_leftPosition, m_leftRate);
+    sysid::SetupEncoders(
+        encoderType, isEncoding, period, cpr, gearing, numSamples,
+        m_controllerNames[0], m_rightControllers.at(0).get(),
+        rightEncoderInverted, rightEncoderPorts,
+        // m_rightCancoder, m_rightRevEncoderPort, m_rightRevDataPort,
+        m_rightEncoder, m_rightPosition, m_rightRate);
 
     fmt::print("Setup gyro\n");
     sysid::SetupGyro(gyroType, gyroCtor, leftPorts, rightPorts,
                      m_controllerNames, m_leftControllers, m_rightControllers,
-                     m_gyro, m_ADIS16448Gyro, m_ADIS16470Gyro, m_pigeon,
-                     m_tempTalon, m_gyroPosition, m_gyroRate);
+                     m_gyro, m_ADIS16448Gyro, m_ADIS16470Gyro,
+                     // m_pigeon, m_tempTalon,
+                     m_gyroPosition, m_gyroRate);
   } catch (std::exception& e) {
     fmt::print("Project failed: {}\n", e.what());
     std::exit(-1);

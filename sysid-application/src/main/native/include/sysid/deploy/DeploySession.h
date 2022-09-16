@@ -11,7 +11,7 @@
 
 #include <wpi/Logger.h>
 #include <wpi/json.h>
-#include <wpi/uv/Loop.h>
+#include <wpinet/uv/Loop.h>
 
 namespace sysid {
 // Define an integer for a successful message in the log (shown in green on the
@@ -91,6 +91,6 @@ class DeploySession {
 
   // The number of hostnames that have completed their resolution/connection
   // attempts.
-  std::atomic_int m_visited = 0;
+  std::atomic_uint m_visited = 0;
 };
 }  // namespace sysid

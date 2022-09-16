@@ -56,6 +56,7 @@ void Analyzer::UpdateFeedforwardGains() {
         m_settings.type == FeedbackControllerLoopType::kPosition
             ? m_manager->GetPositionDelay()
             : m_manager->GetVelocityDelay();
+    m_conversionFactor = m_manager->GetFactor();
     PrepareGraphs();
   } catch (const sysid::InvalidDataError& e) {
     m_state = AnalyzerState::kGeneralDataError;
@@ -145,7 +146,6 @@ void Analyzer::ResetData() {
 bool Analyzer::DisplayResetAndUnitOverride() {
   auto type = m_manager->GetAnalysisType();
   auto unit = m_manager->GetUnit();
-  auto factor = m_manager->GetFactor();
 
   float width = ImGui::GetContentRegionAvail().x;
   ImGui::SameLine(width - ImGui::CalcTextSize("Reset").x);
@@ -173,7 +173,7 @@ bool Analyzer::DisplayResetAndUnitOverride() {
       "Units:              %s\n"
       "Units Per Rotation: %.4f\n"
       "Type:               %s",
-      std::string(unit).c_str(), factor, type.name);
+      std::string(unit).c_str(), m_conversionFactor, type.name);
 
   if (type == analysis::kDrivetrainAngular) {
     ImGui::SameLine();
@@ -197,25 +197,23 @@ bool Analyzer::DisplayResetAndUnitOverride() {
     unit = kUnits[m_selectedOverrideUnit];
 
     if (unit == "Degrees") {
-      factor = 360.0;
+      m_conversionFactor = 360.0;
     } else if (unit == "Radians") {
-      factor = 2 * wpi::numbers::pi;
+      m_conversionFactor = 2 * wpi::numbers::pi;
     } else if (unit == "Rotations") {
-      factor = 1.0;
+      m_conversionFactor = 1.0;
     }
 
     bool isRotational = m_selectedOverrideUnit > 2;
 
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);
     ImGui::InputDouble(
-        "Units Per Rotation", &factor, 0.0, 0.0, "%.4f",
+        "Units Per Rotation", &m_conversionFactor, 0.0, 0.0, "%.4f",
         isRotational ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
-
-    bool ex = false;
 
     if (ImGui::Button("Close")) {
       ImGui::CloseCurrentPopup();
-      m_manager->OverrideUnits(unit, factor);
+      m_manager->OverrideUnits(unit, m_conversionFactor);
       PrepareData();
     }
 
@@ -687,8 +685,8 @@ void Analyzer::DisplayFeedbackGains() {
       "This represents the denominator of the velocity unit used by the "
       "feedback controller. For example, CTRE uses 100 ms = 0.1 s.");
 
-  auto ShowPresetValue = [this](const char* text, double* data,
-                                float cursorX = 0.0f) {
+  auto ShowPresetValue = [](const char* text, double* data,
+                            float cursorX = 0.0f) {
     if (cursorX > 0) {
       ImGui::SetCursorPosX(cursorX);
     }

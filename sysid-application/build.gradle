@@ -4,15 +4,15 @@ plugins {
   id "cpp"
   id "google-test-test-suite"
   id "maven-publish"
-  id "edu.wpi.first.NativeUtils"
 }
+
+apply from: "${rootDir}/config.gradle"
 
 // Support RC files on Windows.
 if (OperatingSystem.current().isWindows())
   apply plugin: "windows-resources"
 
 ext {
-  wpilibVersion = "2022.+"
   libsshVersion = "0.95-1"
 }
 

@@ -1,63 +1,10 @@
 plugins {
   id "cpp"
   id "google-test-test-suite"
-  id "edu.wpi.first.GradleRIO"
 }
 
-// For using remote development artifacts
-wpi.maven.useLocal = false
-wpi.maven.useDevelopment = true
-wpi.versions.wpilibVersion = '2022.+'
-wpi.versions.wpimathVersion = '2022.+'
-wpi.versions.niLibrariesVersion = '2022.4.0'
-
-// Define my targets (RoboRIO) and artifacts (deployable files)
-// This is added by GradleRIO's backing project EmbeddedTools.
-deploy {
-  targets {
-    roborio(getTargetTypeClass('RoboRIO')) {
-      // Team number is loaded either from the .wpilib/wpilib_preferences.json
-      // or from command line. If not found an exception will be thrown.
-      // You can use getTeamOrDefault(team) instead of getTeamNumber if you
-      // want to store a team number in this file.
-      team = project.frc.getTeamNumber()
-      debug = project.frc.getDebugOrDefault(false)
-
-      artifacts {
-        // First part is artifact name, 2nd is artifact type
-        // getTargetTypeClass is a shortcut to get the class type using a string
-        frcCpp(getArtifactTypeClass('FRCNativeArtifact')) {
-        }
-
-        // Static files artifact
-        frcStaticFileDeploy(getArtifactTypeClass('FileTreeArtifact')) {
-          files = project.fileTree('src/main/deploy')
-          directory = '/home/lvuser/deploy'
-        }
-      }
-    }
-  }
-}
-
-// Define the deploy artifact to use later.
-def deployArtifact = deploy.targets.roborio.artifacts.frcCpp
-
-// Use release mode for simulation.
-wpi.cpp.debugSimulation = false
-
-// Enable simulation extensions when not in CI. Also add ws_client when
-// using Romi.
-dependencies {
-  if (System.getenv()["CI"] == null) {
-    wpi.sim.addGui().defaultEnabled = true
-    wpi.sim.addDriverstation()
-  }
-
-  if (project.hasProperty("romi")) {
-    wpi.sim.addWebsocketsClient().defaultEnabled = true
-    wpi.sim.envVar("HALSIMWS_HOST", "10.0.0.2")
-  }
-}
+apply from: "${rootDir}/config.gradle"
+nativeUtils.withCrossRoboRIO()
 
 def exeGenerateTask = nativeUtils.generateResources('generateExeResources').get()
 exeGenerateTask.outputDirectory = project.file('build/generated/exe')
@@ -79,9 +26,9 @@ if (project.name == 'drive') {
 model {
   components {
     frcUserProgram(NativeExecutableSpec) {
-      targetPlatform wpi.platforms.roborio
+      targetPlatform nativeUtils.wpi.nativePlatforms.roborio
       if (!project.hasProperty("skipDesktopRobots"))
-        targetPlatform wpi.platforms.desktop
+        targetPlatform nativeUtils.wpi.nativePlatforms.desktop
 
       sources.cpp {
         source {
@@ -91,11 +38,6 @@ model {
         exportedHeaders.srcDirs 'src/main/include'
       }
 
-      deployArtifact.component = it
-      wpi.cpp.enableExternalTasks(it)
-
-      wpi.sim.enable(it)
-
       binaries.all {
         it.cppCompiler.define("PROJECT_ROOT_DIR", "$projectDir")
         if (project.hasProperty("integration")) {
@@ -103,14 +45,14 @@ model {
         }
         lib project: ":sysid-library", library: "libsysid", linkage: "static"
 
-        wpi.cpp.vendor.cpp(it)
+        nativeUtils.wpi.vendorDeps.nativeVendor.cpp(it)
 
         // In order for vendors to work correctly, we must always build with shared wpilib
-        wpi.cpp.deps.useLibrary(it, 'wpilib_executable_shared')
+        nativeUtils.useRequiredLibrary(it, 'wpilib_executable_shared')
       }
     }
     embeddedBinary(NativeLibrarySpec) {
-      targetPlatform wpi.platforms.desktop
+      targetPlatform nativeUtils.wpi.nativePlatforms.desktop
 
       sources.cpp {
         source {
@@ -135,7 +77,7 @@ model {
   tasks {
     $.components.frcUserProgram.binaries.each { bin ->
       // Create a task that installs the desktop executable with shared linking.
-      if (bin.targetPlatform.name == wpi.platforms.desktop && bin.name.toLowerCase().contains("release"))
+      if (bin.targetPlatform.name == nativeUtils.wpi.nativePlatforms.desktop && bin.name.toLowerCase().contains("release"))
         project.tasks.create("installDesktopExe") {
           dependsOn bin.tasks.install
           ext.setProperty("runScriptFile${project.name}",
@@ -143,7 +85,7 @@ model {
         }
 
       // Create a task that installs and copies the roboRIO executable and libraries.
-      if (project.name != "analysis-test" && bin.targetPlatform.name == wpi.platforms.roborio &&
+      if (project.name != "analysis-test" && bin.targetPlatform.name == nativeUtils.wpi.nativePlatforms.roborio &&
           bin.name.toLowerCase().contains("release")) {
         exeGenerateTask.source.from(bin.tasks.install.executableFile)
         exeGenerateTask.dependsOn bin.tasks.install
@@ -160,5 +102,27 @@ model {
 }
 
 task installSimulateNativeRelease {
-  dependsOn 'installFrcUserProgram' + wpi.platforms.desktop.capitalize() + 'ReleaseExecutable'
+  dependsOn 'installFrcUserProgram' + nativeUtils.wpi.nativePlatforms.desktop.capitalize() + 'ReleaseExecutable'
+}
+
+class CustomExec extends AbstractExecTask<CustomExec> {
+  @Inject
+  public CustomExec() {
+      super(CustomExec.class);
+      getOutputs().upToDateWhen(spec -> false);
+  }
+
+
+  @TaskAction
+  @Override
+  protected void exec() {
+    def installTask = project.tasks.named('installFrcUserProgram' + project.nativeUtils.wpi.nativePlatforms.desktop.capitalize() + 'ReleaseExecutable').get()
+    println installTask
+    setExecutable(installTask.getRunScriptFile().get().getAsFile())
+    super.exec()
+  }
+}
+
+task simulateNativeRelease(type: CustomExec) {
+  dependsOn(installSimulateNativeRelease)
 }
