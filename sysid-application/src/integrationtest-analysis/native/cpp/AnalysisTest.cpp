@@ -77,7 +77,7 @@ class AnalysisTest : public ::testing::Test {
     std::system(failCommand.c_str());
   }
 
-  void SetUp(sysid::AnalysisType mechanism) {
+  void Initialize(sysid::AnalysisType mechanism) {
     // Make a new manager
     m_manager =
         std::make_unique<sysid::TelemetryManager>(m_settings, m_logger, m_nt);
@@ -227,37 +227,37 @@ sysid::TelemetryManager::Settings AnalysisTest::m_settings;
 wpi::Logger AnalysisTest::m_logger;
 
 TEST_F(AnalysisTest, Drivetrain) {
-  SetUp(sysid::analysis::kDrivetrain);
+  Initialize(sysid::analysis::kDrivetrain);
   RunFullTests();
   AnalyzeJSON();
 }
 
 TEST_F(AnalysisTest, DrivetrainAngular) {
-  SetUp(sysid::analysis::kDrivetrainAngular);
+  Initialize(sysid::analysis::kDrivetrainAngular);
   RunFullTests();
   AnalyzeJSON();
 }
 
 TEST_F(AnalysisTest, Flywheel) {
-  SetUp(sysid::analysis::kSimple);
+  Initialize(sysid::analysis::kSimple);
   RunFullTests();
   AnalyzeJSON();
 }
 
 TEST_F(AnalysisTest, Elevator) {
-  SetUp(sysid::analysis::kElevator);
+  Initialize(sysid::analysis::kElevator);
   RunFullTests();
   AnalyzeJSON();
 }
 
 TEST_F(AnalysisTest, Arm) {
-  SetUp(sysid::analysis::kArm);
+  Initialize(sysid::analysis::kArm);
   RunFullTests();
   AnalyzeJSON();
 }
 
 TEST_F(AnalysisTest, Overflow) {
-  SetUp(sysid::analysis::kDrivetrain);
+  Initialize(sysid::analysis::kDrivetrain);
   RunOverflowTest();
   VerifyOverflow();
 }
