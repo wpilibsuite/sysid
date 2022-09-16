@@ -37,4 +37,5 @@ includeOtherLibs {
   ^wpi/
   ^wpigui
   ^wpimath/
+  ^wpinet/
 }

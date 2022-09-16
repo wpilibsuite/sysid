@@ -10,11 +10,12 @@ jobs:
   wpiformat:
     name: "wpiformat"
     runs-on: ubuntu-latest
-    container: wpilib/roborio-cross-ubuntu:2021-20.04
+    container: wpilib/roborio-cross-ubuntu:2022-20.04
     steps:
       - uses: actions/checkout@v2
       - name: Fetch all history and metadata
         run: |
+          git config --global --add safe.directory /__w/sysid/sysid
           git fetch --prune --unshallow
           git checkout -b pr
           git branch -f main origin/main
@@ -44,11 +45,12 @@ jobs:
   tidy:
     name: "clang-tidy"
     runs-on: ubuntu-latest
-    container: wpilib/roborio-cross-ubuntu:2021-20.04
+    container: wpilib/roborio-cross-ubuntu:2022-20.04
     steps:
       - uses: actions/checkout@v2
       - name: Fetch all history and metadata
         run: |
+          git config --global --add safe.directory /__w/sysid/sysid
           git fetch --prune --unshallow
           git checkout -b pr
           git branch -f main origin/main

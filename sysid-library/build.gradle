@@ -1,22 +1,16 @@
 plugins {
   id "cpp"
-  id "edu.wpi.first.GradleRIO"
 }
 
-// For using remote development artifacts
-// wpi.maven.useLocal = false
-// wpi.maven.useDevelopment = true
-
-wpi.versions.wpilibVersion = '2022.4.1'
-wpi.versions.wpimathVersion = '2022.4.1'
-wpi.versions.niLibrariesVersion = '2022.4.0'
+apply from: "${rootDir}/config.gradle"
+nativeUtils.withCrossRoboRIO()
 
 model {
   components {
     libsysid(NativeLibrarySpec) {
-      targetPlatform wpi.platforms.roborio
+      targetPlatform nativeUtils.wpi.nativePlatforms.roborio
       if (!project.hasProperty("skipDesktopRobots"))
-        targetPlatform wpi.platforms.desktop
+        targetPlatform nativeUtils.wpi.nativePlatforms.desktop
 
       sources.cpp {
         source {
@@ -36,8 +30,8 @@ model {
           it.cppCompiler.define("INTEGRATION")
       }
 
-      wpi.cpp.vendor.cpp(it)
-      wpi.cpp.deps.useLibrary(it, 'wpilib_executable_shared')
+      nativeUtils.wpi.vendorDeps.nativeVendor.cpp(it)
+      nativeUtils.useRequiredLibrary(it, 'wpilib_executable_shared')
     }
   }
 }
