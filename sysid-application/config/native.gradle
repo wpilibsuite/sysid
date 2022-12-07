@@ -33,7 +33,7 @@ nativeUtils {
       targetPlatforms.addAll(nativeUtils.wpi.platforms.desktopPlatforms)
     }
     libssh(getNativeDependencyTypeClass('WPIStaticMavenDependency')) {
-      groupId = "edu.wpi.first.thirdparty.frc2022"
+      groupId = "edu.wpi.first.thirdparty.frc2023"
       artifactId = "libssh"
       headerClassifier = "headers"
       sourceClassifier = "sources"

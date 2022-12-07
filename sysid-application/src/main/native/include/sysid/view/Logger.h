@@ -71,7 +71,6 @@ class Logger : public glass::View {
   std::string m_jsonLocation;
 
   glass::NetworkTablesSettings m_ntSettings;
-  bool m_ntConnected = false;
 
   bool m_isRotationalUnits = false;
 

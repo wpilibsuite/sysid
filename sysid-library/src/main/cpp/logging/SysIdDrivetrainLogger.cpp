@@ -4,6 +4,8 @@
 
 #include "sysid/logging/SysIdDrivetrainLogger.h"
 
+#include <array>
+
 #include <frc/smartdashboard/SmartDashboard.h>
 
 using namespace sysid;
@@ -22,9 +24,9 @@ void SysIdDrivetrainLogger::Log(double leftVoltage, double rightVoltage,
                                 double measuredAngle, double angularRate) {
   UpdateData();
   if (m_data.size() < kDataVectorSize) {
-    std::array<double, 9> arr = {m_timestamp,   leftVoltage,   rightVoltage,
-                                 leftPosition,  rightPosition, leftVelocity,
-                                 rightVelocity, measuredAngle, angularRate};
+    std::array<double, 9> arr{m_timestamp,   leftVoltage,   rightVoltage,
+                              leftPosition,  rightPosition, leftVelocity,
+                              rightVelocity, measuredAngle, angularRate};
     m_data.insert(m_data.end(), arr.cbegin(), arr.cend());
   }
 

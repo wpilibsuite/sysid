@@ -5,18 +5,17 @@
 #include "sysid/telemetry/TelemetryManager.h"
 
 #include <algorithm>
-#include <cctype>
-#include <ctime>
+#include <cctype>  // for ::tolower
+#include <numbers>
 #include <stdexcept>
 #include <string>
 #include <utility>
 
 #include <fmt/chrono.h>
-#include <ntcore_cpp.h>
+#include <networktables/NetworkTableInstance.h>
 #include <wpi/Logger.h>
 #include <wpi/SmallVector.h>
 #include <wpi/StringExtras.h>
-#include <wpi/numbers>
 #include <wpi/raw_ostream.h>
 #include <wpi/timestamp.h>
 
@@ -26,69 +25,39 @@
 using namespace sysid;
 
 TelemetryManager::TelemetryManager(const Settings& settings,
-                                   wpi::Logger& logger, NT_Inst instance)
-    : m_settings(settings),
-      m_logger(logger),
-      m_inst(instance),
-      m_poller(nt::CreateEntryListenerPoller(m_inst)),
-      m_voltageCommand(
-          nt::GetEntry(m_inst, "/SmartDashboard/SysIdVoltageCommand")),
-      m_testType(nt::GetEntry(m_inst, "/SmartDashboard/SysIdTestType")),
-      m_rotate(nt::GetEntry(m_inst, "/SmartDashboard/SysIdRotate")),
-      m_telemetry(nt::GetEntry(m_inst, "/SmartDashboard/SysIdTelemetry")),
-      m_overflow(nt::GetEntry(m_inst, "/SmartDashboard/SysIdOverflow")),
-      m_telemetryOld(nt::GetEntry(m_inst, "/robot/telemetry")),
-      m_mechanism(nt::GetEntry(m_inst, "/SmartDashboard/SysIdTest")),
-      m_mechError(nt::GetEntry(m_inst, "/SmartDashboard/SysIdWrongMech")),
-      m_fieldInfo(nt::GetEntry(m_inst, "/FMSInfo/FMSControlData")),
-      m_ackNumberEntry(nt::GetEntry(m_inst, "/SmartDashboard/SysIdAckNumber")) {
-  // Add listeners for our readable entries.
-  nt::AddPolledEntryListener(m_poller, m_telemetry, kNTFlags);
-  nt::AddPolledEntryListener(m_poller, m_overflow, kNTFlags);
-  nt::AddPolledEntryListener(m_poller, m_mechError, kNTFlags);
-  nt::AddPolledEntryListener(m_poller, m_fieldInfo, kNTFlags);
-  nt::AddPolledEntryListener(m_poller, m_ackNumberEntry, kNTFlags);
-  nt::AddPolledEntryListener(m_poller, m_telemetryOld,
-                             NT_NOTIFY_NEW | NT_NOTIFY_UPDATE);
-}
-
-TelemetryManager::~TelemetryManager() {
-  nt::DestroyEntryListenerPoller(m_poller);
-}
+                                   wpi::Logger& logger,
+                                   nt::NetworkTableInstance instance)
+    : m_settings(settings), m_logger(logger), m_inst(instance) {}
 
 void TelemetryManager::BeginTest(std::string_view name) {
   // Create a new test params instance for this test.
-  m_params = TestParameters{
-      wpi::starts_with(name, "fast"), wpi::ends_with(name, "forward"),
-      m_settings.mechanism == analysis::kDrivetrainAngular,
-      State::WaitingForEnable};
+  m_params =
+      TestParameters{name.starts_with("fast"), name.ends_with("forward"),
+                     m_settings.mechanism == analysis::kDrivetrainAngular,
+                     State::WaitingForEnable};
 
   // Add this test to the list of running tests and set the running flag.
   m_tests.push_back(std::string{name});
   m_isRunningTest = true;
 
   // Set the Voltage Command Entry
-  nt::SetEntryValue(
-      m_voltageCommand,
-      nt::Value::MakeDouble((m_params.fast ? m_settings.stepVoltage
-                                           : m_settings.quasistaticRampRate) *
-                            (m_params.forward ? 1 : -1)));
+  m_voltageCommand.Set((m_params.fast ? m_settings.stepVoltage
+                                      : m_settings.quasistaticRampRate) *
+                       (m_params.forward ? 1 : -1));
 
   // Set the test type
-  nt::SetEntryValue(m_testType, nt::Value::MakeString(
-                                    m_params.fast ? "Dynamic" : "Quasistatic"));
+  m_testType.Set(m_params.fast ? "Dynamic" : "Quasistatic");
 
   // Set the rotate entry
-  nt::SetEntryValue(m_rotate, nt::Value::MakeBoolean(m_params.rotate));
+  m_rotate.Set(m_params.rotate);
 
   // Set the current mechanism in NT.
-  nt::SetEntryValue(m_mechanism,
-                    nt::Value::MakeString(m_settings.mechanism.name));
+  m_mechanism.Set(m_settings.mechanism.name);
   // Set Overflow to False
-  nt::SetEntryValue(m_overflow, nt::Value::MakeBoolean(false));
+  m_overflowPub.Set(false);
   // Set Mechanism Error to False
-  nt::SetEntryValue(m_mechError, nt::Value::MakeBoolean(false));
-  nt::Flush(m_inst);
+  m_mechErrorPub.Set(false);
+  m_inst.Flush();
 
   // Display the warning message.
   for (auto&& func : m_callbacks) {
@@ -131,7 +100,8 @@ void TelemetryManager::EndTest() {
       std::transform(m_settings.units.begin(), m_settings.units.end(),
                      units.begin(), ::tolower);
 
-      if (wpi::starts_with(m_settings.mechanism.name, "Drivetrain")) {
+      if (std::string_view{m_settings.mechanism.name}.starts_with(
+              "Drivetrain")) {
         double p = (m_params.data.back()[3] - m_params.data.front()[3]) *
                    m_settings.unitsPerRotation;
         double s = (m_params.data.back()[4] - m_params.data.front()[4]) *
@@ -141,7 +111,7 @@ void TelemetryManager::EndTest() {
         msg = fmt::format(
             "The left and right encoders traveled {} {} and {} {} "
             "respectively.\nThe gyro angle delta was {} degrees.",
-            p, units, s, units, g * 180.0 / wpi::numbers::pi);
+            p, units, s, units, g * 180.0 / std::numbers::pi);
       } else {
         double p = (m_params.data.back()[2] - m_params.data.front()[2]) *
                    m_settings.unitsPerRotation;
@@ -165,8 +135,8 @@ void TelemetryManager::EndTest() {
   }
 
   // Send a zero command over NT.
-  nt::SetEntryValue(m_voltageCommand, nt::Value::MakeDouble(0.0));
-  nt::Flush(m_inst);
+  m_voltageCommand.Set(0.0);
+  m_inst.Flush();
 }
 
 void TelemetryManager::Update() {
@@ -176,42 +146,29 @@ void TelemetryManager::Update() {
   }
 
   // Update the NT entries that we're reading.
-  bool timedOut = false;
-  int currAckNumber = 0;
 
-  if (nt::GetEntryValue(m_ackNumberEntry)->IsDouble()) {
-    currAckNumber = nt::GetEntryValue(m_ackNumberEntry)->GetDouble();
-  }
+  int currAckNumber = m_ackNumberSub.Get();
   std::string telemetryValue;
-  for (auto&& event : nt::PollEntryListener(m_poller, 0, &timedOut)) {
-    // Get the FMS Control Word.
-    if (event.entry == m_fieldInfo && event.value && event.value->IsDouble()) {
-      uint32_t ctrl = event.value->GetDouble();
-      m_params.enabled = ctrl & 0x01;
-    }
-    // Get the string in the data field.
-    if (event.entry == m_telemetry && event.value && event.value->IsString()) {
-      telemetryValue = event.value->GetString();
-    }
-    // Get the overflow flag
-    if (event.entry == m_overflow && event.value && event.value->IsBoolean()) {
-      m_params.overflow = event.value->GetBoolean();
-    }
-    // Get the mechanism error flag
-    if (event.entry == m_mechError && event.value && event.value->IsBoolean()) {
-      m_params.mechError = event.value->GetBoolean();
-    }
 
-    // Check if we got frc-characterization data.
-    if (event.entry == m_telemetryOld) {
-      for (auto&& func : m_callbacks) {
-        func(
-            "Detected data over frc-characterization NT entry.\nPlease ensure "
-            "that you are sending data over the sysid NT entries as described "
-            "in the documentation.");
-        EndTest();
-      }
-    }
+  // Get the FMS Control Word.
+  for (auto tsValue : m_fmsControlData.ReadQueue()) {
+    uint32_t ctrl = tsValue.value;
+    m_params.enabled = ctrl & 0x01;
+  }
+
+  // Get the string in the data field.
+  for (auto tsValue : m_telemetry.ReadQueue()) {
+    telemetryValue = tsValue.value;
+  }
+
+  // Get the overflow flag
+  for (auto tsValue : m_overflowSub.ReadQueue()) {
+    m_params.overflow = tsValue.value;
+  }
+
+  // Get the mechanism error flag
+  for (auto tsValue : m_mechErrorSub.ReadQueue()) {
+    m_params.mechError = tsValue.value;
   }
 
   // Go through our state machine.
@@ -226,7 +183,7 @@ void TelemetryManager::Update() {
 
   if (m_params.state == State::RunningTest) {
     // If for some reason we've disconnected, end the test.
-    if (!nt::IsConnected(m_inst)) {
+    if (!m_inst.IsConnected()) {
       WPI_WARNING(m_logger, "{}",
                   "NT connection was dropped when executing the test. The test "
                   "has been canceled.");
@@ -243,8 +200,8 @@ void TelemetryManager::Update() {
 
   if (m_params.state == State::WaitingForData) {
     double now = wpi::Now() * 1E-6;
-    nt::SetEntryValue(m_voltageCommand, nt::Value::MakeDouble(0.0));
-    nt::Flush(m_inst);
+    m_voltageCommand.Set(0.0);
+    m_inst.Flush();
 
     // Process valid data
     if (!telemetryValue.empty() && m_ackNumber < currAckNumber) {
@@ -288,7 +245,7 @@ void TelemetryManager::Update() {
                "Received data with size: {} for the {} test in {} seconds.",
                m_params.data.size(), m_tests.back(),
                m_params.data.back()[0] - m_params.data.front()[0]);
-      nt::SetEntryValue(m_ackNumberEntry, nt::Value::MakeDouble(++m_ackNumber));
+      m_ackNumberPub.Set(++m_ackNumber);
       EndTest();
     }
 
@@ -309,7 +266,7 @@ std::string TelemetryManager::SaveJSON(std::string_view location) {
   m_data["sysid"] = true;
 
   std::string loc = fmt::format("{}/sysid_data{:%Y%m%d-%H%M%S}.json", location,
-                                fmt::localtime(std::time(nullptr)));
+                                std::chrono::system_clock::now());
 
   sysid::SaveFile(m_data.dump(2), fs::path{loc});
   WPI_INFO(m_logger, "Wrote JSON to: {}", loc);

@@ -5,6 +5,7 @@
 #include "sysid/analysis/FilteringUtils.h"
 
 #include <limits>
+#include <numbers>
 #include <numeric>
 #include <stdexcept>
 #include <vector>
@@ -14,7 +15,6 @@
 #include <frc/filter/MedianFilter.h>
 #include <units/math.h>
 #include <wpi/StringExtras.h>
-#include <wpi/numbers>
 
 using namespace sysid;
 
@@ -81,11 +81,11 @@ static void PrepareMechData(std::vector<PreparedData>* data,
       cos = std::cos(pt.position);
       sin = std::sin(pt.position);
     } else if (unit == "Degrees") {
-      cos = std::cos(pt.position * wpi::numbers::pi / 180.0);
-      sin = std::sin(pt.position * wpi::numbers::pi / 180.0);
+      cos = std::cos(pt.position * std::numbers::pi / 180.0);
+      sin = std::sin(pt.position * std::numbers::pi / 180.0);
     } else if (unit == "Rotations") {
-      cos = std::cos(pt.position * 2 * wpi::numbers::pi);
-      sin = std::sin(pt.position * 2 * wpi::numbers::pi);
+      cos = std::cos(pt.position * 2 * std::numbers::pi);
+      sin = std::sin(pt.position * 2 * std::numbers::pi);
     }
     pt.cos = cos;
     pt.sin = sin;

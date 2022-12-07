@@ -4,6 +4,8 @@
 
 #include "sysid/logging/SysIdGeneralMechanismLogger.h"
 
+#include <array>
+
 #include <frc/smartdashboard/SmartDashboard.h>
 
 using namespace sysid;
@@ -16,8 +18,8 @@ void SysIdGeneralMechanismLogger::Log(double voltage, double measuredPosition,
                                       double measuredVelocity) {
   UpdateData();
   if (m_data.size() < kDataVectorSize) {
-    std::array<double, 4> arr = {m_timestamp, voltage, measuredPosition,
-                                 measuredVelocity};
+    std::array<double, 4> arr{m_timestamp, voltage, measuredPosition,
+                              measuredVelocity};
     m_data.insert(m_data.end(), arr.cbegin(), arr.cend());
   }
 
