@@ -13,11 +13,11 @@ jobs:
       matrix:
         include:
           - os: windows-2022
-            artifact-name: Windows x86-64
+            artifact-name: Win64
             test-type: Analysis
           # Windows generation test hangs
           #- os: windows-2022
-          #  artifact-name: Windows x86-64
+          #  artifact-name: Win64
           #  test-type: Generation
           - os: ubuntu-22.04
             artifact-name: Linux
