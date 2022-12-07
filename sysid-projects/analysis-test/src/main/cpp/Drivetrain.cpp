@@ -4,6 +4,8 @@
 
 #include "Drivetrain.h"
 
+#include <numbers>
+
 #include <frc/RobotController.h>
 
 void Drivetrain::SetSpeeds(const frc::DifferentialDriveWheelSpeeds& speeds) {
@@ -33,7 +35,7 @@ void Drivetrain::ResetOdometry(const frc::Pose2d& pose) {
   m_leftEncoder.Reset();
   m_rightEncoder.Reset();
   m_drivetrainSimulator.SetPose(pose);
-  m_odometry.ResetPosition(pose, m_gyro.GetRotation2d());
+  m_odometry.ResetPosition(m_gyro.GetRotation2d(), 0_m, 0_m, pose);
 }
 
 void Drivetrain::SimulationPeriodic() {
@@ -53,9 +55,25 @@ void Drivetrain::SimulationPeriodic() {
       m_drivetrainSimulator.GetRightPosition().value());
   m_rightEncoderSim.SetRate(m_drivetrainSimulator.GetRightVelocity().value());
 
-  frc::Rotation2d angle = m_drivetrainSimulator.GetHeading();
+  units::degree_t heading = m_drivetrainSimulator.GetHeading().Degrees();
 
-  m_gyroSim.SetAngle(-angle.Degrees().value());
+  // If heading jumped down more than pi, the angle wrapped CCW, so increment
+  // the counter.
+  if (heading - m_prevHeading < units::radian_t{-std::numbers::pi}) {
+    ++m_angleWraps;
+  }
+
+  // If heading jumped up more than pi, the angle wrapped CW, so decrement the
+  // counter.
+  if (heading - m_prevHeading > units::radian_t{std::numbers::pi}) {
+    --m_angleWraps;
+  }
+
+  m_prevHeading = heading;
+
+  m_gyroSim.SetAngle(-units::degree_t{
+      heading + m_angleWraps * units::radian_t{2.0 * std::numbers::pi}}
+                          .value());
   m_gyroSim.SetRate((m_drivetrainSimulator.GetRightVelocity().value() -
                      m_drivetrainSimulator.GetLeftVelocity().value()) /
                     Constants::Drivetrain::kTrackWidth.value());

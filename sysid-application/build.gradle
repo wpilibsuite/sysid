@@ -13,7 +13,7 @@ if (OperatingSystem.current().isWindows())
   apply plugin: "windows-resources"
 
 ext {
-  libsshVersion = "0.95-1"
+  libsshVersion = "0.95-6"
 }
 
 // Apply NativeUtils configuration.

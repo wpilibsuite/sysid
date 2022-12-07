@@ -5,7 +5,7 @@ This is the C++ version of [frc-characterization](https://github.com/wpilibsuite
 
 ## Supported Vendor Hardware
 
-This is a list of the vendors that are currently supported by SysId for 2022:
+This is a list of the vendors that are currently supported by SysId for 2023:
 
 ### Vendors
 

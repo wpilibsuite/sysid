@@ -21,9 +21,9 @@
 
 #include "sysid/logging/SysIdGeneralMechanismLogger.h"
 
-class Robot : public frc::TimedRobot {
+class MechanismRobot : public frc::TimedRobot {
  public:
-  Robot();
+  MechanismRobot();
   void RobotInit() override;
   void RobotPeriodic() override;
   void AutonomousInit() override;

@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <exception>
+#include <numbers>
 #include <thread>
 
 #include <fmt/core.h>
@@ -16,7 +17,6 @@
 #include <imgui_stdlib.h>
 #include <wpi/fs.h>
 #include <wpi/json.h>
-#include <wpi/numbers>
 
 #include "sysid/Util.h"
 #include "sysid/analysis/AnalysisManager.h"
@@ -199,7 +199,7 @@ bool Analyzer::DisplayResetAndUnitOverride() {
     if (unit == "Degrees") {
       m_conversionFactor = 360.0;
     } else if (unit == "Radians") {
-      m_conversionFactor = 2 * wpi::numbers::pi;
+      m_conversionFactor = 2 * std::numbers::pi;
     } else if (unit == "Rotations") {
       m_conversionFactor = 1.0;
     }
@@ -612,9 +612,9 @@ void Analyzer::DisplayFeedforwardGains(float beginX, float beginY) {
     if (unit == "Radians") {
       offset = m_ff[4];
     } else if (unit == "Degrees") {
-      offset = m_ff[4] / wpi::numbers::pi * 180.0;
+      offset = m_ff[4] / std::numbers::pi * 180.0;
     } else if (unit == "Rotations") {
-      offset = m_ff[4] / (2 * wpi::numbers::pi);
+      offset = m_ff[4] / (2 * std::numbers::pi);
     }
     DisplayGain(
         fmt::format("Angle offset to horizontal ({})", GetAbbreviation(unit))

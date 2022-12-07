@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <numbers>
+
 #include <frc/AnalogGyro.h>
 #include <frc/Encoder.h>
 #include <frc/controller/PIDController.h>
@@ -22,7 +24,6 @@
 #include <units/angular_velocity.h>
 #include <units/length.h>
 #include <units/velocity.h>
-#include <wpi/numbers>
 
 #include "Constants.h"
 #include "interface/SysIdDrivetrain.h"
@@ -38,10 +39,10 @@ class Drivetrain : public SysIdDrivetrain {
     // distance traveled for one rotation of the wheel divided by the encoder
     // resolution.
     m_leftEncoder.SetDistancePerPulse(
-        2 * wpi::numbers::pi * Constants::Drivetrain::kWheelRadius /
+        2 * std::numbers::pi * Constants::Drivetrain::kWheelRadius /
         Constants::Drivetrain::kEncoderResolution);
     m_rightEncoder.SetDistancePerPulse(
-        2 * wpi::numbers::pi * Constants::Drivetrain::kWheelRadius /
+        2 * std::numbers::pi * Constants::Drivetrain::kWheelRadius /
         Constants::Drivetrain::kEncoderResolution);
 
     m_leftEncoder.Reset();
@@ -53,7 +54,7 @@ class Drivetrain : public SysIdDrivetrain {
   static constexpr units::meters_per_second_t kMaxSpeed =
       3.0_mps;  // 3 meters per second
   static constexpr units::radians_per_second_t kMaxAngularSpeed{
-      wpi::numbers::pi};  // 1/2 rotation per second
+      std::numbers::pi};  // 1/2 rotation per second
 
   void SetSpeeds(const frc::DifferentialDriveWheelSpeeds& speeds);
   void Drive(units::meters_per_second_t xSpeed,
@@ -104,10 +105,12 @@ class Drivetrain : public SysIdDrivetrain {
   frc2::PIDController m_rightPIDController{8.5, 0.0, 0.0};
 
   frc::AnalogGyro m_gyro{Constants::Drivetrain::kGyroPort};
+  units::degree_t m_prevHeading = 0_deg;
+  int m_angleWraps = 0;
 
   frc::DifferentialDriveKinematics m_kinematics{
       Constants::Drivetrain::kTrackWidth};
-  frc::DifferentialDriveOdometry m_odometry{m_gyro.GetRotation2d()};
+  frc::DifferentialDriveOdometry m_odometry{m_gyro.GetRotation2d(), 0_m, 0_m};
 
   // Gains are for example purposes only - must be determined for your own
   // robot!

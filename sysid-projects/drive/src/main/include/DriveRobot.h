@@ -23,9 +23,9 @@
 
 #include "sysid/logging/SysIdDrivetrainLogger.h"
 
-class Robot : public frc::TimedRobot {
+class DriveRobot : public frc::TimedRobot {
  public:
-  Robot();
+  DriveRobot();
   void RobotInit() override;
   void RobotPeriodic() override;
   void AutonomousInit() override;

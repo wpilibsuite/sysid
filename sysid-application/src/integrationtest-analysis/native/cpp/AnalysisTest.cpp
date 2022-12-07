@@ -8,14 +8,13 @@
 #include <thread>
 
 #include <fmt/core.h>
-#include <ntcore_c.h>
-#include <ntcore_cpp.h>
+#include <networktables/BooleanTopic.h>
+#include <networktables/NetworkTableInstance.h>
 #include <wpi/Logger.h>
 #include <wpi/timestamp.h>
 
 #include "IntegrationUtils.h"
 #include "gtest/gtest.h"
-#include "networktables/NetworkTableValue.h"
 #include "sysid/Util.h"
 #include "sysid/analysis/AnalysisManager.h"
 #include "sysid/analysis/AnalysisType.h"
@@ -35,8 +34,8 @@ constexpr size_t kMaxDataSize = 4000;
 
 // Calculated by finding the voltage required to hold the arm horizontal in the
 // simulation program.
-constexpr double kCos = .250;
-constexpr double kG = .002;
+constexpr double kCos = 0.250;
+constexpr double kG = 0.002;
 
 // Create our test fixture class so we can reuse the same logic for various test
 // mechanisms.
@@ -46,10 +45,14 @@ class AnalysisTest : public ::testing::Test {
                                            "fast-forward", "fast-backward"};
 
   static void SetUpTestSuite() {
-    m_nt = nt::GetDefaultInstance();
-    m_enable = nt::GetEntry(m_nt, "/SmartDashboard/SysIdRun");
-    m_kill = nt::GetEntry(m_nt, "/SmartDashboard/SysIdKill");
-    m_overflow = nt::GetEntry(m_nt, "/SmartDashboard/SysIdOverflow");
+    m_nt = nt::NetworkTableInstance::GetDefault();
+    m_enable =
+        m_nt.GetTable("SmartDashboard")->GetBooleanTopic("SysIdRun").Publish();
+    m_kill =
+        m_nt.GetTable("SmartDashboard")->GetBooleanTopic("SysIdKill").Publish();
+    m_overflow = m_nt.GetTable("SmartDashboard")
+                     ->GetBooleanTopic("SysIdOverflow")
+                     .Subscribe(false);
 
     // Setup logger.
     m_logger.SetLogger([](unsigned int level, const char* file,
@@ -148,9 +151,7 @@ class AnalysisTest : public ::testing::Test {
   }
 
   void VerifyOverflow() {
-    // Make sure overflow is true
-    auto overflow = nt::GetEntryValue(m_overflow);
-    ASSERT_TRUE(overflow->IsBoolean() && overflow->GetBoolean());
+    ASSERT_TRUE(m_overflow.Get());
 
     // Make sure the sent data isn't too large
     ASSERT_TRUE(m_manager->GetCurrentDataSize() <= kMaxDataSize);
@@ -164,28 +165,26 @@ class AnalysisTest : public ::testing::Test {
     m_manager->BeginTest(test);
 
     // Enable the robot.
-    nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(true));
+    m_enable.Set(true);
     fmt::print(stderr, "Running: {}\n", test);
 
-    // Make sure overflow is false
-    auto overflow = nt::GetEntryValue(m_overflow);
-    ASSERT_TRUE(overflow->IsBoolean() && !overflow->GetBoolean());
+    ASSERT_FALSE(m_overflow.Get());
 
     // Start the test and let it run for specified duration.
     auto start = wpi::Now() * 1E-6;
     while (wpi::Now() * 1E-6 - start < duration) {
       m_manager->Update();
-      std::this_thread::sleep_for(0.005s);
-      nt::Flush(m_nt);
+      std::this_thread::sleep_for(5ms);
+      m_nt.Flush();
     }
 
     // Wait at least one second while the mechanism stops.
     start = wpi::Now() * 1E-6;
     while (m_manager->IsActive() || wpi::Now() * 1E-6 - start < 1) {
-      nt::SetEntryValue(m_enable, nt::Value::MakeBoolean(false));
+      m_enable.Set(false);
       m_manager->Update();
-      std::this_thread::sleep_for(0.005s);
-      nt::Flush(m_nt);
+      std::this_thread::sleep_for(5ms);
+      m_nt.Flush();
     }
   }
 
@@ -203,28 +202,17 @@ class AnalysisTest : public ::testing::Test {
   }
 
  private:
-  static NT_Inst m_nt;
+  static inline nt::NetworkTableInstance m_nt;
 
-  static NT_Entry m_enable;
-  static NT_Entry m_kill;
-  static NT_Entry m_overflow;
+  static inline nt::BooleanPublisher m_enable;
+  static inline nt::BooleanPublisher m_kill;
+  static inline nt::BooleanSubscriber m_overflow;
 
-  static std::unique_ptr<sysid::TelemetryManager> m_manager;
-  static sysid::TelemetryManager::Settings m_settings;
+  static inline std::unique_ptr<sysid::TelemetryManager> m_manager;
+  static inline sysid::TelemetryManager::Settings m_settings;
 
-  static wpi::Logger m_logger;
+  static inline wpi::Logger m_logger;
 };
-
-NT_Inst AnalysisTest::m_nt;
-
-NT_Entry AnalysisTest::m_enable;
-NT_Entry AnalysisTest::m_kill;
-NT_Entry AnalysisTest::m_overflow;
-
-std::unique_ptr<sysid::TelemetryManager> AnalysisTest::m_manager;
-sysid::TelemetryManager::Settings AnalysisTest::m_settings;
-
-wpi::Logger AnalysisTest::m_logger;
 
 TEST_F(AnalysisTest, Drivetrain) {
   Initialize(sysid::analysis::kDrivetrain);
