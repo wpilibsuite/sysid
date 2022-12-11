@@ -43,7 +43,7 @@ template <size_t S, size_t Timestamp, size_t Voltage, size_t Position,
 static std::vector<PreparedData> ConvertToPrepared(
     const std::vector<std::array<double, S>>& data) {
   std::vector<PreparedData> prepared;
-  for (int i = 0; i < data.size() - 1; i++) {
+  for (size_t i = 0; i < data.size() - 1; i++) {
     const auto& pt1 = data[i];
     const auto& pt2 = data[i + 1];
     prepared.emplace_back(PreparedData{
@@ -65,7 +65,6 @@ static std::vector<PreparedData> ConvertToPrepared(
 template <size_t S>
 static void CopyRawData(
     wpi::StringMap<std::vector<std::array<double, S>>>* dataset) {
-  using Data = std::array<double, S>;
   auto& data = *dataset;
   // Loads the Raw Data
   for (auto& it : data) {
@@ -92,37 +91,7 @@ static Storage CombineDatasets(const std::vector<PreparedData>& forward,
   return Storage{forward, backward};
 }
 
-/**
- * Prepares data for general mechanisms (i.e. not drivetrain) and stores them
- * in the analysis manager dataset.
- *
- * @param json     A reference to the JSON containing all of the collected
- *                 data.
- * @param settings A reference to the settings being used by the analysis
- *                 manager instance.
- * @param factor   The units per rotation to multiply positions and velocities
- *                 by.
- * @param unit The name of the unit being used
- * @param originalDataset A reference to the String Map storing the original
- *                         datasets (won't be touched in the filtering process)
- * @param rawDataset A reference to the String Map storing the raw datasets
- * @param filteredDataset A reference to the String Map storing the filtered
- *                         datasets
- * @param startTimes A reference to an array containing the start times for the
- *                   4 different tests
- * @param minStepTime A reference to the minimum duration of the step test as
- *                    one of the trimming procedures will remove this amount
- *                    from the start of the test.
- * @param maxStepTime A reference to the maximum duration of the step test
- *                    mainly for use in the GUI
- * @param logger A reference to a logger to help with debugging
- */
-static void PrepareGeneralData(
-    const wpi::json& json, AnalysisManager::Settings& settings, double factor,
-    std::string_view unit, std::array<Storage, 3>& originalDataset,
-    std::array<Storage, 3>& rawDataset, std::array<Storage, 3>& filteredDataset,
-    std::array<units::second_t, 4>& startTimes, units::second_t& minStepTime,
-    units::second_t& maxStepTime, wpi::Logger& logger) {
+void AnalysisManager::PrepareGeneralData() {
   using Data = std::array<double, 4>;
   wpi::StringMap<std::vector<Data>> data;
   wpi::StringMap<std::vector<PreparedData>> preparedData;
@@ -133,27 +102,27 @@ static void PrepareGeneralData(
   static constexpr size_t kPosCol = 2;
   static constexpr size_t kVelCol = 3;
 
-  WPI_INFO(logger, "{}", "Reading JSON data.");
+  WPI_INFO(m_logger, "{}", "Reading JSON data.");
   // Get the major components from the JSON and store them inside a StringMap.
   for (auto&& key : AnalysisManager::kJsonDataKeys) {
-    data[key] = json.at(key).get<std::vector<Data>>();
+    data[key] = m_json.at(key).get<std::vector<Data>>();
   }
 
-  WPI_INFO(logger, "{}", "Preprocessing raw data.");
+  WPI_INFO(m_logger, "{}", "Preprocessing raw data.");
   // Ensure that voltage and velocity have the same sign. Also multiply
   // positions and velocities by the factor.
   for (auto it = data.begin(); it != data.end(); ++it) {
     for (auto&& pt : it->second) {
       pt[kVoltageCol] = std::copysign(pt[kVoltageCol], pt[kVelCol]);
-      pt[kPosCol] *= factor;
-      pt[kVelCol] *= factor;
+      pt[kPosCol] *= m_factor;
+      pt[kVelCol] *= m_factor;
     }
   }
 
-  WPI_INFO(logger, "{}", "Copying raw data.");
+  WPI_INFO(m_logger, "{}", "Copying raw data.");
   CopyRawData(&data);
 
-  WPI_INFO(logger, "{}", "Converting raw data to PreparedData struct.");
+  WPI_INFO(m_logger, "{}", "Converting raw data to PreparedData struct.");
   // Convert data to PreparedData structs
   for (auto& it : data) {
     auto key = it.first();
@@ -163,66 +132,36 @@ static void PrepareGeneralData(
   }
 
   // Store the original datasets
-  originalDataset[static_cast<int>(
+  m_originalDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
       CombineDatasets(preparedData["original-raw-forward"],
                       preparedData["original-raw-backward"]);
 
-  WPI_INFO(logger, "{}", "Initial trimming and filtering.");
-  sysid::InitialTrimAndFilter(&preparedData, &settings, minStepTime,
-                              maxStepTime, unit);
+  WPI_INFO(m_logger, "{}", "Initial trimming and filtering.");
+  sysid::InitialTrimAndFilter(&preparedData, &m_settings, m_positionDelays,
+                              m_velocityDelays, m_minStepTime, m_maxStepTime,
+                              m_unit);
 
-  WPI_INFO(logger, "{}", "Acceleration filtering.");
+  WPI_INFO(m_logger, "{}", "Acceleration filtering.");
   sysid::AccelFilter(&preparedData);
 
-  WPI_INFO(logger, "{}", "Storing datasets.");
+  WPI_INFO(m_logger, "{}", "Storing datasets.");
   // Store the raw datasets
-  rawDataset[static_cast<int>(
+  m_rawDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
       CombineDatasets(preparedData["raw-forward"],
                       preparedData["raw-backward"]);
 
   // Store the filtered datasets
-  filteredDataset[static_cast<int>(
+  m_filteredDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
       CombineDatasets(preparedData["forward"], preparedData["backward"]);
 
-  startTimes = {preparedData["raw-forward"][0].timestamp,
-                preparedData["raw-backward"][0].timestamp};
+  m_startTimes = {preparedData["raw-forward"][0].timestamp,
+                  preparedData["raw-backward"][0].timestamp};
 }
 
-/**
- * Prepares data for angular drivetrain test data and stores them in
- * the analysis manager dataset.
- *
- * @param json       A reference to the JSON containing all of the collected
- *                   data.
- * @param settings   A reference to the settings being used by the analysis
- *                   manager instance.
- * @param factor     The units per rotation to multiply positions and velocities
- *                   by.
- * @param trackWidth A reference to the std::optional where the track width will
- *                   be stored.
- * @param originalDataset A reference to the String Map storing the original
- *                         datasets (won't be touched in the filtering process)
- * @param rawDataset A reference to the String Map storing the raw datasets
- * @param filteredDataset A reference to the String Map storing the filtered
- *                         datasets
- * @param startTimes A reference to an array containing the start times for the
- *                   4 different tests
- * @param minStepTime A reference to the minimum duration of the step test as
- *                    one of the trimming procedures will remove this amount
- *                    from the start of the test.
- * @param maxStepTime A reference to the maximum duration of the step test
- *                    mainly for use in the GUI
- * @param logger A reference to a logger to help with debugging
- */
-static void PrepareAngularDrivetrainData(
-    const wpi::json& json, AnalysisManager::Settings& settings, double factor,
-    std::optional<double>& trackWidth, std::array<Storage, 3>& originalDataset,
-    std::array<Storage, 3>& rawDataset, std::array<Storage, 3>& filteredDataset,
-    std::array<units::second_t, 4>& startTimes, units::second_t& minStepTime,
-    units::second_t& maxStepTime, wpi::Logger& logger) {
+void AnalysisManager::PrepareAngularDrivetrainData() {
   using Data = std::array<double, 9>;
   wpi::StringMap<std::vector<Data>> data;
   wpi::StringMap<std::vector<PreparedData>> preparedData;
@@ -233,32 +172,50 @@ static void PrepareAngularDrivetrainData(
   static constexpr size_t kRVoltageCol = 2;
   static constexpr size_t kLPosCol = 3;
   static constexpr size_t kRPosCol = 4;
+  static constexpr size_t kLVelCol = 5;
+  static constexpr size_t kRVelCol = 6;
   static constexpr size_t kAngleCol = 7;
   static constexpr size_t kAngularRateCol = 8;
 
-  WPI_INFO(logger, "{}", "Reading JSON data.");
+  WPI_INFO(m_logger, "{}", "Reading JSON data.");
   // Get the major components from the JSON and store them inside a StringMap.
   for (auto&& key : AnalysisManager::kJsonDataKeys) {
-    data[key] = json.at(key).get<std::vector<Data>>();
+    data[key] = m_json.at(key).get<std::vector<Data>>();
   }
 
-  WPI_INFO(logger, "{}", "Preprocessing raw data.");
+  WPI_INFO(m_logger, "{}", "Preprocessing raw data.");
   // Ensure that voltage and velocity have the same sign. Also multiply
   // positions and velocities by the factor.
   for (auto it = data.begin(); it != data.end(); ++it) {
     for (auto&& pt : it->second) {
-      pt[kLPosCol] *= factor;
-      pt[kRPosCol] *= factor;
+      pt[kLPosCol] *= m_factor;
+      pt[kRPosCol] *= m_factor;
+      pt[kLVelCol] *= m_factor;
+      pt[kRVelCol] *= m_factor;
 
-      // Store the summarized average voltages in the left voltage column
-      pt[kLVoltageCol] =
-          (std::copysign(pt[kLVoltageCol], pt[kAngularRateCol]) +
-           std::copysign(pt[kRVoltageCol], pt[kAngularRateCol])) /
-          2;
+      // Stores the average voltages in the left voltage column.
+      // This aggregates the left and right voltages into a single voltage
+      // column for the ConvertToPrepared() method. std::copysign() ensures the
+      // polarity of the voltage matches the direction the robot turns.
+      pt[kLVoltageCol] = std::copysign(
+          (std::abs(pt[kLVoltageCol]) + std::abs(pt[kRVoltageCol])) / 2,
+          pt[kAngularRateCol]);
+
+      // ω = (v_r - v_l) / trackwidth
+      // v = ωr => v = ω * trackwidth / 2
+      // (v_r - v_l) / trackwidth * (trackwidth / 2) = (v_r - v_l) / 2
+      // However, since we know this is an angular test, the left and right
+      // wheel velocities will have opposite signs, allowing us to add their
+      // absolute values and get the same result (in terms of magnitude).
+      // std::copysign() is used to make sure the direction of the wheel
+      // velocities matches the direction the robot turns.
+      pt[kAngularRateCol] =
+          std::copysign((std::abs(pt[kRVelCol]) + std::abs(pt[kLVelCol])) / 2,
+                        pt[kAngularRateCol]);
     }
   }
 
-  WPI_INFO(logger, "{}", "Calculating trackwidth");
+  WPI_INFO(m_logger, "{}", "Calculating trackwidth");
   // Aggregating all the deltas from all the tests
   double leftDelta = 0.0;
   double rightDelta = 0.0;
@@ -273,13 +230,13 @@ static void PrepareAngularDrivetrainData(
     angleDelta += std::abs(trackWidthData.back()[kAngleCol] -
                            trackWidthData.front()[kAngleCol]);
   }
-  trackWidth = sysid::CalculateTrackWidth(leftDelta, rightDelta,
-                                          units::radian_t{angleDelta});
+  m_trackWidth = sysid::CalculateTrackWidth(leftDelta, rightDelta,
+                                            units::radian_t{angleDelta});
 
-  WPI_INFO(logger, "{}", "Copying raw data.");
+  WPI_INFO(m_logger, "{}", "Copying raw data.");
   CopyRawData(&data);
 
-  WPI_INFO(logger, "{}", "Converting to PreparedData struct.");
+  WPI_INFO(m_logger, "{}", "Converting to PreparedData struct.");
   // Convert raw data to prepared data
   for (const auto& it : data) {
     auto key = it.first();
@@ -287,77 +244,34 @@ static void PrepareAngularDrivetrainData(
                                           kAngularRateCol>(data[key]);
   }
 
-  // To convert the angular rates into translational velocities (to work with
-  // the model + OLS), v = ωr => v = ω * trackwidth / 2
-  double translationalFactor = trackWidth.value() / 2.0;
-
-  // Scale Angular Rate Data
-  for (auto& it : preparedData) {
-    auto& dataset = it.getValue();
-
-    for (auto& pt : dataset) {
-      pt.velocity *= translationalFactor;
-      pt.acceleration *= translationalFactor;
-    }
-  }
-
   // Create the distinct datasets and store them
-  originalDataset[static_cast<int>(
+  m_originalDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
       CombineDatasets(preparedData["original-raw-forward"],
                       preparedData["original-raw-backward"]);
 
-  WPI_INFO(logger, "{}", "Applying trimming and filtering.");
-  sysid::InitialTrimAndFilter(&preparedData, &settings, minStepTime,
-                              maxStepTime);
+  WPI_INFO(m_logger, "{}", "Applying trimming and filtering.");
+  sysid::InitialTrimAndFilter(&preparedData, &m_settings, m_positionDelays,
+                              m_velocityDelays, m_minStepTime, m_maxStepTime);
 
-  WPI_INFO(logger, "{}", "Acceleration filtering.");
+  WPI_INFO(m_logger, "{}", "Acceleration filtering.");
   sysid::AccelFilter(&preparedData);
 
-  WPI_INFO(logger, "{}", "Storing datasets.");
+  WPI_INFO(m_logger, "{}", "Storing datasets.");
   // Create the distinct datasets and store them
-  rawDataset[static_cast<int>(
+  m_rawDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
       CombineDatasets(preparedData["raw-forward"],
                       preparedData["raw-backward"]);
-  filteredDataset[static_cast<int>(
+  m_filteredDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
       CombineDatasets(preparedData["forward"], preparedData["backward"]);
 
-  startTimes = {preparedData["forward"][0].timestamp,
-                preparedData["backward"][0].timestamp};
+  m_startTimes = {preparedData["forward"][0].timestamp,
+                  preparedData["backward"][0].timestamp};
 }
 
-/**
- * Prepares data for linear drivetrain test data and stores them in
- * the analysis manager dataset.
- *
- * @param json     A reference to the JSON containing all of the collected
- *                 data.
- * @param settings A reference to the settings being used by the analysis
- *                 manager instance.
- * @param factor   The units per rotation to multiply positions and velocities
- *                 by.
- * @param originalDataset A reference to the String Map storing the original
- *                         datasets (won't be touched in the filtering process)
- * @param rawDataset A reference to the String Map storing the raw datasets
- * @param filteredDataset A reference to the String Map storing the filtered
- *                         datasets
- * @param startTimes A reference to an array containing the start times for the
- *                   4 different tests
- * @param minStepTime A reference to the minimum duration of the step test as
- *                    one of the trimming procedures will remove this amount
- *                    from the start of the test.
- * @param maxStepTime A reference to the maximum duration of the step test
- *                    mainly for use in the GUI
- * @param logger A reference to a logger to help with debugging
- */
-static void PrepareLinearDrivetrainData(
-    const wpi::json& json, AnalysisManager::Settings& settings, double factor,
-    std::array<Storage, 3>& originalDataset, std::array<Storage, 3>& rawDataset,
-    std::array<Storage, 3>& filteredDataset,
-    std::array<units::second_t, 4>& startTimes, units::second_t& minStepTime,
-    units::second_t& maxStepTime, wpi::Logger& logger) {
+void AnalysisManager::PrepareLinearDrivetrainData() {
   using Data = std::array<double, 9>;
   wpi::StringMap<std::vector<Data>> data;
   wpi::StringMap<std::vector<PreparedData>> preparedData;
@@ -372,30 +286,30 @@ static void PrepareLinearDrivetrainData(
   static constexpr size_t kRVelCol = 6;
 
   // Get the major components from the JSON and store them inside a StringMap.
-  WPI_INFO(logger, "{}", "Reading JSON data.");
+  WPI_INFO(m_logger, "{}", "Reading JSON data.");
   for (auto&& key : AnalysisManager::kJsonDataKeys) {
-    data[key] = json.at(key).get<std::vector<Data>>();
+    data[key] = m_json.at(key).get<std::vector<Data>>();
   }
 
   // Ensure that voltage and velocity have the same sign. Also multiply
   // positions and velocities by the factor.
-  WPI_INFO(logger, "{}", "Preprocessing raw data.");
+  WPI_INFO(m_logger, "{}", "Preprocessing raw data.");
   for (auto it = data.begin(); it != data.end(); ++it) {
     for (auto&& pt : it->second) {
       pt[kLVoltageCol] = std::copysign(pt[kLVoltageCol], pt[kLVelCol]);
       pt[kRVoltageCol] = std::copysign(pt[kRVoltageCol], pt[kRVelCol]);
-      pt[kLPosCol] *= factor;
-      pt[kRPosCol] *= factor;
-      pt[kLVelCol] *= factor;
-      pt[kRVelCol] *= factor;
+      pt[kLPosCol] *= m_factor;
+      pt[kRPosCol] *= m_factor;
+      pt[kLVelCol] *= m_factor;
+      pt[kRVelCol] *= m_factor;
     }
   }
 
-  WPI_INFO(logger, "{}", "Copying raw data.");
+  WPI_INFO(m_logger, "{}", "Copying raw data.");
   CopyRawData(&data);
 
   // Convert data to PreparedData
-  WPI_INFO(logger, "{}", "Converting to PreparedData struct.");
+  WPI_INFO(m_logger, "{}", "Converting to PreparedData struct.");
   for (auto& it : data) {
     auto key = it.first();
 
@@ -414,31 +328,31 @@ static void PrepareLinearDrivetrainData(
   auto originalBackward =
       AnalysisManager::DataConcat(preparedData["left-original-raw-backward"],
                                   preparedData["right-original-raw-backward"]);
-  originalDataset[static_cast<int>(
+  m_originalDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
       CombineDatasets(originalForward, originalBackward);
-  originalDataset[static_cast<int>(
+  m_originalDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kLeft)] =
       CombineDatasets(preparedData["left-original-raw-forward"],
                       preparedData["left-original-raw-backward"]);
-  originalDataset[static_cast<int>(
+  m_originalDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kRight)] =
       CombineDatasets(preparedData["right-original-raw-forward"],
                       preparedData["right-original-raw-backward"]);
 
-  WPI_INFO(logger, "{}", "Applying trimming and filtering.");
-  sysid::InitialTrimAndFilter(&preparedData, &settings, minStepTime,
-                              maxStepTime);
+  WPI_INFO(m_logger, "{}", "Applying trimming and filtering.");
+  sysid::InitialTrimAndFilter(&preparedData, &m_settings, m_positionDelays,
+                              m_velocityDelays, m_minStepTime, m_maxStepTime);
 
   auto forward = AnalysisManager::DataConcat(preparedData["left-forward"],
                                              preparedData["right-forward"]);
   auto backward = AnalysisManager::DataConcat(preparedData["left-backward"],
                                               preparedData["right-backward"]);
 
-  WPI_INFO(logger, "{}", "Acceleration filtering.");
+  WPI_INFO(m_logger, "{}", "Acceleration filtering.");
   sysid::AccelFilter(&preparedData);
 
-  WPI_INFO(logger, "{}", "Storing datasets.");
+  WPI_INFO(m_logger, "{}", "Storing datasets.");
 
   // Create the distinct raw datasets and store them
   auto rawForward = AnalysisManager::DataConcat(
@@ -446,37 +360,44 @@ static void PrepareLinearDrivetrainData(
   auto rawBackward = AnalysisManager::DataConcat(
       preparedData["left-raw-backward"], preparedData["right-raw-backward"]);
 
-  rawDataset[static_cast<int>(
+  m_rawDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
       CombineDatasets(rawForward, rawBackward);
-  rawDataset[static_cast<int>(
+  m_rawDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kLeft)] =
       CombineDatasets(preparedData["left-raw-forward"],
                       preparedData["left-raw-backward"]);
-  rawDataset[static_cast<int>(
+  m_rawDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kRight)] =
       CombineDatasets(preparedData["right-raw-forward"],
                       preparedData["right-raw-backward"]);
 
   // Create the distinct filtered datasets and store them
-  filteredDataset[static_cast<int>(
+  m_filteredDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kCombined)] =
       CombineDatasets(forward, backward);
-  filteredDataset[static_cast<int>(
+  m_filteredDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kLeft)] =
       CombineDatasets(preparedData["left-forward"],
                       preparedData["left-backward"]);
-  filteredDataset[static_cast<int>(
+  m_filteredDataset[static_cast<int>(
       AnalysisManager::Settings::DrivetrainDataset::kRight)] =
       CombineDatasets(preparedData["right-forward"],
                       preparedData["right-backward"]);
 
-  startTimes = {rawForward.front().timestamp, rawBackward.front().timestamp};
+  m_startTimes = {rawForward.front().timestamp, rawBackward.front().timestamp};
 }
+
+AnalysisManager::AnalysisManager(Settings& settings, wpi::Logger& logger)
+    : m_logger{logger},
+      m_settings{settings},
+      m_type{analysis::kSimple},
+      m_unit{"Meters"},
+      m_factor{1} {}
 
 AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,
                                  wpi::Logger& logger)
-    : m_settings(settings), m_logger(logger) {
+    : m_logger{logger}, m_settings{settings} {
   {
     // Read JSON from the specified path
     std::error_code ec;
@@ -522,24 +443,16 @@ AnalysisManager::AnalysisManager(std::string_view path, Settings& settings,
   // Reset settings for Dynamic Test Limits
   m_settings.stepTestDuration = units::second_t{0.0};
   m_settings.motionThreshold = std::numeric_limits<double>::infinity();
-  m_minDuration = units::second_t{100000};
 }
 
 void AnalysisManager::PrepareData() {
   WPI_INFO(m_logger, "Preparing {} data", m_type.name);
   if (m_type == analysis::kDrivetrain) {
-    PrepareLinearDrivetrainData(m_json, m_settings, m_factor, m_originalDataset,
-                                m_rawDataset, m_filteredDataset, m_startTimes,
-                                m_minDuration, m_maxDuration, m_logger);
+    PrepareLinearDrivetrainData();
   } else if (m_type == analysis::kDrivetrainAngular) {
-    PrepareAngularDrivetrainData(m_json, m_settings, m_factor, m_trackWidth,
-                                 m_originalDataset, m_rawDataset,
-                                 m_filteredDataset, m_startTimes, m_minDuration,
-                                 m_maxDuration, m_logger);
+    PrepareAngularDrivetrainData();
   } else {
-    PrepareGeneralData(m_json, m_settings, m_factor, m_unit, m_originalDataset,
-                       m_rawDataset, m_filteredDataset, m_startTimes,
-                       m_minDuration, m_maxDuration, m_logger);
+    PrepareGeneralData();
   }
   WPI_INFO(m_logger, "{}", "Finished Preparing Data");
 }
@@ -553,7 +466,7 @@ AnalysisManager::FeedforwardGains AnalysisManager::CalculateFeedforward() {
   WPI_INFO(m_logger, "{}", "Calculating Gains");
   // Calculate feedforward gains from the data.
   const auto& ff = sysid::CalculateFeedforwardGains(GetFilteredData(), m_type);
-  m_ffGains = {ff, m_trackWidth};
+  FeedforwardGains ffGains = {ff, m_trackWidth};
 
   const auto& Ks = std::get<0>(ff)[0];
   const auto& Kv = std::get<0>(ff)[1];
@@ -568,29 +481,29 @@ AnalysisManager::FeedforwardGains AnalysisManager::CalculateFeedforward() {
                     Ks, Kv, Ka));
   }
 
-  return m_ffGains;
+  return ffGains;
 }
 
-sysid::FeedbackGains AnalysisManager::CalculateFeedback() {
-  const auto& [ff, trackWidth] = m_ffGains;
-  const auto& Ks = std::get<0>(ff)[0];
-  const auto& Kv = std::get<0>(ff)[1];
-  const auto& Ka = std::get<0>(ff)[2];
+sysid::FeedbackGains AnalysisManager::CalculateFeedback(
+    std::vector<double> ff) {
+  const auto& Kv = ff[1];
+  const auto& Ka = ff[2];
+  FeedbackGains fb;
   if (m_settings.type == FeedbackControllerLoopType::kPosition) {
-    m_fbGains = sysid::CalculatePositionFeedbackGains(
+    fb = sysid::CalculatePositionFeedbackGains(
         m_settings.preset, m_settings.lqr, Kv, Ka,
         m_settings.convertGainsToEncTicks
             ? m_settings.gearing * m_settings.cpr * m_factor
             : 1);
   } else {
-    m_fbGains = sysid::CalculateVelocityFeedbackGains(
+    fb = sysid::CalculateVelocityFeedbackGains(
         m_settings.preset, m_settings.lqr, Kv, Ka,
         m_settings.convertGainsToEncTicks
             ? m_settings.gearing * m_settings.cpr * m_factor
             : 1);
   }
 
-  return m_fbGains;
+  return fb;
 }
 
 void AnalysisManager::OverrideUnits(std::string_view unit,

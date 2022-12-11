@@ -5,15 +5,15 @@
 #include "sysid/view/Logger.h"
 
 #include <exception>
+#include <numbers>
 
 #include <glass/Context.h>
 #include <glass/Storage.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
-#include <ntcore_cpp.h>
+#include <networktables/NetworkTable.h>
 #include <units/angle.h>
-#include <wpi/numbers>
 #include <wpigui.h>
 
 #include "sysid/Util.h"
@@ -23,18 +23,8 @@
 using namespace sysid;
 
 Logger::Logger(glass::Storage& storage, wpi::Logger& logger)
-    : m_logger{logger}, m_ntSettings{storage} {
-  // Add an NT connection listener to update the GUI's state.
-  auto instance = nt::GetDefaultInstance();
-  auto poller = nt::CreateConnectionListenerPoller(instance);
-
-  nt::AddPolledConnectionListener(poller, true);
-  wpi::gui::AddEarlyExecute([poller, &connected = m_ntConnected] {
-    bool timedOut;
-    for (auto&& event : nt::PollConnectionListener(poller, 0, &timedOut)) {
-      connected = event.connected;
-    }
-  });
+    : m_logger{logger}, m_ntSettings{"sysid", storage} {
+  wpi::gui::AddEarlyExecute([&] { m_ntSettings.Update(); });
 
   m_ntSettings.EnableServerOption(false);
 }
@@ -59,8 +49,9 @@ void Logger::Display() {
   static ImVec4 kColorDisconnected{1.0f, 0.4f, 0.4f, 1.0f};
   static ImVec4 kColorConnected{0.2f, 1.0f, 0.2f, 1.0f};
   ImGui::SameLine();
-  ImGui::TextColored(m_ntConnected ? kColorConnected : kColorDisconnected,
-                     m_ntConnected ? "NT Connected" : "NT Disconnected");
+  bool ntConnected = nt::NetworkTableInstance::GetDefault().IsConnected();
+  ImGui::TextColored(ntConnected ? kColorConnected : kColorDisconnected,
+                     ntConnected ? "NT Connected" : "NT Disconnected");
 
   // Create a Section for project configuration
   ImGui::Separator();
@@ -95,7 +86,7 @@ void Logger::Display() {
   if (m_settings.units == "Degrees") {
     m_settings.unitsPerRotation = 360.0;
   } else if (m_settings.units == "Radians") {
-    m_settings.unitsPerRotation = 2 * wpi::numbers::pi;
+    m_settings.unitsPerRotation = 2 * std::numbers::pi;
   } else if (m_settings.units == "Rotations") {
     m_settings.unitsPerRotation = 1.0;
   }
@@ -136,7 +127,7 @@ void Logger::Display() {
       "quasistatic test.");
 
   CreateVoltageParameters("Dynamic Step Voltage (V)", &m_settings.stepVoltage,
-                          2.0f, 10.0f);
+                          0.0f, 10.0f);
   sysid::CreateTooltip(
       "This is the voltage that will be applied for the "
       "dynamic voltage (acceleration) tests.");
@@ -148,7 +139,7 @@ void Logger::Display() {
 
   auto CreateTest = [this, width](const char* text, const char* itext) {
     // Display buttons if we have an NT connection.
-    if (m_ntConnected) {
+    if (nt::NetworkTableInstance::GetDefault().IsConnected()) {
       // Create button to run tests.
       if (ImGui::Button(text)) {
         // Open the warning message.

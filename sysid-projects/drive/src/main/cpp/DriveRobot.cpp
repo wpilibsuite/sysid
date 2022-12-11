@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-#include "Robot.h"
+#include "DriveRobot.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -20,7 +20,7 @@
 
 #include "sysid/generation/SysIdSetup.h"
 
-Robot::Robot() : frc::TimedRobot(5_ms) {
+DriveRobot::DriveRobot() : frc::TimedRobot(5_ms) {
   m_json = sysid::GetConfigJson();
 
   try {
@@ -28,7 +28,7 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 
     std::vector<int> leftPorts =
         m_json.at("primary motor ports").get<std::vector<int>>();
-    std::vector<std::string> controllerNames =
+    m_controllerNames =
         m_json.at("motor controllers").get<std::vector<std::string>>();
     std::vector<int> leftEncoderPorts =
         m_json.at("primary encoder ports").get<std::vector<int>>();
@@ -63,29 +63,31 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 
     fmt::print("Setup motors\n");
     for (size_t i = 0; i < leftPorts.size(); i++) {
-      sysid::AddMotorController(leftPorts[i], controllerNames[i],
+      sysid::AddMotorController(leftPorts[i], m_controllerNames[i],
                                 leftMotorsInverted[i], &m_leftControllers);
-      sysid::AddMotorController(rightPorts[i], controllerNames[i],
+      sysid::AddMotorController(rightPorts[i], m_controllerNames[i],
                                 rightMotorsInverted[i], &m_rightControllers);
     }
 
     fmt::print("Setup encoders\n");
     sysid::SetupEncoders(
         encoderType, isEncoding, period, cpr, gearing, numSamples,
-        controllerNames[0], m_leftControllers.at(0).get(), leftEncoderInverted,
-        leftEncoderPorts, m_leftCancoder, m_leftRevEncoderPort,
-        m_leftRevDataPort, m_leftEncoder, m_leftPosition, m_leftRate);
-    sysid::SetupEncoders(encoderType, isEncoding, period, cpr, gearing,
-                         numSamples, controllerNames[0],
-                         m_rightControllers.at(0).get(), rightEncoderInverted,
-                         rightEncoderPorts, m_rightCancoder,
-                         m_rightRevEncoderPort, m_rightRevDataPort,
-                         m_rightEncoder, m_rightPosition, m_rightRate);
+        m_controllerNames[0], m_leftControllers.at(0).get(),
+        leftEncoderInverted, leftEncoderPorts,
+        // m_leftCancoder, m_leftRevEncoderPort,m_leftRevDataPort,
+        m_leftEncoder, m_leftPosition, m_leftRate);
+    sysid::SetupEncoders(
+        encoderType, isEncoding, period, cpr, gearing, numSamples,
+        m_controllerNames[0], m_rightControllers.at(0).get(),
+        rightEncoderInverted, rightEncoderPorts,
+        // m_rightCancoder, m_rightRevEncoderPort, m_rightRevDataPort,
+        m_rightEncoder, m_rightPosition, m_rightRate);
 
     fmt::print("Setup gyro\n");
-    sysid::SetupGyro(gyroType, gyroCtor, leftPorts, rightPorts, controllerNames,
-                     m_leftControllers, m_rightControllers, m_gyro,
-                     m_ADIS16448Gyro, m_ADIS16470Gyro, m_pigeon, m_tempTalon,
+    sysid::SetupGyro(gyroType, gyroCtor, leftPorts, rightPorts,
+                     m_controllerNames, m_leftControllers, m_rightControllers,
+                     m_gyro, m_ADIS16448Gyro, m_ADIS16470Gyro,
+                     // m_pigeon, m_tempTalon,
                      m_gyroPosition, m_gyroRate);
   } catch (std::exception& e) {
     fmt::print("Project failed: {}\n", e.what());
@@ -101,30 +103,9 @@ Robot::Robot() : frc::TimedRobot(5_ms) {
 #endif
 }
 
-void Robot::RobotInit() {}
+void DriveRobot::RobotInit() {}
 
-/**
- * This function is called every robot packet, no matter the mode. Use
- * this for items like diagnostics that you want ran during disabled,
- * autonomous, teleoperated and test.
- *
- * <p> This runs after the mode specific periodic functions, but before
- * LiveWindow and SmartDashboard integrated updating.
- */
-void Robot::RobotPeriodic() {
-  try {
-    frc::SmartDashboard::PutNumber("Left Position", m_leftPosition());
-    frc::SmartDashboard::PutNumber("Right Position", m_rightPosition());
-    frc::SmartDashboard::PutNumber("Left Velocity", m_leftRate());
-    frc::SmartDashboard::PutNumber("Right Velocity", m_rightRate());
-
-    frc::SmartDashboard::PutNumber("Gyro Reading", m_gyroPosition());
-    frc::SmartDashboard::PutNumber("Gyro Rate", m_gyroRate());
-  } catch (std::exception& e) {
-    fmt::print("Project failed: {}\n", e.what());
-    std::exit(-1);
-  }
-}
+void DriveRobot::RobotPeriodic() {}
 
 /**
  * This autonomous (along with the chooser code above) shows how to select
@@ -137,7 +118,7 @@ void Robot::RobotPeriodic() {
  * if-else structure below with additional strings. If using the
  * SendableChooser make sure to add them to the chooser code above as well.
  */
-void Robot::AutonomousInit() {
+void DriveRobot::AutonomousInit() {
   m_logger.InitLogging();
 }
 
@@ -145,26 +126,30 @@ void Robot::AutonomousInit() {
  * Outputs data in the format: timestamp, l voltage, r voltage, l position, r
  * position, l velocity, r velocity, angle, angular rate
  */
-void Robot::AutonomousPeriodic() {
-  m_logger.Log(m_leftPosition(), m_rightPosition(), m_leftRate(), m_rightRate(),
+void DriveRobot::AutonomousPeriodic() {
+  m_logger.Log(m_logger.MeasureVoltage(m_leftControllers, m_controllerNames),
+               m_logger.MeasureVoltage(m_rightControllers, m_controllerNames),
+               m_leftPosition(), m_rightPosition(), m_leftRate(), m_rightRate(),
                m_gyroPosition(), m_gyroRate());
   sysid::SetMotorControllers(m_logger.GetLeftMotorVoltage(), m_leftControllers);
   sysid::SetMotorControllers(m_logger.GetRightMotorVoltage(),
                              m_rightControllers);
 }
 
-void Robot::TeleopInit() {}
+void DriveRobot::TeleopInit() {}
 
-void Robot::TeleopPeriodic() {}
+void DriveRobot::TeleopPeriodic() {
+  PushNTDiagnostics();
+}
 
-void Robot::DisabledInit() {
+void DriveRobot::DisabledInit() {
   sysid::SetMotorControllers(0_V, m_leftControllers);
   sysid::SetMotorControllers(0_V, m_rightControllers);
   fmt::print("Robot disabled\n");
   m_logger.SendData();
 }
 
-void Robot::SimulationPeriodic() {
+void DriveRobot::SimulationPeriodic() {
 #ifdef INTEGRATION
 
   bool enable = frc::SmartDashboard::GetBoolean("SysIdRun", false);
@@ -179,14 +164,40 @@ void Robot::SimulationPeriodic() {
 #endif
 }
 
-void Robot::DisabledPeriodic() {}
+void DriveRobot::DisabledPeriodic() {
+  PushNTDiagnostics();
+}
 
-void Robot::TestInit() {}
+void DriveRobot::TestInit() {}
 
-void Robot::TestPeriodic() {}
+void DriveRobot::TestPeriodic() {
+  PushNTDiagnostics();
+}
+
+void DriveRobot::PushNTDiagnostics() {
+  try {
+    frc::SmartDashboard::PutNumber(
+        "Left Voltage",
+        m_logger.MeasureVoltage(m_leftControllers, m_controllerNames));
+    frc::SmartDashboard::PutNumber(
+        "Right Voltage",
+        m_logger.MeasureVoltage(m_rightControllers, m_controllerNames));
+
+    frc::SmartDashboard::PutNumber("Left Position", m_leftPosition());
+    frc::SmartDashboard::PutNumber("Right Position", m_rightPosition());
+    frc::SmartDashboard::PutNumber("Left Velocity", m_leftRate());
+    frc::SmartDashboard::PutNumber("Right Velocity", m_rightRate());
+
+    frc::SmartDashboard::PutNumber("Gyro Reading", m_gyroPosition());
+    frc::SmartDashboard::PutNumber("Gyro Rate", m_gyroRate());
+  } catch (std::exception& e) {
+    fmt::print("Project failed: {}\n", e.what());
+    std::exit(-1);
+  }
+}
 
 #ifndef RUNNING_FRC_TESTS
 int main() {
-  return frc::StartRobot<Robot>();
+  return frc::StartRobot<DriveRobot>();
 }
 #endif

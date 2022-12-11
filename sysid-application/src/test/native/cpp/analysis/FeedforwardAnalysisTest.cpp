@@ -17,15 +17,14 @@
 /**
  * Return simulated test data for a given simulation model.
  *
- * @param Ks   Static friction gain.
- * @param Kv   Velocity gain.
- * @param Ka   Acceleration gain.
- * @param Kcos Gravity cosine gain.
+ * @param Ks Static friction gain.
+ * @param Kv Velocity gain.
+ * @param Ka Acceleration gain.
+ * @param Kg Gravity cosine gain.
  */
 template <typename Model>
 sysid::Storage CollectData(Model& model) {
   constexpr auto kUstep = 0.25_V;
-  constexpr units::volt_t kUmax = 7_V;
   constexpr units::second_t T = 5_ms;
   constexpr units::second_t kTestDuration = 5_s;
 
@@ -40,7 +39,7 @@ sysid::Storage CollectData(Model& model) {
     auto accel = model.GetAcceleration(voltage);
     forward.emplace_back(sysid::PreparedData{
         i * T, voltage.value(), model.GetPosition(), model.GetVelocity(), T,
-        accel, std::cos(model.GetPosition())});
+        accel, std::cos(model.GetPosition()), std::sin(model.GetPosition())});
 
     model.Update(voltage, T);
     if (accel <= 0.5 && !steadyState) {
@@ -63,7 +62,7 @@ sysid::Storage CollectData(Model& model) {
     auto accel = model.GetAcceleration(voltage);
     backward.emplace_back(sysid::PreparedData{
         i * T, voltage.value(), model.GetPosition(), model.GetVelocity(), T,
-        accel, std::cos(model.GetPosition())});
+        accel, std::cos(model.GetPosition()), std::sin(model.GetPosition())});
 
     model.Update(voltage, T);
     if (accel <= 0.5 && !steadyState) {
@@ -84,34 +83,40 @@ TEST(FeedforwardAnalysisTest, Arm1) {
   constexpr double Ks = 1.01;
   constexpr double Kv = 3.060;
   constexpr double Ka = 0.327;
-  constexpr double Kcos = -0.211;
+  constexpr double Kg = 0.211;
 
-  sysid::ArmSim model{Ks, Kv, Ka, Kcos};
-  auto ff = sysid::CalculateFeedforwardGains(CollectData(model),
-                                             sysid::analysis::kArm);
-  auto& gains = std::get<0>(ff);
+  for (const auto& offset : {-2.0, -1.0, 0.0, 1.0, 2.0}) {
+    sysid::ArmSim model{Ks, Kv, Ka, Kg, offset};
+    auto ff = sysid::CalculateFeedforwardGains(CollectData(model),
+                                               sysid::analysis::kArm);
+    auto& gains = std::get<0>(ff);
 
-  EXPECT_NEAR(gains[0], Ks, 0.003);
-  EXPECT_NEAR(gains[1], Kv, 0.003);
-  EXPECT_NEAR(gains[2], Ka, 0.003);
-  EXPECT_NEAR(gains[3], Kcos, 0.003);
+    EXPECT_NEAR(gains[0], Ks, 0.003);
+    EXPECT_NEAR(gains[1], Kv, 0.003);
+    EXPECT_NEAR(gains[2], Ka, 0.003);
+    EXPECT_NEAR(gains[3], Kg, 0.003);
+    EXPECT_NEAR(gains[4], offset, 0.007);
+  }
 }
 
 TEST(FeedforwardAnalysisTest, Arm2) {
   constexpr double Ks = 0.547;
   constexpr double Kv = 0.0693;
   constexpr double Ka = 0.1170;
-  constexpr double Kcos = -0.122;
+  constexpr double Kg = 0.122;
 
-  sysid::ArmSim model{Ks, Kv, Ka, Kcos};
-  auto ff = sysid::CalculateFeedforwardGains(CollectData(model),
-                                             sysid::analysis::kArm);
-  auto& gains = std::get<0>(ff);
+  for (const auto& offset : {-2.0, -1.0, 0.0, 1.0, 2.0}) {
+    sysid::ArmSim model{Ks, Kv, Ka, Kg, offset};
+    auto ff = sysid::CalculateFeedforwardGains(CollectData(model),
+                                               sysid::analysis::kArm);
+    auto& gains = std::get<0>(ff);
 
-  EXPECT_NEAR(gains[0], Ks, 0.003);
-  EXPECT_NEAR(gains[1], Kv, 0.003);
-  EXPECT_NEAR(gains[2], Ka, 0.003);
-  EXPECT_NEAR(gains[3], Kcos, 0.003);
+    EXPECT_NEAR(gains[0], Ks, 0.003);
+    EXPECT_NEAR(gains[1], Kv, 0.003);
+    EXPECT_NEAR(gains[2], Ka, 0.003);
+    EXPECT_NEAR(gains[3], Kg, 0.003);
+    EXPECT_NEAR(gains[4], offset, 0.007);
+  }
 }
 
 TEST(FeedforwardAnalysisTest, Drivetrain1) {

@@ -19,11 +19,12 @@ class ArmSim {
    * @param Ks              Static friction gain.
    * @param Kv              Velocity gain.
    * @param Ka              Acceleration gain.
-   * @param Kcos            Gravity cosine gain.
+   * @param Kg              Gravity cosine gain.
+   * @param offset          Arm position offset.
    * @param initialPosition Initial arm position.
    * @param initialVelocity Initial arm velocity.
    */
-  ArmSim(double Ks, double Kv, double Ka, double Kcos,
+  ArmSim(double Ks, double Kv, double Ka, double Kg, double offset = 0.0,
          double initialPosition = 0.0, double initialVelocity = 0.0);
 
   /**
@@ -35,6 +36,7 @@ class ArmSim {
    * @param dt      Sammple period.
    */
   void Update(units::volt_t voltage, units::second_t dt);
+
   /**
    * Returns the position.
    *
@@ -71,6 +73,7 @@ class ArmSim {
   Eigen::Vector<double, 1> m_c;
   Eigen::Vector<double, 1> m_d;
   Eigen::Vector<double, 2> m_x;
+  double m_offset;
 };
 
 }  // namespace sysid

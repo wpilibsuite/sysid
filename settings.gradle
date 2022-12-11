@@ -1,13 +1,10 @@
 import org.gradle.internal.os.OperatingSystem
 
 pluginManagement {
-  plugins {
-    id "edu.wpi.first.GradleRIO" version "2022.2.1"
-  }
   repositories {
     mavenLocal()
     gradlePluginPortal()
-    String frcYear = '2022'
+    String frcYear = '2023'
     File frcHome
     if (OperatingSystem.current().isWindows()) {
       String publicFolder = System.getenv('PUBLIC')

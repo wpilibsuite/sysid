@@ -29,7 +29,7 @@ includeOtherLibs {
   ^imgui
   ^implot\.h$
   ^libssh
-  ^ntcore
+  ^networktables/
   ^portable-file-dialogs
   ^rev/
   ^units
@@ -37,4 +37,5 @@ includeOtherLibs {
   ^wpi/
   ^wpigui
   ^wpimath/
+  ^wpinet/
 }

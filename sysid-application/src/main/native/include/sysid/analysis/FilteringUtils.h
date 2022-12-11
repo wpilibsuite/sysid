@@ -9,6 +9,7 @@
 #include <exception>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -115,10 +116,10 @@ void ApplyMedianFilter(std::vector<PreparedData>* data, int window);
  * @param maxStepTime The maximum step test duration.
  * @return The updated minimum step test duration.
  */
-units::second_t TrimStepVoltageData(std::vector<PreparedData>* data,
-                                    AnalysisManager::Settings* settings,
-                                    units::second_t minStepTime,
-                                    units::second_t maxStepTime);
+std::tuple<units::second_t, units::second_t, units::second_t>
+TrimStepVoltageData(std::vector<PreparedData>* data,
+                    AnalysisManager::Settings* settings,
+                    units::second_t minStepTime, units::second_t maxStepTime);
 
 /**
  * Compute the mean time delta of the given data.
@@ -178,6 +179,10 @@ frc::LinearFilter<double> CentralFiniteDifference(units::second_t period) {
  * @param data A pointer to a data vector recently created by the
  *             ConvertToPrepared method
  * @param settings A reference to the analysis settings
+ * @param positionDelays A reference to the vector of computed position signal
+ * delays.
+ * @param velocityDelays A reference to the vector of computed velocity signal
+ * delays.
  * @param minStepTime A reference to the minimum dynamic test duration as one of
  *                    the trimming procedures will remove this amount from the
  *                    start of the test.
@@ -187,6 +192,8 @@ frc::LinearFilter<double> CentralFiniteDifference(units::second_t period) {
  */
 void InitialTrimAndFilter(wpi::StringMap<std::vector<PreparedData>>* data,
                           AnalysisManager::Settings* settings,
+                          std::vector<units::second_t>& positionDelays,
+                          std::vector<units::second_t>& velocityDelays,
                           units::second_t& minStepTime,
                           units::second_t& maxStepTime,
                           std::string_view unit = "");

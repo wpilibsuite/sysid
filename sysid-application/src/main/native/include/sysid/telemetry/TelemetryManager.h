@@ -7,13 +7,17 @@
 #include <array>
 #include <cstddef>
 #include <functional>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
-#include <ntcore_c.h>
-#include <ntcore_cpp.h>
+#include <networktables/BooleanTopic.h>
+#include <networktables/DoubleTopic.h>
+#include <networktables/IntegerTopic.h>
+#include <networktables/NetworkTableInstance.h>
+#include <networktables/StringTopic.h>
 #include <units/time.h>
 #include <wpi/Logger.h>
 #include <wpi/SmallVector.h>
@@ -69,12 +73,6 @@ class TelemetryManager {
   };
 
   /**
-   * Default NT Listener Flags.
-   */
-  static constexpr int kNTFlags =
-      NT_NOTIFY_LOCAL | NT_NOTIFY_NEW | NT_NOTIFY_UPDATE | NT_NOTIFY_IMMEDIATE;
-
-  /**
    * Constructs an instance of the telemetry manager with the provided settings
    * and NT instance to collect data over.
    *
@@ -85,9 +83,8 @@ class TelemetryManager {
    *                 be changed during unit testing.
    */
   explicit TelemetryManager(const Settings& settings, wpi::Logger& logger,
-                            NT_Inst instance = nt::GetDefaultInstance());
-
-  ~TelemetryManager();
+                            nt::NetworkTableInstance instance =
+                                nt::NetworkTableInstance::GetDefault());
 
   /**
    * Begins a test with the given parameters.
@@ -205,16 +202,36 @@ class TelemetryManager {
   wpi::SmallVector<std::function<void(std::string_view)>, 1> m_callbacks;
 
   // NetworkTables instance and entries.
-  NT_Inst m_inst;
-  NT_EntryListenerPoller m_poller;
-  NT_Entry m_voltageCommand;
-  NT_Entry m_testType;
-  NT_Entry m_rotate;
-  NT_Entry m_telemetry;
-  NT_Entry m_overflow;
-  NT_Entry m_telemetryOld;
-  NT_Entry m_mechanism;
-  NT_Entry m_mechError;
-  NT_Entry m_fieldInfo;
+  nt::NetworkTableInstance m_inst;
+  std::shared_ptr<nt::NetworkTable> table = m_inst.GetTable("SmartDashboard");
+  nt::DoublePublisher m_voltageCommand =
+      table->GetDoubleTopic("SysIdVoltageCommand").Publish();
+  nt::StringPublisher m_testType =
+      table->GetStringTopic("SysIdTestType").Publish();
+  nt::BooleanPublisher m_rotate =
+      table->GetBooleanTopic("SysIdRotate").Publish();
+  nt::StringPublisher m_mechanism =
+      table->GetStringTopic("SysIdTest").Publish();
+  nt::BooleanPublisher m_overflowPub =
+      table->GetBooleanTopic("SysIdOverflow").Publish();
+  nt::BooleanSubscriber m_overflowSub =
+      table->GetBooleanTopic("SysIdOverflow").Subscribe(false);
+  nt::BooleanPublisher m_mechErrorPub =
+      table->GetBooleanTopic("SysIdWrongMech").Publish();
+  nt::BooleanSubscriber m_mechErrorSub =
+      table->GetBooleanTopic("SysIdWrongMech").Subscribe(false);
+  nt::StringSubscriber m_telemetry =
+      table->GetStringTopic("SysIdTelemetry").Subscribe("");
+  nt::IntegerSubscriber m_fmsControlData =
+      m_inst.GetTable("FMSInfo")
+          ->GetIntegerTopic("FMSControlData")
+          .Subscribe(0);
+  nt::DoublePublisher m_ackNumberPub =
+      table->GetDoubleTopic("SysIdAckNumber").Publish();
+  nt::DoubleSubscriber m_ackNumberSub =
+      table->GetDoubleTopic("SysIdAckNumber").Subscribe(0);
+
+  int m_ackNumber;
+  int m_updatedAckNumber;
 };
 }  // namespace sysid

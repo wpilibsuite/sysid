@@ -52,6 +52,12 @@ struct PreparedData {
   double cos = 0.0;
 
   /**
+   * The sine value of the data point. This is only used for arm data where we
+   * take the sine of the position.
+   */
+  double sin = 0.0;
+
+  /**
    * Equality operator between PreparedData structs
    *
    * @param rhs Another PreparedData struct

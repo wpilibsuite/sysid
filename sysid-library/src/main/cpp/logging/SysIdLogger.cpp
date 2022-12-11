@@ -4,18 +4,24 @@
 
 #include "sysid/logging/SysIdLogger.h"
 
+// #include <ctre/Phoenix.h>
+
 #include <cmath>
 #include <cstddef>
 #include <sstream>
 #include <stdexcept>
 
+// #include <CANVenom.h>
 #include <fmt/core.h>
 #include <frc/Notifier.h>
 #include <frc/RobotBase.h>
+#include <frc/RobotController.h>
 #include <frc/Threads.h>
 #include <frc/Timer.h>
 #include <frc/livewindow/LiveWindow.h>
 #include <frc/smartdashboard/SmartDashboard.h>
+// #include <rev/CANSparkMax.h>
+#include <wpi/StringExtras.h>
 
 using namespace sysid;
 
@@ -51,9 +57,22 @@ void SysIdLogger::SendData() {
     }
   }
 
-  frc::SmartDashboard::PutString("SysIdTelemetry", ss.str());
+  std::string type = m_testType == "Dynamic" ? "fast" : "slow";
+  std::string direction = m_voltageCommand > 0 ? "forward" : "backward";
+  std::string test = fmt::format("{}-{}", type, direction);
+
+  frc::SmartDashboard::PutString("SysIdTelemetry",
+                                 fmt::format("{};{}", test, ss.str()));
+  frc::SmartDashboard::PutNumber("SysIdAckNumber", ++m_ackNum);
 
   Reset();
+}
+
+void SysIdLogger::ClearWhenReceived() {
+  if (frc::SmartDashboard::GetNumber("SysIdAckNumber", 0.0) > m_ackNum) {
+    frc::SmartDashboard::PutString("SysIdTelemetry", "");
+    m_ackNum = frc::SmartDashboard::GetNumber("SysIdAckNumber", 0.0);
+  }
 }
 
 void SysIdLogger::UpdateThreadPriority() {
@@ -75,6 +94,7 @@ SysIdLogger::SysIdLogger() {
   frc::SmartDashboard::PutBoolean("SysIdRotate", false);
   frc::SmartDashboard::PutBoolean("SysIdOverflow", false);
   frc::SmartDashboard::PutBoolean("SysIdWrongMech", false);
+  frc::SmartDashboard::PutNumber("SysIdAckNumber", m_ackNum);
 }
 
 void SysIdLogger::UpdateData() {

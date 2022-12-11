@@ -4,6 +4,8 @@
 
 #include "sysid/logging/SysIdGeneralMechanismLogger.h"
 
+#include <array>
+
 #include <frc/smartdashboard/SmartDashboard.h>
 
 using namespace sysid;
@@ -12,13 +14,13 @@ units::volt_t SysIdGeneralMechanismLogger::GetMotorVoltage() const {
   return m_primaryMotorVoltage;
 }
 
-void SysIdGeneralMechanismLogger::Log(double measuredPosition,
+void SysIdGeneralMechanismLogger::Log(double voltage, double measuredPosition,
                                       double measuredVelocity) {
   UpdateData();
   if (m_data.size() < kDataVectorSize) {
     UpdateVelocity(measuredVelocity);
-    std::array<double, 4> arr = {m_timestamp, m_primaryMotorVoltage.value(),
-                                 measuredPosition, measuredVelocity};
+    std::array<double, 4> arr{m_timestamp, m_primaryMotorVoltage.value(),
+                              measuredPosition, measuredVelocity};
     m_data.insert(m_data.end(), arr.cbegin(), arr.cend());
   }
 

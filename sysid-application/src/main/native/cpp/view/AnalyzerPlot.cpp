@@ -21,7 +21,7 @@
 
 using namespace sysid;
 
-static ImPlotPoint Getter(void* data, int idx) {
+static ImPlotPoint Getter(int idx, void* data) {
   return static_cast<ImPlotPoint*>(data)[idx];
 }
 
@@ -182,9 +182,10 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
           rawData, startTimes, step, sysid::ElevatorSim{Ks, Kv, Ka, Kg},
           &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
     } else if (type == analysis::kArm) {
-      const auto& Kcos = ffGains[3];
+      const auto& Kg = ffGains[3];
+      const auto& offset = ffGains[4];
       m_testData.simData = PopulateTimeDomainSim(
-          rawData, startTimes, step, sysid::ArmSim{Ks, Kv, Ka, Kcos},
+          rawData, startTimes, step, sysid::ArmSim{Ks, Kv, Ka, Kg, offset},
           &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
     } else {
       m_testData.simData = PopulateTimeDomainSim(
@@ -226,8 +227,8 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
       const auto& Kg = ffGains[3];
       accelPortion -= Kg / Ka;
     } else if (type == analysis::kArm) {
-      const auto& Kcos = ffGains[3];
-      accelPortion -= Kcos / Ka * plotData[i].cos;
+      const auto& Kg = ffGains[3];
+      accelPortion -= Kg / Ka * plotData[i].cos;
     }
 
     m_regressionData.data.emplace_back(plotData[i].velocity, accelPortion);

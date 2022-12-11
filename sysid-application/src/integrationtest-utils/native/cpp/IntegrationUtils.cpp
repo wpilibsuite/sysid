@@ -5,7 +5,6 @@
 #include "IntegrationUtils.h"
 
 #include <stdexcept>
-#include <string>
 
 #include <fmt/core.h>
 #include <wpi/timestamp.h>
@@ -47,15 +46,16 @@ void LaunchSim(std::string_view projectDirectory) {
   }
 }
 
-void Connect(NT_Inst nt, NT_Entry kill) {
-  nt::StartClient(nt, "localhost", NT_DEFAULT_PORT);
+void Connect(nt::NetworkTableInstance nt, nt::BooleanPublisher& kill) {
+  nt.SetServer("localhost", nt::NetworkTableInstance::kDefaultPort4);
+  nt.StartClient4("localhost");
 
-  nt::SetEntryValue(kill, nt::Value::MakeBoolean(false));
-  nt::Flush(nt);
+  kill.Set(false);
+  nt.Flush();
 
   // Wait for NT to connect or fail it if it times out.
   auto time = wpi::Now();
-  while (!nt::IsConnected(nt)) {
+  while (!nt.IsConnected()) {
     if (wpi::Now() - time > 1.5E7) {
       fmt::print(stderr, "The robot program crashed\n");
       auto capturedStdout = ::testing::internal::GetCapturedStdout();
@@ -67,17 +67,17 @@ void Connect(NT_Inst nt, NT_Entry kill) {
   }
 }
 
-std::string KillNT(NT_Inst nt, NT_Entry kill) {
+std::string KillNT(nt::NetworkTableInstance nt, nt::BooleanPublisher& kill) {
   // Before killing sim, store any captured console output.
   auto capturedStdout = ::testing::internal::GetCapturedStdout();
 
   fmt::print(stderr, "Killing program\n");
   auto time = wpi::Now();
 
-  while (nt::IsConnected(nt)) {
+  while (nt.IsConnected()) {
     // Kill program
-    nt::SetEntryValue(kill, nt::Value::MakeBoolean(true));
-    nt::Flush(nt);
+    kill.Set(true);
+    nt.Flush();
     if (wpi::Now() - time > 3E7) {
       EXPECT_TRUE(false);
       return capturedStdout;
@@ -87,9 +87,11 @@ std::string KillNT(NT_Inst nt, NT_Entry kill) {
   fmt::print(stderr, "Killed robot program\n");
 
   // Set kill entry to false for future tests
-  nt::SetEntryValue(kill, nt::Value::MakeBoolean(false));
-  // Stop NT Client.
-  nt::StopClient(nt);
+  kill.Set(false);
+  nt.Flush();
+
+  // Stop NT Client
+  nt.StopClient();
 
   return capturedStdout;
 }

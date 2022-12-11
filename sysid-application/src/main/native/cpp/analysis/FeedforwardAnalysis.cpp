@@ -44,8 +44,9 @@ static void PopulateOLSVector(const std::vector<PreparedData>& d,
       // Add the gravity term (for Kg)
       olsData.push_back(1.0);
     } else if (type == analysis::kArm) {
-      // Add the cosine term (for Kcos)
+      // Add the cosine and sine terms (for Kg)
       olsData.push_back(pt.cos);
+      olsData.push_back(pt.sin);
     }
   }
 }
@@ -72,19 +73,30 @@ sysid::CalculateFeedforwardGains(const Storage& data,
   PopulateOLSVector(backward, type, olsData);
 
   auto ols = sysid::OLS(olsData, type.independentVariables);
-  double alpha = std::get<0>(ols)[0];  // -kv/ka
-  double beta = std::get<0>(ols)[1];   // 1/ka
-  double gamma = std::get<0>(ols)[2];  // -ks/ka
+  double alpha = std::get<0>(ols)[0];  // -Kv/Ka
+  double beta = std::get<0>(ols)[1];   // 1/Ka
+  double gamma = std::get<0>(ols)[2];  // -Ks/Ka
 
   // Initialize gains list with Ks, Kv, and Ka
   std::vector<double> gains{-gamma / beta, -alpha / beta, 1 / beta};
 
-  if (type == analysis::kElevator || type == analysis::kArm) {
+  if (type == analysis::kElevator) {
     // Add Kg to gains list
-    double delta = std::get<0>(ols)[3];  // -kg/ka
+    double delta = std::get<0>(ols)[3];  // -Kg/Ka
     gains.emplace_back(-delta / beta);
   }
 
-  // Gains are Ks, Kv, Ka, Kg (elevator only)
+  if (type == analysis::kArm) {
+    double delta = std::get<0>(ols)[3];    // -Kg/Ka cos(offset)
+    double epsilon = std::get<0>(ols)[4];  // Kg/Ka sin(offset)
+
+    // Add Kg to gains list
+    gains.emplace_back(std::hypot(delta, epsilon) / beta);
+
+    // Add offset to gains list
+    gains.emplace_back(std::atan2(epsilon, -delta));
+  }
+
+  // Gains are Ks, Kv, Ka, Kg (elevator/arm only), offset (arm only)
   return std::tuple{gains, std::get<1>(ols), std::get<2>(ols)};
 }

@@ -4,10 +4,11 @@
 
 #pragma once
 
-#include <ctre/Phoenix.h>
+// #include <ctre/Phoenix.h>
 
 #include <functional>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include <frc/ADIS16448_IMU.h>
@@ -16,15 +17,15 @@
 #include <frc/TimedRobot.h>
 #include <frc/interfaces/Gyro.h>
 #include <frc/motorcontrol/MotorController.h>
-#include <rev/CANSparkMax.h>
+// #include <rev/CANSparkMax.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
 
 #include "sysid/logging/SysIdDrivetrainLogger.h"
 
-class Robot : public frc::TimedRobot {
+class DriveRobot : public frc::TimedRobot {
  public:
-  Robot();
+  DriveRobot();
   void RobotInit() override;
   void RobotPeriodic() override;
   void AutonomousInit() override;
@@ -37,9 +38,12 @@ class Robot : public frc::TimedRobot {
   void TestInit() override;
   void TestPeriodic() override;
 
+  void PushNTDiagnostics();
+
  private:
   std::vector<std::unique_ptr<frc::MotorController>> m_rightControllers;
   std::vector<std::unique_ptr<frc::MotorController>> m_leftControllers;
+  std::vector<std::string> m_controllerNames;
   std::function<double()> m_leftPosition;
   std::function<double()> m_leftRate;
   std::function<double()> m_rightPosition;
@@ -47,20 +51,20 @@ class Robot : public frc::TimedRobot {
   std::function<double()> m_gyroPosition;
   std::function<double()> m_gyroRate;
   wpi::json m_json;
-  std::unique_ptr<rev::SparkMaxRelativeEncoder> m_leftRevEncoderPort;
-  std::unique_ptr<rev::SparkMaxAlternateEncoder> m_leftRevDataPort;
-  std::unique_ptr<rev::SparkMaxRelativeEncoder> m_rightRevEncoderPort;
-  std::unique_ptr<rev::SparkMaxAlternateEncoder> m_rightRevDataPort;
+  // std::unique_ptr<rev::SparkMaxRelativeEncoder> m_leftRevEncoderPort;
+  // std::unique_ptr<rev::SparkMaxAlternateEncoder> m_leftRevDataPort;
+  // std::unique_ptr<rev::SparkMaxRelativeEncoder> m_rightRevEncoderPort;
+  // std::unique_ptr<rev::SparkMaxAlternateEncoder> m_rightRevDataPort;
   std::unique_ptr<frc::Encoder> m_leftEncoder;
   std::unique_ptr<frc::Encoder> m_rightEncoder;
   std::unique_ptr<frc::Gyro> m_gyro;
   std::unique_ptr<frc::ADIS16448_IMU> m_ADIS16448Gyro;
   std::unique_ptr<frc::ADIS16470_IMU> m_ADIS16470Gyro;
 
-  std::unique_ptr<CANCoder> m_leftCancoder;
-  std::unique_ptr<CANCoder> m_rightCancoder;
-  std::unique_ptr<WPI_TalonSRX> m_tempTalon;
-  std::unique_ptr<PigeonIMU> m_pigeon;
+  // std::unique_ptr<CANCoder> m_leftCancoder;
+  // std::unique_ptr<CANCoder> m_rightCancoder;
+  // std::unique_ptr<WPI_TalonSRX> m_tempTalon;
+  // std::unique_ptr<BasePigeon> m_pigeon;
 
   sysid::SysIdDrivetrainLogger m_logger;
 };
