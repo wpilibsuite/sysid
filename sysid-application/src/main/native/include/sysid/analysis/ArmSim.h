@@ -19,12 +19,12 @@ class ArmSim {
    * @param Ks              Static friction gain.
    * @param Kv              Velocity gain.
    * @param Ka              Acceleration gain.
-   * @param Kcos            Gravity cosine gain.
+   * @param Kg              Gravity cosine gain.
    * @param offset          Arm position offset.
    * @param initialPosition Initial arm position.
    * @param initialVelocity Initial arm velocity.
    */
-  ArmSim(double Ks, double Kv, double Ka, double Kcos, double offset = 0.0,
+  ArmSim(double Ks, double Kv, double Ka, double Kg, double offset = 0.0,
          double initialPosition = 0.0, double initialVelocity = 0.0);
 
   /**
