@@ -45,7 +45,7 @@ class AnalyzerPlot {
    * @param filteredData Filtered data storage.
    * @param unit         Unit of the dataset
    * @param ff           List of feedforward gains (Ks, Kv, Ka, and optionally
-   *                     either Kg or Kcos).
+   *                     Kg).
    * @param startTimes   Array of dataset start times.
    * @param type         Type of analysis.
    * @param abort        Aborts analysis early if set to true from another

@@ -34,8 +34,8 @@ constexpr size_t kMaxDataSize = 4000;
 
 // Calculated by finding the voltage required to hold the arm horizontal in the
 // simulation program.
-constexpr double kCos = 0.250;
-constexpr double kG = 0.002;
+constexpr double kElevatorG = 0.002;
+constexpr double kArmG = 0.250;
 
 // Create our test fixture class so we can reuse the same logic for various test
 // mechanisms.
@@ -120,10 +120,10 @@ class AnalysisTest : public ::testing::Test {
 
       if (m_settings.mechanism == sysid::analysis::kElevator) {
         fmt::print(stderr, "Kg: {}\n", ffGains[3]);
-        EXPECT_NEAR(kG, ffGains[3], 0.003);
+        EXPECT_NEAR(kElevatorG, ffGains[3], 0.003);
       } else if (m_settings.mechanism == sysid::analysis::kArm) {
-        fmt::print(stderr, "KCos: {}\n", ffGains[3]);
-        EXPECT_NEAR(kCos, ffGains[3], 0.04);
+        fmt::print(stderr, "Kg: {}\n", ffGains[3]);
+        EXPECT_NEAR(kArmG, ffGains[3], 0.04);
       }
 
       if (trackWidth) {

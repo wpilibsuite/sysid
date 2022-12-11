@@ -17,10 +17,10 @@
 /**
  * Return simulated test data for a given simulation model.
  *
- * @param Ks   Static friction gain.
- * @param Kv   Velocity gain.
- * @param Ka   Acceleration gain.
- * @param Kcos Gravity cosine gain.
+ * @param Ks Static friction gain.
+ * @param Kv Velocity gain.
+ * @param Ka Acceleration gain.
+ * @param Kg Gravity cosine gain.
  */
 template <typename Model>
 sysid::Storage CollectData(Model& model) {
@@ -90,10 +90,10 @@ TEST(FeedforwardAnalysisTest, Arm1) {
   constexpr double Ks = 1.01;
   constexpr double Kv = 3.060;
   constexpr double Ka = 0.327;
-  constexpr double Kcos = 0.211;
+  constexpr double Kg = 0.211;
 
   for (const auto& offset : {-2.0, -1.0, 0.0, 1.0, 2.0}) {
-    sysid::ArmSim model{Ks, Kv, Ka, Kcos, offset};
+    sysid::ArmSim model{Ks, Kv, Ka, Kg, offset};
     auto ff = sysid::CalculateFeedforwardGains(CollectData(model),
                                                sysid::analysis::kArm);
     auto& gains = std::get<0>(ff);
@@ -101,7 +101,7 @@ TEST(FeedforwardAnalysisTest, Arm1) {
     EXPECT_NEAR(gains[0], Ks, 0.003);
     EXPECT_NEAR(gains[1], Kv, 0.003);
     EXPECT_NEAR(gains[2], Ka, 0.003);
-    EXPECT_NEAR(gains[3], Kcos, 0.003);
+    EXPECT_NEAR(gains[3], Kg, 0.003);
     EXPECT_NEAR(gains[4], offset, 0.007);
   }
 }
@@ -110,10 +110,10 @@ TEST(FeedforwardAnalysisTest, Arm2) {
   constexpr double Ks = 0.547;
   constexpr double Kv = 0.0693;
   constexpr double Ka = 0.1170;
-  constexpr double Kcos = 0.122;
+  constexpr double Kg = 0.122;
 
   for (const auto& offset : {-2.0, -1.0, 0.0, 1.0, 2.0}) {
-    sysid::ArmSim model{Ks, Kv, Ka, Kcos, offset};
+    sysid::ArmSim model{Ks, Kv, Ka, Kg, offset};
     auto ff = sysid::CalculateFeedforwardGains(CollectData(model),
                                                sysid::analysis::kArm);
     auto& gains = std::get<0>(ff);
@@ -121,7 +121,7 @@ TEST(FeedforwardAnalysisTest, Arm2) {
     EXPECT_NEAR(gains[0], Ks, 0.003);
     EXPECT_NEAR(gains[1], Kv, 0.003);
     EXPECT_NEAR(gains[2], Ka, 0.003);
-    EXPECT_NEAR(gains[3], Kcos, 0.003);
+    EXPECT_NEAR(gains[3], Kg, 0.003);
     EXPECT_NEAR(gains[4], offset, 0.007);
   }
 }
