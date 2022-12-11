@@ -20,7 +20,7 @@
 
 using namespace sysid;
 
-static ImPlotPoint Getter(void* data, int idx) {
+static ImPlotPoint Getter(int idx, void* data) {
   return static_cast<ImPlotPoint*>(data)[idx];
 }
 
@@ -231,16 +231,14 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
           rawFast, startTimes, fastStep, sysid::ElevatorSim{Ks, Kv, Ka, Kg},
           &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
     } else if (type == analysis::kArm) {
-      const auto& Kcos = ffGains[3];
+      const auto& Kg = ffGains[3];
       const auto& offset = ffGains[4];
       m_quasistaticData.simData = PopulateTimeDomainSim(
-          rawSlow, startTimes, fastStep,
-          sysid::ArmSim{Ks, Kv, Ka, Kcos, offset}, &simSquaredErrorSum,
-          &squaredVariationSum, &timeSeriesPoints);
+          rawSlow, startTimes, fastStep, sysid::ArmSim{Ks, Kv, Ka, Kg, offset},
+          &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
       m_dynamicData.simData = PopulateTimeDomainSim(
-          rawFast, startTimes, fastStep,
-          sysid::ArmSim{Ks, Kv, Ka, Kcos, offset}, &simSquaredErrorSum,
-          &squaredVariationSum, &timeSeriesPoints);
+          rawFast, startTimes, fastStep, sysid::ArmSim{Ks, Kv, Ka, Kg, offset},
+          &simSquaredErrorSum, &squaredVariationSum, &timeSeriesPoints);
     } else {
       m_quasistaticData.simData = PopulateTimeDomainSim(
           rawSlow, startTimes, fastStep, sysid::SimpleMotorSim{Ks, Kv, Ka},
@@ -293,8 +291,8 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
       const auto& Kg = ffGains[3];
       accelPortion -= Kg / Ka;
     } else if (type == analysis::kArm) {
-      const auto& Kcos = ffGains[3];
-      accelPortion -= Kcos / Ka * slow[i].cos;
+      const auto& Kg = ffGains[3];
+      accelPortion -= Kg / Ka * slow[i].cos;
     }
 
     m_regressionData.data.emplace_back(slow[i].velocity, accelPortion);
@@ -312,8 +310,8 @@ void AnalyzerPlot::SetData(const Storage& rawData, const Storage& filteredData,
       const auto& Kg = ffGains[3];
       accelPortion -= Kg / Ka;
     } else if (type == analysis::kArm) {
-      const auto& Kcos = ffGains[3];
-      accelPortion -= Kcos / Ka * fast[i].cos;
+      const auto& Kg = ffGains[3];
+      accelPortion -= Kg / Ka * fast[i].cos;
     }
 
     m_regressionData.data.emplace_back(fast[i].velocity, accelPortion);

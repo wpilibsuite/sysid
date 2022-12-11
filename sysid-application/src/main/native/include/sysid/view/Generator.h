@@ -14,9 +14,9 @@
 #include <glass/View.h>
 #include <imgui.h>
 #include <portable-file-dialogs.h>
-#include <wpi/EventLoopRunner.h>
 #include <wpi/Logger.h>
 #include <wpi/mutex.h>
+#include <wpinet/EventLoopRunner.h>
 
 #include "sysid/deploy/DeploySession.h"
 #include "sysid/generation/ConfigManager.h"
@@ -39,7 +39,7 @@ struct DisplayNameStorage {
   /**
    * A const char* array to hold all the HardwareType names
    */
-  const char* names[S];
+  const char* names[S]{};
 
   /**
    * An int to pass into the size parameter of functions like `ImGui::Combo`
@@ -51,9 +51,8 @@ struct DisplayNameStorage {
    *
    * @param devices The array of hardware devices to store display names for.
    */
-  explicit constexpr DisplayNameStorage(std::array<HardwareType, S> devices)
-      : names{} {
-    for (int i = 0; i < S; i++) {
+  explicit constexpr DisplayNameStorage(std::array<HardwareType, S> devices) {
+    for (size_t i = 0; i < S; i++) {
       names[i] = devices[i].displayName;
     }
   }

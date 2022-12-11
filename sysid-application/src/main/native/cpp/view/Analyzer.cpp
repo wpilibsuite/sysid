@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <exception>
+#include <numbers>
 #include <thread>
 
 #include <fmt/core.h>
@@ -16,7 +17,6 @@
 #include <imgui_stdlib.h>
 #include <wpi/fs.h>
 #include <wpi/json.h>
-#include <wpi/numbers>
 
 #include "sysid/Util.h"
 #include "sysid/analysis/AnalysisManager.h"
@@ -199,7 +199,7 @@ bool Analyzer::DisplayResetAndUnitOverride() {
     if (unit == "Degrees") {
       m_conversionFactor = 360.0;
     } else if (unit == "Radians") {
-      m_conversionFactor = 2 * wpi::numbers::pi;
+      m_conversionFactor = 2 * std::numbers::pi;
     } else if (unit == "Rotations") {
       m_conversionFactor = 1.0;
     }
@@ -210,8 +210,6 @@ bool Analyzer::DisplayResetAndUnitOverride() {
     ImGui::InputDouble(
         "Units Per Rotation", &m_conversionFactor, 0.0, 0.0, "%.4f",
         isRotational ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None);
-
-    bool ex = false;
 
     if (ImGui::Button("Close")) {
       ImGui::CloseCurrentPopup();
@@ -607,16 +605,16 @@ void Analyzer::DisplayFeedforwardGains(float beginX, float beginY) {
   if (m_manager->GetAnalysisType() == analysis::kElevator) {
     DisplayGain("Kg", &m_ff[3]);
   } else if (m_manager->GetAnalysisType() == analysis::kArm) {
-    DisplayGain("Kcos", &m_ff[3]);
+    DisplayGain("Kg", &m_ff[3]);
 
     double offset;
     auto unit = m_manager->GetUnit();
     if (unit == "Radians") {
       offset = m_ff[4];
     } else if (unit == "Degrees") {
-      offset = m_ff[4] / wpi::numbers::pi * 180.0;
+      offset = m_ff[4] / std::numbers::pi * 180.0;
     } else if (unit == "Rotations") {
-      offset = m_ff[4] / (2 * wpi::numbers::pi);
+      offset = m_ff[4] / (2 * std::numbers::pi);
     }
     DisplayGain(
         fmt::format("Angle offset to horizontal ({})", GetAbbreviation(unit))
@@ -687,8 +685,8 @@ void Analyzer::DisplayFeedbackGains() {
       "This represents the denominator of the velocity unit used by the "
       "feedback controller. For example, CTRE uses 100 ms = 0.1 s.");
 
-  auto ShowPresetValue = [this](const char* text, double* data,
-                                float cursorX = 0.0f) {
+  auto ShowPresetValue = [](const char* text, double* data,
+                            float cursorX = 0.0f) {
     if (cursorX > 0) {
       ImGui::SetCursorPosX(cursorX);
     }

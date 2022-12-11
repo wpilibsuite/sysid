@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <numbers>
+
 #include <frc/AnalogGyro.h>
 #include <frc/Encoder.h>
 #include <frc/RobotController.h>
@@ -13,7 +15,6 @@
 #include <frc/simulation/EncoderSim.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc/system/plant/LinearSystemId.h>
-#include <wpi/numbers>
 
 #include "Constants.h"
 #include "interface/SysIdGeneralMechanism.h"
@@ -27,7 +28,7 @@ class Elevator : public SysIdGeneralMechanism {
     // Set the distance per pulse for the flywheel encoders. We can simply use
     // the 1 divided by the resolution as that denotes one rotation of the
     // flywheel.
-    m_encoder.SetDistancePerPulse(2 * wpi::numbers::pi / kEncoderResolution);
+    m_encoder.SetDistancePerPulse(2 * std::numbers::pi / kEncoderResolution);
 
     m_encoder.Reset();
   }
@@ -77,5 +78,6 @@ class Elevator : public SysIdGeneralMechanism {
                                             1000,
                                             2_in,
                                             -Constants::Elevator::kHeight,
-                                            Constants::Elevator::kHeight};
+                                            Constants::Elevator::kHeight,
+                                            true};
 };

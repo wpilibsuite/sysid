@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <ctre/Phoenix.h>
+// #include <ctre/Phoenix.h>
 
 #include <functional>
 #include <memory>
@@ -15,15 +15,15 @@
 #include <frc/TimedRobot.h>
 #include <frc/motorcontrol/MotorController.h>
 #include <frc/smartdashboard/SendableChooser.h>
-#include <rev/CANSparkMax.h>
+// #include <rev/CANSparkMax.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
 
 #include "sysid/logging/SysIdGeneralMechanismLogger.h"
 
-class Robot : public frc::TimedRobot {
+class MechanismRobot : public frc::TimedRobot {
  public:
-  Robot();
+  MechanismRobot();
   void RobotInit() override;
   void RobotPeriodic() override;
   void AutonomousInit() override;
@@ -44,9 +44,9 @@ class Robot : public frc::TimedRobot {
   std::function<double()> m_position;
   std::function<double()> m_rate;
   wpi::json m_json;
-  std::unique_ptr<rev::SparkMaxRelativeEncoder> m_revEncoderPort;
-  std::unique_ptr<rev::SparkMaxAlternateEncoder> m_revDataPort;
-  std::unique_ptr<CANCoder> m_cancoder;
+  // std::unique_ptr<rev::SparkMaxRelativeEncoder> m_revEncoderPort;
+  // std::unique_ptr<rev::SparkMaxAlternateEncoder> m_revDataPort;
+  // std::unique_ptr<CANCoder> m_cancoder;
   std::unique_ptr<frc::Encoder> m_encoder;
   sysid::SysIdGeneralMechanismLogger m_logger;
 };

@@ -4,14 +4,13 @@ plugins {
   id "edu.wpi.first.wpilib.versioning.WPILibVersioningPlugin" version "4.1.0"
   id "edu.wpi.first.wpilib.repositories.WPILibRepositoriesPlugin" version "2020.2"
   id "org.ysb33r.doxygen" version "0.7.0"
-  id "edu.wpi.first.NativeUtils" version "2022.8.2" apply false
+  id "edu.wpi.first.NativeUtils" version "2023.8.2" apply false
 }
 
 // Configure versioning for this project.
 wpilibVersioning.buildServerMode = project.hasProperty("buildServer")
 wpilibVersioning.releaseMode = project.hasProperty("releaseMode")
 wpilibVersioning.useAllTags = true
-//wpi.maven.useDevelopment = true
 // Configure what repositories we should get dependencies from.
 allprojects {
   // if (project.hasProperty("releaseMode")) {
@@ -39,7 +38,7 @@ def versionFile = file("$outputsFolder/version.txt")
 
 doxygen {
     executables {
-        doxygen version : '1.9.2',
+        doxygen version : '1.9.4',
         baseURI : 'https://frcmaven.wpi.edu/artifactory/generic-release-mirror/doxygen'
     }
 }
@@ -110,5 +109,5 @@ ext.addTaskToCopyAllOutputs = { task ->
 }
 
 wrapper {
-    gradleVersion = '7.3.3'
+    gradleVersion = '7.5.1'
 }

@@ -33,7 +33,7 @@ wpi::json ConfigManager::Generate(size_t occupied) {
 
   // Add motor types.
   std::vector<std::string_view> motorControllers;
-  for (int i = 0; i < occupied; i++) {
+  for (size_t i = 0; i < occupied; i++) {
     motorControllers.push_back(m_config.motorControllers[i].name);
   }
   json["motor controllers"] = motorControllers;
