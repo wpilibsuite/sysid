@@ -605,7 +605,7 @@ void Analyzer::DisplayFeedforwardGains(float beginX, float beginY) {
   if (m_manager->GetAnalysisType() == analysis::kElevator) {
     DisplayGain("Kg", &m_ff[3]);
   } else if (m_manager->GetAnalysisType() == analysis::kArm) {
-    DisplayGain("Kcos", &m_ff[3]);
+    DisplayGain("Kg", &m_ff[3]);
 
     double offset;
     auto unit = m_manager->GetUnit();

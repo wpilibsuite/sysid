@@ -250,7 +250,7 @@ void TelemetryManager::Update() {
     }
 
     // If we timed out, end the test and let the user know.
-    if (now - m_params.disableStart > 5) {
+    if (now - m_params.disableStart > 5.0) {
       WPI_WARNING(m_logger, "{}",
                   "TelemetryManager did not receieve data 5 seconds after "
                   "completing the test...");
