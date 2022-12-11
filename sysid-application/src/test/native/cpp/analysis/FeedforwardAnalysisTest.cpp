@@ -91,11 +91,11 @@ TEST(FeedforwardAnalysisTest, Arm1) {
                                                sysid::analysis::kArm);
     auto& gains = std::get<0>(ff);
 
-    EXPECT_NEAR(gains[0], Ks, 0.003);
-    EXPECT_NEAR(gains[1], Kv, 0.003);
-    EXPECT_NEAR(gains[2], Ka, 0.003);
-    EXPECT_NEAR(gains[3], Kg, 0.003);
-    EXPECT_NEAR(gains[4], offset, 0.007);
+    EXPECT_NEAR(gains[0], Ks, 0.004);
+    EXPECT_NEAR(gains[1], Kv, 0.04);
+    EXPECT_NEAR(gains[2], Ka, 0.005);
+    EXPECT_NEAR(gains[3], Kg, 0.02);
+    EXPECT_NEAR(gains[4], offset, 0.06);
   }
 }
 
@@ -115,7 +115,7 @@ TEST(FeedforwardAnalysisTest, Arm2) {
     EXPECT_NEAR(gains[1], Kv, 0.003);
     EXPECT_NEAR(gains[2], Ka, 0.003);
     EXPECT_NEAR(gains[3], Kg, 0.003);
-    EXPECT_NEAR(gains[4], offset, 0.007);
+    EXPECT_NEAR(gains[4], offset, 0.01);
   }
 }
 
@@ -191,7 +191,7 @@ TEST(FeedforwardAnalysisTest, Elevator1) {
   auto& gains = std::get<0>(ff);
 
   EXPECT_NEAR(gains[0], Ks, 0.003);
-  EXPECT_NEAR(gains[1], Kv, 0.003);
+  EXPECT_NEAR(gains[1], Kv, 0.008);
   EXPECT_NEAR(gains[2], Ka, 0.003);
   EXPECT_NEAR(gains[3], Kg, 0.003);
 }
