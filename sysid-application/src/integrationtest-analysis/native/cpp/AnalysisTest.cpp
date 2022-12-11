@@ -171,7 +171,7 @@ class AnalysisTest : public ::testing::Test {
     ASSERT_FALSE(m_overflow.Get());
 
     // Start the test and let it run for specified duration.
-    auto start = wpi::Now() * 1E-6;
+    double start = wpi::Now() * 1E-6;
     while (wpi::Now() * 1E-6 - start < duration) {
       m_manager->Update();
       std::this_thread::sleep_for(5ms);
@@ -180,7 +180,7 @@ class AnalysisTest : public ::testing::Test {
 
     // Wait at least one second while the mechanism stops.
     start = wpi::Now() * 1E-6;
-    while (m_manager->IsActive() || wpi::Now() * 1E-6 - start < 1) {
+    while (m_manager->IsActive() || wpi::Now() * 1E-6 - start < 1.0) {
       m_enable.Set(false);
       m_manager->Update();
       std::this_thread::sleep_for(5ms);
@@ -189,9 +189,7 @@ class AnalysisTest : public ::testing::Test {
   }
 
   void RunFullTests() {
-    for (int i = 0; i < 4; i++) {
-      auto test = kTests[i];
-
+    for (auto& test : kTests) {
       // Run each test for 3 seconds
       RunTest(test, 3);
     }

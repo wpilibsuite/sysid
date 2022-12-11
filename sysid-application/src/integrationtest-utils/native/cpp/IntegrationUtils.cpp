@@ -89,7 +89,8 @@ std::string KillNT(nt::NetworkTableInstance nt, nt::BooleanPublisher& kill) {
   // Set kill entry to false for future tests
   kill.Set(false);
   nt.Flush();
-  // Stop NT Client.
+
+  // Stop NT Client
   nt.StopClient();
 
   return capturedStdout;
