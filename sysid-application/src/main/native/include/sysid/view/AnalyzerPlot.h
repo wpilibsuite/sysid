@@ -59,9 +59,8 @@ class AnalyzerPlot {
   /**
    * Utility method to plot the raw time series data
    *
-   * @param rawSlow The raw slow (quasistatic) test data
-   * @param rawFast The raw fast (dynamic) test data
-   * @param abort   Aborts analysis early if set to true from another thread
+   * @param data The raw test data
+   * @param abort Aborts analysis early if set to true from another thread
    */
   void SetRawTimeData(const std::vector<PreparedData>& data,
                       std::atomic<bool>& abort);

@@ -81,10 +81,8 @@ static void CopyRawData(
 /**
  * Assigns the combines the various datasets into a single one for analysis.
  *
- * @param slowForward The slow forward dataset
- * @param slowBackward The slow backward dataset
- * @param fastForward The fast forward dataset
- * @param fastBackward The fast backward dataset
+ * @param forward The forward dataset
+ * @param backward The backward dataset
  */
 static Storage CombineDatasets(const std::vector<PreparedData>& forward,
                                const std::vector<PreparedData>& backward) {
