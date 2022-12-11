@@ -179,6 +179,7 @@ void SetupEncoders(
   double combinedCPR = cpr * gearing;
   frc::SmartDashboard::PutNumber("SysIdCPR", cpr);
   frc::SmartDashboard::PutNumber("SysIdGearing", gearing);
+  frc::SmartDashboard::PutNumber("SysIdConversionFactor", combinedCPR);
 
 #ifndef __FRC_ROBORIO__
   fmt::print("Setting default rates\n");
@@ -196,7 +197,6 @@ void SetupEncoders(
       }
       // SetupCTREEncoder(controller, feedbackDevice, period, combinedCPR,
       //                  numSamples, encoderInverted, position, rate);
-      frc::SmartDashboard::PutNumber("SysIdConversionFactor", combinedCPR);
     } else {  // Venom
       fmt::print("Setup Built-in+Venom\n");
       // auto* venom = static_cast<frc::CANVenom*>(controller);
@@ -205,7 +205,6 @@ void SetupEncoders(
       //     return venom->GetSpeed() / gearing /
       //            60;  // Conversion from RPM to rotations per second
       // };
-      frc::SmartDashboard::PutNumber("SysIdConversionFactor", gearing);
     }
   } else if (encoderType == "Encoder Port") {
     // auto* sparkMax = static_cast<rev::CANSparkMax*>(controller);
@@ -221,7 +220,6 @@ void SetupEncoders(
       // revEncoderPort =
       //     std::make_unique<rev::SparkMaxRelativeEncoder>(sparkMax->GetEncoder(
       //         rev::SparkMaxRelativeEncoder::Type::kHallSensor));
-      frc::SmartDashboard::PutNumber("SysIdConversionFactor", gearing);
     }
 
     // revEncoderPort->SetMeasurementPeriod(period);
@@ -248,13 +246,11 @@ void SetupEncoders(
     // rate = [=, &revDataPort] {
     //     return revDataPort->GetVelocity() / gearing / 60;
     // };
-    frc::SmartDashboard::PutNumber("SysIdConversionFactor", combinedCPR);
   } else if (encoderType == "Tachometer") {
     fmt::print("Setup Tachometer\n");
     // SetupCTREEncoder(controller, FeedbackDevice::Tachometer, period,
     //                  combinedCPR, numSamples, encoderInverted, position,
     //                  rate);
-    frc::SmartDashboard::PutNumber("SysIdConversionFactor", combinedCPR);
   } else if (encoderType == "CANCoder") {
     fmt::print("Setup CANCoder\n");
     // cancoder = std::make_unique<CANCoder>(encoderPorts[0]);
@@ -269,7 +265,6 @@ void SetupEncoders(
     // position = [=, &cancoder] { return cancoder->GetPosition() / combinedCPR;
     // }; rate = [=, &cancoder] { return cancoder->GetVelocity() / combinedCPR;
     // };
-    frc::SmartDashboard::PutNumber("SysIdConversionFactor", combinedCPR);
   } else {
     fmt::print("Setup roboRIO quadrature\n");
     if (isEncoding) {
@@ -286,7 +281,6 @@ void SetupEncoders(
     encoder->SetSamplesToAverage(numSamples);
     position = [&] { return encoder->GetDistance(); };
     rate = [&] { return encoder->GetRate(); };
-    frc::SmartDashboard::PutNumber("SysIdConversionFactor", combinedCPR);
   }
 }
 
