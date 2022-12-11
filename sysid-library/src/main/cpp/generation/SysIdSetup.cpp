@@ -214,7 +214,6 @@ void SetupEncoders(
       //     std::make_unique<rev::SparkMaxRelativeEncoder>(sparkMax->GetEncoder(
       //         rev::SparkMaxRelativeEncoder::Type::kQuadrature, cpr));
       // revEncoderPort->SetInverted(encoderInverted);
-      frc::SmartDashboard::PutNumber("SysIdConversionFactor", combinedCPR);
     } else {
       fmt::print("Setup SPARK MAX (Brushless) Encoder Port\n");
       // revEncoderPort =
