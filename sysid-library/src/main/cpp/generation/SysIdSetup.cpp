@@ -14,6 +14,7 @@
 #include <frc/TimedRobot.h>
 #include <frc/motorcontrol/Spark.h>
 // #include <frc/romi/RomiGyro.h>
+#include <frc/smartdashboard/SmartDashboard.h>
 #include <units/angle.h>
 #include <units/angular_velocity.h>
 #include <wpi/SmallString.h>
@@ -176,6 +177,10 @@ void SetupEncoders(
     std::unique_ptr<frc::Encoder>& encoder, std::function<double()>& position,
     std::function<double()>& rate) {
   double combinedCPR = cpr * gearing;
+  frc::SmartDashboard::PutNumber("SysIdCPR", cpr);
+  frc::SmartDashboard::PutNumber("SysIdGearing", gearing);
+  frc::SmartDashboard::PutNumber("SysIdConversionFactor", combinedCPR);
+
 #ifndef __FRC_ROBORIO__
   fmt::print("Setting default rates\n");
   SetDefaultDataCollection(position, rate);
