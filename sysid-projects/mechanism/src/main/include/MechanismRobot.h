@@ -4,7 +4,7 @@
 
 #pragma once
 
-// #include <ctre/Phoenix.h>
+#include <ctre/Phoenix.h>
 
 #include <functional>
 #include <memory>
@@ -46,7 +46,7 @@ class MechanismRobot : public frc::TimedRobot {
   wpi::json m_json;
   // std::unique_ptr<rev::SparkMaxRelativeEncoder> m_revEncoderPort;
   // std::unique_ptr<rev::SparkMaxAlternateEncoder> m_revDataPort;
-  // std::unique_ptr<CANCoder> m_cancoder;
+  std::unique_ptr<CANCoder> m_cancoder;
   std::unique_ptr<frc::Encoder> m_encoder;
   sysid::SysIdGeneralMechanismLogger m_logger;
 };

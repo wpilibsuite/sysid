@@ -58,13 +58,14 @@ constexpr HardwareType kPWM{"PWM"};
 constexpr HardwareType kTalonSRX{"TalonSRX"};
 constexpr HardwareType kVictorSPX{"VictorSPX"};
 constexpr HardwareType kTalonFX{"TalonFX"};
+constexpr HardwareType kTalonFXPro{"TalonFX (Pro)"};
 constexpr HardwareType kSPARKMAXBrushless{"SPARK MAX (Brushless)"};
 constexpr HardwareType kSPARKMAXBrushed{"SPARK MAX (Brushed)"};
 constexpr HardwareType kVenom{"Venom"};
 
-constexpr std::array<HardwareType, 7> kMotorControllers = {
+constexpr std::array<HardwareType, 8> kMotorControllers = {
     kPWM,     kTalonSRX,          kVictorSPX,
-    kTalonFX, kSPARKMAXBrushless, kSPARKMAXBrushed,
+    kTalonFX, kTalonFXPro, kSPARKMAXBrushless, kSPARKMAXBrushed,
     kVenom};
 
 /**

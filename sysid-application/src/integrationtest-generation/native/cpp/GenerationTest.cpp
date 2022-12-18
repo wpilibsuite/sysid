@@ -44,6 +44,7 @@ wpi::StringMap<wpi::SmallVector<sysid::HardwareType, 2>>
         {std::string{sysid::motorcontroller::kVictorSPX.name}, kGeneralEncs},
         {std::string{sysid::motorcontroller::kTalonSRX.name}, kTalonEncs},
         {std::string{sysid::motorcontroller::kTalonFX.name}, kBuiltInEncs},
+        {std::string{sysid::motorcontroller::kTalonFXPro.name}, kBuiltInEncs},
         {std::string{sysid::motorcontroller::kSPARKMAXBrushless.name},
          kSMaxEncs},
         {std::string{sysid::motorcontroller::kSPARKMAXBrushed.name}, kSMaxEncs},
@@ -140,6 +141,8 @@ class GenerationTest : public ::testing::Test {
                motorController == sysid::motorcontroller::kVictorSPX.name ||
                motorController == sysid::motorcontroller::kTalonFX.name) {
       voltageAccessor = "CTRE";
+    } else if (motorController == sysid::motorcontroller::kTalonFXPro.name) {
+      voltageAccessor = "CTRE (Pro)";
     } else if (motorController == sysid::motorcontroller::kVenom.name) {
       voltageAccessor = "Venom";
     } else {

@@ -4,7 +4,7 @@
 
 #pragma once
 
-// #include <ctre/Phoenix.h>
+#include <ctre/Phoenix.h>
 
 #include <functional>
 #include <memory>
@@ -61,10 +61,10 @@ class DriveRobot : public frc::TimedRobot {
   std::unique_ptr<frc::ADIS16448_IMU> m_ADIS16448Gyro;
   std::unique_ptr<frc::ADIS16470_IMU> m_ADIS16470Gyro;
 
-  // std::unique_ptr<CANCoder> m_leftCancoder;
-  // std::unique_ptr<CANCoder> m_rightCancoder;
-  // std::unique_ptr<WPI_TalonSRX> m_tempTalon;
-  // std::unique_ptr<BasePigeon> m_pigeon;
+  std::unique_ptr<CANCoder> m_leftCancoder;
+  std::unique_ptr<CANCoder> m_rightCancoder;
+  std::unique_ptr<WPI_TalonSRX> m_tempTalon;
+  std::unique_ptr<BasePigeon> m_pigeon;
 
   sysid::SysIdDrivetrainLogger m_logger;
 };

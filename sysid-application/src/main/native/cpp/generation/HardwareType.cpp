@@ -25,6 +25,9 @@ HardwareType sysid::motorcontroller::FromMotorControllerName(
   if (name == "TalonFX") {
     return sysid::motorcontroller::kTalonFX;
   }
+  if (name == "TalonFX (Pro)") {
+    return sysid::motorcontroller::kTalonFXPro;
+  }
   if (name == "SPARK MAX (Brushless)") {
     return sysid::motorcontroller::kSPARKMAXBrushless;
   }

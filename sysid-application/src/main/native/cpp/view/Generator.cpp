@@ -167,8 +167,10 @@ void Generator::UpdateFromConfig() {
 
   // Setting right Idxs for the GUI
   if (mainMotorController == sysid::motorcontroller::kTalonSRX ||
-      mainMotorController == sysid::motorcontroller::kTalonFX) {
-    if (mainMotorController == sysid::motorcontroller::kTalonFX) {
+      mainMotorController == sysid::motorcontroller::kTalonFX ||
+      mainMotorController == sysid::motorcontroller::kTalonFXPro) {
+    if (mainMotorController == sysid::motorcontroller::kTalonFX ||
+        mainMotorController == sysid::motorcontroller::kTalonFXPro) {
       m_encoderIdx = GetNewIdx(ArrayConcat(kBuiltInEncoders, kGeneralEncoders),
                                encoderTypeName);
     } else {
@@ -383,8 +385,10 @@ void Generator::Display() {
   // Add encoder selection.
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
   if (mainMotorController == sysid::motorcontroller::kTalonSRX ||
-      mainMotorController == sysid::motorcontroller::kTalonFX) {
-    if (mainMotorController == sysid::motorcontroller::kTalonFX) {
+      mainMotorController == sysid::motorcontroller::kTalonFX ||
+      mainMotorController == sysid::motorcontroller::kTalonFXPro) {
+    if (mainMotorController == sysid::motorcontroller::kTalonFX ||
+        mainMotorController == sysid::motorcontroller::kTalonFXPro) {
       GetEncoder(ArrayConcat(kBuiltInEncoders, kGeneralEncoders));
       if (m_encoderIdx < 1) {
         RegularEncoderSetup(drive);
@@ -536,7 +540,7 @@ void Generator::Display() {
   sysid::CreateTooltip(
       "This is the number of encoder counts per revolution for your encoder.\n"
       "Common values for this are here:\nCTRE Magnetic Encoder: 4096\nFalcon "
-      "500 Integrated: 2048\nREV Throughbore: 8192\nNEO (and NEO 550) "
+      "500 Integrated: 2048\nFalcon 500 running Phoenix Pro (Pro already handles this value): 1\nREV Throughbore: 8192\nNEO (and NEO 550) "
       "Integrated "
       "Encoders (REV already handles this value): 1");
 
