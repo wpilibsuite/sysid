@@ -41,7 +41,7 @@ wpi::json GetConfigJson();
  *                             controller objects
  */
 void AddMotorController(
-    int port, std::string_view controller, bool inverted,
+    int port, std::string_view controller, bool inverted, std::string_view canivore,
     std::vector<std::unique_ptr<frc::MotorController>>* controllers);
 
 /**

@@ -348,6 +348,15 @@ void Generator::Display() {
     ImGui::SameLine();
     ImGui::Checkbox(drive ? "L Inverted" : "Inverted", &pi[i]);
 
+    if (m_settings.motorControllers[i] == sysid::motorcontroller::kTalonFX ||
+        m_settings.motorControllers[i] == sysid::motorcontroller::kTalonFXPro) {
+      // Add CANivore name if we are using a CTRE motor controller
+      ImGui::SameLine();
+      ImGui::SetNextItemWidth(80);
+      ImGui::InputText("CANivore Name", m_settings.canivoreNames[i].data(), m_settings.canivoreNames[i].size());
+    }
+
+
     // Add right side drivetrain ports (if the analysis type is drivetrain).
     if (drive) {
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);

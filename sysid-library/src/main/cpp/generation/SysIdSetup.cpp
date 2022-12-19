@@ -57,7 +57,7 @@ wpi::json GetConfigJson() {
 }
 
 void AddMotorController(
-    int port, std::string_view controller, bool inverted,
+    int port, std::string_view controller, bool inverted, std::string_view canivore,
     std::vector<std::unique_ptr<frc::MotorController>>* controllers) {
   if (controller == "TalonSRX" || controller == "VictorSPX" ||
       controller == "TalonFX") {
@@ -66,7 +66,7 @@ void AddMotorController(
       controllers->push_back(std::make_unique<WPI_TalonSRX>(port));
     } else if (controller == "TalonFX") {
       fmt::print("Setup TalonFX\n");
-      controllers->emplace_back(std::make_unique<WPI_TalonFX>(port));
+      controllers->emplace_back(std::make_unique<WPI_TalonFX>(port, std::string{canivore.begin(), canivore.end()}));
     } else {
       fmt::print("Setup VictorSPX\n");
       controllers->emplace_back(std::make_unique<WPI_VictorSPX>(port));
@@ -79,7 +79,7 @@ void AddMotorController(
     ctreController->SetNeutralMode(motorcontrol::NeutralMode::Brake);
   } else if (controller == "TalonFX (Pro)") {
     fmt::print("Setup TalonFX (Pro)\n");
-    controllers->emplace_back(std::make_unique<ctre::phoenixpro::hardware::TalonFX>(port));
+    controllers->emplace_back(std::make_unique<ctre::phoenixpro::hardware::TalonFX>(port, std::string{canivore.begin(), canivore.end()}));
     auto* ctreController = dynamic_cast<ctre::phoenixpro::hardware::TalonFX*>(controllers->back().get());
     ctre::phoenixpro::configs::TalonFXConfiguration configs{};
     configs.MotorOutput.Inverted = inverted ? ctre::phoenixpro::spns::InvertedValue::CounterClockwise_Positive : ctre::phoenixpro::spns::InvertedValue::Clockwise_Positive;

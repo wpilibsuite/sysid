@@ -42,6 +42,9 @@ DriveRobot::DriveRobot() : frc::TimedRobot(5_ms) {
     std::vector<bool> rightMotorsInverted =
         m_json.at("secondary motors inverted").get<std::vector<bool>>();
 
+    std::vector<std::string> canivoreNames =
+        m_json.at("canivore names").get<std::vector<std::string>>();
+
     std::string encoderType = m_json.at("encoder type").get<std::string>();
     bool leftEncoderInverted =
         m_json.at("primary encoder inverted").get<bool>();
@@ -64,9 +67,9 @@ DriveRobot::DriveRobot() : frc::TimedRobot(5_ms) {
     fmt::print("Setup motors\n");
     for (size_t i = 0; i < leftPorts.size(); i++) {
       sysid::AddMotorController(leftPorts[i], m_controllerNames[i],
-                                leftMotorsInverted[i], &m_leftControllers);
+                                leftMotorsInverted[i], canivoreNames[i], &m_leftControllers);
       sysid::AddMotorController(rightPorts[i], m_controllerNames[i],
-                                rightMotorsInverted[i], &m_rightControllers);
+                                rightMotorsInverted[i], canivoreNames[i], &m_rightControllers);
     }
 
     fmt::print("Setup encoders\n");

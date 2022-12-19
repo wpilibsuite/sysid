@@ -43,6 +43,11 @@ struct ConfigSettings {
       sysid::motorcontroller::kPWM, sysid::motorcontroller::kPWM};
 
   /**
+   * The CANivore name if it's on a Non-RIO bus
+   */
+  wpi::SmallVector<std::array<char, 32>, 3> canivoreNames = {{'r', 'i', 'o', '\0'}, {'r', 'i', 'o', '\0'}};
+
+  /**
    * If the primary motor controllers (general mechanism motors / left
    * drivetrain motors) should be inverted or not.
    */
@@ -136,6 +141,7 @@ struct ConfigSettings {
 const ConfigSettings kRomiConfig{{0},
                                  {1},
                                  {sysid::motorcontroller::kPWM},
+                                 {{'r', 'i', 'o', '\0'}},
                                  {true},
                                  {false},
                                  sysid::encoder::kRoboRIO,

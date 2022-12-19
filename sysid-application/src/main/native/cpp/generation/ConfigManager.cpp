@@ -38,6 +38,13 @@ wpi::json ConfigManager::Generate(size_t occupied) {
   }
   json["motor controllers"] = motorControllers;
 
+  // Add CANivore busses
+  std::vector<std::string> canivoreNames;
+  for (size_t i = 0; i < occupied; i++) {
+    canivoreNames.push_back(std::string(m_config.canivoreNames[i].data()));
+  }
+  json["canivore names"] = canivoreNames;
+
   // Add motor inversions.
   json["primary motors inverted"] =
       SliceVector(m_config.primaryMotorsInverted, occupied);
