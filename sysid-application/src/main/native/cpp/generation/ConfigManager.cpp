@@ -25,6 +25,9 @@ wpi::json ConfigManager::Generate(size_t occupied) {
   // Create the JSON to return.
   wpi::json json;
 
+  // Keep a CANivore name vector around that we can push our names into
+  std::vector<std::string> canivoreNames;
+
   // Add motor ports.
   json["primary motor ports"] =
       SliceVector(m_config.primaryMotorPorts, occupied);
@@ -39,7 +42,7 @@ wpi::json ConfigManager::Generate(size_t occupied) {
   json["motor controllers"] = motorControllers;
 
   // Add CANivore busses
-  std::vector<std::string> canivoreNames;
+  canivoreNames.clear();
   for (size_t i = 0; i < occupied; i++) {
     canivoreNames.push_back(std::string(m_config.canivoreNames[i].data()));
   }
@@ -54,6 +57,7 @@ wpi::json ConfigManager::Generate(size_t occupied) {
   // Add encoder ports.
   json["primary encoder ports"] = m_config.primaryEncoderPorts;
   json["secondary encoder ports"] = m_config.secondaryEncoderPorts;
+  json["encoder canivore name"] = std::string(m_config.encoderCANivoreName.data());
 
   // Add encoder type.
   json["encoder type"] = m_config.encoderType.name;
@@ -70,6 +74,7 @@ wpi::json ConfigManager::Generate(size_t occupied) {
   // Add gyro type and constructor.
   json["gyro"] = m_config.gyro.name;
   json["gyro ctor"] = m_config.gyroCtor;
+  json["gyro canivore name"] = std::string(m_config.gyroCANivoreName.data());
 
   // Add advanced encoder settings.
   json["encoding"] = m_config.encoding;

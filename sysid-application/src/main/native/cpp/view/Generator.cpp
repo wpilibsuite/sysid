@@ -134,6 +134,8 @@ void Generator::CANCoderSetup(bool drive) {
   ImGui::SameLine();
   ImGui::Checkbox(drive ? "Left Encoder Inverted" : "Encoder Inverted",
                   &m_settings.primaryEncoderInverted);
+  ImGui::SameLine();
+  ImGui::SetNextItemWidth(80);
   if (drive) {
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
     ImGui::InputInt("R CANCoder Port", &m_settings.secondaryEncoderPorts[1], 0,
@@ -142,6 +144,8 @@ void Generator::CANCoderSetup(bool drive) {
     ImGui::Checkbox("Right Encoder Inverted",
                     &m_settings.secondaryEncoderInverted);
   }
+  ImGui::SetNextItemWidth(80);
+  ImGui::InputText("CANcoder CANivore Name", m_settings.encoderCANivoreName.data(), m_settings.encoderCANivoreName.size());
 }
 
 void Generator::RegularEncoderSetup(bool drive) {
@@ -294,6 +298,7 @@ void Generator::Display() {
     auto& mc = m_settings.motorControllers;
     auto& pi = m_settings.primaryMotorsInverted;
     auto& si = m_settings.secondaryMotorsInverted;
+    auto& cn = m_settings.canivoreNames;
 
     // Ensure that our vector contains i+1 elements.
     if (pm.size() == i) {
@@ -302,6 +307,7 @@ void Generator::Display() {
       mc.emplace_back(motorControllerNames[0]);
       pi.emplace_back(false);
       si.emplace_back(false);
+      cn.emplace_back(std::array<char, 32>{'r', 'i', 'o', '\0'});
     }
 
     // Make sure elements have unique IDs.
@@ -353,7 +359,7 @@ void Generator::Display() {
       // Add CANivore name if we are using a CTRE motor controller
       ImGui::SameLine();
       ImGui::SetNextItemWidth(80);
-      ImGui::InputText("CANivore Name", m_settings.canivoreNames[i].data(), m_settings.canivoreNames[i].size());
+      ImGui::InputText("MC CANivore Name", m_settings.canivoreNames[i].data(), m_settings.canivoreNames[i].size());
     }
 
 
@@ -504,7 +510,10 @@ void Generator::Display() {
       }
     } else if (gyroType == sysid::gyro::kPigeon2) {
       ImGui::InputInt("CAN ID", &m_gyroPort, 0, 0);
-      m_settings.gyroCtor = std::to_string(m_gyroPort);
+      ImGui::SameLine();
+      ImGui::SetNextItemWidth(80);
+      ImGui::InputText("Gyro CANivore Name", m_settings.gyroCANivoreName.data(), m_settings.gyroCANivoreName.size());
+      m_settings.gyroCtor = std::to_string(m_gyroPort) + ", " + std::string{m_settings.gyroCANivoreName.begin(), m_settings.gyroCANivoreName.end()};
     } else if (gyroType == sysid::gyro::kADXRS450) {
       ImGui::Combo("SPI Port", &m_gyroParam, kADXRS450Ctors,
                    IM_ARRAYSIZE(kADXRS450Ctors));

@@ -79,6 +79,11 @@ struct ConfigSettings {
   std::array<int, 2> secondaryEncoderPorts = {2, 3};
 
   /**
+   * CANivore names for the CANcoder sensors if they're not on the RIO bus.
+   */
+  std::array<char, 32> encoderCANivoreName = {'r', 'i', 'o', '\0'};
+
+  /**
    * If the primary encoder (general mechanism motors / left drivetrain encoder)
    * should be inverted or not.
    */
@@ -116,6 +121,11 @@ struct ConfigSettings {
   std::string gyroCtor = "0";
 
   /**
+   * The CANivore name of a Pigeon2 if it's on a Non-RIO bus
+   */
+  std::array<char, 32> gyroCANivoreName = {'r', 'i', 'o', '\0'};
+
+  /**
    * If the encoder is plugged into the roboRIO, there's the option to set it's
    * encoding setting to reduce noise.
    */
@@ -147,13 +157,15 @@ const ConfigSettings kRomiConfig{{0},
                                  sysid::encoder::kRoboRIO,
                                  {4, 5},
                                  {6, 7},
+                                 {{'r', 'i', 'o', '\0'}},
                                  false,
                                  false,
                                  1440.0,
                                  1.0,
                                  1.0,
                                  sysid::gyro::kRomiGyro,
-                                 ""};
+                                 "",
+                                 {'r', 'i', 'o', '\0'}};
 
 /**
  * This class manages generating the JSON configuration from a reference to the

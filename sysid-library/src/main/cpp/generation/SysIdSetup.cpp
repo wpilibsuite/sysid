@@ -174,7 +174,7 @@ void SetupEncoders(
     std::string_view encoderType, bool isEncoding, int period, double cpr,
     double gearing, int numSamples, std::string_view controllerName,
     frc::MotorController* controller, bool encoderInverted,
-    const std::vector<int>& encoderPorts,
+    const std::vector<int>& encoderPorts, const std::string& encoderCANivoreName,
     std::unique_ptr<CANCoder>& cancoder,
     // std::unique_ptr<rev::SparkMaxRelativeEncoder>& revEncoderPort,
     // std::unique_ptr<rev::SparkMaxAlternateEncoder>& revDataPort,
@@ -260,18 +260,18 @@ void SetupEncoders(
     //                  rate);
   } else if (encoderType == "CANCoder") {
     fmt::print("Setup CANCoder\n");
-    // cancoder = std::make_unique<CANCoder>(encoderPorts[0]);
-    // cancoder->ConfigSensorDirection(encoderInverted);
+    cancoder = std::make_unique<CANCoder>(encoderPorts[0], encoderCANivoreName);
+    cancoder->ConfigSensorDirection(encoderInverted);
 
-    // sensors::SensorVelocityMeasPeriod cancoderPeriod =
-    //     getCTREVelocityPeriod(period);
+    sensors::SensorVelocityMeasPeriod cancoderPeriod =
+        getCTREVelocityPeriod(period);
 
-    // cancoder->ConfigVelocityMeasurementPeriod(cancoderPeriod);
-    // cancoder->ConfigVelocityMeasurementWindow(numSamples);
+    cancoder->ConfigVelocityMeasurementPeriod(cancoderPeriod);
+    cancoder->ConfigVelocityMeasurementWindow(numSamples);
 
-    // position = [=, &cancoder] { return cancoder->GetPosition() / combinedCPR;
-    // }; rate = [=, &cancoder] { return cancoder->GetVelocity() / combinedCPR;
-    // };
+    position = [=, &cancoder] { return cancoder->GetPosition() / combinedCPR;
+    }; rate = [=, &cancoder] { return cancoder->GetVelocity() / combinedCPR;
+    };
   } else {
     fmt::print("Setup roboRIO quadrature\n");
     if (isEncoding) {
@@ -324,6 +324,7 @@ void SetupGyro(
     std::unique_ptr<frc::ADIS16470_IMU>& ADIS16470Gyro,
     std::unique_ptr<BasePigeon>& pigeon,
     std::unique_ptr<WPI_TalonSRX>& tempTalon,
+    const std::string& gyroCANivoreName,
     std::function<double()>& gyroPosition, std::function<double()>& gyroRate) {
 #ifndef __FRC_ROBORIO__
   sysid::SetDefaultDataCollection(gyroPosition, gyroRate);
@@ -372,7 +373,7 @@ void SetupGyro(
         pigeon = std::make_unique<PigeonIMU>(srxPort);
         fmt::print("Setup Pigeon, {}\n", portStr);
       } else {
-        pigeon = std::make_unique<Pigeon2>(srxPort);
+        pigeon = std::make_unique<Pigeon2>(srxPort, gyroCANivoreName);
         fmt::print("Setup Pigeon2, {}\n", portStr);
       }
     }

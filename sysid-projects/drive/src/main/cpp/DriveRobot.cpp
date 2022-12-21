@@ -44,6 +44,10 @@ DriveRobot::DriveRobot() : frc::TimedRobot(5_ms) {
 
     std::vector<std::string> canivoreNames =
         m_json.at("canivore names").get<std::vector<std::string>>();
+    std::string encoderCANivoreName =
+        m_json.at("encoder canivore name").get<std::string>();
+    std::string gyroCANivoreName =
+        m_json.at("gyro canivore name").get<std::string>();
 
     std::string encoderType = m_json.at("encoder type").get<std::string>();
     bool leftEncoderInverted =
@@ -76,13 +80,13 @@ DriveRobot::DriveRobot() : frc::TimedRobot(5_ms) {
     sysid::SetupEncoders(
         encoderType, isEncoding, period, cpr, gearing, numSamples,
         m_controllerNames[0], m_leftControllers.at(0).get(),
-        leftEncoderInverted, leftEncoderPorts,
+        leftEncoderInverted, leftEncoderPorts, encoderCANivoreName,
         m_leftCancoder, // m_leftRevEncoderPort,m_leftRevDataPort,
         m_leftEncoder, m_leftPosition, m_leftRate);
     sysid::SetupEncoders(
         encoderType, isEncoding, period, cpr, gearing, numSamples,
         m_controllerNames[0], m_rightControllers.at(0).get(),
-        rightEncoderInverted, rightEncoderPorts,
+        rightEncoderInverted, rightEncoderPorts, encoderCANivoreName,
         m_rightCancoder, // m_rightRevEncoderPort, m_rightRevDataPort,
         m_rightEncoder, m_rightPosition, m_rightRate);
 
@@ -90,7 +94,8 @@ DriveRobot::DriveRobot() : frc::TimedRobot(5_ms) {
     sysid::SetupGyro(gyroType, gyroCtor, leftPorts, rightPorts,
                      m_controllerNames, m_leftControllers, m_rightControllers,
                      m_gyro, m_ADIS16448Gyro, m_ADIS16470Gyro, m_pigeon,
-                     m_tempTalon, m_gyroPosition, m_gyroRate);
+                     m_tempTalon, gyroCANivoreName,
+                     m_gyroPosition, m_gyroRate);
   } catch (std::exception& e) {
     fmt::print("Project failed: {}\n", e.what());
     std::exit(-1);
