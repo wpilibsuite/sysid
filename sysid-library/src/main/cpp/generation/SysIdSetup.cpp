@@ -29,6 +29,8 @@
 #define EXPAND_STRINGIZE(s) STRINGIZE(s)
 #define STRINGIZE(s) #s
 
+using namespace ctre::phoenixpro;
+
 namespace sysid {
 
 wpi::json GetConfigJson() {
@@ -79,10 +81,10 @@ void AddMotorController(
     ctreController->SetNeutralMode(motorcontrol::NeutralMode::Brake);
   } else if (controller == "TalonFX (Pro)") {
     fmt::print("Setup TalonFX (Pro)\n");
-    controllers->emplace_back(std::make_unique<ctre::phoenixpro::hardware::TalonFX>(port, std::string{canivore.begin(), canivore.end()}));
-    auto* ctreController = dynamic_cast<ctre::phoenixpro::hardware::TalonFX*>(controllers->back().get());
-    ctre::phoenixpro::configs::TalonFXConfiguration configs{};
-    configs.MotorOutput.Inverted = inverted ? ctre::phoenixpro::spns::InvertedValue::CounterClockwise_Positive : ctre::phoenixpro::spns::InvertedValue::Clockwise_Positive;
+    controllers->emplace_back(std::make_unique<hardware::TalonFX>(port, std::string{canivore.begin(), canivore.end()}));
+    auto* ctreController = dynamic_cast<hardware::TalonFX*>(controllers->back().get());
+    configs::TalonFXConfiguration configs{};
+    configs.MotorOutput.Inverted = inverted ? ctre::phoenixpro::signals::InvertedValue::CounterClockwise_Positive : ctre::phoenixpro::signals::InvertedValue::Clockwise_Positive;
     ctreController->GetConfigurator().Apply(configs);
   } else if (controller == "SPARK MAX (Brushless)" ||
              controller == "SPARK MAX (Brushed)") {
@@ -190,8 +192,8 @@ void SetupEncoders(
   if (encoderType == "Built-in") {
     if (controllerName == "TalonFX (Pro)") {
       fmt::print("Setup Built-in+TalonFX (Pro)\n");
-      position = [=] { return dynamic_cast<ctre::phoenixpro::hardware::TalonFX *>(controller)->GetPosition().GetValue().value() / gearing; };
-      rate = [=] { return dynamic_cast<ctre::phoenixpro::hardware::TalonFX *>(controller)->GetVelocity().GetValue().value() / gearing; };
+      position = [=] { return dynamic_cast<hardware::TalonFX *>(controller)->GetPosition().GetValue().value() / gearing; };
+      rate = [=] { return dynamic_cast<hardware::TalonFX *>(controller)->GetVelocity().GetValue().value() / gearing; };
     } else if (wpi::starts_with(controllerName, "Talon")) {
       FeedbackDevice feedbackDevice;
       if (controllerName == "TalonSRX") {
