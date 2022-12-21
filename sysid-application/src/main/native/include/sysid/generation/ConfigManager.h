@@ -24,6 +24,10 @@ namespace sysid {
  */
 struct ConfigSettings {
   /**
+   * Maximum length of a CANivore name is 32 characters
+   */
+  static constexpr int kMaxCANivoreNameLength = 32;
+  /**
    * Ports for the primary motor controllers. For general mechanisms this is the
    * motor ports that will be used. For drivetrains these are the left-side
    * motor controllers.
@@ -45,7 +49,7 @@ struct ConfigSettings {
   /**
    * The CANivore name if it's on a Non-RIO bus
    */
-  wpi::SmallVector<std::array<char, 32>, 3> canivoreNames = {{'r', 'i', 'o', '\0'}, {'r', 'i', 'o', '\0'}};
+  wpi::SmallVector<std::array<char, kMaxCANivoreNameLength>, 3> canivoreNames = {{'r', 'i', 'o', '\0'}, {'r', 'i', 'o', '\0'}};
 
   /**
    * If the primary motor controllers (general mechanism motors / left
@@ -81,7 +85,7 @@ struct ConfigSettings {
   /**
    * CANivore names for the CANcoder sensors if they're not on the RIO bus.
    */
-  std::array<char, 32> encoderCANivoreName = {'r', 'i', 'o', '\0'};
+  std::array<char, kMaxCANivoreNameLength> encoderCANivoreName = {'r', 'i', 'o', '\0'};
 
   /**
    * If the primary encoder (general mechanism motors / left drivetrain encoder)
@@ -123,7 +127,7 @@ struct ConfigSettings {
   /**
    * The CANivore name of a Pigeon2 if it's on a Non-RIO bus
    */
-  std::array<char, 32> gyroCANivoreName = {'r', 'i', 'o', '\0'};
+  std::array<char, kMaxCANivoreNameLength> gyroCANivoreName = {'r', 'i', 'o', '\0'};
 
   /**
    * If the encoder is plugged into the roboRIO, there's the option to set it's
