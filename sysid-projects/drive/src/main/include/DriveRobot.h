@@ -4,14 +4,13 @@
 
 #pragma once
 
-#include <ctre/Phoenix.h>
-#include <ctre/phoenixpro/Pigeon2.hpp>
-
 #include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include <ctre/Phoenix.h>
+#include <ctre/phoenixpro/Pigeon2.hpp>
 #include <frc/ADIS16448_IMU.h>
 #include <frc/ADIS16470_IMU.h>
 #include <frc/Encoder.h>

@@ -4,13 +4,12 @@
 
 #pragma once
 
-#include <ctre/Phoenix.h>
-
 #include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include <ctre/Phoenix.h>
 #include <frc/Encoder.h>
 #include <frc/TimedRobot.h>
 #include <frc/motorcontrol/MotorController.h>

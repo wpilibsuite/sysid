@@ -352,7 +352,8 @@ void SetupGyro(
     std::string portStr;
     portStr = gyroCtor;
     int canID = std::stoi(portStr);
-    pigeonpro = std::make_unique<ctre::phoenixpro::hardware::Pigeon2>(canID, gyroCANivoreName);
+    pigeonpro = std::make_unique<ctre::phoenixpro::hardware::Pigeon2>(
+        canID, gyroCANivoreName);
     fmt::print("Setup Pigeon2 (Pro), {}\n", portStr);
 
     // setup functions
@@ -361,7 +362,9 @@ void SetupGyro(
     };
 
     gyroRate = [&] {
-      return units::radians_per_second_t{pigeonpro->GetAngularVelocityZ().GetValue()}.value();
+      return units::radians_per_second_t{
+          pigeonpro->GetAngularVelocityZ().GetValue()}
+          .value();
     };
   } else if (wpi::starts_with(gyroType, "Pigeon")) {
     std::string portStr;

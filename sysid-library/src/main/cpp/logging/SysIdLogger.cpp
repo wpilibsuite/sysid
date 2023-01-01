@@ -4,13 +4,12 @@
 
 #include "sysid/logging/SysIdLogger.h"
 
-#include <ctre/Phoenix.h>
-
 #include <cstddef>
 #include <sstream>
 #include <stdexcept>
 
 // #include <CANVenom.h>
+#include <ctre/Phoenix.h>
 #include <ctre/phoenixpro/TalonFX.hpp>
 #include <fmt/core.h>
 #include <frc/Notifier.h>
