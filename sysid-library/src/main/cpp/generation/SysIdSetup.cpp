@@ -341,13 +341,29 @@ void SetupGyro(
     std::unique_ptr<frc::ADIS16448_IMU>& ADIS16448Gyro,
     std::unique_ptr<frc::ADIS16470_IMU>& ADIS16470Gyro,
     std::unique_ptr<BasePigeon>& pigeon,
+    std::unique_ptr<ctre::phoenixpro::hardware::Pigeon2>& pigeonpro,
     std::unique_ptr<WPI_TalonSRX>& tempTalon,
     const std::string& gyroCANivoreName, std::function<double()>& gyroPosition,
     std::function<double()>& gyroRate) {
 #ifndef __FRC_ROBORIO__
   sysid::SetDefaultDataCollection(gyroPosition, gyroRate);
 #endif
-  if (wpi::starts_with(gyroType, "Pigeon")) {
+  if (gyroType == "Pigeon2 (Pro)") {
+    std::string portStr;
+    portStr = gyroCtor;
+    int canID = std::stoi(portStr);
+    pigeonpro = std::make_unique<ctre::phoenixpro::hardware::Pigeon2>(canID, gyroCANivoreName);
+    fmt::print("Setup Pigeon2 (Pro), {}\n", portStr);
+
+    // setup functions
+    gyroPosition = [&] {
+      return units::radian_t{pigeonpro->GetYaw().GetValue()}.value();
+    };
+
+    gyroRate = [&] {
+      return units::radians_per_second_t{pigeonpro->GetAngularVelocityZ().GetValue()}.value();
+    };
+  } else if (wpi::starts_with(gyroType, "Pigeon")) {
     std::string portStr;
     if (wpi::contains(gyroCtor, "WPI_TalonSRX")) {
       portStr = wpi::split(gyroCtor, "-").second;
@@ -509,7 +525,12 @@ void SetMotorControllers(
     units::volt_t motorVoltage,
     const std::vector<std::unique_ptr<frc::MotorController>>& controllers) {
   for (auto&& controller : controllers) {
-    controller->SetVoltage(motorVoltage);
+    auto* ctreController = dynamic_cast<hardware::TalonFX*>(controller.get());
+    if (ctreController) {
+      ctreController->SetControl(controls::VoltageOut{motorVoltage, true});
+    } else {
+      controller->SetVoltage(motorVoltage);
+    }
   }
 }
 

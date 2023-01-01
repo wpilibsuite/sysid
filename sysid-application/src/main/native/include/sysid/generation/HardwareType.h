@@ -107,6 +107,7 @@ constexpr HardwareType kADIS16470{"ADIS16470"};
 constexpr HardwareType kNavX{"NavX"};
 constexpr HardwareType kPigeon{"Pigeon"};
 constexpr HardwareType kPigeon2{"Pigeon2"};
+constexpr HardwareType kPigeon2Pro{"Pigeon2 (Pro)"};
 constexpr HardwareType kRomiGyro{"Romi"};
 constexpr HardwareType kNoGyroOption{"None"};
 

@@ -5,6 +5,7 @@
 #pragma once
 
 #include <ctre/Phoenix.h>
+#include <ctre/phoenixpro/Pigeon2.hpp>
 
 #include <functional>
 #include <memory>
@@ -65,6 +66,7 @@ class DriveRobot : public frc::TimedRobot {
   std::unique_ptr<CANCoder> m_rightCancoder;
   std::unique_ptr<WPI_TalonSRX> m_tempTalon;
   std::unique_ptr<BasePigeon> m_pigeon;
+  std::unique_ptr<ctre::phoenixpro::hardware::Pigeon2> m_pigeonPro;
 
   sysid::SysIdDrivetrainLogger m_logger;
 };

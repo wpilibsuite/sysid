@@ -12,6 +12,7 @@
 #include <string_view>
 #include <vector>
 
+#include <ctre/phoenixpro/Pigeon2.hpp>
 #include <ctre/phoenixpro/TalonFX.hpp>
 #include <frc/ADIS16448_IMU.h>
 #include <frc/ADIS16470_IMU.h>
@@ -141,6 +142,7 @@ void SetupGyro(
     std::unique_ptr<frc::ADIS16448_IMU>& ADIS16448Gyro,
     std::unique_ptr<frc::ADIS16470_IMU>& ADIS16470Gyro,
     std::unique_ptr<BasePigeon>& pigeon,
+    std::unique_ptr<ctre::phoenixpro::hardware::Pigeon2>& pigeonpro,
     std::unique_ptr<WPI_TalonSRX>& tempTalon,
     const std::string& gyroCANivoreName, std::function<double()>& gyroPosition,
     std::function<double()>& gyroRate);

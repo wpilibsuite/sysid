@@ -510,7 +510,8 @@ void Generator::Display() {
       if (m_isTalon) {
         m_settings.gyroCtor = "WPI_TalonSRX-" + m_settings.gyroCtor;
       }
-    } else if (gyroType == sysid::gyro::kPigeon2) {
+    } else if (gyroType == sysid::gyro::kPigeon2 ||
+               gyroType == sysid::gyro::kPigeon2Pro) {
       ImGui::InputInt("CAN ID", &m_gyroPort, 0, 0);
       ImGui::SameLine();
       ImGui::SetNextItemWidth(80);

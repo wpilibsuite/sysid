@@ -95,7 +95,7 @@ DriveRobot::DriveRobot() : frc::TimedRobot(5_ms) {
     fmt::print("Setup gyro\n");
     sysid::SetupGyro(gyroType, gyroCtor, leftPorts, rightPorts,
                      m_controllerNames, m_leftControllers, m_rightControllers,
-                     m_gyro, m_ADIS16448Gyro, m_ADIS16470Gyro, m_pigeon,
+                     m_gyro, m_ADIS16448Gyro, m_ADIS16470Gyro, m_pigeon, m_pigeonPro,
                      m_tempTalon, gyroCANivoreName, m_gyroPosition, m_gyroRate);
   } catch (std::exception& e) {
     fmt::print("Project failed: {}\n", e.what());
