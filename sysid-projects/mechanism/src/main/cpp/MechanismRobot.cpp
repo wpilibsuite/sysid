@@ -50,7 +50,8 @@ MechanismRobot::MechanismRobot() : frc::TimedRobot(5_ms) {
     fmt::print("Initializing Motors\n");
     for (size_t i = 0; i < ports.size(); i++) {
       sysid::AddMotorController(ports[i], m_controllerNames[i],
-                                motorsInverted[i], canivoreNames[i], &m_controllers);
+                                motorsInverted[i], canivoreNames[i],
+                                &m_controllers);
     }
 
     fmt::print("Initializing encoder\n");
@@ -58,7 +59,7 @@ MechanismRobot::MechanismRobot() : frc::TimedRobot(5_ms) {
                          numSamples, m_controllerNames[0],
                          m_controllers.front().get(), encoderInverted,
                          encoderPorts, encoderCANivoreName,
-                         m_cancoder, // m_revEncoderPort,  m_revDataPort,
+                         m_cancoder,  // m_revEncoderPort,  m_revDataPort,
                          m_encoder, m_position, m_rate);
   } catch (std::exception& e) {
     fmt::print("Project failed: {}\n", e.what());

@@ -57,7 +57,8 @@ wpi::json ConfigManager::Generate(size_t occupied) {
   // Add encoder ports.
   json["primary encoder ports"] = m_config.primaryEncoderPorts;
   json["secondary encoder ports"] = m_config.secondaryEncoderPorts;
-  json["encoder canivore name"] = std::string(m_config.encoderCANivoreName.data());
+  json["encoder canivore name"] =
+      std::string(m_config.encoderCANivoreName.data());
 
   // Add encoder type.
   json["encoder type"] = m_config.encoderType.name;

@@ -5,13 +5,13 @@
 #include "sysid/logging/SysIdLogger.h"
 
 #include <ctre/Phoenix.h>
-#include <ctre/phoenixpro/TalonFX.hpp>
 
 #include <cstddef>
 #include <sstream>
 #include <stdexcept>
 
 // #include <CANVenom.h>
+#include <ctre/phoenixpro/TalonFX.hpp>
 #include <fmt/core.h>
 #include <frc/Notifier.h>
 #include <frc/RobotBase.h>
@@ -54,7 +54,8 @@ double SysIdLogger::MeasureVoltage(
         fmt::print("Recording SPARK MAX voltage\n");
       }
     } else if (controllerNames[i] == "TalonFX (Pro)") {
-      auto* ctreController = dynamic_cast<ctre::phoenixpro::hardware::TalonFX *>(controller);
+      auto* ctreController =
+          dynamic_cast<ctre::phoenixpro::hardware::TalonFX*>(controller);
       sum += ctreController->GetDutyCycle().GetValue().value();
       if constexpr (frc::RobotBase::IsSimulation()) {
         fmt::print("Recording CTRE (Pro) voltage\n");

@@ -145,7 +145,9 @@ void Generator::CANCoderSetup(bool drive) {
                     &m_settings.secondaryEncoderInverted);
   }
   ImGui::SetNextItemWidth(80);
-  ImGui::InputText("CANcoder CANivore Name", m_settings.encoderCANivoreName.data(), m_settings.encoderCANivoreName.size());
+  ImGui::InputText("CANcoder CANivore Name",
+                   m_settings.encoderCANivoreName.data(),
+                   m_settings.encoderCANivoreName.size());
 }
 
 void Generator::RegularEncoderSetup(bool drive) {
@@ -359,9 +361,9 @@ void Generator::Display() {
       // Add CANivore name if we are using a CTRE motor controller
       ImGui::SameLine();
       ImGui::SetNextItemWidth(80);
-      ImGui::InputText("MC CANivore Name", m_settings.canivoreNames[i].data(), m_settings.canivoreNames[i].size());
+      ImGui::InputText("MC CANivore Name", m_settings.canivoreNames[i].data(),
+                       m_settings.canivoreNames[i].size());
     }
-
 
     // Add right side drivetrain ports (if the analysis type is drivetrain).
     if (drive) {
@@ -512,8 +514,11 @@ void Generator::Display() {
       ImGui::InputInt("CAN ID", &m_gyroPort, 0, 0);
       ImGui::SameLine();
       ImGui::SetNextItemWidth(80);
-      ImGui::InputText("Gyro CANivore Name", m_settings.gyroCANivoreName.data(), m_settings.gyroCANivoreName.size());
-      m_settings.gyroCtor = std::to_string(m_gyroPort) + ", " + std::string{m_settings.gyroCANivoreName.begin(), m_settings.gyroCANivoreName.end()};
+      ImGui::InputText("Gyro CANivore Name", m_settings.gyroCANivoreName.data(),
+                       m_settings.gyroCANivoreName.size());
+      m_settings.gyroCtor = std::to_string(m_gyroPort) + ", " +
+                            std::string{m_settings.gyroCANivoreName.begin(),
+                                        m_settings.gyroCANivoreName.end()};
     } else if (gyroType == sysid::gyro::kADXRS450) {
       ImGui::Combo("SPI Port", &m_gyroParam, kADXRS450Ctors,
                    IM_ARRAYSIZE(kADXRS450Ctors));
@@ -558,7 +563,8 @@ void Generator::Display() {
   sysid::CreateTooltip(
       "This is the number of encoder counts per revolution for your encoder.\n"
       "Common values for this are here:\nCTRE Magnetic Encoder: 4096\nFalcon "
-      "500 Integrated: 2048\nFalcon 500 running Phoenix Pro (Pro already handles this value): 1\nREV Throughbore: 8192\nNEO (and NEO 550) "
+      "500 Integrated: 2048\nFalcon 500 running Phoenix Pro (Pro already "
+      "handles this value): 1\nREV Throughbore: 8192\nNEO (and NEO 550) "
       "Integrated "
       "Encoders (REV already handles this value): 1");
 

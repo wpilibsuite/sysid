@@ -64,9 +64,8 @@ constexpr HardwareType kSPARKMAXBrushed{"SPARK MAX (Brushed)"};
 constexpr HardwareType kVenom{"Venom"};
 
 constexpr std::array<HardwareType, 8> kMotorControllers = {
-    kPWM,     kTalonSRX,          kVictorSPX,
-    kTalonFX, kTalonFXPro, kSPARKMAXBrushless, kSPARKMAXBrushed,
-    kVenom};
+    kPWM,        kTalonSRX,          kVictorSPX,       kTalonFX,
+    kTalonFXPro, kSPARKMAXBrushless, kSPARKMAXBrushed, kVenom};
 
 /**
  * Returns an existing motor controller HardwareType from a string_view. Throws

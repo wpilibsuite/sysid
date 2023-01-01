@@ -59,7 +59,8 @@ wpi::json GetConfigJson() {
 }
 
 void AddMotorController(
-    int port, std::string_view controller, bool inverted, std::string_view canivore,
+    int port, std::string_view controller, bool inverted,
+    std::string_view canivore,
     std::vector<std::unique_ptr<frc::MotorController>>* controllers) {
   if (controller == "TalonSRX" || controller == "VictorSPX" ||
       controller == "TalonFX") {
@@ -68,7 +69,8 @@ void AddMotorController(
       controllers->push_back(std::make_unique<WPI_TalonSRX>(port));
     } else if (controller == "TalonFX") {
       fmt::print("Setup TalonFX\n");
-      controllers->emplace_back(std::make_unique<WPI_TalonFX>(port, std::string{canivore.begin(), canivore.end()}));
+      controllers->emplace_back(std::make_unique<WPI_TalonFX>(
+          port, std::string{canivore.begin(), canivore.end()}));
     } else {
       fmt::print("Setup VictorSPX\n");
       controllers->emplace_back(std::make_unique<WPI_VictorSPX>(port));
@@ -81,10 +83,15 @@ void AddMotorController(
     ctreController->SetNeutralMode(motorcontrol::NeutralMode::Brake);
   } else if (controller == "TalonFX (Pro)") {
     fmt::print("Setup TalonFX (Pro)\n");
-    controllers->emplace_back(std::make_unique<hardware::TalonFX>(port, std::string{canivore.begin(), canivore.end()}));
-    auto* ctreController = dynamic_cast<hardware::TalonFX*>(controllers->back().get());
+    controllers->emplace_back(std::make_unique<hardware::TalonFX>(
+        port, std::string{canivore.begin(), canivore.end()}));
+    auto* ctreController =
+        dynamic_cast<hardware::TalonFX*>(controllers->back().get());
     configs::TalonFXConfiguration configs{};
-    configs.MotorOutput.Inverted = inverted ? ctre::phoenixpro::signals::InvertedValue::CounterClockwise_Positive : ctre::phoenixpro::signals::InvertedValue::Clockwise_Positive;
+    configs.MotorOutput.Inverted =
+        inverted ? ctre::phoenixpro::signals::InvertedValue::
+                       CounterClockwise_Positive
+                 : ctre::phoenixpro::signals::InvertedValue::Clockwise_Positive;
     ctreController->GetConfigurator().Apply(configs);
   } else if (controller == "SPARK MAX (Brushless)" ||
              controller == "SPARK MAX (Brushed)") {
@@ -174,8 +181,8 @@ void SetupEncoders(
     std::string_view encoderType, bool isEncoding, int period, double cpr,
     double gearing, int numSamples, std::string_view controllerName,
     frc::MotorController* controller, bool encoderInverted,
-    const std::vector<int>& encoderPorts, const std::string& encoderCANivoreName,
-    std::unique_ptr<CANCoder>& cancoder,
+    const std::vector<int>& encoderPorts,
+    const std::string& encoderCANivoreName, std::unique_ptr<CANCoder>& cancoder,
     // std::unique_ptr<rev::SparkMaxRelativeEncoder>& revEncoderPort,
     // std::unique_ptr<rev::SparkMaxAlternateEncoder>& revDataPort,
     std::unique_ptr<frc::Encoder>& encoder, std::function<double()>& position,
@@ -192,8 +199,20 @@ void SetupEncoders(
   if (encoderType == "Built-in") {
     if (controllerName == "TalonFX (Pro)") {
       fmt::print("Setup Built-in+TalonFX (Pro)\n");
-      position = [=] { return dynamic_cast<hardware::TalonFX *>(controller)->GetPosition().GetValue().value() / gearing; };
-      rate = [=] { return dynamic_cast<hardware::TalonFX *>(controller)->GetVelocity().GetValue().value() / gearing; };
+      position = [=] {
+        return dynamic_cast<hardware::TalonFX*>(controller)
+                   ->GetPosition()
+                   .GetValue()
+                   .value() /
+               gearing;
+      };
+      rate = [=] {
+        return dynamic_cast<hardware::TalonFX*>(controller)
+                   ->GetVelocity()
+                   .GetValue()
+                   .value() /
+               gearing;
+      };
     } else if (wpi::starts_with(controllerName, "Talon")) {
       FeedbackDevice feedbackDevice;
       if (controllerName == "TalonSRX") {
@@ -269,9 +288,8 @@ void SetupEncoders(
     cancoder->ConfigVelocityMeasurementPeriod(cancoderPeriod);
     cancoder->ConfigVelocityMeasurementWindow(numSamples);
 
-    position = [=, &cancoder] { return cancoder->GetPosition() / combinedCPR;
-    }; rate = [=, &cancoder] { return cancoder->GetVelocity() / combinedCPR;
-    };
+    position = [=, &cancoder] { return cancoder->GetPosition() / combinedCPR; };
+    rate = [=, &cancoder] { return cancoder->GetVelocity() / combinedCPR; };
   } else {
     fmt::print("Setup roboRIO quadrature\n");
     if (isEncoding) {
@@ -324,8 +342,8 @@ void SetupGyro(
     std::unique_ptr<frc::ADIS16470_IMU>& ADIS16470Gyro,
     std::unique_ptr<BasePigeon>& pigeon,
     std::unique_ptr<WPI_TalonSRX>& tempTalon,
-    const std::string& gyroCANivoreName,
-    std::function<double()>& gyroPosition, std::function<double()>& gyroRate) {
+    const std::string& gyroCANivoreName, std::function<double()>& gyroPosition,
+    std::function<double()>& gyroRate) {
 #ifndef __FRC_ROBORIO__
   sysid::SetDefaultDataCollection(gyroPosition, gyroRate);
 #endif
