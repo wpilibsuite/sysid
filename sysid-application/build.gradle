@@ -13,6 +13,7 @@ if (OperatingSystem.current().isWindows())
   apply plugin: "windows-resources"
 
 ext {
+  imguiVersion = "1.89.1-1"
   libsshVersion = "0.95-6"
 }
 
