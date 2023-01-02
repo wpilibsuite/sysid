@@ -124,6 +124,7 @@ void SetupEncoders(
  * @param[in, out] ADIS16448Gyro A pointer to an ADIS16448_IMU object.
  * @param[in, out] ADIS16470Gyro A pointer to an ADIS16470_IMU object.
  * @param[in, out] pigeon A pointer to a Pigeon IMU Object
+ * @param[in, out] pigeonpro A pointer to a Pigeon2 Pro Object
  * @param[in, out] tempTalon A pointer to a TalonSRX object mean to store a
  *                           Talon that the Pigeon IMU is plugged into.
  * @param[out] gyroPosition A reference to a function that is supposed to return
