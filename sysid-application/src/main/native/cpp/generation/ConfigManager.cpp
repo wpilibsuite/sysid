@@ -92,10 +92,12 @@ void ConfigManager::ReadJSON(std::string_view path) {
   constexpr const char* json_keys[] = {"primary motor ports",
                                        "secondary motor ports",
                                        "motor controllers",
+                                       "canivore names",
                                        "primary motors inverted",
                                        "secondary motors inverted",
                                        "primary encoder ports",
                                        "secondary encoder ports",
+                                       "encoder canivore name",
                                        "encoder type",
                                        "primary encoder inverted",
                                        "secondary encoder inverted",
@@ -104,9 +106,11 @@ void ConfigManager::ReadJSON(std::string_view path) {
                                        "gearing denominator",
                                        "gyro",
                                        "gyro ctor",
+                                       "gyro canivore name",
                                        "encoding",
                                        "number of samples per average",
-                                       "velocity measurement period"};
+                                       "velocity measurement period",
+                                       "is drivetrain"};
 
   // Read JSON from the specified path.
   std::error_code ec;

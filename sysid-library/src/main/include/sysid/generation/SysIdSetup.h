@@ -37,6 +37,7 @@ wpi::json GetConfigJson();
  * (Pro)" "SPARK MAX (Brushless)", "SPARK AX (Brushed)", "Venom"
  * @param[in] inverted True if the motor controller should be inverted, false if
  *                     not.
+ * @param[in] canivore Name of the CANivore bus the motor controller is on.
  * @param[in, out] controllers A reference to the vector storing the motor
  *                             controller objects
  */
@@ -79,6 +80,7 @@ void SetMotorControllers(
  * @param[in] encoderPorts Port number for the encoder if its not plugged into a
  *                         motor controller. 2 ports should be used for roboRIO
  *                         encoders, 1 port should be used for CANCoder.
+ * @param[in] encoderCANivoreName The name of the CANivore bus the encoder is on.
  * @param[in, out] cancoder A reference to a CANCoder object
  * @param[in, out] encoder A reference to a roboRIO encoder object
  * @param[out] position A reference to a function that is supposed to return the
@@ -127,6 +129,8 @@ void SetupEncoders(
  * @param[in, out] pigeonpro A pointer to a Pigeon2 Pro Object
  * @param[in, out] tempTalon A pointer to a TalonSRX object mean to store a
  *                           Talon that the Pigeon IMU is plugged into.
+ * @param[in] gyroCANivoreName A reference to the name of the CANivore the Gyro
+ *                             is plugged into.
  * @param[out] gyroPosition A reference to a function that is supposed to return
  *                          the gyro position
  * @param[out] gyroRate A reference to a function that is supposed to return the

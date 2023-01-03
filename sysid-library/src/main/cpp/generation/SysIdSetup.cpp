@@ -530,7 +530,7 @@ void SetMotorControllers(
   for (auto&& controller : controllers) {
     auto* ctreController = dynamic_cast<hardware::TalonFX*>(controller.get());
     if (ctreController) {
-      ctreController->SetControl(controls::VoltageOut{motorVoltage, true});
+      ctreController->SetControl(controls::VoltageOut{motorVoltage, true, false});
     } else {
       controller->SetVoltage(motorVoltage);
     }
