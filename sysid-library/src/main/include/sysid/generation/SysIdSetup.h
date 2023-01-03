@@ -4,20 +4,19 @@
 
 #pragma once
 
-// #include <ctre/Phoenix.h>
-
 #include <functional>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
 
+#include <ctre/Phoenix.h>
 #include <frc/ADIS16448_IMU.h>
 #include <frc/ADIS16470_IMU.h>
 #include <frc/Encoder.h>
 #include <frc/interfaces/Gyro.h>
 #include <frc/motorcontrol/MotorController.h>
-// #include <rev/CANSparkMax.h>
+#include <rev/CANSparkMax.h>
 #include <units/voltage.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
@@ -77,6 +76,9 @@ void SetMotorControllers(
  * @param[in] encoderPorts Port number for the encoder if its not plugged into a
  *                         motor controller. 2 ports should be used for roboRIO
  *                         encoders, 1 port should be used for CANCoder.
+ * @param[in, out] cancoder A reference to a CANCoder object
+ * @param[in, out] revEncoderPort A reference to a REV Encoder Port object
+ * @param[in, out] revDataPort A reference to a REV Data Port object
  * @param[in, out] encoder A reference to a roboRIO encoder object
  * @param[out] position A reference to a function that is supposed to return the
  *                      encoder position
@@ -87,10 +89,9 @@ void SetupEncoders(
     std::string_view encoderType, bool isEncoding, int period, double cpr,
     double gearing, int numSamples, std::string_view controllerName,
     frc::MotorController* controller, bool encoderInverted,
-    const std::vector<int>&
-        encoderPorts,  // std::unique_ptr<CANCoder>& cancoder,
-    // std::unique_ptr<rev::SparkMaxRelativeEncoder>& revEncoderPort,
-    // std::unique_ptr<rev::SparkMaxAlternateEncoder>& revDataPort,
+    const std::vector<int>& encoderPorts, std::unique_ptr<CANCoder>& cancoder,
+    std::unique_ptr<rev::SparkMaxRelativeEncoder>& revEncoderPort,
+    std::unique_ptr<rev::SparkMaxAlternateEncoder>& revDataPort,
     std::unique_ptr<frc::Encoder>& encoder, std::function<double()>& position,
     std::function<double()>& rate);
 
@@ -120,6 +121,9 @@ void SetupEncoders(
  * @param[in, out] gyro A pointer to a WPILib Gyro object.
  * @param[in, out] ADIS16448Gyro A pointer to an ADIS16448_IMU object.
  * @param[in, out] ADIS16470Gyro A pointer to an ADIS16470_IMU object.
+ * @param[in, out] pigeon A pointer to a Pigeon IMU Object
+ * @param[in, out] tempTalon A pointer to a TalonSRX object mean to store a
+ *                           Talon that the Pigeon IMU is plugged into.
  * @param[out] gyroPosition A reference to a function that is supposed to return
  *                          the gyro position
  * @param[out] gyroRate A reference to a function that is supposed to return the
@@ -134,8 +138,8 @@ void SetupGyro(
     std::unique_ptr<frc::Gyro>& gyro,
     std::unique_ptr<frc::ADIS16448_IMU>& ADIS16448Gyro,
     std::unique_ptr<frc::ADIS16470_IMU>& ADIS16470Gyro,
-    // std::unique_ptr<BasePigeon>& pigeon,
-    // std::unique_ptr<WPI_TalonSRX>& tempTalon,
+    std::unique_ptr<BasePigeon>& pigeon,
+    std::unique_ptr<WPI_TalonSRX>& tempTalon,
     std::function<double()>& gyroPosition, std::function<double()>& gyroRate);
 
 /**
