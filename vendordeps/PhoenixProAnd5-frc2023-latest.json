@@ -12,12 +12,12 @@
         {
             "groupId": "com.ctre.phoenix",
             "artifactId": "api-java",
-            "version": "5.30.1-beta-6"
+            "version": "5.30.1-beta-7"
         },
         {
             "groupId": "com.ctre.phoenix",
             "artifactId": "wpiapi-java",
-            "version": "5.30.1-beta-6"
+            "version": "5.30.1-beta-7"
         },
         {
             "groupId": "com.ctre.phoenixpro",
@@ -29,7 +29,7 @@
         {
             "groupId": "com.ctre.phoenix",
             "artifactId": "cci",
-            "version": "5.30.1-beta-6",
+            "version": "5.30.1-beta-7",
             "isJar": false,
             "skipInvalidPlatforms": true,
             "validPlatforms": [
@@ -42,7 +42,7 @@
         {
             "groupId": "com.ctre.phoenix.sim",
             "artifactId": "cci-sim",
-            "version": "5.30.1-beta-6",
+            "version": "5.30.1-beta-7",
             "isJar": false,
             "skipInvalidPlatforms": true,
             "validPlatforms": [
@@ -187,7 +187,7 @@
         {
             "groupId": "com.ctre.phoenix",
             "artifactId": "wpiapi-cpp",
-            "version": "5.30.1-beta-6",
+            "version": "5.30.1-beta-7",
             "libName": "CTRE_Phoenix_WPI",
             "headerClassifier": "headers",
             "sharedLibrary": true,
@@ -202,7 +202,7 @@
         {
             "groupId": "com.ctre.phoenix",
             "artifactId": "api-cpp",
-            "version": "5.30.1-beta-6",
+            "version": "5.30.1-beta-7",
             "libName": "CTRE_Phoenix",
             "headerClassifier": "headers",
             "sharedLibrary": true,
@@ -217,7 +217,7 @@
         {
             "groupId": "com.ctre.phoenix",
             "artifactId": "cci",
-            "version": "5.30.1-beta-6",
+            "version": "5.30.1-beta-7",
             "libName": "CTRE_PhoenixCCI",
             "headerClassifier": "headers",
             "sharedLibrary": true,
@@ -247,7 +247,7 @@
         {
             "groupId": "com.ctre.phoenix.sim",
             "artifactId": "wpiapi-cpp-sim",
-            "version": "5.30.1-beta-6",
+            "version": "5.30.1-beta-7",
             "libName": "CTRE_Phoenix_WPISim",
             "headerClassifier": "headers",
             "sharedLibrary": true,
@@ -262,7 +262,7 @@
         {
             "groupId": "com.ctre.phoenix.sim",
             "artifactId": "api-cpp-sim",
-            "version": "5.30.1-beta-6",
+            "version": "5.30.1-beta-7",
             "libName": "CTRE_PhoenixSim",
             "headerClassifier": "headers",
             "sharedLibrary": true,
@@ -277,7 +277,7 @@
         {
             "groupId": "com.ctre.phoenix.sim",
             "artifactId": "cci-sim",
-            "version": "5.30.1-beta-6",
+            "version": "5.30.1-beta-7",
             "libName": "CTRE_PhoenixCCISim",
             "headerClassifier": "headers",
             "sharedLibrary": true,

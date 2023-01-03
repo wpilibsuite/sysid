@@ -21,9 +21,9 @@
 #include <wpi/StringExtras.h>
 #include <wpi/fs.h>
 
-// #ifdef __FRC_ROBORIO__
-// #include "AHRS.h"
-// #endif
+#ifdef __FRC_ROBORIO__
+#include "AHRS.h"
+#endif
 
 // Based on https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html
 #define EXPAND_STRINGIZE(s) STRINGIZE(s)
@@ -97,21 +97,20 @@ void AddMotorController(
              controller == "SPARK MAX (Brushed)") {
     if (controller == "SPARK MAX (Brushless)") {
       fmt::print("Setup SPARK MAX (Brushless)\n");
-      // controllers->emplace_back(std::make_unique<rev::CANSparkMax>(
-      //     port, rev::CANSparkMax::MotorType::kBrushless));
+      controllers->emplace_back(std::make_unique<rev::CANSparkMax>(
+          port, rev::CANSparkMax::MotorType::kBrushless));
       controllers->emplace_back(std::make_unique<frc::Spark>(port));
     } else {
       fmt::print("Setup SPARK MAX (Brushed)\n");
-      // controllers->emplace_back(std::make_unique<rev::CANSparkMax>(
-      //     port, rev::CANSparkMax::MotorType::kBrushed));
+      controllers->emplace_back(std::make_unique<rev::CANSparkMax>(
+          port, rev::CANSparkMax::MotorType::kBrushed));
       controllers->emplace_back(std::make_unique<frc::Spark>(port));
     }
 
-    // auto* sparkMax =
-    // static_cast<rev::CANSparkMax*>(controllers->back().get());
-    // sparkMax->RestoreFactoryDefaults();
-    // sparkMax->SetInverted(inverted);
-    // sparkMax->SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
+    auto* sparkMax = static_cast<rev::CANSparkMax*>(controllers->back().get());
+    sparkMax->RestoreFactoryDefaults();
+    sparkMax->SetInverted(inverted);
+    sparkMax->SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
   } else if (controller == "Venom") {
     fmt::print("Setup Venom\n");
     // controllers->emplace_back(std::make_unique<frc::CANVenom>(port));
@@ -123,9 +122,9 @@ void AddMotorController(
     controllers->emplace_back(std::make_unique<frc::Spark>(port));
   } else {
     fmt::print("Setup PWM\n");
-    // controllers->emplace_back(std::make_unique<frc::Spark>(port));
-    // auto* spark = static_cast<frc::Spark*>(controllers->back().get());
-    // spark->SetInverted(inverted);
+    controllers->emplace_back(std::make_unique<frc::Spark>(port));
+    auto* spark = static_cast<frc::Spark*>(controllers->back().get());
+    spark->SetInverted(inverted);
     controllers->emplace_back(std::make_unique<frc::Spark>(port));
   }
 }
@@ -183,8 +182,8 @@ void SetupEncoders(
     frc::MotorController* controller, bool encoderInverted,
     const std::vector<int>& encoderPorts,
     const std::string& encoderCANivoreName, std::unique_ptr<CANCoder>& cancoder,
-    // std::unique_ptr<rev::SparkMaxRelativeEncoder>& revEncoderPort,
-    // std::unique_ptr<rev::SparkMaxAlternateEncoder>& revDataPort,
+    std::unique_ptr<rev::SparkMaxRelativeEncoder>& revEncoderPort,
+    std::unique_ptr<rev::SparkMaxAlternateEncoder>& revDataPort,
     std::unique_ptr<frc::Encoder>& encoder, std::function<double()>& position,
     std::function<double()>& rate) {
   double combinedCPR = cpr * gearing;
@@ -234,49 +233,48 @@ void SetupEncoders(
       // };
     }
   } else if (encoderType == "Encoder Port") {
-    // auto* sparkMax = static_cast<rev::CANSparkMax*>(controller);
+    auto* sparkMax = static_cast<rev::CANSparkMax*>(controller);
     if (controllerName != "SPARK MAX (Brushless)") {
       fmt::print("Setup SPARK MAX (Brushed) Encoder Port\n");
-      // revEncoderPort =
-      //     std::make_unique<rev::SparkMaxRelativeEncoder>(sparkMax->GetEncoder(
-      //         rev::SparkMaxRelativeEncoder::Type::kQuadrature, cpr));
-      // revEncoderPort->SetInverted(encoderInverted);
+      revEncoderPort =
+          std::make_unique<rev::SparkMaxRelativeEncoder>(sparkMax->GetEncoder(
+              rev::SparkMaxRelativeEncoder::Type::kQuadrature, cpr));
+      revEncoderPort->SetInverted(encoderInverted);
     } else {
       fmt::print("Setup SPARK MAX (Brushless) Encoder Port\n");
-      // revEncoderPort =
-      //     std::make_unique<rev::SparkMaxRelativeEncoder>(sparkMax->GetEncoder(
-      //         rev::SparkMaxRelativeEncoder::Type::kHallSensor));
+      revEncoderPort =
+          std::make_unique<rev::SparkMaxRelativeEncoder>(sparkMax->GetEncoder(
+              rev::SparkMaxRelativeEncoder::Type::kHallSensor));
     }
 
-    // revEncoderPort->SetMeasurementPeriod(period);
-    // revEncoderPort->SetAverageDepth(numSamples);
+    revEncoderPort->SetMeasurementPeriod(period);
+    revEncoderPort->SetAverageDepth(numSamples);
 
-    // position = [=, &revEncoderPort] {
-    //     return revEncoderPort->GetPosition() / gearing;
-    // };
-    // rate = [=, &revEncoderPort] {
-    //     return revEncoderPort->GetVelocity() / gearing / 60;
-    // };
+    position = [=, &revEncoderPort] {
+      return revEncoderPort->GetPosition() / gearing;
+    };
+    rate = [=, &revEncoderPort] {
+      return revEncoderPort->GetVelocity() / gearing / 60;
+    };
   } else if (encoderType == "Data Port") {
     fmt::print("Setup SPARK MAX Data Port\n");
-    // auto* sparkMax = static_cast<rev::CANSparkMax*>(controller);
-    // revDataPort = std::make_unique<rev::SparkMaxAlternateEncoder>(
-    //     sparkMax->GetAlternateEncoder(
-    //         rev::SparkMaxAlternateEncoder::Type::kQuadrature, cpr));
-    // revDataPort->SetInverted(encoderInverted);
-    // revDataPort->SetMeasurementPeriod(period);
-    // revDataPort->SetAverageDepth(numSamples);
-    // position = [=, &revDataPort] {
-    //     return revDataPort->GetPosition() / gearing;
-    // };
-    // rate = [=, &revDataPort] {
-    //     return revDataPort->GetVelocity() / gearing / 60;
-    // };
+    auto* sparkMax = static_cast<rev::CANSparkMax*>(controller);
+    revDataPort = std::make_unique<rev::SparkMaxAlternateEncoder>(
+        sparkMax->GetAlternateEncoder(
+            rev::SparkMaxAlternateEncoder::Type::kQuadrature, cpr));
+    revDataPort->SetInverted(encoderInverted);
+    revDataPort->SetMeasurementPeriod(period);
+    revDataPort->SetAverageDepth(numSamples);
+    position = [=, &revDataPort] {
+      return revDataPort->GetPosition() / gearing;
+    };
+    rate = [=, &revDataPort] {
+      return revDataPort->GetVelocity() / gearing / 60;
+    };
   } else if (encoderType == "Tachometer") {
     fmt::print("Setup Tachometer\n");
-    // SetupCTREEncoder(controller, FeedbackDevice::Tachometer, period,
-    //                  combinedCPR, numSamples, encoderInverted, position,
-    //                  rate);
+    SetupCTREEncoder(controller, FeedbackDevice::Tachometer, period,
+                     combinedCPR, numSamples, encoderInverted, position, rate);
   } else if (encoderType == "CANCoder") {
     fmt::print("Setup CANCoder\n");
     cancoder = std::make_unique<CANCoder>(encoderPorts[0], encoderCANivoreName);
@@ -469,26 +467,24 @@ void SetupGyro(
     } else if (gyroType == "NavX") {
       if (gyroCtor == "SerialPort (USB)") {
         fmt::print("Setup NavX, SerialPort (USB)\n");
-        // #ifdef __FRC_ROBORIO__
-        //                 gyro =
-        //                 std::make_unique<AHRS>(frc::SerialPort::Port::kUSB);
-        // #endif
+#ifdef __FRC_ROBORIO__
+        gyro = std::make_unique<AHRS>(frc::SerialPort::Port::kUSB);
+#endif
       } else if (gyroCtor == "I2C (MXP)") {
         fmt::print("Setup NavX, I2C (MXP)\n");
-        // #ifdef __FRC_ROBORIO__
-        //                 gyro = std::make_unique<AHRS>(frc::I2C::Port::kMXP);
-        // #endif
+#ifdef __FRC_ROBORIO__
+        gyro = std::make_unique<AHRS>(frc::I2C::Port::kMXP);
+#endif
       } else if (gyroCtor == "SerialPort (MXP)") {
         fmt::print("Setup NavX, SerialPort (MXP)\n");
-        // #ifdef __FRC_ROBORIO__
-        //                 gyro =
-        //                 std::make_unique<AHRS>(frc::SerialPort::Port::kMXP);
-        // #endif
+#ifdef __FRC_ROBORIO__
+        gyro = std::make_unique<AHRS>(frc::SerialPort::Port::kMXP);
+#endif
       } else {
         fmt::print("Setup NavX, SPI (MXP)\n");
-        // #ifdef __FRC_ROBORIO__
-        //                 gyro = std::make_unique<AHRS>(frc::SPI::Port::kMXP);
-        // #endif
+#ifdef __FRC_ROBORIO__
+        gyro = std::make_unique<AHRS>(frc::SPI::Port::kMXP);
+#endif
       }
       //     // FIXME: Update Romi Gyro once vendordep is out
     } else if (gyroType == "Romi") {

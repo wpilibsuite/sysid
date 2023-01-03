@@ -18,7 +18,7 @@
 #include <frc/Encoder.h>
 #include <frc/interfaces/Gyro.h>
 #include <frc/motorcontrol/MotorController.h>
-// #include <rev/CANSparkMax.h>
+#include <rev/CANSparkMax.h>
 #include <units/voltage.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
@@ -82,6 +82,8 @@ void SetMotorControllers(
  *                         encoders, 1 port should be used for CANCoder.
  * @param[in] encoderCANivoreName The name of the CANivore bus the encoder is on.
  * @param[in, out] cancoder A reference to a CANCoder object
+ * @param[in, out] revEncoderPort A reference to a REV Encoder Port object
+ * @param[in, out] revDataPort A reference to a REV Data Port object
  * @param[in, out] encoder A reference to a roboRIO encoder object
  * @param[out] position A reference to a function that is supposed to return the
  *                      encoder position
@@ -94,8 +96,8 @@ void SetupEncoders(
     frc::MotorController* controller, bool encoderInverted,
     const std::vector<int>& encoderPorts,
     const std::string& encoderCANivoreName, std::unique_ptr<CANCoder>& cancoder,
-    // std::unique_ptr<rev::SparkMaxRelativeEncoder>& revEncoderPort,
-    // std::unique_ptr<rev::SparkMaxAlternateEncoder>& revDataPort,
+    std::unique_ptr<rev::SparkMaxRelativeEncoder>& revEncoderPort,
+    std::unique_ptr<rev::SparkMaxAlternateEncoder>& revDataPort,
     std::unique_ptr<frc::Encoder>& encoder, std::function<double()>& position,
     std::function<double()>& rate);
 
