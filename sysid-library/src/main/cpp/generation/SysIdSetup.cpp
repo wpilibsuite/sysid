@@ -342,7 +342,7 @@ void SetupGyro(
         portStr = fmt::format("{} (plugged to drive motorcontroller)", portStr);
       } else {
         // If it isn't tied to an existing Talon, create a new object
-        // tempTalon = std::make_unique<WPI_TalonSRX>(srxPort);
+        tempTalon = std::make_unique<WPI_TalonSRX>(srxPort);
         talon = tempTalon.get();
         portStr = fmt::format("{} (plugged to other motorcontroller)", portStr);
       }
