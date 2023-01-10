@@ -9,7 +9,7 @@ concurrency:
 jobs:
   build-host:
     env:
-      MACOSX_DEPLOYMENT_TARGET: 10.14
+      MACOSX_DEPLOYMENT_TARGET: 10.15
     strategy:
       fail-fast: false
       matrix:

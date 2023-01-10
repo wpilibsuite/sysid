@@ -6,6 +6,7 @@
 
 #ifndef RUNNING_SYSID_TESTS
 
+#include <filesystem>
 #include <memory>
 #include <string_view>
 
@@ -20,7 +21,6 @@
 #include <libssh/libssh.h>
 #include <uv.h>
 #include <wpi/Logger.h>
-#include <wpi/fs.h>
 #include <wpigui.h>
 
 #include "sysid/view/Analyzer.h"
@@ -89,7 +89,7 @@ void Application(std::string_view saveDir) {
     } else if (level >= wpi::WPI_LOG_DEBUG) {
       lvl = "DEBUG: ";
     }
-    std::string filename = fs::path{file}.filename().string();
+    std::string filename = std::filesystem::path{file}.filename().string();
     gLog.Append(fmt::format("{}{} ({}:{})\n", lvl, msg, filename, line));
 #ifndef NDEBUG
     fmt::print(stderr, "{}{} ({}:{})\n", lvl, msg, filename, line);
