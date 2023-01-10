@@ -30,10 +30,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-java@v1
+      - uses: actions/setup-java@v3
         with:
+          distribution: 'zulu'
           java-version: 11
-          architecture: ${{ matrix.architecture }}
 
       - name: Install Toolchain
         run: ./gradlew installRoborioToolchain
@@ -102,8 +102,9 @@ jobs:
           cat combiner/products/build/allOutputs/version.txt
           test -s combiner/products/build/allOutputs/version.txt
 
-      - uses: actions/setup-java@v1
+      - uses: actions/setup-java@v3
         with:
+          distribution: 'zulu'
           java-version: 11
 
       - name: Combine
