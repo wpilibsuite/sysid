@@ -9,14 +9,14 @@
 #include <string>
 #include <vector>
 
-#include <ctre/Phoenix.h>
-#include <ctre/phoenixpro/Pigeon2.hpp>
 #include <frc/ADIS16448_IMU.h>
 #include <frc/ADIS16470_IMU.h>
 #include <frc/Encoder.h>
 #include <frc/TimedRobot.h>
 #include <frc/interfaces/Gyro.h>
 #include <frc/motorcontrol/MotorController.h>
+#include <ctre/Phoenix.h>
+#include <ctre/phoenixpro/Pigeon2.hpp>
 #include <rev/CANSparkMax.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>

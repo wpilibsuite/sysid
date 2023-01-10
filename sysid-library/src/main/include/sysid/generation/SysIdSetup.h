@@ -10,14 +10,14 @@
 #include <string_view>
 #include <vector>
 
-#include <ctre/Phoenix.h>
-#include <ctre/phoenixpro/Pigeon2.hpp>
-#include <ctre/phoenixpro/TalonFX.hpp>
 #include <frc/ADIS16448_IMU.h>
 #include <frc/ADIS16470_IMU.h>
 #include <frc/Encoder.h>
 #include <frc/interfaces/Gyro.h>
 #include <frc/motorcontrol/MotorController.h>
+#include <ctre/Phoenix.h>
+#include <ctre/phoenixpro/Pigeon2.hpp>
+#include <ctre/phoenixpro/TalonFX.hpp>
 #include <rev/CANSparkMax.h>
 #include <units/voltage.h>
 #include <wpi/json.h>
