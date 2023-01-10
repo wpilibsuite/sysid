@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <exception>
+#include <filesystem>
 #include <numbers>
 #include <thread>
 
@@ -15,7 +16,6 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
-#include <wpi/fs.h>
 #include <wpi/json.h>
 
 #include "sysid/Util.h"
