@@ -99,12 +99,10 @@ void AddMotorController(
       fmt::print("Setup SPARK MAX (Brushless)\n");
       controllers->emplace_back(std::make_unique<rev::CANSparkMax>(
           port, rev::CANSparkMax::MotorType::kBrushless));
-      controllers->emplace_back(std::make_unique<frc::Spark>(port));
     } else {
       fmt::print("Setup SPARK MAX (Brushed)\n");
       controllers->emplace_back(std::make_unique<rev::CANSparkMax>(
           port, rev::CANSparkMax::MotorType::kBrushed));
-      controllers->emplace_back(std::make_unique<frc::Spark>(port));
     }
 
     auto* sparkMax = static_cast<rev::CANSparkMax*>(controllers->back().get());
@@ -125,7 +123,6 @@ void AddMotorController(
     controllers->emplace_back(std::make_unique<frc::Spark>(port));
     auto* spark = static_cast<frc::Spark*>(controllers->back().get());
     spark->SetInverted(inverted);
-    controllers->emplace_back(std::make_unique<frc::Spark>(port));
   }
 }
 
