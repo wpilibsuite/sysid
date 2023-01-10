@@ -15,11 +15,13 @@
 #include <frc/TimedRobot.h>
 #include <frc/interfaces/Gyro.h>
 #include <frc/motorcontrol/MotorController.h>
-#include <ctre/Phoenix.h>
-#include <ctre/phoenixpro/Pigeon2.hpp>
 #include <rev/CANSparkMax.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
+
+/* Keep CTRE includes below ADIS16448_IMU header to allow Windows to build */
+#include <ctre/Phoenix.h>
+#include <ctre/phoenixpro/Pigeon2.hpp>
 
 #include "sysid/logging/SysIdDrivetrainLogger.h"
 

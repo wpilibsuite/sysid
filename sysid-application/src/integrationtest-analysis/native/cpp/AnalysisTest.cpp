@@ -157,9 +157,7 @@ class AnalysisTest : public ::testing::Test {
     ASSERT_TRUE(m_manager->GetCurrentDataSize() <= kMaxDataSize);
   }
 
-  static void TearDownTestSuite() {
-    KillNT(m_nt, m_kill);
-  }
+  static void TearDownTestSuite() { KillNT(m_nt, m_kill); }
 
   void RunTest(const char* test, double duration) {
     m_manager->BeginTest(test);
@@ -195,9 +193,7 @@ class AnalysisTest : public ::testing::Test {
     }
   }
 
-  void RunOverflowTest() {
-    RunTest(kTests[0], 25);
-  }
+  void RunOverflowTest() { RunTest(kTests[0], 25); }
 
  private:
   static inline nt::NetworkTableInstance m_nt;

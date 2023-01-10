@@ -15,13 +15,15 @@
 #include <frc/Encoder.h>
 #include <frc/interfaces/Gyro.h>
 #include <frc/motorcontrol/MotorController.h>
-#include <ctre/Phoenix.h>
-#include <ctre/phoenixpro/Pigeon2.hpp>
-#include <ctre/phoenixpro/TalonFX.hpp>
 #include <rev/CANSparkMax.h>
 #include <units/voltage.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
+
+/* Keep CTRE includes below ADIS16448_IMU header to allow Windows to build */
+#include <ctre/Phoenix.h>
+#include <ctre/phoenixpro/Pigeon2.hpp>
+#include <ctre/phoenixpro/TalonFX.hpp>
 
 namespace sysid {
 
@@ -80,7 +82,8 @@ void SetMotorControllers(
  * @param[in] encoderPorts Port number for the encoder if its not plugged into a
  *                         motor controller. 2 ports should be used for roboRIO
  *                         encoders, 1 port should be used for CANCoder.
- * @param[in] encoderCANivoreName The name of the CANivore bus the encoder is on.
+ * @param[in] encoderCANivoreName The name of the CANivore bus the encoder is
+ * on.
  * @param[in, out] cancoder A reference to a CANCoder object
  * @param[in, out] revEncoderPort A reference to a REV Encoder Port object
  * @param[in, out] revDataPort A reference to a REV Data Port object

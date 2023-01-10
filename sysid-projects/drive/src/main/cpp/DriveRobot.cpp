@@ -79,12 +79,12 @@ DriveRobot::DriveRobot() : frc::TimedRobot(5_ms) {
     }
 
     fmt::print("Setup encoders\n");
-    sysid::SetupEncoders(
-        encoderType, isEncoding, period, cpr, gearing, numSamples,
-        m_controllerNames[0], m_leftControllers.at(0).get(),
-        leftEncoderInverted, leftEncoderPorts, encoderCANivoreName,
-        m_leftCancoder, m_leftRevEncoderPort,m_leftRevDataPort,
-        m_leftEncoder, m_leftPosition, m_leftRate);
+    sysid::SetupEncoders(encoderType, isEncoding, period, cpr, gearing,
+                         numSamples, m_controllerNames[0],
+                         m_leftControllers.at(0).get(), leftEncoderInverted,
+                         leftEncoderPorts, encoderCANivoreName, m_leftCancoder,
+                         m_leftRevEncoderPort, m_leftRevDataPort, m_leftEncoder,
+                         m_leftPosition, m_leftRate);
     sysid::SetupEncoders(
         encoderType, isEncoding, period, cpr, gearing, numSamples,
         m_controllerNames[0], m_rightControllers.at(0).get(),

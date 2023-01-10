@@ -405,7 +405,8 @@ void SetupGyro(
         pigeon = std::make_unique<ctre::phoenix::sensors::PigeonIMU>(srxPort);
         fmt::print("Setup Pigeon, {}\n", portStr);
       } else {
-        pigeon = std::make_unique<ctre::phoenix::sensors::Pigeon2>(srxPort, gyroCANivoreName);
+        pigeon = std::make_unique<ctre::phoenix::sensors::Pigeon2>(
+            srxPort, gyroCANivoreName);
         fmt::print("Setup Pigeon2, {}\n", portStr);
       }
     }
@@ -523,7 +524,8 @@ void SetMotorControllers(
   for (auto&& controller : controllers) {
     auto* ctreController = dynamic_cast<hardware::TalonFX*>(controller.get());
     if (ctreController) {
-      ctreController->SetControl(controls::VoltageOut{motorVoltage, true, false});
+      ctreController->SetControl(
+          controls::VoltageOut{motorVoltage, true, false});
     } else {
       controller->SetVoltage(motorVoltage);
     }

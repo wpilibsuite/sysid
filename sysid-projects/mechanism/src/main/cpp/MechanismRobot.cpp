@@ -55,12 +55,11 @@ MechanismRobot::MechanismRobot() : frc::TimedRobot(5_ms) {
     }
 
     fmt::print("Initializing encoder\n");
-    sysid::SetupEncoders(encoderType, isEncoding, period, cpr, gearing,
-                         numSamples, m_controllerNames[0],
-                         m_controllers.front().get(), encoderInverted,
-                         encoderPorts, encoderCANivoreName,
-                         m_cancoder, m_revEncoderPort,  m_revDataPort,
-                         m_encoder, m_position, m_rate);
+    sysid::SetupEncoders(
+        encoderType, isEncoding, period, cpr, gearing, numSamples,
+        m_controllerNames[0], m_controllers.front().get(), encoderInverted,
+        encoderPorts, encoderCANivoreName, m_cancoder, m_revEncoderPort,
+        m_revDataPort, m_encoder, m_position, m_rate);
   } catch (std::exception& e) {
     fmt::print("Project failed: {}\n", e.what());
     std::exit(-1);
