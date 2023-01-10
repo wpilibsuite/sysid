@@ -396,16 +396,16 @@ void SetupGyro(
         talon = tempTalon.get();
         portStr = fmt::format("{} (plugged to other motorcontroller)", portStr);
       }
-      pigeon = std::make_unique<PigeonIMU>(talon);
+      pigeon = std::make_unique<ctre::phoenix::sensors::PigeonIMU>(talon);
       fmt::print("Setup Pigeon, {}\n", portStr);
     } else {
       portStr = fmt::format("{} (CAN)", portStr);
 
       if (gyroType == "Pigeon") {
-        pigeon = std::make_unique<PigeonIMU>(srxPort);
+        pigeon = std::make_unique<ctre::phoenix::sensors::PigeonIMU>(srxPort);
         fmt::print("Setup Pigeon, {}\n", portStr);
       } else {
-        pigeon = std::make_unique<Pigeon2>(srxPort, gyroCANivoreName);
+        pigeon = std::make_unique<ctre::phoenix::sensors::Pigeon2>(srxPort, gyroCANivoreName);
         fmt::print("Setup Pigeon2, {}\n", portStr);
       }
     }

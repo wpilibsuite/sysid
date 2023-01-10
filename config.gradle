@@ -8,7 +8,7 @@ nativeUtils.wpi.vendorDeps.nativeVendor.initializeNativeDependencies()
 nativeUtils.wpi.vendorDeps.addVendorReposToMaven(true)
 
 nativeUtils.wpi.configureDependencies {
-    wpiVersion = "2023.1.1-beta-7"
+    wpiVersion = "2023.1.1"
     niLibVersion = "2023.3.0"
     googleTestVersion = "1.12.1-1"
 }
