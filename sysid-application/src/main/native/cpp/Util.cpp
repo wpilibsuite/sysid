@@ -4,10 +4,10 @@
 
 #include "sysid/Util.h"
 
+#include <filesystem>
 #include <stdexcept>
 
 #include <imgui.h>
-#include <wpi/fs.h>
 #include <wpi/raw_ostream.h>
 
 void sysid::CreateTooltip(const char* text) {
@@ -61,9 +61,10 @@ std::string_view sysid::GetAbbreviation(std::string_view unit) {
   }
 }
 
-void sysid::SaveFile(std::string_view contents, const fs::path& path) {
+void sysid::SaveFile(std::string_view contents,
+                     const std::filesystem::path& path) {
   // Create the path if it doesn't already exist.
-  fs::create_directories(path.root_directory());
+  std::filesystem::create_directories(path.root_directory());
 
   // Open a fd_ostream to write to file.
   std::error_code ec;
