@@ -19,18 +19,18 @@ jobs:
             artifact-name: Windows x86-64
             test-type: Generation
           - os: ubuntu-22.04
-            artifact-name: Linux x86-64
+            artifact-name: Linux
             test-type: Analysis
           - os: ubuntu-22.04
-            artifact-name: Linux x86-64
+            artifact-name: Linux
             test-type: Generation
           # macOS analysis test hangs
           # - os: macos-11
-          #   artifact-name: macOS x86-64
+          #   artifact-name: macOS
           #   test-type: Analysis
           # macOS generation test returns failure with no error message
           # - os: macos-11
-          #   artifact-name: macOS x86-64
+          #   artifact-name: macOS
           #   test-type: Generation
 
     name: "${{ matrix.test-type }} - ${{ matrix.artifact-name }}"
