@@ -19,7 +19,7 @@ jobs:
             architecture: x64
             build-options: ""
           - os: macos-11
-            artifact-name: macOS x86-64
+            artifact-name: macOS
             architecture: x64
             build-options: ""
 
@@ -52,7 +52,7 @@ jobs:
           path: build/allOutputs
 
   build-docker:
-    name: "Build - Linux x86-64"
+    name: "Build - Linux"
     runs-on: ubuntu-22.04
     container: wpilib/ubuntu-base:22.04
     steps:
@@ -78,7 +78,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: Linux x86-64
+          name: Linux
           path: build/allOutputs
 
   combine:
