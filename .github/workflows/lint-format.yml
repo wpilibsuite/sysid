@@ -24,7 +24,7 @@ jobs:
           git checkout -b pr
           git branch -f main origin/main
       - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
       - name: Install clang-format
@@ -60,7 +60,7 @@ jobs:
           git checkout -b pr
           git branch -f main origin/main
       - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
       - name: Install clang-tidy

@@ -90,7 +90,7 @@ jobs:
         with:
           repository: wpilibsuite/build-tools
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           path: combiner/products/build/allOutputs
 
