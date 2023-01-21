@@ -4,6 +4,7 @@
 
 #include "sysid/generation/SysIdSetup.h"
 
+#include <filesystem>
 #include <stdexcept>
 
 // #include <CANVenom.h>
@@ -19,7 +20,6 @@
 #include <units/angular_velocity.h>
 #include <wpi/SmallString.h>
 #include <wpi/StringExtras.h>
-#include <wpi/fs.h>
 
 #ifdef __FRC_ROBORIO__
 #include "AHRS.h"

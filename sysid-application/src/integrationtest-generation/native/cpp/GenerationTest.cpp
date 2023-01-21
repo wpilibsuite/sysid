@@ -4,6 +4,7 @@
 
 #include <cstdlib>
 #include <exception>
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -16,7 +17,6 @@
 #include <wpi/SmallVector.h>
 #include <wpi/StringExtras.h>
 #include <wpi/StringMap.h>
-#include <wpi/fs.h>
 #include <wpi/timestamp.h>
 
 #include "IntegrationUtils.h"
@@ -92,7 +92,7 @@ class GenerationTest : public ::testing::Test {
         m_nt.GetTable("SmartDashboard")->GetBooleanTopic("SysIdRun").Publish();
 
     // Get the path to write the json
-    m_jsonPath = fs::path{EXPAND_STRINGIZE(PROJECT_ROOT_DIR)} /
+    m_jsonPath = std::filesystem::path{EXPAND_STRINGIZE(PROJECT_ROOT_DIR)} /
                  "sysid-projects" / "deploy" / "config.json";
     m_directory = directory;
 
@@ -253,7 +253,7 @@ class GenerationTest : public ::testing::Test {
 
   std::string m_directory;
   std::string m_logContent;
-  fs::path m_jsonPath;
+  std::filesystem::path m_jsonPath;
 
   sysid::ConfigSettings m_settings;
   sysid::ConfigManager m_manager{m_settings, m_logger};

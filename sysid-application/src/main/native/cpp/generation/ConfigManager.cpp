@@ -182,7 +182,7 @@ void ConfigManager::ReadJSON(std::string_view path) {
 
 void ConfigManager::SaveJSON(std::string_view path, size_t occupied) {
   auto config_json = Generate(occupied);
-  sysid::SaveFile(config_json.dump(2), fs::path{path});
+  sysid::SaveFile(config_json.dump(2), std::filesystem::path{path});
   WPI_INFO(m_logger, "Wrote Config JSON to: {}", path);
 }
 
