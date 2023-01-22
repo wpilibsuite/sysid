@@ -446,7 +446,7 @@ void Generator::Display() {
     GetEncoder(ArrayConcat(kBuiltInEncoders, kGeneralEncoders));
     if (m_encoderIdx == 0) {
       RegularEncoderSetup(drive);
-    } else if (m_encoderIdx == 1, m_encoderIdx == 2) {
+    } else if (m_encoderIdx == 1 || m_encoderIdx == 2) {
       CANCoderSetup(drive, m_encoderIdx == 2);
     } else {
       RoboRIOEncoderSetup(drive);
