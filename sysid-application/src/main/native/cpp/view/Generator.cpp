@@ -127,7 +127,7 @@ void Generator::RoboRIOEncoderSetup(bool drive) {
       "CTRE Magnetic Encoder and REV Throughbore Encoder");
 }
 
-void Generator::CANCoderSetup(bool drive) {
+void Generator::CANCoderSetup(bool drive, bool usePro) {
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
   ImGui::InputInt(drive ? "L CANCoder Port" : "CANCoder Port",
                   &m_settings.primaryEncoderPorts[0], 0, 0);
@@ -148,6 +148,8 @@ void Generator::CANCoderSetup(bool drive) {
   ImGui::InputText("CANcoder CANivore Name",
                    m_settings.encoderCANivoreName.data(),
                    m_settings.encoderCANivoreName.size());
+
+  m_settings.cancoderUsingPro = usePro;
 }
 
 void Generator::RegularEncoderSetup(bool drive) {
@@ -409,8 +411,8 @@ void Generator::Display() {
       GetEncoder(ArrayConcat(kBuiltInEncoders, kGeneralEncoders));
       if (m_encoderIdx < 1) {
         RegularEncoderSetup(drive);
-      } else if (m_encoderIdx == 1) {
-        CANCoderSetup(drive);
+      } else if (m_encoderIdx == 1 || m_encoderIdx == 2) {
+        CANCoderSetup(drive, m_encoderIdx == 2);
       } else {
         RoboRIOEncoderSetup(drive);
       }
@@ -418,8 +420,8 @@ void Generator::Display() {
       GetEncoder(ArrayConcat(kTalonSRXEncoders, kGeneralEncoders));
       if (m_encoderIdx <= 1) {
         RegularEncoderSetup(drive);
-      } else if (m_encoderIdx == 2) {
-        CANCoderSetup(drive);
+      } else if (m_encoderIdx == 2 || m_encoderIdx == 3) {
+        CANCoderSetup(drive, m_encoderIdx == 3);
       } else {
         RoboRIOEncoderSetup(drive);
       }
@@ -435,8 +437,8 @@ void Generator::Display() {
         // You're not allowed to invert the NEO Built-in encoder
         RegularEncoderSetup(drive);
       }
-    } else if (m_encoderIdx == 2) {
-      CANCoderSetup(drive);
+    } else if (m_encoderIdx == 2 || m_encoderIdx == 3) {
+      CANCoderSetup(drive, m_encoderIdx == 3);
     } else {
       RoboRIOEncoderSetup(drive);
     }
@@ -444,15 +446,15 @@ void Generator::Display() {
     GetEncoder(ArrayConcat(kBuiltInEncoders, kGeneralEncoders));
     if (m_encoderIdx == 0) {
       RegularEncoderSetup(drive);
-    } else if (m_encoderIdx == 1) {
-      CANCoderSetup(drive);
+    } else if (m_encoderIdx == 1, m_encoderIdx == 2) {
+      CANCoderSetup(drive, m_encoderIdx == 2);
     } else {
       RoboRIOEncoderSetup(drive);
     }
   } else {
     GetEncoder(kGeneralEncoders);
-    if (m_encoderIdx == 0) {
-      CANCoderSetup(drive);
+    if (m_encoderIdx == 0 || m_encoderIdx == 1) {
+      CANCoderSetup(drive, m_encoderIdx == 1);
     } else {
       RoboRIOEncoderSetup(drive);
     }
@@ -462,7 +464,10 @@ void Generator::Display() {
   if (!((mainMotorController == sysid::motorcontroller::kVenom &&
          m_settings.encoderType == sysid::encoder::kBuiltInSetting) ||
         (mainMotorController == sysid::motorcontroller::kSPARKMAXBrushless &&
-         m_settings.encoderType == sysid::encoder::kSMaxEncoderPort))) {
+         m_settings.encoderType == sysid::encoder::kSMaxEncoderPort) ||
+        (mainMotorController == sysid::motorcontroller::kTalonFXPro &&
+         m_settings.encoderType == sysid::encoder::kBuiltInSetting) ||
+        m_settings.encoderType == sysid::encoder::kCANcoderPro)) {
     // Samples Per Average Setting
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
     ImGui::InputInt("Samples Per Average", &m_settings.numSamples, 0, 0);
@@ -472,7 +477,8 @@ void Generator::Display() {
         "CPRs.");
 
     // Add Velocity Measurement Period
-    if (m_settings.encoderType != sysid::encoder::kRoboRIO) {
+    if (m_settings.encoderType != sysid::encoder::kRoboRIO &&
+        m_settings.encoderType != sysid::encoder::kCANcoderPro) {
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
       ImGui::Combo("Time Measurement Window", &m_periodIdx, kCTREPeriods,
                    IM_ARRAYSIZE(kCTREPeriods));

@@ -102,6 +102,11 @@ struct ConfigSettings {
   bool secondaryEncoderInverted = false;
 
   /**
+   * If using a CANcoder and it's using Pro.
+   */
+  bool cancoderUsingPro = false;
+
+  /**
    * The counts per revolution of the encoder.
    */
   double cpr = 1.0;
@@ -165,6 +170,7 @@ const ConfigSettings kRomiConfig{{0},
                                  {4, 5},
                                  {6, 7},
                                  {{'r', 'i', 'o', '\0'}},
+                                 false,
                                  false,
                                  false,
                                  1440.0,

@@ -14,8 +14,6 @@
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <units/voltage.h>
 
-#include "sysid/generation/SysIdSetup.h"
-
 MechanismRobot::MechanismRobot() : frc::TimedRobot(5_ms) {
   try {
     m_json = sysid::GetConfigJson();
@@ -58,8 +56,8 @@ MechanismRobot::MechanismRobot() : frc::TimedRobot(5_ms) {
     sysid::SetupEncoders(
         encoderType, isEncoding, period, cpr, gearing, numSamples,
         m_controllerNames[0], m_controllers.front().get(), encoderInverted,
-        encoderPorts, encoderCANivoreName, m_cancoder, m_revEncoderPort,
-        m_revDataPort, m_encoder, m_position, m_rate);
+        encoderPorts, encoderCANivoreName, m_cancoder, m_cancoderPro,
+        m_revEncoderPort, m_revDataPort, m_encoder, m_position, m_rate);
   } catch (std::exception& e) {
     fmt::print("Project failed: {}\n", e.what());
     std::exit(-1);

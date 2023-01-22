@@ -24,6 +24,7 @@
 #include <ctre/Phoenix.h>
 #include <ctre/phoenixpro/Pigeon2.hpp>
 #include <ctre/phoenixpro/TalonFX.hpp>
+#include <ctre/phoenixpro/CANcoder.hpp>
 
 namespace sysid {
 
@@ -65,7 +66,8 @@ void SetMotorControllers(
  *
  * @param[in] encoderType The type of encoder used, should be one of these:
  *                        "Built-in", "Tachometer", "CANCoder",
- *                        "roboRIO quadrature", "Encoder Port", "Data Port"
+ *                        "CANcoder (Pro)", "roboRIO quadrature",
+ *                        "Encoder Port", "Data Port"
  * @param[in] isEncoding True if the encoder should be in an encoding setting
  *                       (only applies to Encoders plugged into a roboRIO)
  * @param[in] period The measurement period used to calculate velocity of the
@@ -85,6 +87,7 @@ void SetMotorControllers(
  * @param[in] encoderCANivoreName The name of the CANivore bus the encoder is
  * on.
  * @param[in, out] cancoder A reference to a CANCoder object
+ * @param[in, out] cancoderPro A reference to a CANcoder Pro object
  * @param[in, out] revEncoderPort A reference to a REV Encoder Port object
  * @param[in, out] revDataPort A reference to a REV Data Port object
  * @param[in, out] encoder A reference to a roboRIO encoder object
@@ -99,6 +102,7 @@ void SetupEncoders(
     frc::MotorController* controller, bool encoderInverted,
     const std::vector<int>& encoderPorts,
     const std::string& encoderCANivoreName, std::unique_ptr<CANCoder>& cancoder,
+    std::unique_ptr<ctre::phoenixpro::hardware::CANcoder>& cancoderPro,
     std::unique_ptr<rev::SparkMaxRelativeEncoder>& revEncoderPort,
     std::unique_ptr<rev::SparkMaxAlternateEncoder>& revDataPort,
     std::unique_ptr<frc::Encoder>& encoder, std::function<double()>& position,

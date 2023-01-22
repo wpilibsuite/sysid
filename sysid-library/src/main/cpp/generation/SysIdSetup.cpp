@@ -179,6 +179,7 @@ void SetupEncoders(
     frc::MotorController* controller, bool encoderInverted,
     const std::vector<int>& encoderPorts,
     const std::string& encoderCANivoreName, std::unique_ptr<CANCoder>& cancoder,
+    std::unique_ptr<hardware::CANcoder>& cancoderPro,
     std::unique_ptr<rev::SparkMaxRelativeEncoder>& revEncoderPort,
     std::unique_ptr<rev::SparkMaxAlternateEncoder>& revDataPort,
     std::unique_ptr<frc::Encoder>& encoder, std::function<double()>& position,
@@ -285,6 +286,24 @@ void SetupEncoders(
 
     position = [=, &cancoder] { return cancoder->GetPosition() / combinedCPR; };
     rate = [=, &cancoder] { return cancoder->GetVelocity() / combinedCPR; };
+  } else if (encoderType == "CANcoder (Pro)") {
+    fmt::print("Setup CANCoder (Pro)\n");
+    cancoderPro = std::make_unique<hardware::CANcoder>(encoderPorts[0],
+                                                       encoderCANivoreName);
+    configs::CANcoderConfiguration cfg;
+    cfg.MagnetSensor.SensorDirection =
+        encoderInverted ? ctre::phoenixpro::signals::SensorDirectionValue::
+                              Clockwise_Positive
+                        : ctre::phoenixpro::signals::SensorDirectionValue::
+                              CounterClockwise_Positive;
+    cancoderPro->GetConfigurator().Apply(cfg);
+
+    position = [=, &cancoderPro] {
+      return cancoderPro->GetPosition().GetValue().value() / combinedCPR;
+    };
+    rate = [=, &cancoderPro] {
+      return cancoderPro->GetVelocity().GetValue().value() / combinedCPR;
+    };
   } else {
     fmt::print("Setup roboRIO quadrature\n");
     if (isEncoding) {

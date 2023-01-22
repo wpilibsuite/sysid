@@ -80,13 +80,14 @@ HardwareType FromMotorControllerName(std::string_view name);
 namespace encoder {
 constexpr HardwareType kRoboRIO{"roboRIO quadrature"};
 constexpr HardwareType kCANCoder{"CANCoder"};
+constexpr HardwareType kCANcoderPro{"CANcoder (Pro)"};
 constexpr HardwareType kBuiltInSetting{"Built-in"};
 constexpr HardwareType kCTRETachometer{"Tachometer"};
 constexpr HardwareType kSMaxEncoderPort{"Encoder Port"};
 constexpr HardwareType kSMaxDataPort{"Data Port"};
 
-constexpr std::array<HardwareType, 6> kEncoders = {
-    kRoboRIO,        kCANCoder,        kBuiltInSetting,
+constexpr std::array<HardwareType, 7> kEncoders = {
+    kRoboRIO,        kCANCoder,        kCANcoderPro, kBuiltInSetting,
     kCTRETachometer, kSMaxEncoderPort, kSMaxDataPort};
 
 /**
