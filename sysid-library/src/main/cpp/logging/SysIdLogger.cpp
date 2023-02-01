@@ -55,7 +55,7 @@ double SysIdLogger::MeasureVoltage(
     } else if (controllerNames[i] == "TalonFX (Pro)") {
       auto* ctreController =
           dynamic_cast<ctre::phoenixpro::hardware::TalonFX*>(controller);
-      sum += ctreController->GetDutyCycle().GetValue().value();
+      sum += ctreController->GetDutyCycle().GetValue().value() * 12.0;
       if constexpr (frc::RobotBase::IsSimulation()) {
         fmt::print("Recording CTRE (Pro) voltage\n");
       }
