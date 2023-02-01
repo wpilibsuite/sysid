@@ -17,7 +17,6 @@
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
 
-#include "sysid/generation/SysIdSetup.h"
 #include "sysid/logging/SysIdGeneralMechanismLogger.h"
 
 /* Keep CTRE includes below other headers to allow Windows to build */

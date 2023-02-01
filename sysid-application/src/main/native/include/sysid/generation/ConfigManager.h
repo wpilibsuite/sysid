@@ -27,6 +27,7 @@ struct ConfigSettings {
    * Maximum length of a CANivore name is 32 characters
    */
   static constexpr int kMaxCANivoreNameLength = 32;
+
   /**
    * Ports for the primary motor controllers. For general mechanisms this is the
    * motor ports that will be used. For drivetrains these are the left-side

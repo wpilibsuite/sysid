@@ -14,6 +14,8 @@
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <units/voltage.h>
 
+#include "sysid/generation/SysIdSetup.h"
+
 MechanismRobot::MechanismRobot() : frc::TimedRobot(5_ms) {
   try {
     m_json = sysid::GetConfigJson();
