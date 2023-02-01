@@ -134,8 +134,6 @@ void Generator::CANCoderSetup(bool drive, bool usePro) {
   ImGui::SameLine();
   ImGui::Checkbox(drive ? "Left Encoder Inverted" : "Encoder Inverted",
                   &m_settings.primaryEncoderInverted);
-  ImGui::SameLine();
-  ImGui::SetNextItemWidth(80);
   if (drive) {
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
     ImGui::InputInt("R CANCoder Port", &m_settings.secondaryEncoderPorts[1], 0,
@@ -144,6 +142,7 @@ void Generator::CANCoderSetup(bool drive, bool usePro) {
     ImGui::Checkbox("Right Encoder Inverted",
                     &m_settings.secondaryEncoderInverted);
   }
+
   ImGui::SetNextItemWidth(80);
   ImGui::InputText("CANcoder CANivore Name",
                    m_settings.encoderCANivoreName.data(),
@@ -358,15 +357,6 @@ void Generator::Display() {
     ImGui::SameLine();
     ImGui::Checkbox(drive ? "L Inverted" : "Inverted", &pi[i]);
 
-    if (m_settings.motorControllers[i] == sysid::motorcontroller::kTalonFX ||
-        m_settings.motorControllers[i] == sysid::motorcontroller::kTalonFXPro) {
-      // Add CANivore name if we are using a CTRE motor controller
-      ImGui::SameLine();
-      ImGui::SetNextItemWidth(80);
-      ImGui::InputText("MC CANivore Name", m_settings.canivoreNames[i].data(),
-                       m_settings.canivoreNames[i].size());
-    }
-
     // Add right side drivetrain ports (if the analysis type is drivetrain).
     if (drive) {
       ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
@@ -381,6 +371,15 @@ void Generator::Display() {
       // Add inverted setting.
       ImGui::SameLine();
       ImGui::Checkbox("R Inverted", &si[i]);
+    }
+
+    // Add CANivore name if we are using a CTRE motor controller
+    if (m_settings.motorControllers[i] == sysid::motorcontroller::kTalonFX ||
+        m_settings.motorControllers[i] == sysid::motorcontroller::kTalonFXPro) {
+      ImGui::SetNextItemWidth(80);
+      ImGui::InputText("Motor CANivore Name",
+                       m_settings.canivoreNames[i].data(),
+                       m_settings.canivoreNames[i].size());
     }
 
     ImGui::PopID();
@@ -519,7 +518,7 @@ void Generator::Display() {
     } else if (gyroType == sysid::gyro::kPigeon2 ||
                gyroType == sysid::gyro::kPigeon2Pro) {
       ImGui::InputInt("CAN ID", &m_gyroPort, 0, 0);
-      ImGui::SameLine();
+
       ImGui::SetNextItemWidth(80);
       ImGui::InputText("Gyro CANivore Name", m_settings.gyroCANivoreName.data(),
                        m_settings.gyroCANivoreName.size());
