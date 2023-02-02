@@ -58,6 +58,7 @@ class Analyzer : public glass::View {
                                                  "WPILib (2020-)",
                                                  "WPILib (Pre-2020)",
                                                  "CANCoder",
+                                                 "CTRE (Pro)",
                                                  "CTRE",
                                                  "REV Brushless Encoder Port",
                                                  "REV Brushed Encoder Port",

@@ -24,6 +24,11 @@ namespace sysid {
  */
 struct ConfigSettings {
   /**
+   * Maximum length of a CANivore name is 32 characters
+   */
+  static constexpr int kMaxCANivoreNameLength = 32;
+
+  /**
    * Ports for the primary motor controllers. For general mechanisms this is the
    * motor ports that will be used. For drivetrains these are the left-side
    * motor controllers.
@@ -41,6 +46,12 @@ struct ConfigSettings {
    */
   wpi::SmallVector<HardwareType, 3> motorControllers = {
       sysid::motorcontroller::kPWM, sysid::motorcontroller::kPWM};
+
+  /**
+   * The CANivore name if it's on a Non-RIO bus
+   */
+  wpi::SmallVector<std::array<char, kMaxCANivoreNameLength>, 3> canivoreNames =
+      {{'r', 'i', 'o', '\0'}, {'r', 'i', 'o', '\0'}};
 
   /**
    * If the primary motor controllers (general mechanism motors / left
@@ -74,6 +85,12 @@ struct ConfigSettings {
   std::array<int, 2> secondaryEncoderPorts = {2, 3};
 
   /**
+   * CANivore names for the CANcoder sensors if they're not on the RIO bus.
+   */
+  std::array<char, kMaxCANivoreNameLength> encoderCANivoreName = {'r', 'i', 'o',
+                                                                  '\0'};
+
+  /**
    * If the primary encoder (general mechanism motors / left drivetrain encoder)
    * should be inverted or not.
    */
@@ -84,6 +101,11 @@ struct ConfigSettings {
    * not.
    */
   bool secondaryEncoderInverted = false;
+
+  /**
+   * If using a CANcoder and it's using Pro.
+   */
+  bool cancoderUsingPro = false;
 
   /**
    * The counts per revolution of the encoder.
@@ -111,6 +133,12 @@ struct ConfigSettings {
   std::string gyroCtor = "0";
 
   /**
+   * The CANivore name of a Pigeon2 if it's on a Non-RIO bus
+   */
+  std::array<char, kMaxCANivoreNameLength> gyroCANivoreName = {'r', 'i', 'o',
+                                                               '\0'};
+
+  /**
    * If the encoder is plugged into the roboRIO, there's the option to set it's
    * encoding setting to reduce noise.
    */
@@ -136,18 +164,22 @@ struct ConfigSettings {
 const ConfigSettings kRomiConfig{{0},
                                  {1},
                                  {sysid::motorcontroller::kPWM},
+                                 {{'r', 'i', 'o', '\0'}},
                                  {true},
                                  {false},
                                  sysid::encoder::kRoboRIO,
                                  {4, 5},
                                  {6, 7},
+                                 {{'r', 'i', 'o', '\0'}},
+                                 false,
                                  false,
                                  false,
                                  1440.0,
                                  1.0,
                                  1.0,
                                  sysid::gyro::kRomiGyro,
-                                 ""};
+                                 "",
+                                 {'r', 'i', 'o', '\0'}};
 
 /**
  * This class manages generating the JSON configuration from a reference to the

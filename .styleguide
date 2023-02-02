@@ -23,6 +23,7 @@ includeOtherLibs {
   ^glass
   ^GLFW
   ^cscore
+  ^ctre
   ^Eigen
   ^fmt/
   ^frc

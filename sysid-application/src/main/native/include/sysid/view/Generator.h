@@ -62,8 +62,9 @@ struct DisplayNameStorage {
 static constexpr auto kMotorControllerNames =
     DisplayNameStorage(sysid::motorcontroller::kMotorControllers);
 
-static constexpr std::array<const char*, 2> kGeneralEncoders{
+static constexpr std::array<const char*, 3> kGeneralEncoders{
     sysid::encoder::kCANCoder.displayName,
+    sysid::encoder::kCANcoderPro.displayName,
     sysid::encoder::kRoboRIO.displayName};
 
 static constexpr std::array<const char*, 2> kTalonSRXEncoders{
@@ -150,8 +151,9 @@ class Generator : public glass::View {
    * Displays the widgets to setup the CANCoder
    *
    * @param drive True if the encoder setup is for a Drivetrain.
+   * @param usePro True if CANcoder is using Pro firmware
    */
-  void CANCoderSetup(bool drive);
+  void CANCoderSetup(bool drive, bool usePro);
 
   /**
    * Displays the encoder options for a specific combination of motor controller
