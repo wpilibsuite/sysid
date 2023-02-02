@@ -9,7 +9,6 @@
 #include <string>
 #include <vector>
 
-#include <ctre/Phoenix.h>
 #include <frc/ADIS16448_IMU.h>
 #include <frc/ADIS16470_IMU.h>
 #include <frc/Encoder.h>
@@ -19,6 +18,11 @@
 #include <rev/CANSparkMax.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
+
+/* Keep CTRE includes below ADIS16448_IMU header to allow Windows to build */
+#include <ctre/Phoenix.h>
+#include <ctre/phoenixpro/Pigeon2.hpp>
+#include <ctre/phoenixpro/CANcoder.hpp>
 
 #include "sysid/logging/SysIdDrivetrainLogger.h"
 
@@ -62,8 +66,11 @@ class DriveRobot : public frc::TimedRobot {
 
   std::unique_ptr<CANCoder> m_leftCancoder;
   std::unique_ptr<CANCoder> m_rightCancoder;
+  std::unique_ptr<ctre::phoenixpro::hardware::CANcoder> m_leftCancoderPro;
+  std::unique_ptr<ctre::phoenixpro::hardware::CANcoder> m_rightCancoderPro;
   std::unique_ptr<WPI_TalonSRX> m_tempTalon;
   std::unique_ptr<BasePigeon> m_pigeon;
+  std::unique_ptr<ctre::phoenixpro::hardware::Pigeon2> m_pigeonPro;
 
   sysid::SysIdDrivetrainLogger m_logger;
 };

@@ -10,7 +10,6 @@
 #include <string_view>
 #include <vector>
 
-#include <ctre/Phoenix.h>
 #include <frc/ADIS16448_IMU.h>
 #include <frc/ADIS16470_IMU.h>
 #include <frc/Encoder.h>
@@ -20,6 +19,12 @@
 #include <units/voltage.h>
 #include <wpi/json.h>
 #include <wpi/raw_istream.h>
+
+/* Keep CTRE includes below ADIS16448_IMU header to allow Windows to build */
+#include <ctre/Phoenix.h>
+#include <ctre/phoenixpro/Pigeon2.hpp>
+#include <ctre/phoenixpro/TalonFX.hpp>
+#include <ctre/phoenixpro/CANcoder.hpp>
 
 namespace sysid {
 
@@ -31,15 +36,17 @@ wpi::json GetConfigJson();
  *
  * @param[in] port The port number that the motor controller is plugged into.
  * @param[in] controller The type of motor controller, should be one of these:
- *                       "PWM", "TalonSRX", "VictorSPX", "TalonFX",
- *                       "SPARK MAX (Brushless)", "SPARK AX (Brushed)", "Venom"
+ *                       "PWM", "TalonSRX", "VictorSPX", "TalonFX", "TalonFX
+ * (Pro)" "SPARK MAX (Brushless)", "SPARK AX (Brushed)", "Venom"
  * @param[in] inverted True if the motor controller should be inverted, false if
  *                     not.
+ * @param[in] canivore Name of the CANivore bus the motor controller is on.
  * @param[in, out] controllers A reference to the vector storing the motor
  *                             controller objects
  */
 void AddMotorController(
     int port, std::string_view controller, bool inverted,
+    std::string_view canivore,
     std::vector<std::unique_ptr<frc::MotorController>>* controllers);
 
 /**
@@ -59,7 +66,8 @@ void SetMotorControllers(
  *
  * @param[in] encoderType The type of encoder used, should be one of these:
  *                        "Built-in", "Tachometer", "CANCoder",
- *                        "roboRIO quadrature", "Encoder Port", "Data Port"
+ *                        "CANcoder (Pro)", "roboRIO quadrature",
+ *                        "Encoder Port", "Data Port"
  * @param[in] isEncoding True if the encoder should be in an encoding setting
  *                       (only applies to Encoders plugged into a roboRIO)
  * @param[in] period The measurement period used to calculate velocity of the
@@ -76,7 +84,10 @@ void SetMotorControllers(
  * @param[in] encoderPorts Port number for the encoder if its not plugged into a
  *                         motor controller. 2 ports should be used for roboRIO
  *                         encoders, 1 port should be used for CANCoder.
+ * @param[in] encoderCANivoreName The name of the CANivore bus the encoder is
+ * on.
  * @param[in, out] cancoder A reference to a CANCoder object
+ * @param[in, out] cancoderPro A reference to a CANcoder Pro object
  * @param[in, out] revEncoderPort A reference to a REV Encoder Port object
  * @param[in, out] revDataPort A reference to a REV Data Port object
  * @param[in, out] encoder A reference to a roboRIO encoder object
@@ -89,7 +100,9 @@ void SetupEncoders(
     std::string_view encoderType, bool isEncoding, int period, double cpr,
     double gearing, int numSamples, std::string_view controllerName,
     frc::MotorController* controller, bool encoderInverted,
-    const std::vector<int>& encoderPorts, std::unique_ptr<CANCoder>& cancoder,
+    const std::vector<int>& encoderPorts,
+    const std::string& encoderCANivoreName, std::unique_ptr<CANCoder>& cancoder,
+    std::unique_ptr<ctre::phoenixpro::hardware::CANcoder>& cancoderPro,
     std::unique_ptr<rev::SparkMaxRelativeEncoder>& revEncoderPort,
     std::unique_ptr<rev::SparkMaxAlternateEncoder>& revDataPort,
     std::unique_ptr<frc::Encoder>& encoder, std::function<double()>& position,
@@ -122,8 +135,11 @@ void SetupEncoders(
  * @param[in, out] ADIS16448Gyro A pointer to an ADIS16448_IMU object.
  * @param[in, out] ADIS16470Gyro A pointer to an ADIS16470_IMU object.
  * @param[in, out] pigeon A pointer to a Pigeon IMU Object
+ * @param[in, out] pigeonpro A pointer to a Pigeon2 Pro Object
  * @param[in, out] tempTalon A pointer to a TalonSRX object mean to store a
  *                           Talon that the Pigeon IMU is plugged into.
+ * @param[in] gyroCANivoreName A reference to the name of the CANivore the Gyro
+ *                             is plugged into.
  * @param[out] gyroPosition A reference to a function that is supposed to return
  *                          the gyro position
  * @param[out] gyroRate A reference to a function that is supposed to return the
@@ -139,8 +155,10 @@ void SetupGyro(
     std::unique_ptr<frc::ADIS16448_IMU>& ADIS16448Gyro,
     std::unique_ptr<frc::ADIS16470_IMU>& ADIS16470Gyro,
     std::unique_ptr<BasePigeon>& pigeon,
+    std::unique_ptr<ctre::phoenixpro::hardware::Pigeon2>& pigeonpro,
     std::unique_ptr<WPI_TalonSRX>& tempTalon,
-    std::function<double()>& gyroPosition, std::function<double()>& gyroRate);
+    const std::string& gyroCANivoreName, std::function<double()>& gyroPosition,
+    std::function<double()>& gyroRate);
 
 /**
  * Sets specified data collection functions to return zero. This is to avoid

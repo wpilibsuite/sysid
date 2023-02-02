@@ -58,14 +58,14 @@ constexpr HardwareType kPWM{"PWM"};
 constexpr HardwareType kTalonSRX{"TalonSRX"};
 constexpr HardwareType kVictorSPX{"VictorSPX"};
 constexpr HardwareType kTalonFX{"TalonFX"};
+constexpr HardwareType kTalonFXPro{"TalonFX (Pro)"};
 constexpr HardwareType kSPARKMAXBrushless{"SPARK MAX (Brushless)"};
 constexpr HardwareType kSPARKMAXBrushed{"SPARK MAX (Brushed)"};
 constexpr HardwareType kVenom{"Venom"};
 
-constexpr std::array<HardwareType, 7> kMotorControllers = {
-    kPWM,     kTalonSRX,          kVictorSPX,
-    kTalonFX, kSPARKMAXBrushless, kSPARKMAXBrushed,
-    kVenom};
+constexpr std::array<HardwareType, 8> kMotorControllers = {
+    kPWM,        kTalonSRX,          kVictorSPX,       kTalonFX,
+    kTalonFXPro, kSPARKMAXBrushless, kSPARKMAXBrushed, kVenom};
 
 /**
  * Returns an existing motor controller HardwareType from a string_view. Throws
@@ -80,13 +80,14 @@ HardwareType FromMotorControllerName(std::string_view name);
 namespace encoder {
 constexpr HardwareType kRoboRIO{"roboRIO quadrature"};
 constexpr HardwareType kCANCoder{"CANCoder"};
+constexpr HardwareType kCANcoderPro{"CANcoder (Pro)"};
 constexpr HardwareType kBuiltInSetting{"Built-in"};
 constexpr HardwareType kCTRETachometer{"Tachometer"};
 constexpr HardwareType kSMaxEncoderPort{"Encoder Port"};
 constexpr HardwareType kSMaxDataPort{"Data Port"};
 
-constexpr std::array<HardwareType, 6> kEncoders = {
-    kRoboRIO,        kCANCoder,        kBuiltInSetting,
+constexpr std::array<HardwareType, 7> kEncoders = {
+    kRoboRIO,        kCANCoder,        kCANcoderPro, kBuiltInSetting,
     kCTRETachometer, kSMaxEncoderPort, kSMaxDataPort};
 
 /**
@@ -107,6 +108,7 @@ constexpr HardwareType kADIS16470{"ADIS16470"};
 constexpr HardwareType kNavX{"NavX"};
 constexpr HardwareType kPigeon{"Pigeon"};
 constexpr HardwareType kPigeon2{"Pigeon2"};
+constexpr HardwareType kPigeon2Pro{"Pigeon2 (Pro)"};
 constexpr HardwareType kRomiGyro{"Romi"};
 constexpr HardwareType kNoGyroOption{"None"};
 

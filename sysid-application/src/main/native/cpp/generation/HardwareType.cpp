@@ -25,6 +25,9 @@ HardwareType sysid::motorcontroller::FromMotorControllerName(
   if (name == "TalonFX") {
     return sysid::motorcontroller::kTalonFX;
   }
+  if (name == "TalonFX (Pro)") {
+    return sysid::motorcontroller::kTalonFXPro;
+  }
   if (name == "SPARK MAX (Brushless)") {
     return sysid::motorcontroller::kSPARKMAXBrushless;
   }
@@ -44,6 +47,9 @@ HardwareType sysid::encoder::FromEncoderName(std::string_view name) {
   }
   if (name == "CANCoder") {
     return sysid::encoder::kCANCoder;
+  }
+  if (name == "CANcoder (Pro)") {
+    return sysid::encoder::kCANcoderPro;
   }
   if (name == "Built-in") {
     return sysid::encoder::kBuiltInSetting;

@@ -121,6 +121,15 @@ constexpr FeedbackControllerPreset kCTRECANCoder{1.0 / 12.0, 60.0, 1_ms, true,
                                                  81.5_ms};
 constexpr FeedbackControllerPreset kCTREDefault{1023.0 / 12.0, 0.1, 1_ms, false,
                                                 81.5_ms};
+/**
+ * https://api.ctr-electronics.com/phoenixpro/release/cpp/classctre_1_1phoenixpro_1_1hardware_1_1core_1_1_core_c_a_ncoder.html#a718a1a214b58d3c4543e88e3cb51ade5
+ *
+ * Phoenix Pro uses standard units and Voltage output. This means the output
+ * is 1.0, time factor is 1.0, and closed loop operates at 1 millisecond. All
+ * Pro devices make use of Kalman filters default-tuned to lowest latency, which
+ * in testing is roughly 1 millisecond
+ */
+constexpr FeedbackControllerPreset kCTREProDefault{1.0, 1.0, 1_ms, true, 1_ms};
 
 /**
  * https://github.com/wpilibsuite/sysid/issues/258#issuecomment-1010658237

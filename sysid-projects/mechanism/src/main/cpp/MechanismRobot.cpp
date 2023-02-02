@@ -14,8 +14,6 @@
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <units/voltage.h>
 
-#include "sysid/generation/SysIdSetup.h"
-
 MechanismRobot::MechanismRobot() : frc::TimedRobot(5_ms) {
   try {
     m_json = sysid::GetConfigJson();
@@ -24,10 +22,14 @@ MechanismRobot::MechanismRobot() : frc::TimedRobot(5_ms) {
         m_json.at("primary motor ports").get<std::vector<int>>();
     m_controllerNames =
         m_json.at("motor controllers").get<std::vector<std::string>>();
+    std::vector<std::string> canivoreNames =
+        m_json.at("canivore names").get<std::vector<std::string>>();
     std::vector<int> encoderPorts =
         m_json.at("primary encoder ports").get<std::vector<int>>();
     std::vector<bool> motorsInverted =
         m_json.at("primary motors inverted").get<std::vector<bool>>();
+    std::string encoderCANivoreName =
+        m_json.at("encoder canivore name").get<std::string>();
 
     std::string encoderType = m_json.at("encoder type").get<std::string>();
     bool encoderInverted = m_json.at("primary encoder inverted").get<bool>();
@@ -46,15 +48,16 @@ MechanismRobot::MechanismRobot() : frc::TimedRobot(5_ms) {
     fmt::print("Initializing Motors\n");
     for (size_t i = 0; i < ports.size(); i++) {
       sysid::AddMotorController(ports[i], m_controllerNames[i],
-                                motorsInverted[i], &m_controllers);
+                                motorsInverted[i], canivoreNames[i],
+                                &m_controllers);
     }
 
     fmt::print("Initializing encoder\n");
-    sysid::SetupEncoders(encoderType, isEncoding, period, cpr, gearing,
-                         numSamples, m_controllerNames[0],
-                         m_controllers.front().get(), encoderInverted,
-                         encoderPorts, m_cancoder, m_revEncoderPort,
-                         m_revDataPort, m_encoder, m_position, m_rate);
+    sysid::SetupEncoders(
+        encoderType, isEncoding, period, cpr, gearing, numSamples,
+        m_controllerNames[0], m_controllers.front().get(), encoderInverted,
+        encoderPorts, encoderCANivoreName, m_cancoder, m_cancoderPro,
+        m_revEncoderPort, m_revDataPort, m_encoder, m_position, m_rate);
   } catch (std::exception& e) {
     fmt::print("Project failed: {}\n", e.what());
     std::exit(-1);

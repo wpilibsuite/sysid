@@ -25,6 +25,9 @@ wpi::json ConfigManager::Generate(size_t occupied) {
   // Create the JSON to return.
   wpi::json json;
 
+  // Keep a CANivore name vector around that we can push our names into
+  std::vector<std::string> canivoreNames;
+
   // Add motor ports.
   json["primary motor ports"] =
       SliceVector(m_config.primaryMotorPorts, occupied);
@@ -38,6 +41,13 @@ wpi::json ConfigManager::Generate(size_t occupied) {
   }
   json["motor controllers"] = motorControllers;
 
+  // Add CANivore busses
+  canivoreNames.clear();
+  for (size_t i = 0; i < occupied; i++) {
+    canivoreNames.push_back(std::string(m_config.canivoreNames[i].data()));
+  }
+  json["canivore names"] = canivoreNames;
+
   // Add motor inversions.
   json["primary motors inverted"] =
       SliceVector(m_config.primaryMotorsInverted, occupied);
@@ -47,6 +57,8 @@ wpi::json ConfigManager::Generate(size_t occupied) {
   // Add encoder ports.
   json["primary encoder ports"] = m_config.primaryEncoderPorts;
   json["secondary encoder ports"] = m_config.secondaryEncoderPorts;
+  json["encoder canivore name"] =
+      std::string(m_config.encoderCANivoreName.data());
 
   // Add encoder type.
   json["encoder type"] = m_config.encoderType.name;
@@ -63,6 +75,7 @@ wpi::json ConfigManager::Generate(size_t occupied) {
   // Add gyro type and constructor.
   json["gyro"] = m_config.gyro.name;
   json["gyro ctor"] = m_config.gyroCtor;
+  json["gyro canivore name"] = std::string(m_config.gyroCANivoreName.data());
 
   // Add advanced encoder settings.
   json["encoding"] = m_config.encoding;
@@ -79,10 +92,12 @@ void ConfigManager::ReadJSON(std::string_view path) {
   constexpr const char* json_keys[] = {"primary motor ports",
                                        "secondary motor ports",
                                        "motor controllers",
+                                       "canivore names",
                                        "primary motors inverted",
                                        "secondary motors inverted",
                                        "primary encoder ports",
                                        "secondary encoder ports",
+                                       "encoder canivore name",
                                        "encoder type",
                                        "primary encoder inverted",
                                        "secondary encoder inverted",
@@ -91,9 +106,11 @@ void ConfigManager::ReadJSON(std::string_view path) {
                                        "gearing denominator",
                                        "gyro",
                                        "gyro ctor",
+                                       "gyro canivore name",
                                        "encoding",
                                        "number of samples per average",
-                                       "velocity measurement period"};
+                                       "velocity measurement period",
+                                       "is drivetrain"};
 
   // Read JSON from the specified path.
   std::error_code ec;
