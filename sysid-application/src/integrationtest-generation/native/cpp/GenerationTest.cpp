@@ -236,7 +236,7 @@ class GenerationTest : public ::testing::Test {
     m_enable.Set(false);
 
     // Test to see if the error flag is proper
-    ASSERT_TRUE(m_mechErrorSub.Get() == shouldFail);
+    ASSERT_EQ(m_mechErrorSub.Get(), shouldFail);
   }
 
   void EndSimulation() { KillNT(m_nt, m_kill); }
