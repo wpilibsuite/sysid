@@ -154,7 +154,7 @@ class AnalysisTest : public ::testing::Test {
     ASSERT_TRUE(m_overflow.Get());
 
     // Make sure the sent data isn't too large
-    ASSERT_TRUE(m_manager->GetCurrentDataSize() <= kMaxDataSize);
+    ASSERT_LE(m_manager->GetCurrentDataSize(), kMaxDataSize);
   }
 
   static void TearDownTestSuite() {
