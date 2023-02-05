@@ -253,7 +253,7 @@ class Analyzer : public glass::View {
 
   // Stores graph scroll bar position and states for keeping track of scroll
   // positions after loading graphs
-  float m_graphScroll;
+  float m_graphScroll = 0;
 
   std::atomic<bool> m_abortDataPrep{false};
   std::thread m_dataThread;
