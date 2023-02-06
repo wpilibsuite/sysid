@@ -478,21 +478,21 @@ void Generator::Display() {
         m_settings.encoderType == sysid::encoder::kCANcoderPro)) {
     // Samples Per Average Setting
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-    if (m_settings.encoderType == sysid::encoder::kBuiltInSetting) {
-      if (mainMotorController == sysid::motorcontroller::kSPARKMAXBrushless) {
-        if (ImGui::Combo("Samples Per Average", &m_numSamplesIdx,
-                         kREVBuiltInNumSamples,
-                         IM_ARRAYSIZE(kREVBuiltInNumSamples))) {
-          m_settings.numSamples =
-              std::stoi(kREVBuiltInNumSamples[m_numSamplesIdx]);
-        }
-      } else if (mainMotorController == sysid::motorcontroller::kTalonFX) {
-        if (ImGui::Combo("Samples Per Average", &m_numSamplesIdx,
-                         kCTREBuiltInNumSamples,
-                         IM_ARRAYSIZE(kCTREBuiltInNumSamples))) {
-          m_settings.numSamples =
-              std::stoi(kCTREBuiltInNumSamples[m_numSamplesIdx]);
-        }
+    if (mainMotorController == sysid::motorcontroller::kSPARKMAXBrushless &&
+        m_settings.encoderType == sysid::encoder::kSMaxEncoderPort) {
+      if (ImGui::Combo("Samples Per Average", &m_numSamplesIdx,
+                       kREVBuiltInNumSamples,
+                       IM_ARRAYSIZE(kREVBuiltInNumSamples))) {
+        m_settings.numSamples =
+            std::stoi(kREVBuiltInNumSamples[m_numSamplesIdx]);
+      }
+    } else if (mainMotorController == sysid::motorcontroller::kTalonFX &&
+               m_settings.encoderType == sysid::encoder::kBuiltInSetting) {
+      if (ImGui::Combo("Samples Per Average", &m_numSamplesIdx,
+                       kCTREBuiltInNumSamples,
+                       IM_ARRAYSIZE(kCTREBuiltInNumSamples))) {
+        m_settings.numSamples =
+            std::stoi(kCTREBuiltInNumSamples[m_numSamplesIdx]);
       }
     } else {
       ImGui::InputInt("Samples Per Average", &m_settings.numSamples, 0, 0);
