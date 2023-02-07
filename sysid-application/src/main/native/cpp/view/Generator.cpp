@@ -200,15 +200,16 @@ void Generator::UpdateFromConfig() {
 
   const auto& gyroNames = kGyroNames.names;
   m_gyroIdx = GetNewIdx(gyroNames, m_settings.gyro.displayName);
-  if (mainMotorController == sysid::motorcontroller::kSPARKMAXBrushless) {
-    m_numSamplesIdx =
-        GetNewIdx(kCTREPeriods, std::to_string(m_settings.period));
+
+  if (mainMotorController == sysid::motorcontroller::kTalonFX) {
+    m_numSamplesIdx = GetNewIdx(kCTREBuiltInNumSamples,
+                                std::to_string(m_settings.numSamples));
     m_periodIdx = GetNewIdx(kCTREPeriods, std::to_string(m_settings.period));
   } else if (mainMotorController ==
              sysid::motorcontroller::kSPARKMAXBrushless) {
     m_numSamplesIdx =
-        GetNewIdx(kCTREPeriods, std::to_string(m_settings.period));
-    m_periodIdx = GetNewIdx(kCTREPeriods, std::to_string(m_settings.period));
+        GetNewIdx(kREVBuiltInNumSamples, std::to_string(m_settings.numSamples));
+    m_periodIdx = GetNewIdx(kREVPeriods, std::to_string(m_settings.period));
   }
 
   // Read in Gyro Constructors
@@ -504,17 +505,19 @@ void Generator::Display() {
 
     // Add Velocity Measurement Period
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-    if (m_settings.encoderType == sysid::encoder::kBuiltInSetting) {
-      if (mainMotorController == sysid::motorcontroller::kSPARKMAXBrushless) {
-        if (ImGui::Combo("Time Measurement Window", &m_periodIdx, kREVPeriods,
-                         IM_ARRAYSIZE(kREVPeriods))) {
-          m_settings.numSamples = std::stoi(kREVPeriods[m_periodIdx]);
-        }
-      } else if (mainMotorController == sysid::motorcontroller::kTalonFX) {
-        if (ImGui::Combo("Time Measurement Window", &m_periodIdx, kCTREPeriods,
-                         IM_ARRAYSIZE(kCTREPeriods))) {
-          m_settings.numSamples = std::stoi(kCTREPeriods[m_periodIdx]);
-        }
+    if (mainMotorController == sysid::motorcontroller::kSPARKMAXBrushless &&
+        m_settings.encoderType == sysid::encoder::kSMaxEncoderPort) {
+      if (ImGui::Combo("Time Measurement Window", &m_periodIdx, kREVPeriods,
+                       IM_ARRAYSIZE(kREVPeriods)) ||
+          m_settings.period == 0) {
+        m_settings.period = std::stoi(kREVPeriods[m_periodIdx]);
+      }
+    } else if (mainMotorController == sysid::motorcontroller::kTalonFX &&
+               m_settings.encoderType == sysid::encoder::kBuiltInSetting) {
+      if (ImGui::Combo("Time Measurement Window", &m_periodIdx, kCTREPeriods,
+                       IM_ARRAYSIZE(kCTREPeriods)) ||
+          m_settings.period == 0) {
+        m_settings.period = std::stoi(kCTREPeriods[m_periodIdx]);
       }
     }
   }
