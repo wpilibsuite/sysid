@@ -441,7 +441,7 @@ void Generator::Display() {
                  sysid::motorcontroller::kSPARKMAXBrushless) {
     GetEncoder(ArrayConcat(kSparkMaxEncoders, kGeneralEncoders));
     if (m_encoderIdx <= 1) {
-      if (!(m_encoderIdx == 1 &&
+      if (!(m_encoderIdx == 0 &&
             mainMotorController ==
                 sysid::motorcontroller::kSPARKMAXBrushless)) {
         // You're not allowed to invert the NEO Built-in encoder
