@@ -419,8 +419,8 @@ void Generator::Display() {
     if (mainMotorController == sysid::motorcontroller::kTalonFX ||
         mainMotorController == sysid::motorcontroller::kTalonFXPro) {
       GetEncoder(ArrayConcat(kBuiltInEncoders, kGeneralEncoders));
-      if (m_encoderIdx < 1) {
-        RegularEncoderSetup(drive);
+      if (m_encoderIdx == 0) {
+        // Built in encoder on TalonFX can't be inverted.
       } else if (m_encoderIdx == 1 || m_encoderIdx == 2) {
         CANCoderSetup(drive, m_encoderIdx == 2);
       } else {
