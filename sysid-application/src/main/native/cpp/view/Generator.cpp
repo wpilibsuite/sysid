@@ -4,6 +4,7 @@
 
 #include "sysid/view/Generator.h"
 
+#include <algorithm>
 #include <memory>
 #include <mutex>
 #include <stdexcept>
@@ -199,7 +200,17 @@ void Generator::UpdateFromConfig() {
 
   const auto& gyroNames = kGyroNames.names;
   m_gyroIdx = GetNewIdx(gyroNames, m_settings.gyro.displayName);
-  m_periodIdx = GetNewIdx(kCTREPeriods, std::to_string(m_settings.period));
+
+  if (mainMotorController == sysid::motorcontroller::kTalonFX) {
+    m_numSamplesIdx = GetNewIdx(kCTREBuiltInNumSamples,
+                                std::to_string(m_settings.numSamples));
+    m_periodIdx = GetNewIdx(kCTREPeriods, std::to_string(m_settings.period));
+  } else if (mainMotorController ==
+             sysid::motorcontroller::kSPARKMAXBrushless) {
+    m_numSamplesIdx =
+        GetNewIdx(kREVBuiltInNumSamples, std::to_string(m_settings.numSamples));
+    m_periodIdx = GetNewIdx(kREVPeriods, std::to_string(m_settings.period));
+  }
 
   // Read in Gyro Constructors
   if (m_settings.gyro == sysid::gyro::kPigeon) {
@@ -459,29 +470,55 @@ void Generator::Display() {
     }
   }
 
-  // Venom or NEO built-in encoders can't change sampling or measurement period.
+  // Venom built-in encoder, TalonFX Pro built-in encoder, and CANcoder Pro
+  // can't change number of samples or measurement window.
   if (!((mainMotorController == sysid::motorcontroller::kVenom &&
          m_settings.encoderType == sysid::encoder::kBuiltInSetting) ||
-        (mainMotorController == sysid::motorcontroller::kSPARKMAXBrushless &&
-         m_settings.encoderType == sysid::encoder::kSMaxEncoderPort) ||
         (mainMotorController == sysid::motorcontroller::kTalonFXPro &&
          m_settings.encoderType == sysid::encoder::kBuiltInSetting) ||
         m_settings.encoderType == sysid::encoder::kCANcoderPro)) {
     // Samples Per Average Setting
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 2);
-    ImGui::InputInt("Samples Per Average", &m_settings.numSamples, 0, 0);
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+    if (mainMotorController == sysid::motorcontroller::kSPARKMAXBrushless &&
+        m_settings.encoderType == sysid::encoder::kSMaxEncoderPort) {
+      if (ImGui::Combo("Samples Per Average", &m_numSamplesIdx,
+                       kREVBuiltInNumSamples,
+                       IM_ARRAYSIZE(kREVBuiltInNumSamples))) {
+        m_settings.numSamples =
+            std::stoi(kREVBuiltInNumSamples[m_numSamplesIdx]);
+      }
+    } else if (mainMotorController == sysid::motorcontroller::kTalonFX &&
+               m_settings.encoderType == sysid::encoder::kBuiltInSetting) {
+      if (ImGui::Combo("Samples Per Average", &m_numSamplesIdx,
+                       kCTREBuiltInNumSamples,
+                       IM_ARRAYSIZE(kCTREBuiltInNumSamples))) {
+        m_settings.numSamples =
+            std::stoi(kCTREBuiltInNumSamples[m_numSamplesIdx]);
+      }
+    } else {
+      ImGui::InputInt("Samples Per Average", &m_settings.numSamples, 0, 0);
+    }
     CreateTooltip(
         "This helps reduce encoder noise by averaging collected samples "
         "together. A value from 5-10 is reccomended for encoders with high "
         "CPRs.");
 
     // Add Velocity Measurement Period
-    if (m_settings.encoderType != sysid::encoder::kRoboRIO &&
-        m_settings.encoderType != sysid::encoder::kCANcoderPro) {
-      ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
-      ImGui::Combo("Time Measurement Window", &m_periodIdx, kCTREPeriods,
-                   IM_ARRAYSIZE(kCTREPeriods));
-      m_settings.period = std::stoi(std::string{kCTREPeriods[m_periodIdx]});
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4);
+    if (mainMotorController == sysid::motorcontroller::kSPARKMAXBrushless &&
+        m_settings.encoderType == sysid::encoder::kSMaxEncoderPort) {
+      if (ImGui::Combo("Time Measurement Window", &m_periodIdx, kREVPeriods,
+                       IM_ARRAYSIZE(kREVPeriods)) ||
+          m_settings.period == 0) {
+        m_settings.period = std::stoi(kREVPeriods[m_periodIdx]);
+      }
+    } else if (mainMotorController == sysid::motorcontroller::kTalonFX &&
+               m_settings.encoderType == sysid::encoder::kBuiltInSetting) {
+      if (ImGui::Combo("Time Measurement Window", &m_periodIdx, kCTREPeriods,
+                       IM_ARRAYSIZE(kCTREPeriods)) ||
+          m_settings.period == 0) {
+        m_settings.period = std::stoi(kCTREPeriods[m_periodIdx]);
+      }
     }
   }
 

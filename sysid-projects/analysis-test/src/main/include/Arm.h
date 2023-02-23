@@ -76,12 +76,8 @@ class Arm : public SysIdGeneralMechanism {
   frc::LinearSystem<2, 1, 1> m_armSystem =
       frc::LinearSystemId::IdentifyPositionSystem<units::radians>(
           Constants::Arm::kV, Constants::Arm::kA);
-  frc::sim::SingleJointedArmSim m_armSimulator{m_armSystem,
-                                               frc::DCMotor::Vex775Pro(4),
-                                               1000,
-                                               1000_in,
-                                               -Constants::Arm::kAngle,
-                                               Constants::Arm::kAngle,
-                                               Constants::Arm::kMass,
-                                               true};
+  frc::sim::SingleJointedArmSim m_armSimulator{
+      m_armSystem, frc::DCMotor::Vex775Pro(4), 1000,
+      1000_in,     -Constants::Arm::kAngle,    Constants::Arm::kAngle,
+      true};
 };
