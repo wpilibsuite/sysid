@@ -26,9 +26,12 @@ using namespace sysid;
 
 void SysIdLogger::InitLogging() {
   m_mechanism = frc::SmartDashboard::GetString("SysIdTest", "");
-
-  if (IsWrongMechanism()) {
-    frc::SmartDashboard::PutBoolean("SysIdWrongMech", true);
+  if (m_mechanism == "") {
+    fmt::print(
+        "WARNING: Robot enabled before connecting SysId. Connect SysId, then "
+        "reenable the robot.\n");
+  } else {
+    frc::SmartDashboard::PutBoolean("SysIdWrongMech", IsWrongMechanism());
   }
 
   m_testType = frc::SmartDashboard::GetString("SysIdTestType", "");
