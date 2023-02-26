@@ -509,14 +509,14 @@ void Generator::Display() {
         m_settings.encoderType == sysid::encoder::kSMaxEncoderPort) {
       if (ImGui::Combo("Time Measurement Window", &m_periodIdx, kREVPeriods,
                        IM_ARRAYSIZE(kREVPeriods)) ||
-          m_settings.period == 0) {
+          m_settings.period == 1) {
         m_settings.period = std::stoi(kREVPeriods[m_periodIdx]);
       }
     } else if (mainMotorController == sysid::motorcontroller::kTalonFX &&
                m_settings.encoderType == sysid::encoder::kBuiltInSetting) {
       if (ImGui::Combo("Time Measurement Window", &m_periodIdx, kCTREPeriods,
                        IM_ARRAYSIZE(kCTREPeriods)) ||
-          m_settings.period == 0) {
+          m_settings.period == 1) {
         m_settings.period = std::stoi(kCTREPeriods[m_periodIdx]);
       }
     }
