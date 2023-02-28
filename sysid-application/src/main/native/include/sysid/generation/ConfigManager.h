@@ -152,7 +152,7 @@ struct ConfigSettings {
   /**
    * The period of time in which the velocity is calculated.
    */
-  int period = 0;
+  int period = 1;
 
   /**
    * If the configuration is for a drivetrain.
