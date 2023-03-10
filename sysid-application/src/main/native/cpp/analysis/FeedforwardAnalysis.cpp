@@ -16,38 +16,39 @@
 using namespace sysid;
 
 /**
- * Populates OLS vector for x_k+1 - x_k / tau = alpha x_k + beta u_k + gamma
+ * Populates OLS data for x_k+1 - x_k / tau = alpha x_k + beta u_k + gamma
  * sgn(x_k).
  *
- * @param d       List of characterization data.
- * @param type    Type of system being identified.
- * @param olsData Vector of OLS data.
+ * @param d List of characterization data.
+ * @param type Type of system being identified.
+ * @param X Vector representation of X in y = Xβ.
+ * @param y Vector representation of y in y = Xβ.
  */
-static void PopulateOLSVector(const std::vector<PreparedData>& d,
-                              const AnalysisType& type,
-                              std::vector<double>& olsData) {
+static void PopulateOLSData(const std::vector<PreparedData>& d,
+                            const AnalysisType& type, std::vector<double>& X,
+                            std::vector<double>& y) {
   for (const auto& pt : d) {
-    // Add the dependent variable (acceleration)
-    olsData.push_back(pt.acceleration);
-
     // Add the velocity term (for alpha)
-    olsData.push_back(pt.velocity);
+    X.push_back(pt.velocity);
 
     // Add the voltage term (for beta)
-    olsData.push_back(pt.voltage);
+    X.push_back(pt.voltage);
 
     // Add the intercept term (for gamma)
-    olsData.push_back(std::copysign(1, pt.velocity));
+    X.push_back(std::copysign(1, pt.velocity));
 
     // Add test-specific variables
     if (type == analysis::kElevator) {
       // Add the gravity term (for Kg)
-      olsData.push_back(1.0);
+      X.push_back(1.0);
     } else if (type == analysis::kArm) {
       // Add the cosine and sine terms (for Kg)
-      olsData.push_back(pt.cos);
-      olsData.push_back(pt.sin);
+      X.push_back(pt.cos);
+      X.push_back(pt.sin);
     }
+
+    // Add the dependent variable (acceleration)
+    y.push_back(pt.acceleration);
   }
 }
 
@@ -55,7 +56,8 @@ std::tuple<std::vector<double>, double, double>
 sysid::CalculateFeedforwardGains(const Storage& data,
                                  const AnalysisType& type) {
   // Create a raw vector of doubles with our data in it.
-  std::vector<double> olsData;
+  std::vector<double> X;
+  std::vector<double> y;
 
   // Iterate through the data and add it to our raw vector.
   const auto& [slowForward, slowBackward, fastForward, fastBackward] = data;
@@ -65,17 +67,18 @@ sysid::CalculateFeedforwardGains(const Storage& data,
 
   // 1 dependent variable, n independent variables in each observation
   // Observations are stored serially
-  olsData.reserve(1 + type.independentVariables * size);
+  X.reserve(type.independentVariables * size);
+  y.reserve(size);
 
   // Perform OLS with accel = alpha*vel + beta*voltage + gamma*signum(vel)
   // OLS performs best with the noisiest variable as the dependent var,
   // so we regress accel in terms of the other variables.
-  PopulateOLSVector(slowForward, type, olsData);
-  PopulateOLSVector(slowBackward, type, olsData);
-  PopulateOLSVector(fastForward, type, olsData);
-  PopulateOLSVector(fastBackward, type, olsData);
+  PopulateOLSData(slowForward, type, X, y);
+  PopulateOLSData(slowBackward, type, X, y);
+  PopulateOLSData(fastForward, type, X, y);
+  PopulateOLSData(fastBackward, type, X, y);
 
-  auto ols = sysid::OLS(olsData, type.independentVariables);
+  auto ols = sysid::OLS(X, type.independentVariables, y);
   double alpha = std::get<0>(ols)[0];  // -Kv/Ka
   double beta = std::get<0>(ols)[1];   // 1/Ka
   double gamma = std::get<0>(ols)[2];  // -Ks/Ka
