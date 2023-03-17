@@ -1,0 +1,70 @@
+{
+    "fileName": "playingwithfusion2023.json",
+    "name": "PlayingWithFusion",
+    "version": "2023.01.17",
+    "uuid": "14b8ad04-24df-11ea-978f-2e728ce88125",
+    "jsonUrl": "https://www.playingwithfusion.com/frc/playingwithfusion2023.json",
+    "mavenUrls": [
+        "https://www.playingwithfusion.com/frc/maven/"
+    ],
+    "javaDependencies": [
+        {
+            "groupId": "com.playingwithfusion.frc",
+            "artifactId": "PlayingWithFusion-java",
+            "version": "2023.01.17"
+        }
+    ],
+    "jniDependencies": [
+        {
+            "groupId": "com.playingwithfusion.frc",
+            "artifactId": "PlayingWithFusion-driver",
+            "version": "2023.01.17",
+            "isJar": false,
+            "skipInvalidPlatforms": true,
+            "validPlatforms": [
+                "linuxathena",
+                "linuxraspbian",
+                "linuxaarch64bionic",
+                "windowsx86-64",
+                "linuxx86-64",
+                "osxx86-64"
+            ]
+        }
+    ],
+    "cppDependencies": [
+        {
+            "groupId": "com.playingwithfusion.frc",
+            "artifactId": "PlayingWithFusion-cpp",
+            "version": "2023.01.17",
+            "headerClassifier": "headers",
+            "sharedLibrary": false,
+            "libName": "PlayingWithFusion",
+            "skipInvalidPlatforms": true,
+            "binaryPlatforms": [
+                "linuxathena",
+                "linuxraspbian",
+                "linuxaarch64bionic",
+                "windowsx86-64",
+                "linuxx86-64",
+                "osxx86-64"
+            ]
+        },
+        {
+            "groupId": "com.playingwithfusion.frc",
+            "artifactId": "PlayingWithFusion-driver",
+            "version": "2023.01.17",
+            "headerClassifier": "headers",
+            "sharedLibrary": true,
+            "libName": "PlayingWithFusionDriver",
+            "skipInvalidPlatforms": true,
+            "binaryPlatforms": [
+                "linuxathena",
+                "linuxraspbian",
+                "linuxaarch64bionic",
+                "windowsx86-64",
+                "linuxx86-64",
+                "osxx86-64"
+            ]
+        }
+    ]
+}
