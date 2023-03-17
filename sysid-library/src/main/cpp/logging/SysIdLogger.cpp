@@ -8,7 +8,7 @@
 #include <sstream>
 #include <stdexcept>
 
-// #include <CANVenom.h>
+#include <CANVenom.h>
 #include <ctre/Phoenix.h>
 #include <ctre/phoenixpro/TalonFX.hpp>
 #include <fmt/core.h>
@@ -71,8 +71,8 @@ double SysIdLogger::MeasureVoltage(
         fmt::print("Recording CTRE voltage\n");
       }
     } else if (controllerNames[i] == "Venom") {
-      // auto* venom = static_cast<frc::CANVenom*>(controller);
-      // sum += venom->GetOutputVoltage();
+      auto* venom = static_cast<frc::CANVenom*>(controller);
+      sum += venom->GetOutputVoltage();
       if constexpr (frc::RobotBase::IsSimulation()) {
         fmt::print("Recording Venom voltage\n");
       }

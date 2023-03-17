@@ -7,7 +7,7 @@
 #include <filesystem>
 #include <stdexcept>
 
-// #include <CANVenom.h>
+#include <CANVenom.h>
 #include <fmt/core.h>
 #include <frc/ADXRS450_Gyro.h>
 #include <frc/AnalogGyro.h>
@@ -111,12 +111,12 @@ void AddMotorController(
     sparkMax->SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
   } else if (controller == "Venom") {
     fmt::print("Setup Venom\n");
-    // controllers->emplace_back(std::make_unique<frc::CANVenom>(port));
+    controllers->emplace_back(std::make_unique<frc::CANVenom>(port));
 
-    // auto* venom = static_cast<frc::CANVenom*>(controllers->back().get());
+    auto* venom = static_cast<frc::CANVenom*>(controllers->back().get());
 
-    // venom->SetInverted(inverted);
-    // venom->SetBrakeCoastMode(frc::CANVenom::BrakeCoastMode::kBrake);
+    venom->SetInverted(inverted);
+    venom->SetBrakeCoastMode(frc::CANVenom::BrakeCoastMode::kBrake);
     controllers->emplace_back(std::make_unique<frc::Spark>(port));
   } else {
     fmt::print("Setup PWM\n");
@@ -223,12 +223,12 @@ void SetupEncoders(
                        numSamples, encoderInverted, position, rate);
     } else {  // Venom
       fmt::print("Setup Built-in+Venom\n");
-      // auto* venom = static_cast<frc::CANVenom*>(controller);
-      // position = [=] { return venom->GetPosition() / gearing; };
-      // rate = [=] {
-      //     return venom->GetSpeed() / gearing /
-      //            60;  // Conversion from RPM to rotations per second
-      // };
+      auto* venom = static_cast<frc::CANVenom*>(controller);
+      position = [=] { return venom->GetPosition() / gearing; };
+      rate = [=] {
+          return venom->GetSpeed() / gearing /
+                 60;  // Conversion from RPM to rotations per second
+      };
     }
   } else if (encoderType == "Encoder Port") {
     auto* sparkMax = static_cast<rev::CANSparkMax*>(controller);
