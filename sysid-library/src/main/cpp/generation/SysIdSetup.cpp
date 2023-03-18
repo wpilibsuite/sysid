@@ -226,8 +226,8 @@ void SetupEncoders(
       auto* venom = static_cast<frc::CANVenom*>(controller);
       position = [=] { return venom->GetPosition() / gearing; };
       rate = [=] {
-          return venom->GetSpeed() / gearing /
-                 60;  // Conversion from RPM to rotations per second
+        return venom->GetSpeed() / gearing /
+               60;  // Conversion from RPM to rotations per second
       };
     }
   } else if (encoderType == "Encoder Port") {
