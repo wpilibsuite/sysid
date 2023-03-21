@@ -35,7 +35,7 @@ constexpr size_t kMaxDataSize = 4000;
 // Calculated by finding the voltage required to hold the arm horizontal in the
 // simulation program.
 constexpr double kElevatorG = 0.002;
-constexpr double kArmG = 0.250;
+constexpr double kArmG = 0.125;
 
 // Create our test fixture class so we can reuse the same logic for various test
 // mechanisms.
@@ -154,7 +154,7 @@ class AnalysisTest : public ::testing::Test {
     ASSERT_TRUE(m_overflow.Get());
 
     // Make sure the sent data isn't too large
-    ASSERT_TRUE(m_manager->GetCurrentDataSize() <= kMaxDataSize);
+    ASSERT_LE(m_manager->GetCurrentDataSize(), kMaxDataSize);
   }
 
   static void TearDownTestSuite() {

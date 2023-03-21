@@ -4,13 +4,13 @@
 
 #include "sysid/logging/SysIdLogger.h"
 
-// #include <ctre/Phoenix.h>
-
 #include <cstddef>
 #include <sstream>
 #include <stdexcept>
 
-// #include <CANVenom.h>
+#include <CANVenom.h>
+#include <ctre/Phoenix.h>
+#include <ctre/phoenixpro/TalonFX.hpp>
 #include <fmt/core.h>
 #include <frc/Notifier.h>
 #include <frc/RobotBase.h>
@@ -19,16 +19,19 @@
 #include <frc/Timer.h>
 #include <frc/livewindow/LiveWindow.h>
 #include <frc/smartdashboard/SmartDashboard.h>
-// #include <rev/CANSparkMax.h>
+#include <rev/CANSparkMax.h>
 #include <wpi/StringExtras.h>
 
 using namespace sysid;
 
 void SysIdLogger::InitLogging() {
   m_mechanism = frc::SmartDashboard::GetString("SysIdTest", "");
-
-  if (IsWrongMechanism()) {
-    frc::SmartDashboard::PutBoolean("SysIdWrongMech", true);
+  if (m_mechanism == "") {
+    fmt::print(
+        "WARNING: Robot enabled before connecting SysId. Connect SysId, then "
+        "reenable the robot.\n");
+  } else {
+    frc::SmartDashboard::PutBoolean("SysIdWrongMech", IsWrongMechanism());
   }
 
   m_testType = frc::SmartDashboard::GetString("SysIdTestType", "");
@@ -45,24 +48,31 @@ double SysIdLogger::MeasureVoltage(
     const std::vector<std::string>& controllerNames) {
   double sum = 0.0;
   for (size_t i = 0; i < controllers.size(); ++i) {
-    // auto&& controller = controllers[i].get();
+    auto&& controller = controllers[i].get();
     if (wpi::starts_with(controllerNames[i], "SPARK MAX")) {
-      // auto* smax = static_cast<rev::CANSparkMax*>(controller);
-      // sum += smax->GetBusVoltage() * smax->GetAppliedOutput();
+      auto* smax = static_cast<rev::CANSparkMax*>(controller);
+      sum += smax->GetBusVoltage() * smax->GetAppliedOutput();
       if constexpr (frc::RobotBase::IsSimulation()) {
         fmt::print("Recording SPARK MAX voltage\n");
       }
+    } else if (controllerNames[i] == "TalonFX (Pro)") {
+      auto* ctreController =
+          dynamic_cast<ctre::phoenixpro::hardware::TalonFX*>(controller);
+      sum += ctreController->GetDutyCycle().GetValue().value() *
+             ctreController->GetSupplyVoltage().GetValue().value();
+      if constexpr (frc::RobotBase::IsSimulation()) {
+        fmt::print("Recording CTRE (Pro) voltage\n");
+      }
     } else if (wpi::starts_with(controllerNames[i], "Talon") ||
                wpi::starts_with(controllerNames[i], "Victor")) {
-      // auto* ctreController =
-      // dynamic_cast<WPI_BaseMotorController*>(controller); sum +=
-      // ctreController->GetMotorOutputVoltage();
+      auto* ctreController = dynamic_cast<WPI_BaseMotorController*>(controller);
+      sum += ctreController->GetMotorOutputVoltage();
       if constexpr (frc::RobotBase::IsSimulation()) {
         fmt::print("Recording CTRE voltage\n");
       }
     } else if (controllerNames[i] == "Venom") {
-      // auto* venom = static_cast<frc::CANVenom*>(controller);
-      // sum += venom->GetOutputVoltage();
+      auto* venom = static_cast<frc::CANVenom*>(controller);
+      sum += venom->GetOutputVoltage();
       if constexpr (frc::RobotBase::IsSimulation()) {
         fmt::print("Recording Venom voltage\n");
       }

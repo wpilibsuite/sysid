@@ -4,6 +4,7 @@
 
 #include <cstdlib>
 #include <exception>
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -16,7 +17,6 @@
 #include <wpi/SmallVector.h>
 #include <wpi/StringExtras.h>
 #include <wpi/StringMap.h>
-#include <wpi/fs.h>
 #include <wpi/timestamp.h>
 
 #include "IntegrationUtils.h"
@@ -44,6 +44,7 @@ wpi::StringMap<wpi::SmallVector<sysid::HardwareType, 2>>
         {std::string{sysid::motorcontroller::kVictorSPX.name}, kGeneralEncs},
         {std::string{sysid::motorcontroller::kTalonSRX.name}, kTalonEncs},
         {std::string{sysid::motorcontroller::kTalonFX.name}, kBuiltInEncs},
+        {std::string{sysid::motorcontroller::kTalonFXPro.name}, kBuiltInEncs},
         {std::string{sysid::motorcontroller::kSPARKMAXBrushless.name},
          kSMaxEncs},
         {std::string{sysid::motorcontroller::kSPARKMAXBrushed.name}, kSMaxEncs},
@@ -66,6 +67,7 @@ wpi::StringMap<wpi::SmallVector<std::string_view, 4>> gyroCtorMap = {
     {std::string{sysid::gyro::kAnalogGyro.name}, kAnalogCtors},
     {std::string{sysid::gyro::kPigeon.name}, kPigeonCtors},
     {std::string{sysid::gyro::kPigeon2.name}, kAnalogCtors},
+    {std::string{sysid::gyro::kPigeon2Pro.name}, kAnalogCtors},
     {std::string{sysid::gyro::kADXRS450.name}, kADXRS450Ctors},
     {std::string{sysid::gyro::kNavX.name}, kNavXCtors},
     {std::string{sysid::gyro::kADIS16448.name}, kADIS16448Ctors},
@@ -90,7 +92,7 @@ class GenerationTest : public ::testing::Test {
         m_nt.GetTable("SmartDashboard")->GetBooleanTopic("SysIdRun").Publish();
 
     // Get the path to write the json
-    m_jsonPath = fs::path{EXPAND_STRINGIZE(PROJECT_ROOT_DIR)} /
+    m_jsonPath = std::filesystem::path{EXPAND_STRINGIZE(PROJECT_ROOT_DIR)} /
                  "sysid-projects" / "deploy" / "config.json";
     m_directory = directory;
 
@@ -140,6 +142,8 @@ class GenerationTest : public ::testing::Test {
                motorController == sysid::motorcontroller::kVictorSPX.name ||
                motorController == sysid::motorcontroller::kTalonFX.name) {
       voltageAccessor = "CTRE";
+    } else if (motorController == sysid::motorcontroller::kTalonFXPro.name) {
+      voltageAccessor = "CTRE (Pro)";
     } else if (motorController == sysid::motorcontroller::kVenom.name) {
       voltageAccessor = "Venom";
     } else {
@@ -176,6 +180,8 @@ class GenerationTest : public ::testing::Test {
       FindInLog(fmt::format("Pigeon, {}", pigeonPortStr));
     } else if (gyro == sysid::gyro::kPigeon2.name) {
       FindInLog(fmt::format("Pigeon2, {} (CAN)", gyroCtor));
+    } else if (gyro == sysid::gyro::kPigeon2Pro.name) {
+      FindInLog(fmt::format("Pigeon2, {} (CAN) (Pro)", gyroCtor));
     } else if (gyro == sysid::gyro::kADXRS450.name ||
                gyro == sysid::gyro::kADIS16448.name ||
                gyro == sysid::gyro::kADIS16470.name) {
@@ -230,7 +236,7 @@ class GenerationTest : public ::testing::Test {
     m_enable.Set(false);
 
     // Test to see if the error flag is proper
-    ASSERT_TRUE(m_mechErrorSub.Get() == shouldFail);
+    ASSERT_EQ(m_mechErrorSub.Get(), shouldFail);
   }
 
   void EndSimulation() { KillNT(m_nt, m_kill); }
@@ -247,7 +253,7 @@ class GenerationTest : public ::testing::Test {
 
   std::string m_directory;
   std::string m_logContent;
-  fs::path m_jsonPath;
+  std::filesystem::path m_jsonPath;
 
   sysid::ConfigSettings m_settings;
   sysid::ConfigManager m_manager{m_settings, m_logger};

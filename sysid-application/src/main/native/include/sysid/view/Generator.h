@@ -62,8 +62,9 @@ struct DisplayNameStorage {
 static constexpr auto kMotorControllerNames =
     DisplayNameStorage(sysid::motorcontroller::kMotorControllers);
 
-static constexpr std::array<const char*, 2> kGeneralEncoders{
+static constexpr std::array<const char*, 3> kGeneralEncoders{
     sysid::encoder::kCANCoder.displayName,
+    sysid::encoder::kCANcoderPro.displayName,
     sysid::encoder::kRoboRIO.displayName};
 
 static constexpr std::array<const char*, 2> kTalonSRXEncoders{
@@ -92,7 +93,21 @@ static constexpr const char* kADIS16470Ctors[] = {
     "SPI (Onboard CS0)", "SPI (Onboard CS1)", "SPI (Onboard CS2)",
     "SPI (Onboard CS3)", "SPI (MXP)"};
 
-static constexpr const char* kCTREPeriods[] = {"1",  "2",  "5",  "10",
+// https://codedocs.revrobotics.com/cpp/classrev_1_1_spark_max_relative_encoder.html#ad2220467e1725840dbe77db4278a8d80
+static constexpr const char* kREVBuiltInNumSamples[] = {"1", "2", "4", "8"};
+
+// https://codedocs.revrobotics.com/cpp/classrev_1_1_spark_max_relative_encoder.html#a8922f3c305ef6e57d7f639a17496c45d
+static constexpr const char* kREVPeriods[] = {
+    "8",  "9",  "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
+    "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31",
+    "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43",
+    "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55",
+    "56", "57", "58", "59", "60", "61", "62", "63", "64"};
+
+// https://docs.ctre-phoenix.com/en/stable/ch14_MCSensor.html#changing-velocity-measurement-parameters
+static constexpr const char* kCTREBuiltInNumSamples[] = {"1",  "2",  "4", "8",
+                                                         "16", "32", "64"};
+static constexpr const char* kCTREPeriods[] = {"1",  "5",  "10", "20",
                                                "25", "50", "100"};
 
 /**
@@ -150,8 +165,9 @@ class Generator : public glass::View {
    * Displays the widgets to setup the CANCoder
    *
    * @param drive True if the encoder setup is for a Drivetrain.
+   * @param usePro True if CANcoder is using Pro firmware
    */
-  void CANCoderSetup(bool drive);
+  void CANCoderSetup(bool drive, bool usePro);
 
   /**
    * Displays the encoder options for a specific combination of motor controller
@@ -166,6 +182,13 @@ class Generator : public glass::View {
     ImGui::Combo("Encoder", &m_encoderIdx, encoders.data(), encoders.size());
     m_settings.encoderType =
         sysid::encoder::FromEncoderName(encoders[m_encoderIdx]);
+    if (m_settings.motorControllers[0] ==
+            sysid::motorcontroller::kSPARKMAXBrushless &&
+        m_settings.encoderType == sysid::encoder::kSMaxEncoderPort) {
+      // Spark Max built-in encoder number of samples must be within 8 to 64
+      // inclusive
+      m_settings.numSamples = 8;
+    }
   }
 
   // Configuration manager along with its settings -- used to generate the JSON
@@ -182,7 +205,8 @@ class Generator : public glass::View {
   int m_encoderIdx = 0;
   int m_gyroIdx = 0;
   int m_unitsIdx = 0;
-  int m_periodIdx = 6;
+  int m_numSamplesIdx = 0;
+  int m_periodIdx = 0;
 
   HardwareType m_prevMainMotorController = sysid::motorcontroller::kPWM;
 

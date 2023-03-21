@@ -11,7 +11,6 @@
 #include <units/angular_acceleration.h>
 #include <units/angular_velocity.h>
 #include <units/length.h>
-#include <units/mass.h>
 #include <units/velocity.h>
 #include <units/voltage.h>
 
@@ -78,8 +77,6 @@ constexpr auto kV = 1.98_V / 1_rad_per_s;
 constexpr auto kA = 0.2_V / 1_rad_per_s_sq;
 
 constexpr units::degree_t kAngle{std::numeric_limits<double>::max()};
-
-constexpr auto kMass = 0.01_kg;
 
 }  // namespace Arm
 

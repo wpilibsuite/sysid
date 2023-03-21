@@ -6,10 +6,9 @@
 
 #include <algorithm>
 #include <array>
+#include <filesystem>
 #include <string>
 #include <string_view>
-
-#include <wpi/fs.h>
 
 // The generated AppleScript by portable-file-dialogs for just *.json does not
 // work correctly because it is a uniform type identifier. This means that
@@ -68,7 +67,7 @@ std::string_view GetAbbreviation(std::string_view unit);
  * @param contents The file contents.
  * @param path The file location.
  */
-void SaveFile(std::string_view contents, const fs::path& path);
+void SaveFile(std::string_view contents, const std::filesystem::path& path);
 
 /**
  * Concatenates all the arrays passed as arguments and returns the result.
