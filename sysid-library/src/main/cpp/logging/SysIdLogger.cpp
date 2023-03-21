@@ -9,7 +9,7 @@
 #include <sstream>
 #include <stdexcept>
 
-// #include <CANVenom.h>
+#include <CANVenom.h>
 #include <ctre/Phoenix.h>
 #include <ctre/phoenixpro/TalonFX.hpp>
 #include <fmt/core.h>
@@ -27,9 +27,12 @@ using namespace sysid;
 
 void SysIdLogger::InitLogging() {
   m_mechanism = frc::SmartDashboard::GetString("SysIdTest", "");
-
-  if (IsWrongMechanism()) {
-    frc::SmartDashboard::PutBoolean("SysIdWrongMech", true);
+  if (m_mechanism == "") {
+    fmt::print(
+        "WARNING: Robot enabled before connecting SysId. Connect SysId, then "
+        "reenable the robot.\n");
+  } else {
+    frc::SmartDashboard::PutBoolean("SysIdWrongMech", IsWrongMechanism());
   }
 
   m_testType = frc::SmartDashboard::GetString("SysIdTestType", "");
@@ -71,8 +74,8 @@ double SysIdLogger::MeasureVoltage(
         fmt::print("Recording CTRE voltage\n");
       }
     } else if (controllerNames[i] == "Venom") {
-      // auto* venom = static_cast<frc::CANVenom*>(controller);
-      // sum += venom->GetOutputVoltage();
+      auto* venom = static_cast<frc::CANVenom*>(controller);
+      sum += venom->GetOutputVoltage();
       if constexpr (frc::RobotBase::IsSimulation()) {
         fmt::print("Recording Venom voltage\n");
       }

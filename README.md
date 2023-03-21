@@ -78,6 +78,8 @@ There is also a robot project in `sysid-projects/analysis-test` that you can use
     - On Linux, install GCC 11 or greater
     - On Windows, install [Visual Studio Community 2022](https://visualstudio.microsoft.com/vs/community/) and select the C++ programming language during installation (Gradle can't use the build tools for Visual Studio)
     - On macOS, install the Xcode command-line build tools via `xcode-select --install`. Xcode 13 or later is required.
+- roboRIO C++ compiler
+    - Run the latest WPILib installer from [here](https://github.com/wpilibsuite/allwpilib/releases/latest)
 
 ## Logging Projects
 
