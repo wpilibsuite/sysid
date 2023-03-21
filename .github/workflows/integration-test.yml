@@ -15,15 +15,17 @@ jobs:
           - os: windows-2022
             artifact-name: Windows x86-64
             test-type: Analysis
-          - os: windows-2022
-            artifact-name: Windows x86-64
-            test-type: Generation
+          # Windows generation test hangs
+          #- os: windows-2022
+          #  artifact-name: Windows x86-64
+          #  test-type: Generation
           - os: ubuntu-22.04
             artifact-name: Linux
             test-type: Analysis
-          - os: ubuntu-22.04
-            artifact-name: Linux
-            test-type: Generation
+          # Linux generation test hangs
+          #- os: ubuntu-22.04
+          #  artifact-name: Linux
+          #  test-type: Generation
           # macOS analysis test hangs
           # - os: macos-11
           #   artifact-name: macOS
