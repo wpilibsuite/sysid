@@ -14,11 +14,12 @@ namespace sysid {
  * returns a vector of coefficients along with the r-squared (coefficient of
  * determination) and RMSE (stardard deviation of the residuals) of the fit.
  *
- * @param data                 The data to perform the regression on. The data
- *                             must be formatted as y, x₀, x₁, x₂, ..., y, ...
- *                             in the vector.
+ * @param XData The independent data in y = Xβ. The data must be formatted as
+ *   x₀, x₁, x₂, ..., in the vector.
  * @param independentVariables The number of independent variables (x values).
+ * @param yData The dependent data in y = Xβ.
  */
 std::tuple<std::vector<double>, double, double> OLS(
-    const std::vector<double>& data, size_t independentVariables);
+    const std::vector<double>& XData, size_t independentVariables,
+    const std::vector<double>& yData);
 }  // namespace sysid
