@@ -76,7 +76,7 @@ void SaveFile(std::string_view contents, const std::filesystem::path& path);
  * @tparam Sizes The array sizes.
  * @param arrays Parameter pack of arrays to concatenate.
  */
-template <typename Type, std::size_t... Sizes>
+template <typename Type, size_t... Sizes>
 constexpr auto ArrayConcat(const std::array<Type, Sizes>&... arrays) {
   std::array<Type, (Sizes + ...)> result;
   size_t index = 0;
