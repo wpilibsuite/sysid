@@ -168,8 +168,14 @@ model {
             '-framework' << 'Cocoa' << '-framework' << 'IOKit' << '-framework' <<
             'CoreFoundation' << '-framework' << 'CoreVideo' << '-framework' << 'QuartzCore'
         it.linker.args << '-framework' << 'Kerberos'
+        if (it.buildType.getName() == "release") {
+          it.linker.args << '-s'
+        }
       } else {
         it.linker.args << '-lX11'
+        if (it.buildType.getName() == "release") {
+          it.linker.args << '-s'
+        }
       }
 
       // Define NDEBUG in Release Mode (needed for proper wpi::Logger functionality).
