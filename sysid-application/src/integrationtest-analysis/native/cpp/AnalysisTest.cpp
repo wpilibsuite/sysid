@@ -8,13 +8,13 @@
 #include <thread>
 
 #include <fmt/core.h>
+#include <gtest/gtest.h>
 #include <networktables/BooleanTopic.h>
 #include <networktables/NetworkTableInstance.h>
 #include <wpi/Logger.h>
 #include <wpi/timestamp.h>
 
 #include "IntegrationUtils.h"
-#include "gtest/gtest.h"
 #include "sysid/Util.h"
 #include "sysid/analysis/AnalysisManager.h"
 #include "sysid/analysis/AnalysisType.h"

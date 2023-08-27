@@ -6,7 +6,8 @@
 #include <cmath>
 #include <vector>
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
+
 #include "sysid/analysis/AnalysisManager.h"
 #include "sysid/analysis/FeedforwardAnalysis.h"
 #include "sysid/analysis/FilteringUtils.h"

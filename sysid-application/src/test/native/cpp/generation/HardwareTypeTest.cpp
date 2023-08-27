@@ -7,7 +7,8 @@
 #include <stdexcept>
 #include <string_view>
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
+
 #include "sysid/generation/HardwareType.h"
 
 /**
