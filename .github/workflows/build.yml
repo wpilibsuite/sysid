@@ -17,7 +17,7 @@ jobs:
           - os: windows-2022
             artifact-name: Win64
             architecture: x64
-          - os: macos-11
+          - os: macos-12
             artifact-name: macOS
             architecture: x64
 
