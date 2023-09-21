@@ -55,17 +55,13 @@ Go to the directory that the repository is cloned in and run `./gradlew run` to 
 
 ### Generating And Running SysId Robot Code
 
-1. Use the Generator Widget to create a config.json
-2. If you are characterizing a mechanism (Arm, Simple Motor, Elevator), deploy the project in `sysid-projects/mechanism` to your robot (`./gradlew :sysid-projects:mechanism:deploy`). For drivetrain charactarization (Drivetrains, Romi), deploy the project in `sysid-projects/drive` to your robot.
+1. Add sysid vendordep to your robot code and call the logging function.
+2. Deploy your robot code.
 3. Connect the logger to your robot and perform the required tests.
 
 ## Building and Running SysId
 
 SysId uses Gradle to build. To build debug and release versions of the main executable and run tests, run `./gradlew build`. During development, you can use `./gradlew run` to build and run the debug executable.
-
-SysId also has integration tests, which involves launching a robot program with simulation physics, characterizing it and verifying the gains. These tests are not enabled by default; instead, you need to pass the `-PwithIntegration` flag into Gradle. Use `./gradlew runAnalysisIntegrationTests -PwithIntegration` or `./gradlew runGenerationIntegrationTests -PwithIntegration` to run just the analysis or project generation integration tests respectively.
-
-There is also a robot project in `sysid-projects/analysis-test` that you can use to test out SysId. To launch the robot program, simply run `./gradlew :sysid-projects:analysis-test:simulateCpp`.
 
 ### Requirements
 
@@ -82,14 +78,6 @@ There is also a robot project in `sysid-projects/analysis-test` that you can use
     - Run the latest WPILib installer from [here](https://github.com/wpilibsuite/allwpilib/releases/latest)
 
 ## Logging Projects
-
-SysId comes with projects that interface with the telemetry manager to provide the necessary data for analysis. These projects are stored in the `sysid-projects` folder and take in a `config.json` file in the `sysid-projects/deploy` directory to setup the robot hardware for analysis.
-
-There is a `drivetrain` project for drivetrain analysis and a `mechanism` project for simple-motor, elevator, and arm analyses.
-
-### Running the Projects
-
-The executable generated from building is currently hardcoded to save to the proper project and these projects can be run normally from VSCode or the command line.
 
 ### Time Plotting Script
 

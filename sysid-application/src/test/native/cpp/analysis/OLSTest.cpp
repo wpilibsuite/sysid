@@ -4,7 +4,8 @@
 
 #include <vector>
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
+
 #include "sysid/analysis/OLS.h"
 
 TEST(OLSTest, TwoVariablesTwoPoints) {

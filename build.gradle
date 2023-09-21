@@ -59,7 +59,7 @@ doxygen {
     project_name 'SysId'
     project_logo 'sysid-application/src/main/native/resources/sysid-128.png'
     project_number wpilibVersioning.version.get()
-    source 'sysid-application/src/integrationtest-utils', 'sysid-application/src/main/native/cpp', 'sysid-application/src/main/native/include', 'sysid-library/src', 'sysid-projects/src'
+    source 'sysid-application/src/main/native/cpp', 'sysid-application/src/main/native/include'
     quiet true
     recursive true
     strip_code_comments false
@@ -92,10 +92,6 @@ task run {
 
 task runAnalysisIntegrationTests {
   dependsOn ":sysid-application:runAnalysisIntegrationTests"
-}
-
-task runGenerationIntegrationTests {
-  dependsOn ":sysid-application:runGenerationIntegrationTests"
 }
 
 copyAllOutputs.dependsOn outputVersions
