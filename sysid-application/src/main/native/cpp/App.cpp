@@ -18,13 +18,11 @@
 #include <glass/WindowManager.h>
 #include <glass/other/Log.h>
 #include <imgui.h>
-#include <libssh/libssh.h>
 #include <uv.h>
 #include <wpi/Logger.h>
 #include <wpigui.h>
 
 #include "sysid/view/Analyzer.h"
-#include "sysid/view/Generator.h"
 #include "sysid/view/JSONConverter.h"
 #include "sysid/view/Logger.h"
 #include "sysid/view/UILayout.h"
@@ -35,7 +33,6 @@ static std::unique_ptr<glass::WindowManager> gWindowManager;
 
 glass::Window* gLoggerWindow;
 glass::Window* gAnalyzerWindow;
-glass::Window* gGeneratorWindow;
 glass::Window* gProgramLogWindow;
 static glass::MainMenuBar gMainMenu;
 
@@ -100,9 +97,6 @@ void Application(std::string_view saveDir) {
   // Set the number of workers for the libuv threadpool.
   uv_os_setenv("UV_THREADPOOL_SIZE", "6");
 
-  // Initialize libssh.
-  ssh_init();
-
   // Initialize window manager and add views.
   auto& storage = glass::GetStorageRoot().GetChild("SysId");
   gWindowManager = std::make_unique<glass::WindowManager>(storage);
@@ -117,16 +111,7 @@ void Application(std::string_view saveDir) {
   gProgramLogWindow = gWindowManager->AddWindow(
       "Program Log", std::make_unique<glass::LogView>(&gLog));
 
-  gGeneratorWindow = gWindowManager->AddWindow(
-      "Generator", std::make_unique<sysid::Generator>(storage, gLogger));
-
   // Set default positions and sizes for windows.
-
-  // Generator window position/size
-  gGeneratorWindow->SetDefaultPos(sysid::kGeneratorWindowPos.x,
-                                  sysid::kGeneratorWindowPos.y);
-  gGeneratorWindow->SetDefaultSize(sysid::kGeneratorWindowSize.x,
-                                   sysid::kGeneratorWindowSize.y);
 
   // Logger window position/size
   gLoggerWindow->SetDefaultPos(sysid::kLoggerWindowPos.x,
@@ -215,8 +200,6 @@ void Application(std::string_view saveDir) {
   gui::Initialize("System Identification", sysid::kAppWindowSize.x,
                   sysid::kAppWindowSize.y);
   gui::Main();
-
-  ssh_finalize();
 
   glass::DestroyContext();
   gui::DestroyContext();

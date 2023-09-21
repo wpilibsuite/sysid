@@ -14,7 +14,6 @@ if (OperatingSystem.current().isWindows())
 
 ext {
   imguiVersion = "1.89.1-1"
-  libsshVersion = "0.95-6"
 }
 
 // Apply NativeUtils configuration.
@@ -85,10 +84,6 @@ model {
         }
         exportedHeaders.srcDirs "src/main/native/include"
       }
-      binaries.all {
-        lib project: ":sysid-projects:drive", library: "embeddedBinary", linkage: "static"
-        lib project: ":sysid-projects:mechanism", library: "embeddedBinary", linkage: "static"
-      }
       if (OperatingSystem.current().isWindows()) {
         sources.rc {
           source {
@@ -115,50 +110,11 @@ model {
         it.cppCompiler.define("RUNNING_SYSID_TESTS")
       }
     }
-    sysidAnalysisIntegrationTest(GoogleTestTestSuiteSpec) {
-      testing $.components.sysid
-      sources.cpp {
-        source {
-          srcDirs "src/integrationtest-analysis/native/cpp", "src/integrationtest-utils/native/cpp"
-          include "**/*.cpp", "**/*.h"
-        }
-        exportedHeaders.srcDirs "src/integrationtest-utils/native/include"
-      }
-      binaries.all {
-        nativeUtils.useRequiredLibrary(it, "googletest_static");
-        it.cppCompiler.define("RUNNING_SYSID_TESTS")
-        if (!project.hasProperty("withIntegration")) {
-          it.buildable = false
-        }
-      }
-    }
-    sysidGenerationIntegrationTest(GoogleTestTestSuiteSpec) {
-      testing $.components.sysid
-      sources.cpp {
-        source {
-          srcDirs "src/integrationtest-generation/native/cpp", "src/integrationtest-utils/native/cpp"
-          include "**/*.cpp", "**/*.h"
-        }
-        exportedHeaders.srcDirs "src/integrationtest-utils/native/include"
-      }
-      binaries.all {
-        nativeUtils.useRequiredLibrary(it, "googletest_static")
-        it.cppCompiler.define("RUNNING_SYSID_TESTS")
-        if (!project.hasProperty("withIntegration")) {
-          it.buildable = false
-        }
-      }
-    }
   }
   binaries {
     withType(NativeBinarySpec).all {
-      lib project: ":sysid-projects:drive", library: "embeddedBinary", linkage: "static"
-      lib project: ":sysid-projects:mechanism", library: "embeddedBinary", linkage: "static"
       nativeUtils.useRequiredLibrary(it, "gui")
-      nativeUtils.useRequiredLibrary(it, "ssh")
 
-      it.cppCompiler.define("LIBSSH_STATIC")
-      it.cppCompiler.define("PROJECT_ROOT_DIR", "$rootDir")
       // Add platform-specific renderer and cryptography dependencies.
       if (it.targetPlatform.operatingSystem.isWindows()) {
         it.linker.args << 'Gdi32.lib' << 'Shell32.lib' << 'd3d11.lib' << 'd3dcompiler.lib'
@@ -189,22 +145,6 @@ model {
     $.components.sysid.binaries.each { bin ->
       if (bin.buildable && bin.name.contains("debug")) {
         Task run = project.tasks.create("run", Exec) {
-          commandLine bin.tasks.install.runScriptFile.get().asFile.toString()
-        }
-        run.dependsOn bin.tasks.install
-      }
-    }
-    $.testSuites.sysidAnalysisIntegrationTest.binaries.each { bin ->
-      if (bin.buildable && bin.name.contains("release")) {
-        Task run = project.tasks.create("runAnalysisIntegrationTests", Exec) {
-          commandLine bin.tasks.install.runScriptFile.get().asFile.toString()
-        }
-        run.dependsOn bin.tasks.install
-      }
-    }
-    $.testSuites.sysidGenerationIntegrationTest.binaries.each { bin ->
-      if (bin.buildable && bin.name.contains("release")) {
-        Task run = project.tasks.create("runGenerationIntegrationTests", Exec) {
           commandLine bin.tasks.install.runScriptFile.get().asFile.toString()
         }
         run.dependsOn bin.tasks.install

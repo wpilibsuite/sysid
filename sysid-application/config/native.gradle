@@ -41,15 +41,6 @@ nativeUtils {
         version = imguiVersion
         targetPlatforms.addAll(nativeUtils.wpi.platforms.allPlatforms)
     }
-    libssh_static(getNativeDependencyTypeClass('WPIStaticMavenDependency')) {
-      groupId = "edu.wpi.first.thirdparty.frc2023"
-      artifactId = "libssh"
-      headerClassifier = "headers"
-      sourceClassifier = "sources"
-      ext = "zip"
-      version = libsshVersion
-      targetPlatforms.addAll(nativeUtils.wpi.platforms.desktopPlatforms)
-    }
 
     // Combined
     gui(getNativeDependencyTypeClass('AllPlatformsCombinedNativeDependency')) {
@@ -57,9 +48,6 @@ nativeUtils {
                       "libglassnt_static", "libglass_static", "wpigui_static",
                       "imgui_static", "wpimath_static", "ntcore_static",
                       "wpinet_static", "wpiutil_static"]
-    }
-    ssh(getNativeDependencyTypeClass('AllPlatformsCombinedNativeDependency')) {
-      dependencies = ["libssh_static"]
     }
   }
 }

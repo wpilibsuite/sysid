@@ -62,10 +62,7 @@ inline constexpr Vector2d kLeftColSize{
     310, kAppWindowSize.y - kLeftColPos.y - kWindowGap};
 
 // Left column contents
-inline constexpr Vector2d kGeneratorWindowPos = kLeftColPos;
-inline constexpr Vector2d kGeneratorWindowSize{kLeftColSize.x, 300};
-inline constexpr Vector2d kLoggerWindowPos =
-    kGeneratorWindowPos + Vector2d{0, kGeneratorWindowSize.y + kWindowGap};
+inline constexpr Vector2d kLoggerWindowPos = kLeftColPos;
 inline constexpr Vector2d kLoggerWindowSize{
     kLeftColSize.x, kAppWindowSize.y - kWindowGap - kLoggerWindowPos.y};
 
