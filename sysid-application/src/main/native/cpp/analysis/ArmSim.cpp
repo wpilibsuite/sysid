@@ -29,7 +29,8 @@ ArmSim::ArmSim(double Ks, double Kv, double Ka, double Kg, double offset,
 
 void ArmSim::Update(units::volt_t voltage, units::second_t dt) {
   // Returns arm acceleration under gravity
-  auto f = [=](const Eigen::Vector<double, 2>& x,
+  auto f = [=, this](
+               const Eigen::Vector<double, 2>& x,
                const Eigen::Vector<double, 1>& u) -> Eigen::Vector<double, 2> {
     return Eigen::Vector<double, 2>{
         x(1), (m_A * x.block<1, 1>(1, 0) + m_B * u + m_c * wpi::sgn(x(1)) +
