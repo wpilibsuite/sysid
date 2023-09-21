@@ -20,21 +20,22 @@ repoRootNameOverride {
 }
 
 includeOtherLibs {
-  ^glass
-  ^GLFW
-  ^cscore
-  ^ctre
-  ^Eigen
+  ^Eigen/
+  ^GLFW/
+  ^cscore/
+  ^ctre/
   ^fmt/
-  ^frc
+  ^frc/
+  ^glass/
+  ^gtest/
   ^imgui
   ^implot\.h$
-  ^libssh
+  ^libssh/
   ^networktables/
   ^portable-file-dialogs
   ^rev/
-  ^units
-  ^uv
+  ^units/
+  ^uv/
   ^wpi/
   ^wpigui
   ^wpimath/

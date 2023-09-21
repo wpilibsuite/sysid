@@ -129,16 +129,27 @@ sysid::TrimStepVoltageData(std::vector<PreparedData>* data,
                (settings->motionThreshold * datum.dt.value());
       });
 
+  units::second_t positionDelay;
+  if (motionBegins != data->end()) {
+    positionDelay = motionBegins->timestamp - firstTimestamp;
+  } else {
+    positionDelay = 0_s;
+  }
+
   auto maxAccel = std::max_element(
       data->begin(), data->end(), [](const auto& a, const auto& b) {
         return std::abs(a.acceleration) < std::abs(b.acceleration);
       });
 
-  units::second_t positionDelay = motionBegins->timestamp - firstTimestamp;
-  units::second_t velocityDelay = maxAccel->timestamp - firstTimestamp;
+  units::second_t velocityDelay;
+  if (maxAccel != data->end()) {
+    velocityDelay = maxAccel->timestamp - firstTimestamp;
 
-  // Trim data before max acceleration
-  data->erase(data->begin(), maxAccel);
+    // Trim data before max acceleration
+    data->erase(data->begin(), maxAccel);
+  } else {
+    velocityDelay = 0_s;
+  }
 
   minStepTime = std::min(data->at(0).timestamp - firstTimestamp, minStepTime);
 

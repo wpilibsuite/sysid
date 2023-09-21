@@ -4,14 +4,16 @@
 
 #include <vector>
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
+
 #include "sysid/analysis/OLS.h"
 
 TEST(OLSTest, TwoVariablesTwoPoints) {
   // (1, 3) and (2, 5). Should produce y = 2x + 1.
-  std::vector<double> data{3.0, 1.0, 1.0, 5.0, 1.0, 2.0};
+  std::vector<double> X{1.0, 1.0, 1.0, 2.0};
+  std::vector<double> y{3.0, 5.0};
 
-  auto [coefficients, cod, rmse] = sysid::OLS(data, 2);
+  auto [coefficients, cod, rmse] = sysid::OLS(X, 2, y);
   EXPECT_EQ(coefficients.size(), 2u);
 
   EXPECT_NEAR(coefficients[0], 1.0, 0.05);
@@ -22,9 +24,10 @@ TEST(OLSTest, TwoVariablesTwoPoints) {
 TEST(OLSTest, TwoVariablesFivePoints) {
   // (2, 4), (3, 5), (5, 7), (7, 10), (9, 15)
   // Should produce 1.518x + 0.305.
-  std::vector<double> data{4, 1, 2, 5, 1, 3, 7, 1, 5, 10, 1, 7, 15, 1, 9};
+  std::vector<double> X{1, 2, 1, 3, 1, 5, 1, 7, 1, 9};
+  std::vector<double> y{4, 5, 7, 10, 15};
 
-  auto [coefficients, cod, rmse] = sysid::OLS(data, 2);
+  auto [coefficients, cod, rmse] = sysid::OLS(X, 2, y);
   EXPECT_EQ(coefficients.size(), 2u);
 
   EXPECT_NEAR(coefficients[0], 0.305, 0.05);
@@ -35,6 +38,8 @@ TEST(OLSTest, TwoVariablesFivePoints) {
 #ifndef NDEBUG
 TEST(OLSTest, MalformedData) {
   std::vector<double> data{4, 1, 2, 5, 1};
-  EXPECT_DEATH(sysid::OLS(data, 2), "");
+  std::vector<double> X{1, 2, 1};
+  std::vector<double> y{4, 5};
+  EXPECT_DEATH(sysid::OLS(X, 2, y), "");
 }
 #endif

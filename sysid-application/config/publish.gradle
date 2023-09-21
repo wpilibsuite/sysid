@@ -37,7 +37,8 @@ model {
           from("../LICENSE.md") { into '/' }
           from("../ThirdPartyNotices.txt") { into '/' }
           from(exe)
-          if (binary.targetPlatform.operatingSystem.isWindows()) {
+          if (binary.targetPlatform.operatingSystem.isWindows() &&
+              !binary.name.contains("release")) {
               def exePath = binary.executable.file.absolutePath
               exePath = exePath.substring(0, exePath.length() - 4)
               def pdbPath = new File(exePath + '.pdb')

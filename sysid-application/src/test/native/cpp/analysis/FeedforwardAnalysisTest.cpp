@@ -4,10 +4,10 @@
 
 #include <cmath>
 
+#include <gtest/gtest.h>
 #include <units/time.h>
 #include <units/voltage.h>
 
-#include "gtest/gtest.h"
 #include "sysid/analysis/AnalysisManager.h"
 #include "sysid/analysis/ArmSim.h"
 #include "sysid/analysis/ElevatorSim.h"

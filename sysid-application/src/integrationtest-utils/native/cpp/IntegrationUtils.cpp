@@ -7,9 +7,8 @@
 #include <stdexcept>
 
 #include <fmt/core.h>
+#include <gtest/gtest.h>
 #include <wpi/timestamp.h>
-
-#include "gtest/gtest.h"
 
 void LaunchSim(std::string_view projectDirectory) {
   // Install the robot program.

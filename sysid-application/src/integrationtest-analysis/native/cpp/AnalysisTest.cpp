@@ -8,13 +8,13 @@
 #include <thread>
 
 #include <fmt/core.h>
+#include <gtest/gtest.h>
 #include <networktables/BooleanTopic.h>
 #include <networktables/NetworkTableInstance.h>
 #include <wpi/Logger.h>
 #include <wpi/timestamp.h>
 
 #include "IntegrationUtils.h"
-#include "gtest/gtest.h"
 #include "sysid/Util.h"
 #include "sysid/analysis/AnalysisManager.h"
 #include "sysid/analysis/AnalysisType.h"
@@ -156,9 +156,7 @@ class AnalysisTest : public ::testing::Test {
     ASSERT_LE(m_manager->GetCurrentDataSize(), kMaxDataSize);
   }
 
-  static void TearDownTestSuite() {
-    KillNT(m_nt, m_kill);
-  }
+  static void TearDownTestSuite() { KillNT(m_nt, m_kill); }
 
   void RunTest(const char* test, double duration) {
     m_manager->BeginTest(test);
@@ -194,9 +192,7 @@ class AnalysisTest : public ::testing::Test {
     }
   }
 
-  void RunOverflowTest() {
-    RunTest(kTests[0], 25);
-  }
+  void RunOverflowTest() { RunTest(kTests[0], 25); }
 
  private:
   static inline nt::NetworkTableInstance m_nt;
