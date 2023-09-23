@@ -233,6 +233,5 @@ class TelemetryManager {
       table->GetDoubleTopic("SysIdAckNumber").Subscribe(0);
 
   int m_ackNumber;
-  int m_updatedAckNumber;
 };
 }  // namespace sysid
