@@ -53,8 +53,10 @@ if filename.suffix == ".json":
         unit_columns = columns[3:]
 
     prepared_data = pd.DataFrame(columns=columns)
-    for test in (test for test in raw_data.keys() if "-" in test):
-        formatted_entry = [[pt[0]] + [test] + pt[1:] for pt in raw_data[test]]
+    for test in raw_data.keys():
+        if "-" not in test:
+            continue
+        formatted_entry = [[pt[0], test, *pt[1:]] for pt in raw_data[test]]
         prepared_data = pd.concat(
             [prepared_data, pd.DataFrame(formatted_entry, columns=columns)]
         )
