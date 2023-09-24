@@ -16,8 +16,7 @@
 using namespace sysid;
 
 /**
- * Populates OLS data for x_k+1 - x_k / tau = alpha x_k + beta u_k + gamma
- * sgn(x_k).
+ * Populates OLS data for (xₖ₊₁ − xₖ)/τ = αxₖ + βuₖ + γ sgn(xₖ).
  *
  * @param d List of characterization data.
  * @param type Type of system being identified.
@@ -25,60 +24,73 @@ using namespace sysid;
  * @param y Vector representation of y in y = Xβ.
  */
 static void PopulateOLSData(const std::vector<PreparedData>& d,
-                            const AnalysisType& type, std::vector<double>& X,
-                            std::vector<double>& y) {
-  for (const auto& pt : d) {
-    // Add the velocity term (for alpha)
-    X.push_back(pt.velocity);
+                            const AnalysisType& type,
+                            Eigen::Block<Eigen::MatrixXd> X,
+                            Eigen::VectorBlock<Eigen::VectorXd> y) {
+  for (size_t sample = 0; sample < d.size(); ++sample) {
+    const auto& pt = d[sample];
 
-    // Add the voltage term (for beta)
-    X.push_back(pt.voltage);
+    // Add the velocity term (for α)
+    X(sample, 0) = pt.velocity;
 
-    // Add the intercept term (for gamma)
-    X.push_back(std::copysign(1, pt.velocity));
+    // Add the voltage term (for β)
+    X(sample, 1) = pt.voltage;
+
+    // Add the intercept term (for γ)
+    X(sample, 2) = std::copysign(1, pt.velocity);
 
     // Add test-specific variables
     if (type == analysis::kElevator) {
       // Add the gravity term (for Kg)
-      X.push_back(1.0);
+      X(sample, 3) = 1.0;
     } else if (type == analysis::kArm) {
       // Add the cosine and sine terms (for Kg)
-      X.push_back(pt.cos);
-      X.push_back(pt.sin);
+      X(sample, 3) = pt.cos;
+      X(sample, 4) = pt.sin;
     }
 
     // Add the dependent variable (acceleration)
-    y.push_back(pt.acceleration);
+    y(sample) = pt.acceleration;
   }
 }
 
 std::tuple<std::vector<double>, double, double>
 sysid::CalculateFeedforwardGains(const Storage& data,
                                  const AnalysisType& type) {
-  // Create a raw vector of doubles with our data in it.
-  std::vector<double> X;
-  std::vector<double> y;
-
   // Iterate through the data and add it to our raw vector.
   const auto& [slowForward, slowBackward, fastForward, fastBackward] = data;
 
   const auto size = slowForward.size() + slowBackward.size() +
                     fastForward.size() + fastBackward.size();
 
-  // 1 dependent variable, n independent variables in each observation
-  // Observations are stored serially
-  X.reserve(type.independentVariables * size);
-  y.reserve(size);
+  // Create a raw vector of doubles with our data in it.
+  Eigen::MatrixXd X{size, type.independentVariables};
+  Eigen::VectorXd y{size};
+
+  int rowOffset = 0;
+  PopulateOLSData(slowForward, type,
+                  X.block(rowOffset, 0, slowForward.size(), X.cols()),
+                  y.segment(rowOffset, slowForward.size()));
+
+  rowOffset += slowForward.size();
+  PopulateOLSData(slowBackward, type,
+                  X.block(rowOffset, 0, slowBackward.size(), X.cols()),
+                  y.segment(rowOffset, slowBackward.size()));
+
+  rowOffset += slowBackward.size();
+  PopulateOLSData(fastForward, type,
+                  X.block(rowOffset, 0, fastForward.size(), X.cols()),
+                  y.segment(rowOffset, fastForward.size()));
+
+  rowOffset += fastForward.size();
+  PopulateOLSData(fastBackward, type,
+                  X.block(rowOffset, 0, fastBackward.size(), X.cols()),
+                  y.segment(rowOffset, fastBackward.size()));
 
   // Perform OLS with accel = alpha*vel + beta*voltage + gamma*signum(vel)
   // OLS performs best with the noisiest variable as the dependent var,
   // so we regress accel in terms of the other variables.
-  PopulateOLSData(slowForward, type, X, y);
-  PopulateOLSData(slowBackward, type, X, y);
-  PopulateOLSData(fastForward, type, X, y);
-  PopulateOLSData(fastBackward, type, X, y);
-
-  auto ols = sysid::OLS(X, type.independentVariables, y);
+  auto ols = sysid::OLS(X, y);
   double alpha = std::get<0>(ols)[0];  // -Kv/Ka
   double beta = std::get<0>(ols)[1];   // 1/Ka
   double gamma = std::get<0>(ols)[2];  // -Ks/Ka

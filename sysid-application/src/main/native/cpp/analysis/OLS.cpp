@@ -13,11 +13,8 @@
 using namespace sysid;
 
 std::tuple<std::vector<double>, double, double> sysid::OLS(
-    const std::vector<double>& XData, size_t independentVariables,
-    const std::vector<double>& yData) {
-  // Perform some quick sanity checks regarding the size of the vector.
-  assert(XData.size() % independentVariables == 0);
-  assert(yData.size() % independentVariables == 0);
+    const Eigen::MatrixXd& X, const Eigen::VectorXd& y) {
+  assert(X.rows() == y.rows());
 
   // The linear model can be written as follows:
   // y = Xβ + u, where y is the dependent observed variable, X is the matrix
@@ -26,15 +23,6 @@ std::tuple<std::vector<double>, double, double> sysid::OLS(
 
   // We want to minimize u² = uᵀu = (y - Xβ)ᵀ(y - Xβ).
   // β = (XᵀX)⁻¹Xᵀy
-
-  // Create X matrix and y vector.
-  Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                                 Eigen::RowMajor>>
-      X(XData.data(), XData.size() / independentVariables,
-        independentVariables);
-  Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                                 Eigen::RowMajor>>
-      y(yData.data(), yData.size(), 1);
 
   // Calculate β that minimizes uᵀu.
   Eigen::MatrixXd beta = (X.transpose() * X).llt().solve(X.transpose() * y);
