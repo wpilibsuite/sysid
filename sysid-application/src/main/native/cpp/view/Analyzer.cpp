@@ -764,8 +764,8 @@ void Analyzer::DisplayFeedbackGains() {
       UpdateFeedbackGains();
     }
     sysid::CreateTooltip(
-        "The gearing between the encoder and the output shaft (# of "
-        "encoder turns / # of output shaft turns).");
+        "The gearing between the encoder and the motor shaft (# of encoder "
+        "turns / # of motor shaft turns).");
 
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 5);
     if (ImGui::InputInt("CPR", &m_settings.cpr, 0, 0,

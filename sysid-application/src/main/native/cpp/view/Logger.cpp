@@ -98,7 +98,7 @@ void Logger::Display() {
                      m_isRotationalUnits ? ImGuiInputTextFlags_ReadOnly
                                          : ImGuiInputTextFlags_None);
   sysid::CreateTooltip(
-      "The logger assumes that the code will be sending recorded output shaft "
+      "The logger assumes that the code will be sending recorded motor shaft "
       "rotations over NetworkTables. This value will then be multiplied by the "
       "units per rotation to get the measurement in the units you "
       "specified.\n\nFor non-rotational units (e.g. meters), this value is "
