@@ -21,6 +21,7 @@
 #include <uv.h>
 #include <wpi/Logger.h>
 #include <wpigui.h>
+#include <wpigui_openurl.h>
 
 #include "sysid/view/Analyzer.h"
 #include "sysid/view/JSONConverter.h"
@@ -165,11 +166,27 @@ void Application(std::string_view saveDir) {
       ImGui::EndMenu();
     }
 
+    bool docs = false;
+    if (ImGui::BeginMenu("Docs")) {
+      if (ImGui::MenuItem("Online documentation")) {
+        docs = true;
+      }
+
+      ImGui::EndMenu();
+    }
+
     ImGui::EndMainMenuBar();
 
     if (toCSV) {
       ImGui::OpenPopup("SysId JSON to CSV Converter");
       toCSV = false;
+    }
+
+    if (docs) {
+      wpi::gui::OpenURL(
+          "https://docs.wpilib.org/en/stable/docs/software/pathplanning/"
+          "system-identification/");
+      docs = false;
     }
 
     if (ImGui::BeginPopupModal("SysId JSON to CSV Converter")) {
