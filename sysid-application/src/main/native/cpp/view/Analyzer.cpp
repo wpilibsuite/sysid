@@ -815,23 +815,29 @@ void Analyzer::DisplayFeedbackGains() {
   // Come back to the starting y pos.
   ImGui::SetCursorPosY(beginY);
 
-  std::string_view abbreviation = GetAbbreviation(m_manager->GetUnit());
-
   if (m_selectedLoopType == 0) {
+    std::string unit;
+    if (m_state != AnalyzerState::kWaitingForJSON) {
+      unit = fmt::format(" ({})", GetAbbreviation(m_manager->GetUnit()));
+    }
+
     ImGui::SetCursorPosX(ImGui::GetFontSize() * 9);
-    if (DisplayGain(
-            fmt::format("Max Position Error ({})", abbreviation).c_str(),
-            &m_settings.lqr.qp, false)) {
+    if (DisplayGain(fmt::format("Max Position Error{}", unit).c_str(),
+                    &m_settings.lqr.qp, false)) {
       if (m_settings.lqr.qp > 0) {
         UpdateFeedbackGains();
       }
     }
   }
 
+  std::string unit;
+  if (m_state != AnalyzerState::kWaitingForJSON) {
+    unit = fmt::format(" ({}/s)", GetAbbreviation(m_manager->GetUnit()));
+  }
+
   ImGui::SetCursorPosX(ImGui::GetFontSize() * 9);
-  if (DisplayGain(
-          fmt::format("Max Velocity Error ({}/s)", abbreviation).c_str(),
-          &m_settings.lqr.qv, false)) {
+  if (DisplayGain(fmt::format("Max Velocity Error{}", unit).c_str(),
+                  &m_settings.lqr.qv, false)) {
     if (m_settings.lqr.qv > 0) {
       UpdateFeedbackGains();
     }
