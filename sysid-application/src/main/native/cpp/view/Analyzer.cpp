@@ -159,9 +159,9 @@ bool Analyzer::DisplayResetAndUnitOverride() {
   if (type == analysis::kDrivetrain) {
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * kTextBoxWidthMultiple);
     if (ImGui::Combo("Dataset", &m_dataset, kDatasets, 3)) {
-      PrepareData();
       m_settings.dataset =
           static_cast<AnalysisManager::Settings::DrivetrainDataset>(m_dataset);
+      PrepareData();
     }
     ImGui::SameLine();
   } else {
