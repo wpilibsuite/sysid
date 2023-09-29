@@ -166,10 +166,11 @@ void Application(std::string_view saveDir) {
       ImGui::EndMenu();
     }
 
-    bool docs = false;
     if (ImGui::BeginMenu("Docs")) {
       if (ImGui::MenuItem("Online documentation")) {
-        docs = true;
+        wpi::gui::OpenURL(
+            "https://docs.wpilib.org/en/stable/docs/software/pathplanning/"
+            "system-identification/");
       }
 
       ImGui::EndMenu();
@@ -180,13 +181,6 @@ void Application(std::string_view saveDir) {
     if (toCSV) {
       ImGui::OpenPopup("SysId JSON to CSV Converter");
       toCSV = false;
-    }
-
-    if (docs) {
-      wpi::gui::OpenURL(
-          "https://docs.wpilib.org/en/stable/docs/software/pathplanning/"
-          "system-identification/");
-      docs = false;
     }
 
     if (ImGui::BeginPopupModal("SysId JSON to CSV Converter")) {
