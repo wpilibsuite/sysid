@@ -43,7 +43,7 @@ template <size_t S, size_t Timestamp, size_t Voltage, size_t Position,
 static std::vector<PreparedData> ConvertToPrepared(
     const std::vector<std::array<double, S>>& data) {
   std::vector<PreparedData> prepared;
-  for (size_t i = 0; i < data.size() - 1; i++) {
+  for (int i = 0; i < static_cast<int>(data.size()) - 1; ++i) {
     const auto& pt1 = data[i];
     const auto& pt2 = data[i + 1];
     prepared.emplace_back(PreparedData{
