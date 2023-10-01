@@ -1,3 +1,5 @@
+SysId has moved into the [allwpilib](https://github.com/wpilibsuite/allwpilib) monorepo.
+
 # SysId: System Identification for Robot Mechanisms
 [![Build](https://github.com/wpilibsuite/sysid/actions/workflows/build.yml/badge.svg)](https://github.com/wpilibsuite/sysid/actions/workflows/build.yml)
 
